@@ -34,7 +34,7 @@
                     <p>Sign in to your account</p>
                 </div>
 
-                <form id="loginForm">
+                <form id="loginForm" method="POST">
                     <!-- Email Field -->
                     <div class="form-group">
                         <label for="email" class="form-label">
@@ -183,14 +183,36 @@ form.addEventListener('submit', function(e) {
     passwordInput.classList.toggle('is-invalid', !passwordValid);
     passwordInput.classList.toggle('is-valid', passwordValid);
 
-    if (emailValid && passwordValid) {
-        showToast('success', 'Login Successful', 'Redirecting to dashboard...');
-        setTimeout(() => {
-            window.location.href = 'dashboard.php';
-        }, 1500);
-    } else {
+    if (!emailValid || !passwordValid) {
         showToast('error', 'Validation Failed', 'Please enter valid email and password.');
+        return;
     }
+
+    // Submit to handler
+    const formData = new FormData(form);
+    
+    fetch('handlers/login.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('success', 'Login Successful', 'Redirecting to dashboard...');
+            setTimeout(() => {
+                window.location.href = data.redirect || 'dashboard.php';
+            }, 1500);
+        } else {
+            showToast('error', 'Login Failed', data.message || 'Invalid credentials');
+            passwordInput.value = '';
+            emailInput.classList.remove('is-valid');
+            passwordInput.classList.remove('is-valid');
+        }
+    })
+    .catch(error => {
+        showToast('error', 'Error', 'An error occurred. Please try again.');
+        console.error('Error:', error);
+    });
 });
 </script>
 

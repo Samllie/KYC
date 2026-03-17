@@ -34,7 +34,7 @@
                     <p>Register as a KYC Officer</p>
                 </div>
 
-                <form id="registerForm">
+                <form id="registerForm" method="POST">
                     <!-- Full Name Field -->
                     <div class="form-group">
                         <label for="fullname" class="form-label">
@@ -273,14 +273,33 @@ form.addEventListener('submit', function(e) {
     departmentInput.classList.toggle('is-invalid', !departmentValid);
     departmentInput.classList.toggle('is-valid', departmentValid);
 
-    if (fullnameValid && emailValid && passwordValid && confirmPasswordValid && departmentValid && termsValid) {
-        showToast('success', 'Account Created!', 'Redirecting to login...');
-        setTimeout(() => {
-            window.location.href = 'login.php';
-        }, 1500);
-    } else {
+    if (!fullnameValid || !emailValid || !passwordValid || !confirmPasswordValid || !departmentValid || !termsValid) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields correctly.');
+        return;
     }
+
+    // Submit to handler
+    const formData = new FormData(form);
+    
+    fetch('handlers/register.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('success', 'Account Created!', 'Redirecting to login...');
+            setTimeout(() => {
+                window.location.href = data.redirect || 'login.php';
+            }, 1500);
+        } else {
+            showToast('error', 'Registration Failed', data.message || 'Please try again.');
+        }
+    })
+    .catch(error => {
+        showToast('error', 'Error', 'An error occurred. Please try again.');
+        console.error('Error:', error);
+    });
 });
 </script>
 

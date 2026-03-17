@@ -1,3 +1,7 @@
+<?php
+require_once 'config/session.php';
+requireLogin();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +12,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/clients.css">
+    <link rel="stylesheet" href="css/global.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -113,7 +119,7 @@
                 </div>
             </div>
             <div class="controls-right">
-                <button class="btn-export" title="Export">
+                <button class="btn-export" title="Export" onclick="showExportPreview()">
                     <i class="bi bi-download"></i> Export
                 </button>
                 <button class="btn-add-client" title="Add New Client" onclick="window.location.href='kyc-verification.php'">
@@ -383,16 +389,169 @@
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════ MODAL: Export Preview -->
+<div id="exportPreviewModal" class="modal">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="modal-header">
+            <h2>Export Clients Report</h2>
+            <button class="modal-close" title="Close" onclick="document.getElementById('exportPreviewModal').style.display='none'"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="modal-body" style="flex: 1; overflow-y: auto;">
+            <div id="previewContent" style="background: white; padding: 20px; border-radius: 8px;"></div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button class="btn-cancel" onclick="document.getElementById('exportPreviewModal').style.display='none'">
+                <i class="bi bi-x-circle"></i> Close
+            </button>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-outline" onclick="exportAsCSV()">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                </button>
+                <button class="btn btn-outline" onclick="exportAsPDF()">
+                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                </button>
+                <button class="btn btn-primary" onclick="printReport()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // Get client ID from row
+    function getClientIdFromRow(button) {
+        const row = button.closest('tr');
+        const refCodeCell = row.querySelector('.col-ref span');
+        return refCodeCell.textContent;
+    }
+
+    // Get client data from row
+    function getClientDataFromRow(row) {
+        const cells = row.querySelectorAll('td');
+        return {
+            refCode: cells[1].textContent.trim(),
+            firstName: cells[2].textContent.split(' ')[0],
+            lastName: cells[2].textContent.split(' ').pop(),
+            type: cells[3].textContent.trim(),
+            contact: cells[4].textContent.trim(),
+            email: cells[5].textContent.trim()
+        };
+    }
+
     // Modal functionality
     const editModal = document.getElementById('editModal');
     const cancelBtn = document.getElementById('cancelBtn');
 
-    document.querySelectorAll('.action-icon:not(.delete)').forEach(btn => {
+    // View Client
+    document.querySelectorAll('.action-icon:not(.delete)').forEach((btn, index) => {
+        // Only add event listener to first icon (View) and second icon (Edit)
+        if (index % 3 === 0) {
+            // View
+            btn.addEventListener('click', function(e) {
+                const row = this.closest('tr');
+                const data = getClientDataFromRow(row);
+                viewClient(data);
+            });
+        } else if (index % 3 === 1) {
+            // Edit
+            btn.addEventListener('click', function(e) {
+                const row = this.closest('tr');
+                const data = getClientDataFromRow(row);
+                editClient(data);
+            });
+        }
+    });
+
+    // Delete Client
+    document.querySelectorAll('.action-icon.delete').forEach(btn => {
         btn.addEventListener('click', function() {
-            editModal.style.display = 'block';
+            const row = this.closest('tr');
+            const refCode = row.querySelector('.col-ref span').textContent;
+            deleteClient(refCode, row);
         });
     });
+
+    // View Client Function
+    function viewClient(data) {
+        alert('Client Details:\n\nRef Code: ' + data.refCode + '\nName: ' + data.firstName + ' ' + data.lastName + '\nType: ' + data.type + '\nEmail: ' + data.email + '\nContact: ' + data.contact);
+    }
+
+    // Edit Client Function
+    function editClient(data) {
+        // Populate edit modal with data
+        // For now just show in edit modal
+        editModal.style.display = 'block';
+    }
+
+    // Delete Client Function
+    function deleteClient(refCode, row) {
+        if (!confirm('Are you sure you want to delete this client?\n\n' + refCode)) {
+            return;
+        }
+        
+        // Extract client name for reference
+        const clientName = row.querySelector('.col-name').textContent;
+        
+        const formData = new FormData();
+        formData.append('action', 'delete_client');
+        formData.append('client_id', refCode);
+        
+        fetch('handlers/client.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show toast
+                const toast = createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
+                // Fade out and remove row
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            } else {
+                const toast = createToast('error', 'Error', data.message || 'Failed to delete client.', 'toastContainer');
+            }
+        })
+        .catch(error => {
+            const toast = createToast('error', 'Error', 'An error occurred.', 'toastContainer');
+            console.error('Error:', error);
+        });
+    }
+
+    // Create Toast helper function
+    function createToast(type, title, msg, containerId) {
+        const icons = { 
+            success: 'bi-check-circle-fill', 
+            error: 'bi-x-circle-fill', 
+            info: 'bi-info-circle-fill' 
+        };
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <i class="bi ${icons[type]} toast-icon"></i>
+            <div class="toast-body">
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${msg}</div>
+            </div>
+            <i class="bi bi-x toast-close" onclick="removeToast(this.parentElement)"></i>`;
+        
+        let container = document.getElementById(containerId);
+        if (!container) {
+            container = document.createElement('div');
+            container.id = containerId;
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+        container.appendChild(toast);
+        setTimeout(() => removeToast(toast), 4000);
+        return toast;
+    }
+
+    function removeToast(el) {
+        el.classList.add('out');
+        setTimeout(() => el.remove(), 250);
+    }
 
     cancelBtn.addEventListener('click', function() {
         editModal.style.display = 'none';
@@ -419,6 +578,174 @@
             row.style.display = text.includes(searchTerm) ? '' : 'none';
         });
     });
+
+    // Export Clients functionality
+    let exportData = [];
+
+    function getTableData() {
+        const table = document.querySelector('.clients-table');
+        const data = [];
+        
+        // Add data rows (only visible rows)
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            if (tr.style.display !== 'none') {
+                const cells = [];
+                let cellIndex = 0;
+                tr.querySelectorAll('td').forEach(td => {
+                    // Skip checkbox column
+                    if (cellIndex === 0) {
+                        cellIndex++;
+                        return;
+                    }
+                    cellIndex++;
+                    const content = td.textContent.trim();
+                    cells.push(content);
+                });
+                if (cells.length > 0) {
+                    data.push(cells);
+                }
+            }
+        });
+        return data;
+    }
+
+    function showExportPreview() {
+        const table = document.querySelector('.clients-table');
+        const modal = document.getElementById('exportPreviewModal');
+        const previewContent = document.getElementById('previewContent');
+        
+        // Get visible rows
+        const data = getTableData();
+        
+        if (data.length === 0) {
+            alert('No clients to export!');
+            return;
+        }
+
+        // Build HTML preview table
+        let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
+        html += '<thead><tr style="background: #f3f4f6; border: 1px solid #d1d5db;">';
+        
+        const headers = ['Ref Code', 'Full Name', 'Type', 'Contact', 'Email', 'Status', 'Actions'];
+        headers.forEach(header => {
+            html += `<th style="padding: 10px; text-align: left; border: 1px solid #d1d5db; font-weight: 600;">${header}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        
+        data.forEach((row, index) => {
+            html += `<tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'}; border: 1px solid #d1d5db;">`;
+            row.forEach(cell => {
+                html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${cell}</td>`;
+            });
+            html += '</tr>';
+        });
+        
+        html += '</tbody></table>';
+        html += `<div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #d1d5db; font-size: 0.85rem; color: #6b7280;">`;
+        html += `<p><strong>Total Records:</strong> ${data.length}</p>`;
+        html += `<p><strong>Export Date:</strong> ${new Date().toLocaleString()}</p>`;
+        html += `</div>`;
+
+        previewContent.innerHTML = html;
+        exportData = data;
+        modal.style.display = 'block';
+    }
+
+    function exportAsCSV() {
+        if (exportData.length === 0) return;
+
+        const table = document.querySelector('.clients-table');
+        const rows = [];
+        
+        // Add header row
+        const headers = [];
+        table.querySelectorAll('thead th').forEach(th => {
+            const text = th.textContent.trim();
+            if (text && text !== '') {
+                headers.push(text);
+            }
+        });
+        rows.push(headers.slice(0, -2).join(','));
+
+        // Add data rows
+        exportData.forEach(row => {
+            const cells = row.map(cell => {
+                let content = cell.replace(/\s+/g, ' ').replace(/,/g, ';');
+                if (content.includes(',') || content.includes('"')) {
+                    content = '"' + content.replace(/"/g, '""') + '"';
+                }
+                return content;
+            });
+            rows.push(cells.slice(0, -1).join(','));
+        });
+
+        const csvContent = rows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `clients_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function exportAsPDF() {
+        if (exportData.length === 0) return;
+
+        const element = document.getElementById('previewContent');
+        const opt = {
+            margin: 10,
+            filename: `clients_export_${new Date().toISOString().split('T')[0]}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' }
+        };
+
+        html2pdf().set(opt).from(element).save();
+    }
+
+    function printReport() {
+        if (exportData.length === 0) return;
+
+        const printWindow = window.open('', '_blank');
+        const content = document.getElementById('previewContent').innerHTML;
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Clients Report - KYC System</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    h1 { text-align: center; color: #374151; margin-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                    th { background: #f3f4f6; padding: 10px; text-align: left; border: 1px solid #d1d5db; font-weight: bold; }
+                    td { padding: 10px; border: 1px solid #d1d5db; }
+                    tr:nth-child(even) { background: #f9fafb; }
+                    .footer { margin-top: 20px; font-size: 0.9rem; color: #6b7280; border-top: 1px solid #d1d5db; padding-top: 10px; }
+                    @media print { body { margin: 0; padding: 10px; } }
+                </style>
+            </head>
+            <body>
+                <h1>Clients Management Report</h1>
+                ${content}
+                <div class="footer">
+                    <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+                    <p><strong>Total Records:</strong> ${exportData.length}</p>
+                </div>
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.print();
+        }, 250);
+    }
 </script>
 
 </body>

@@ -1,3 +1,7 @@
+<?php
+require_once 'config/session.php';
+requireLogin();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +11,7 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/global.css">
 </head>
 <body>
 
@@ -473,21 +478,84 @@ function submitForm() {
         showToast('error', 'Validation Failed', 'Please fill in all required fields.');
         return;
     }
-    showToast('success', 'Client Saved!', 'Proceeding to Document Verification.');
-    // Advance step indicator
-    const s2 = document.getElementById('step-2');
-    s2.classList.remove('active'); s2.classList.add('done');
-    s2.querySelector('.step-num').innerHTML = '<i class="bi bi-check" style="font-size:.9rem;"></i>';
-    const s3 = document.getElementById('step-3');
-    s3.classList.add('active');
-    document.querySelectorAll('.step-line')[1].classList.add('done');
-    // Increment stat
-    const tv = document.getElementById('stat-total');
-    tv.textContent = parseInt(tv.textContent) + 1;
+    
+    // Collect form data
+    const formData = new FormData();
+    formData.append('action', 'submit_kyc');
+    
+    // Add all form fields
+    const form = document.getElementById('kycForm');
+    const elements = form.querySelectorAll('input, select, textarea');
+    elements.forEach(el => {
+        if (el.name && el.value) {
+            formData.append(el.name, el.value);
+        }
+    });
+    
+    // Submit to handler
+    fetch('handlers/kyc.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('success', 'Client Saved!', 'Proceeding to Document Verification.');
+            // Advance step indicator
+            const s2 = document.getElementById('step-2');
+            s2.classList.remove('active'); s2.classList.add('done');
+            s2.querySelector('.step-num').innerHTML = '<i class="bi bi-check" style="font-size:.9rem;"></i>';
+            const s3 = document.getElementById('step-3');
+            s3.classList.add('active');
+            document.querySelectorAll('.step-line')[1].classList.add('done');
+            // Increment stat
+            const tv = document.getElementById('stat-total');
+            tv.textContent = parseInt(tv.textContent) + 1;
+            
+            setTimeout(() => {
+                window.location.href = 'dashboard.php';
+            }, 2000);
+        } else {
+            showToast('error', 'Submission Failed', data.message || 'Please try again.');
+        }
+    })
+    .catch(error => {
+        showToast('error', 'Error', 'An error occurred. Please try again.');
+        console.error('Error:', error);
+    });
 }
 
 function saveDraft() {
-    showToast('info', 'Draft Saved', 'Your progress has been saved locally.');
+    // Collect form data
+    const formData = new FormData();
+    formData.append('action', 'save_draft');
+    
+    // Add all form fields
+    const form = document.getElementById('kycForm');
+    const elements = form.querySelectorAll('input, select, textarea');
+    elements.forEach(el => {
+        if (el.name) {
+            formData.append(el.name, el.value);
+        }
+    });
+    
+    // Submit to handler
+    fetch('handlers/kyc.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('info', 'Draft Saved', 'Your progress has been saved successfully.');
+        } else {
+            showToast('error', 'Save Failed', data.message || 'Please try again.');
+        }
+    })
+    .catch(error => {
+        showToast('error', 'Error', 'An error occurred. Please try again.');
+        console.error('Error:', error);
+    });
 }
 
 function clearForm() {
