@@ -1,5 +1,5 @@
 <?php
-require_once 'config/session.php';
+require_once '../config/session.php';
 requireLogin();
 ?>
 <!DOCTYPE html>
@@ -10,9 +10,9 @@ requireLogin();
     <title>KYC System — Clients Management</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="css/index.css">
-    <link rel="stylesheet" href="css/clients.css">
-    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="../css/index.css">
+    <link rel="stylesheet" href="../css/clients.css">
+    <link rel="stylesheet" href="../css/global.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
@@ -327,7 +327,7 @@ requireLogin();
 <script>
     // Load clients from database on page load
     function loadClients() {
-        fetch('handlers/get_clients.php')
+        fetch('../handlers/get_clients.php')
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.data && data.data.length > 0) {
@@ -499,7 +499,7 @@ requireLogin();
         formData.append('action', 'delete_client');
         formData.append('client_id', refCode);
         
-        fetch('handlers/client.php', {
+        fetch('../handlers/client.php', {
             method: 'POST',
             body: formData
         })
