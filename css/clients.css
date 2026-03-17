@@ -1,0 +1,542 @@
+/* ─── Clients Table Styles ─────────────────────── */
+
+/* Table Controls */
+.table-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.controls-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-box i {
+    position: absolute;
+    left: 12px;
+    color: var(--gray-400);
+    font-size: 0.9rem;
+}
+
+.search-input {
+    padding: 8px 12px 8px 32px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    width: 250px;
+    transition: all var(--transition);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--green-500);
+    box-shadow: 0 0 0 3px rgba(34, 145, 109, 0.1);
+}
+
+.filter-group {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-select {
+    padding: 8px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    background: var(--white);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.filter-select:hover {
+    border-color: var(--gray-400);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--green-500);
+    box-shadow: 0 0 0 3px rgba(34, 145, 109, 0.1);
+}
+
+.controls-right {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-export,
+.btn-add-client {
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-export {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-300);
+}
+
+.btn-export:hover {
+    background: var(--gray-200);
+}
+
+.btn-add-client {
+    background: var(--green-500);
+    color: var(--white);
+}
+
+.btn-add-client:hover {
+    background: var(--green-600);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Table Wrapper */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+/* Clients Table */
+.clients-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.clients-table thead {
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.clients-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-700);
+    white-space: nowrap;
+}
+
+.clients-table tbody tr {
+    border-bottom: 1px solid var(--gray-200);
+    transition: background var(--transition);
+}
+
+.clients-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.clients-table td {
+    padding: 12px;
+    color: var(--gray-700);
+}
+
+/* Column Widths */
+.col-checkbox { width: 40px; }
+.col-ref { width: 120px; }
+.col-name { width: 150px; }
+.col-type { width: 100px; }
+.col-contact { width: 140px; }
+.col-email { width: 160px; }
+.col-status { width: 120px; }
+.col-actions { width: 120px; text-align: center; }
+
+/* Checkbox */
+.clients-table input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Reference Badge */
+.ref-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: var(--green-100);
+    color: var(--green-700);
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+}
+
+/* Type Badges */
+.type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.type-badge.individual {
+    background: var(--info);
+    color: var(--white);
+    opacity: 0.85;
+}
+
+.type-badge.corporate {
+    background: #8B5CF6;
+    color: var(--white);
+    opacity: 0.85;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-badge.verified {
+    background: #D1FAE5;
+    color: var(--green-700);
+}
+
+.status-badge.pending {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.status-badge.rejected {
+    background: #FEE2E2;
+    color: var(--danger);
+}
+
+/* Action Buttons */
+.action-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    color: var(--gray-500);
+    font-size: 0.95rem;
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-icon:hover {
+    background: var(--gray-100);
+    color: var(--green-500);
+}
+
+.action-icon.delete:hover {
+    background: #FEE2E2;
+    color: var(--danger);
+}
+
+/* Table Footer */
+.table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.pagination-info {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    gap: 4px;
+}
+
+.pagination-btn {
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    color: var(--gray-700);
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all var(--transition);
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: var(--green-500);
+    color: var(--green-500);
+}
+
+.pagination-btn.active {
+    background: var(--green-500);
+    border-color: var(--green-500);
+    color: var(--white);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ─── Modal Styles ─────────────────────────────── */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: var(--white);
+    margin: 5% auto;
+    padding: 0;
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 700px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.modal-header h2 {
+    font-size: 1.2rem;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--gray-400);
+    cursor: pointer;
+    transition: color var(--transition);
+}
+
+.modal-close:hover {
+    color: var(--gray-700);
+}
+
+.modal-body {
+    padding: 24px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.form-row .form-group.full {
+    grid-column: 1 / -1;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 6px;
+}
+
+.form-control,
+.form-select {
+    padding: 8px 10px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-family: 'Sora', sans-serif;
+    transition: all var(--transition);
+}
+
+.form-control:focus,
+.form-select:focus {
+    outline: none;
+    border-color: var(--green-500);
+    box-shadow: 0 0 0 3px rgba(34, 145, 109, 0.1);
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 16px 24px;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.btn-cancel,
+.btn-save {
+    padding: 8px 20px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-cancel {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.btn-cancel:hover {
+    background: var(--gray-300);
+}
+
+.btn-save {
+    background: var(--green-500);
+    color: var(--white);
+}
+
+.btn-save:hover {
+    background: var(--green-600);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ─── Responsive Design ─────────────────────────── */
+@media (max-width: 1024px) {
+    .table-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .controls-left {
+        width: 100%;
+    }
+
+    .search-input {
+        width: 100%;
+    }
+
+    .controls-right {
+        width: 100%;
+    }
+
+    .btn-export,
+    .btn-add-client {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .col-ref,
+    .col-contact,
+    .col-email {
+        display: none;
+    }
+
+    .col-name { width: 200px; }
+    .col-actions { width: 100px; }
+}
+
+@media (max-width: 768px) {
+    .clients-table {
+        font-size: 0.75rem;
+    }
+
+    .col-name { width: 120px; }
+    .col-type { display: none; }
+
+    .table-footer {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 20% auto;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-export,
+    .btn-add-client {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .col-checkbox { display: none; }
+    .col-status { display: none; }
+
+    .clients-table th,
+    .clients-table td {
+        padding: 8px 4px;
+    }
+
+    .search-input {
+        width: 100%;
+    }
+
+    .ref-badge,
+    .type-badge,
+    .status-badge {
+        display: block;
+        margin-bottom: 4px;
+    }
+}
