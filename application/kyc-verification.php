@@ -1,5 +1,5 @@
 <?php
-require_once 'config/session.php';
+require_once '../config/session.php';
 requireLogin();
 ?>
 <!DOCTYPE html>
@@ -10,8 +10,8 @@ requireLogin();
     <title>KYC System — Client Registration</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="css/index.css">
-    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="../css/index.css">
+    <link rel="stylesheet" href="../css/global.css">
 </head>
 <body>
 
@@ -493,7 +493,7 @@ function submitForm() {
     });
     
     // Submit to handler
-    fetch('handlers/kyc.php', {
+    fetch('../handlers/kyc.php', {
         method: 'POST',
         body: formData
     })
@@ -545,7 +545,7 @@ function saveDraft() {
     });
     
     // Submit to handler
-    fetch('handlers/kyc.php', {
+    fetch('../handlers/kyc.php', {
         method: 'POST',
         body: formData
     })

@@ -6,7 +6,7 @@
     <title>KYC System — Login</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="../css/auth.css">
 </head>
 <body>
 
@@ -191,7 +191,7 @@ form.addEventListener('submit', function(e) {
     // Submit to handler
     const formData = new FormData(form);
     
-    fetch('handlers/logins.php', {
+    fetch('../handlers/logins.php', {
         method: 'POST',
         body: formData
     })
@@ -200,7 +200,7 @@ form.addEventListener('submit', function(e) {
         if (data.success) {
             showToast('success', 'Login Successful', 'Redirecting to dashboard...');
             setTimeout(() => {
-                window.location.href = data.redirect || 'dashboard.php';
+                window.location.href = data.redirect || '../application/dashboard.php';
             }, 1500);
         } else {
             showToast('error', 'Login Failed', data.message || 'Invalid credentials');
