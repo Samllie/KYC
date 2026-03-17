@@ -33,7 +33,7 @@
             <i class="bi bi-people"></i> Clients
             <span class="nav-badge">24</span>
         </a>
-        <a href="index.php" class="nav-item">
+        <a href="kyc-verification.php" class="nav-item">
             <i class="bi bi-person-check"></i> KYC Verification
         </a>
         <a href="policy.php" class="nav-item">
@@ -98,7 +98,7 @@
                 <p>Here's what's happening today!</p>
             </div>
             <div class="add client">
-            <a href="index.php">
+            <a href="kyc-verification.php">
                 <button class="btn btn-primary" style="margin-left:auto;">
                     <i class="bi bi-plus-circle"></i> New Client
                 </button>
