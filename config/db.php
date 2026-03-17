@@ -91,6 +91,37 @@ function fetchOne($query, $params = []) {
 }
 
 /**
+ * Generate unique reference code
+ * Format: REF-YYYYMMDD-XXXXX (e.g., REF-20260317-00001)
+ */
+function generateUniqueReferenceCode() {
+    global $db;
+    
+    $date = date('Ymd');
+    $counter = 1;
+    
+    while ($counter <= 99999) {
+        $refCode = 'REF-' . $date . '-' . str_pad($counter, 5, '0', STR_PAD_LEFT);
+        
+        // Check if reference code already exists
+        $query = "SELECT reference_code FROM clients WHERE reference_code = ?";
+        $stmt = $db->prepare($query);
+        $stmt->bind_param('s', $refCode);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows === 0) {
+            return $refCode;
+        }
+        
+        $counter++;
+    }
+    
+    // Fallback to unique timestamp if counter exceeds limit
+    return 'REF-' . time();
+}
+
+/**
  * Helper function to insert data
  */
 function insert($table, $data) {
@@ -106,7 +137,19 @@ function insert($table, $data) {
         return ['error' => 'Insert preparation failed: ' . $db->error];
     }
     
-    $stmt->bind_param(str_repeat('s', count($data)), ...array_values($data));
+    // Build proper type string and convert values to references
+    $types = str_repeat('s', count($data));
+    $values = array_values($data);
+    
+    // Create reference array for bind_param
+    $refs = [];
+    foreach ($values as &$val) {
+        $refs[] = &$val;
+    }
+    
+    // Bind parameters with types
+    array_unshift($refs, $types);
+    call_user_func_array([$stmt, 'bind_param'], $refs);
     
     if (!$stmt->execute()) {
         return ['error' => 'Insert failed: ' . $stmt->error];
@@ -136,7 +179,16 @@ function update($table, $data, $where, $whereParams = []) {
     
     $params = array_merge(array_values($data), $whereParams);
     $types = str_repeat('s', count($params));
-    $stmt->bind_param($types, ...$params);
+    
+    // Create reference array for bind_param
+    $refs = [];
+    foreach ($params as &$val) {
+        $refs[] = &$val;
+    }
+    
+    // Bind parameters with types
+    array_unshift($refs, $types);
+    call_user_func_array([$stmt, 'bind_param'], $refs);
     
     if (!$stmt->execute()) {
         return ['error' => 'Update failed: ' . $stmt->error];

@@ -23,7 +23,6 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 // ADD NEW CLIENT
 // ============================================
 if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $refCode = trim($_POST['refCode'] ?? '');
     $clientType = trim($_POST['clientType'] ?? '');
     $firstName = trim($_POST['firstName'] ?? '');
     $lastName = trim($_POST['lastName'] ?? '');
@@ -35,12 +34,15 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $address = trim($_POST['address'] ?? '');
     
     // Validation
-    if (empty($refCode) || empty($clientType) || empty($firstName) || empty($lastName) || 
+    if (empty($clientType) || empty($firstName) || empty($lastName) || 
         empty($birthdate) || empty($email) || empty($mobile) || empty($occupation) || empty($address)) {
         $response['message'] = 'All required fields must be filled';
         echo json_encode($response);
         exit;
     }
+    
+    // Auto-generate unique reference code
+    $refCode = generateUniqueReferenceCode();
     
     // Generate client number
     $clientNumber = 'CN-' . time();
@@ -70,6 +72,7 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $response['success'] = true;
     $response['message'] = 'Client added successfully';
     $response['client_id'] = $result['id'];
+    $response['reference_code'] = $refCode;
 }
 
 // ============================================

@@ -144,102 +144,8 @@ requireLogin();
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Sample Row 1 -->
-                        <tr>
-                            <td class="col-checkbox"><input type="checkbox"></td>
-                            <td class="col-ref"><span class="ref-badge">KYC-2024-0001</span></td>
-                            <td class="col-name">Juan Dela Cruz</td>
-                            <td class="col-type"><span class="type-badge individual">Individual</span></td>
-                            <td class="col-contact">+63 912 345 6789</td>
-                            <td class="col-email">juan@example.com</td>
-                            <td class="col-status"><span class="status-badge verified"><i class="bi bi-check-circle"></i> Verified</span></td>
-                            <td class="col-actions">
-                                <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
-                                <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
-                                <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>
-
-                        <!-- Sample Row 2 -->
-                        <tr>
-                            <td class="col-checkbox"><input type="checkbox"></td>
-                            <td class="col-ref"><span class="ref-badge">KYC-2024-0002</span></td>
-                            <td class="col-name">Maria Garcia</td>
-                            <td class="col-type"><span class="type-badge individual">Individual</span></td>
-                            <td class="col-contact">+63 921 654 3210</td>
-                            <td class="col-email">maria@example.com</td>
-                            <td class="col-status"><span class="status-badge pending"><i class="bi bi-hourglass-split"></i> Pending</span></td>
-                            <td class="col-actions">
-                                <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
-                                <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
-                                <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>
-
-                        <!-- Sample Row 3 -->
-                        <tr>
-                            <td class="col-checkbox"><input type="checkbox"></td>
-                            <td class="col-ref"><span class="ref-badge">KYC-2024-0003</span></td>
-                            <td class="col-name">Robert Santos</td>
-                            <td class="col-type"><span class="type-badge corporate">Corporate</span></td>
-                            <td class="col-contact">(02) 8123-4567</td>
-                            <td class="col-email">robert@company.com</td>
-                            <td class="col-status"><span class="status-badge verified"><i class="bi bi-check-circle"></i> Verified</span></td>
-                            <td class="col-actions">
-                                <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
-                                <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
-                                <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>
-
-                        <!-- Sample Row 4 -->
-                        <tr>
-                            <td class="col-checkbox"><input type="checkbox"></td>
-                            <td class="col-ref"><span class="ref-badge">KYC-2024-0004</span></td>
-                            <td class="col-name">Angela Torres</td>
-                            <td class="col-type"><span class="type-badge individual">Individual</span></td>
-                            <td class="col-contact">+63 938 765 4321</td>
-                            <td class="col-email">angela@example.com</td>
-                            <td class="col-status"><span class="status-badge rejected"><i class="bi bi-x-circle"></i> Rejected</span></td>
-                            <td class="col-actions">
-                                <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
-                                <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
-                                <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>
-
-                        <!-- Sample Row 5 -->
-                        <tr>
-                            <td class="col-checkbox"><input type="checkbox"></td>
-                            <td class="col-ref"><span class="ref-badge">KYC-2024-0005</span></td>
-                            <td class="col-name">John Reyes</td>
-                            <td class="col-type"><span class="type-badge individual">Individual</span></td>
-                            <td class="col-contact">+63 945 678 9012</td>
-                            <td class="col-email">john@example.com</td>
-                            <td class="col-status"><span class="status-badge verified"><i class="bi bi-check-circle"></i> Verified</span></td>
-                            <td class="col-actions">
-                                <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
-                                <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
-                                <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>
-
-                        <!-- Sample Row 6 -->
-                        <tr>
-                            <td class="col-checkbox"><input type="checkbox"></td>
-                            <td class="col-ref"><span class="ref-badge">KYC-2024-0006</span></td>
-                            <td class="col-name">Luisa Cruz</td>
-                            <td class="col-type"><span class="type-badge individual">Individual</span></td>
-                            <td class="col-contact">+63 956 234 5678</td>
-                            <td class="col-email">luisa@example.com</td>
-                            <td class="col-status"><span class="status-badge pending"><i class="bi bi-hourglass-split"></i> Pending</span></td>
-                            <td class="col-actions">
-                                <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
-                                <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
-                                <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>
+                    <tbody id="clientsTableBody">
+                        <!-- Clients will be loaded dynamically -->
                     </tbody>
                 </table>
             </div>
@@ -419,8 +325,104 @@ requireLogin();
 </div>
 
 <script>
-    // Get client ID from row
-    function getClientIdFromRow(button) {
+    // Load clients from database on page load
+    function loadClients() {
+        fetch('handlers/get_clients.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data && data.data.length > 0) {
+                    renderClientsTable(data.data);
+                    attachClientEventListeners();
+                    updatePaginationInfo(data.count);
+                } else {
+                    document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">No clients found</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading clients:', error);
+                document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: red;">Error loading clients</td></tr>';
+            });
+    }
+
+    // Render clients table with data from database
+    function renderClientsTable(clients) {
+        const tbody = document.getElementById('clientsTableBody');
+        tbody.innerHTML = '';
+
+        clients.forEach(client => {
+            const statusClass = client.verification_status === 'verified' ? 'verified' : 
+                               client.verification_status === 'pending' ? 'pending' : 'rejected';
+            const statusText = client.verification_status.charAt(0).toUpperCase() + client.verification_status.slice(1);
+            const statusIcon = client.verification_status === 'verified' ? 'bi-check-circle' : 
+                              client.verification_status === 'pending' ? 'bi-hourglass-split' : 'bi-x-circle';
+            const typeClass = client.client_type === 'individual' ? 'individual' : 'corporate';
+            const typeText = client.client_type.charAt(0).toUpperCase() + client.client_type.slice(1);
+            const fullName = `${client.first_name} ${client.last_name}`.trim();
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="col-checkbox"><input type="checkbox"></td>
+                <td class="col-ref"><span class="ref-badge">${client.reference_code}</span></td>
+                <td class="col-name">${fullName}</td>
+                <td class="col-type"><span class="type-badge ${typeClass}">${typeText}</span></td>
+                <td class="col-contact">${client.mobile_phone || 'N/A'}</td>
+                <td class="col-email">${client.email}</td>
+                <td class="col-status"><span class="status-badge ${statusClass}"><i class="bi ${statusIcon}"></i> ${statusText}</span></td>
+                <td class="col-actions">
+                    <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
+                    <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
+                    <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Update pagination info
+    function updatePaginationInfo(total) {
+        const start = document.querySelector('.info-start');
+        const end = document.querySelector('.info-end');
+        const totalEl = document.querySelector('.info-total');
+        
+        if (start) start.textContent = total > 0 ? '1' : '0';
+        if (end) end.textContent = Math.min(total, 6);
+        if (totalEl) totalEl.textContent = total;
+    }
+
+    // Attach event listeners to dynamically loaded rows
+    function attachClientEventListeners() {
+        // View Client
+        document.querySelectorAll('.action-icon:not(.delete)').forEach((btn, index) => {
+            if (index % 3 === 0) {
+                // View
+                btn.addEventListener('click', function(e) {
+                    const row = this.closest('tr');
+                    const data = getClientDataFromRow(row);
+                    viewClient(data);
+                });
+            } else if (index % 3 === 1) {
+                // Edit
+                btn.addEventListener('click', function(e) {
+                    const row = this.closest('tr');
+                    const data = getClientDataFromRow(row);
+                    editClient(data);
+                });
+            }
+        });
+
+        // Delete Client
+        document.querySelectorAll('.action-icon.delete').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const refCode = row.querySelector('.col-ref span').textContent;
+                deleteClient(refCode, row);
+            });
+        });
+    }
+
+    // Load clients on page load
+    document.addEventListener('DOMContentLoaded', loadClients);
+
         const row = button.closest('tr');
         const refCodeCell = row.querySelector('.col-ref span');
         return refCodeCell.textContent;

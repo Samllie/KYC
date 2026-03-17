@@ -24,8 +24,10 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 // ============================================
 if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Collect all form data
+    $userProvidedRefCode = trim($_POST['refCode'] ?? '');
+    
     $formData = [
-        'ref_code' => trim($_POST['refCode'] ?? ''),
+        'ref_code' => $userProvidedRefCode,
         'client_type' => trim($_POST['clientType'] ?? ''),
         'last_name' => trim($_POST['lastName'] ?? ''),
         'first_name' => trim($_POST['firstName'] ?? ''),
@@ -44,8 +46,8 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'address' => trim($_POST['address'] ?? '')
     ];
     
-    // Validation of required fields
-    $required = ['ref_code', 'client_type', 'last_name', 'first_name', 'birthdate', 'occupation', 'email', 'mobile', 'address'];
+    // Validation of required fields (excluding ref_code since it will be auto-generated)
+    $required = ['client_type', 'last_name', 'first_name', 'birthdate', 'occupation', 'email', 'mobile', 'address'];
     foreach ($required as $field) {
         if (empty($formData[$field])) {
             $response['message'] = 'All required fields must be filled';
@@ -54,7 +56,12 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // Check if client already exists
+    // If no reference code provided, generate a unique one
+    if (empty($userProvidedRefCode)) {
+        $formData['ref_code'] = generateUniqueReferenceCode();
+    }
+    
+    // Check if client already exists using provided/generated reference code
     $existingClient = fetchOne("SELECT client_id FROM clients WHERE reference_code = ?", [$formData['ref_code']]);
     
     if ($existingClient) {
@@ -137,14 +144,17 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $response['success'] = true;
     $response['message'] = 'KYC verification submitted successfully';
     $response['client_id'] = $clientId;
+    $response['reference_code'] = $formData['ref_code'];
 }
 
 // ============================================
 // SAVE DRAFT
 // ============================================
 else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $userProvidedRefCode = trim($_POST['refCode'] ?? '');
+    
     $formData = [
-        'ref_code' => trim($_POST['refCode'] ?? ''),
+        'ref_code' => $userProvidedRefCode,
         'client_type' => trim($_POST['clientType'] ?? ''),
         'last_name' => trim($_POST['lastName'] ?? ''),
         'first_name' => trim($_POST['firstName'] ?? ''),
@@ -163,10 +173,9 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'address' => trim($_POST['address'] ?? '')
     ];
     
-    if (empty($formData['ref_code'])) {
-        $response['message'] = 'Reference code is required';
-        echo json_encode($response);
-        exit;
+    // If no reference code provided, generate a unique one
+    if (empty($userProvidedRefCode)) {
+        $formData['ref_code'] = generateUniqueReferenceCode();
     }
     
     // Check if KYC record exists
@@ -183,6 +192,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $response['success'] = true;
     $response['message'] = 'Draft saved successfully';
+    $response['reference_code'] = $formData['ref_code'];
 }
 
 // ============================================

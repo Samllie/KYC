@@ -188,9 +188,9 @@ requireLogin();
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="refCode" class="form-label">Reference Code <span class="req">*</span></label>
-                                <input type="text" id="refCode" name="refCode" class="form-control" placeholder="e.g., REF-001" required>
-                                <div class="form-error">Reference code is required</div>
+                                <label for="refCode" class="form-label">Reference Code <span style="font-size:0.85rem;color:#999;">(Optional)</span></label>
+                                <input type="text" id="refCode" name="refCode" class="form-control" placeholder="Leave blank to auto-generate">
+                                <small class="text-muted">Leave empty for automatic generation</small>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -453,7 +453,7 @@ function removeToast(el) {
 }
 
 // ── Form Validation ────────────────────────────────────────
-const requiredFields = ['refCode','lastName','firstName','birthdate','occupation','email','mobile','address'];
+const requiredFields = ['lastName','firstName','birthdate','occupation','email','mobile','address'];
 
 function validateField(id) {
     const el = document.getElementById(id);
@@ -500,7 +500,12 @@ function submitForm() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('success', 'Client Saved!', 'Proceeding to Document Verification.');
+            // Display auto-generated reference code if provided
+            if (data.reference_code && !document.getElementById('refCode').value) {
+                document.getElementById('refCode').value = data.reference_code;
+                document.getElementById('refCode').readOnly = true;
+            }
+            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Proceeding to Document Verification.');
             // Advance step indicator
             const s2 = document.getElementById('step-2');
             s2.classList.remove('active'); s2.classList.add('done');
@@ -547,7 +552,12 @@ function saveDraft() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('info', 'Draft Saved', 'Your progress has been saved successfully.');
+            // Display auto-generated reference code if provided
+            if (data.reference_code && !document.getElementById('refCode').value) {
+                document.getElementById('refCode').value = data.reference_code;
+                document.getElementById('refCode').readOnly = true;
+            }
+            showToast('info', 'Draft Saved', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Your progress has been saved successfully.');
         } else {
             showToast('error', 'Save Failed', data.message || 'Please try again.');
         }
