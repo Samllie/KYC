@@ -2,20 +2,20 @@
 
 /* ─── CSS Variables ─────────────────────────────── */
 :root {
-    --green-900: #0D3D2E;
+    --green-900: #14470e;
     --green-700: #1A6B52;
     --green-600: #1e8064;
-    --green-500: #22916D;
-    --green-400: #2EBD8E;
-    --green-100: #D6F5EC;
-    --green-50:  #F0FBF7;
+    --green-500: #1c6f26;
+    --green-400: #009420;
+    --green-100: #9fe79e;
+    --green-50:  #cfffc7;
 
     --gray-900: #111827;
     --gray-700: #374151;
     --gray-500: #6B7280;
     --gray-300: #D1D5DB;
     --gray-100: #F3F4F6;
-    --gray-50:  #F9FAFB;
+    --gray-50:  #dcffd7;
 
     --white:    #FFFFFF;
     --danger:   #EF4444;

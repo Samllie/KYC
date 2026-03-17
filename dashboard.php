@@ -20,7 +20,7 @@ requireLogin();
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <a href="#" class="brand-logo">
-            <div class="brand-icon"><i class="bi bi-shield-check"></i></div>
+            <div class="brand-icon"><img src="SterlingLogo.png" alt="Sterling Insurance" style="width: 100%; height: 100%; object-fit: contain;"></div>
             <div class="brand-text">
                 <span>STerling Insurance Company</span>
                 <strong>KYC System</strong>
