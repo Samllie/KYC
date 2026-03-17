@@ -62,7 +62,7 @@ function executeQuery($query, $params = []) {
 function fetchAll($query, $params = []) {
     $result = executeQuery($query, $params);
     
-    if (isset($result['error'])) {
+    if (is_array($result) && isset($result['error'])) {
         return [];
     }
     
@@ -82,7 +82,7 @@ function fetchAll($query, $params = []) {
 function fetchOne($query, $params = []) {
     $result = executeQuery($query, $params);
     
-    if (isset($result['error'])) {
+    if (is_array($result) && isset($result['error'])) {
         return null;
     }
     

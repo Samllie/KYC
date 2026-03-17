@@ -4,6 +4,11 @@
  * API Endpoint for user authentication
  */
 
+// Start session FIRST before any output
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 header('Content-Type: application/json');
 require_once '../config/db.php';
 
@@ -26,18 +31,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
+    // Check database connection first
+    global $db;
+    if (!isset($db) || $db->connect_error) {
+        $response['message'] = 'Database connection error. Please check database configuration.';
+        echo json_encode($response);
+        exit;
+    }
+    
     // Query user
     $user = fetchOne("SELECT user_id, full_name, email, password, department, role FROM users WHERE email = ?", [$email]);
     
     if (!$user) {
+        // User not found - could be wrong email or users table doesn't exist
         $response['message'] = 'Email or password is incorrect';
         echo json_encode($response);
         exit;
     }
     
     // Verify password
-    $passwordHash = hash('sha256', $password);
-    if ($user['password'] !== $passwordHash) {
+    $inputHash = hash('sha256', $password);
+    $storedHash = strtolower($user['password']); // Case-insensitive comparison
+    
+    if (strtolower($inputHash) !== $storedHash) {
         $response['message'] = 'Email or password is incorrect';
         echo json_encode($response);
         exit;
@@ -46,8 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Update last login
     update('users', ['last_login' => date('Y-m-d H:i:s')], 'user_id = ?', [$user['user_id']]);
     
-    // Create session
-    session_start();
+    // Create session variables
     $_SESSION['user_id'] = $user['user_id'];
     $_SESSION['full_name'] = $user['full_name'];
     $_SESSION['email'] = $user['email'];

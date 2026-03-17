@@ -19,7 +19,7 @@
             <div class="brand-logo-large">
                 <i class="bi bi-shield-check"></i>
             </div>
-            <h1>STerling Insurance Company</h1>
+            <h1>Sterling Insurance Company</h1>
             <p>KYC System</p>
             <div class="brand-description">
                 <p>Secure Know Your Customer verification system for streamlined client onboarding and compliance.</p>
@@ -191,7 +191,7 @@ form.addEventListener('submit', function(e) {
     // Submit to handler
     const formData = new FormData(form);
     
-    fetch('handlers/login.php', {
+    fetch('handlers/logins.php', {
         method: 'POST',
         body: formData
     })
