@@ -17,60 +17,10 @@ requireLogin();
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════ SIDEBAR -->
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-        <a href="#" class="brand-logo">
-            <div class="brand-icon"><i class="bi bi-shield-check"></i></div>
-            <div class="brand-text">
-                <span>STerling Insurance Company</span>
-                <strong>KYC System</strong>
-            </div>
-        </a>
-    </div>
-
-    <nav class="sidebar-nav">
-        <div class="nav-label">Main Menu</div>
-
-        <a href="dashboard.php" class="nav-item">
-            <i class="bi bi-grid-1x2"></i> Dashboard
-        </a>
-        <a href="clients.php" class="nav-item active">
-            <i class="bi bi-people"></i> Clients
-            <span class="nav-badge">24</span>
-        </a>
-        <a href="kyc-verification.php" class="nav-item">
-            <i class="bi bi-person-check"></i> KYC Verification
-        </a>
-        <a href="#" class="nav-item">
-            <i class="bi bi-file-earmark-text"></i> Policy Issuance
-        </a>
-
-        <div class="nav-label">Analytics</div>
-
-        <a href="#" class="nav-item">
-            <i class="bi bi-bar-chart"></i> Reports
-        </a>
-        <a href="#" class="nav-item">
-            <i class="bi bi-bell"></i> Notifications
-            <span class="nav-badge">3</span>
-        </a>
-        <a href="#" class="nav-item">
-            <i class="bi bi-gear"></i> Settings
-        </a>
-    </nav>
-
-    <div class="sidebar-footer">
-        <div class="user-card">
-            <div class="user-avatar">JD</div>
-            <div class="user-info">
-                <span>Juan Dela Cruz</span>
-                <span>KYC Officer</span>
-            </div>
-            <i class="bi bi-three-dots-vertical" style="color:rgba(255,255,255,.35);margin-left:auto;"></i>
-        </div>
-    </div>
-</aside>
+<?php
+$activePage = 'clients';
+include 'includes/sidebar.php';
+?>
 
 <!-- ═══════════════════════════════════════════════ MAIN -->
 <div class="main">
