@@ -64,7 +64,9 @@ CREATE TABLE IF NOT EXISTS clients (
     -- Address
     full_address VARCHAR(255),
     
-    -- Verification Status
+    -- Submission & Verification Status
+    submitted_by INT,
+    submitted_at DATETIME,
     verification_status ENUM('draft', 'pending', 'verified', 'rejected') DEFAULT 'draft',
     verification_date DATETIME,
     verified_by INT,
@@ -84,6 +86,7 @@ CREATE TABLE IF NOT EXISTS clients (
     INDEX idx_email (email),
     INDEX idx_verification_status (verification_status),
     INDEX idx_client_type (client_type),
+    FOREIGN KEY (submitted_by) REFERENCES users(user_id) ON DELETE SET NULL,
     FOREIGN KEY (verified_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

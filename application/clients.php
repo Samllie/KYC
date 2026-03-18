@@ -141,6 +141,7 @@ requireLogin();
                             <th class="col-contact">Contact</th>
                             <th class="col-email">Email</th>
                             <th class="col-status">Status</th>
+                            <th class="col-verified">Verified By</th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
@@ -153,15 +154,10 @@ requireLogin();
             <!-- Pagination -->
             <div class="table-footer">
                 <div class="pagination-info">
-                    Showing <span class="info-start">1</span> to <span class="info-end">6</span> of <span class="info-total">24</span> clients
+                    Showing <span class="info-start">1</span> to <span class="info-end">6</span> of <span class="info-total">0</span> clients
                 </div>
-                <div class="pagination">
-                    <button class="pagination-btn" disabled><i class="bi bi-chevron-left"></i></button>
-                    <button class="pagination-btn active">1</button>
-                    <button class="pagination-btn">2</button>
-                    <button class="pagination-btn">3</button>
-                    <button class="pagination-btn">4</button>
-                    <button class="pagination-btn"><i class="bi bi-chevron-right"></i></button>
+                <div class="pagination" id="paginationContainer">
+                    <!-- Pagination buttons will be generated dynamically -->
                 </div>
             </div>
         </div>
@@ -325,22 +321,44 @@ requireLogin();
 </div>
 
 <script>
+    // Pagination state
+    let currentPage = 1;
+    let pageSize = 6;
+    let totalPages = 1;
+    let totalClients = 0;
+
     // Load clients from database on page load
-    function loadClients() {
-        fetch('../handlers/get_clients.php')
-            .then(response => response.json())
+    function loadClients(page = 1) {
+        console.log('loadClients() starting for page:', page);
+        fetch(`../handlers/get_clients.php?page=${page}&pageSize=${pageSize}`, {
+            method: 'GET',
+            credentials: 'include'  // Include session cookies in the request
+        })
+            .then(response => {
+                console.log('Response received:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('Data parsed:', data);
                 if (data.success && data.data && data.data.length > 0) {
+                    console.log('Rendering ' + data.data.length + ' clients');
+                    currentPage = data.page;
+                    totalPages = data.totalPages;
+                    totalClients = data.total;
                     renderClientsTable(data.data);
                     attachClientEventListeners();
-                    updatePaginationInfo(data.count);
+                    updatePaginationInfo(data);
+                    generatePaginationButtons(data);
                 } else {
-                    document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">No clients found</td></tr>';
+                    console.log('No clients found or fetch failed');
+                    document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">No clients found</td></tr>';
+                    updatePaginationInfo({ page: 1, total: 0, pageSize: 6, totalPages: 0 });
+                    generatePaginationButtons({ page: 1, totalPages: 0 });
                 }
             })
             .catch(error => {
                 console.error('Error loading clients:', error);
-                document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: red;">Error loading clients</td></tr>';
+                document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: red;">Error loading clients: ' + error.message + '</td></tr>';
             });
     }
 
@@ -358,6 +376,7 @@ requireLogin();
             const typeClass = client.client_type === 'individual' ? 'individual' : 'corporate';
             const typeText = client.client_type.charAt(0).toUpperCase() + client.client_type.slice(1);
             const fullName = `${client.first_name} ${client.last_name}`.trim();
+            const verifiedByName = client.verified_by_name || 'N/A';
 
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -368,6 +387,7 @@ requireLogin();
                 <td class="col-contact">${client.mobile_phone || 'N/A'}</td>
                 <td class="col-email">${client.email}</td>
                 <td class="col-status"><span class="status-badge ${statusClass}"><i class="bi ${statusIcon}"></i> ${statusText}</span></td>
+                <td class="col-verified">${verifiedByName}</td>
                 <td class="col-actions">
                     <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
                     <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
@@ -379,14 +399,66 @@ requireLogin();
     }
 
     // Update pagination info
-    function updatePaginationInfo(total) {
+    function updatePaginationInfo(data) {
         const start = document.querySelector('.info-start');
         const end = document.querySelector('.info-end');
         const totalEl = document.querySelector('.info-total');
         
-        if (start) start.textContent = total > 0 ? '1' : '0';
-        if (end) end.textContent = Math.min(total, 6);
-        if (totalEl) totalEl.textContent = total;
+        const startRecord = data.total > 0 ? ((data.page - 1) * data.pageSize) + 1 : 0;
+        const endRecord = Math.min(data.page * data.pageSize, data.total);
+        
+        if (start) start.textContent = startRecord;
+        if (end) end.textContent = endRecord;
+        if (totalEl) totalEl.textContent = data.total;
+    }
+
+    // Generate pagination buttons dynamically
+    function generatePaginationButtons(data) {
+        const container = document.getElementById('paginationContainer');
+        container.innerHTML = '';
+
+        const maxButtons = 5;
+        let startPage = Math.max(1, data.page - 2);
+        let endPage = Math.min(data.totalPages, startPage + maxButtons - 1);
+        
+        // Adjust if we're at the end
+        if (endPage - startPage < maxButtons - 1) {
+            startPage = Math.max(1, endPage - maxButtons + 1);
+        }
+
+        // Previous button
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'pagination-btn';
+        prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+        prevBtn.disabled = data.page === 1;
+        prevBtn.addEventListener('click', () => {
+            if (data.page > 1) {
+                loadClients(data.page - 1);
+            }
+        });
+        container.appendChild(prevBtn);
+
+        // Page buttons
+        for (let i = startPage; i <= endPage; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'pagination-btn';
+            if (i === data.page) btn.classList.add('active');
+            btn.textContent = i;
+            btn.addEventListener('click', () => loadClients(i));
+            container.appendChild(btn);
+        }
+
+        // Next button
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'pagination-btn';
+        nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+        nextBtn.disabled = data.page === data.totalPages || data.totalPages === 0;
+        nextBtn.addEventListener('click', () => {
+            if (data.page < data.totalPages) {
+                loadClients(data.page + 1);
+            }
+        });
+        container.appendChild(nextBtn);
     }
 
     // Attach event listeners to dynamically loaded rows
@@ -421,12 +493,7 @@ requireLogin();
     }
 
     // Load clients on page load
-    document.addEventListener('DOMContentLoaded', loadClients);
-
-        const row = button.closest('tr');
-        const refCodeCell = row.querySelector('.col-ref span');
-        return refCodeCell.textContent;
-    }
+    document.addEventListener('DOMContentLoaded', () => loadClients(1));
 
     // Get client data from row
     function getClientDataFromRow(row) {
@@ -437,7 +504,9 @@ requireLogin();
             lastName: cells[2].textContent.split(' ').pop(),
             type: cells[3].textContent.trim(),
             contact: cells[4].textContent.trim(),
-            email: cells[5].textContent.trim()
+            email: cells[5].textContent.trim(),
+            status: cells[6].textContent.trim(),
+            verifiedBy: cells[7].textContent.trim()
         };
     }
 
@@ -628,7 +697,7 @@ requireLogin();
         let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
         html += '<thead><tr style="background: #f3f4f6; border: 1px solid #d1d5db;">';
         
-        const headers = ['Ref Code', 'Full Name', 'Type', 'Contact', 'Email', 'Status', 'Actions'];
+        const headers = ['Ref Code', 'Full Name', 'Type', 'Contact', 'Email', 'Status', 'Verified By', 'Actions'];
         headers.forEach(header => {
             html += `<th style="padding: 10px; text-align: left; border: 1px solid #d1d5db; font-weight: 600;">${header}</th>`;
         });
