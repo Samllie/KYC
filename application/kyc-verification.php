@@ -9,6 +9,9 @@ requireLogin();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KYC System — Client Registration</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/index.css">
     <link rel="stylesheet" href="../css/global.css">
@@ -44,43 +47,6 @@ include '../includes/sidebar.php';
 
     <!-- Content -->
     <main class="content">
-
-        <!-- Stat Cards -->
-        <div class="stats-row">
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="stat-value" id="stat-total">248</div>
-                    <div class="stat-label">Total Clients</div>
-                    <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> +12 this month</div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="stat-value">37</div>
-                    <div class="stat-label">Pending KYC</div>
-                    <div class="stat-change down"><i class="bi bi-arrow-down-short"></i> -5 from last week</div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="stat-value">194</div>
-                    <div class="stat-label">Verified</div>
-                    <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> +8 this month</div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-patch-check-fill"></i></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="stat-value">17</div>
-                    <div class="stat-label">Rejected</div>
-                    <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> +2 this week</div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-x-circle-fill"></i></div>
-            </div>
-        </div>
-
         <!-- Steps -->
         <div class="steps-bar">
             <div class="step done" id="step-1">
@@ -178,14 +144,14 @@ include '../includes/sidebar.php';
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="lastName" class="form-label">Last Name <span class="req">*</span></label>
-                                    <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Dela Cruz" required>
+                                    <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Dela Cruz">
                                     <div class="form-error">Last name is required</div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="firstName" class="form-label">First Name <span class="req">*</span></label>
-                                    <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Juan" required>
+                                    <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Juan">
                                     <div class="form-error">First name is required</div>
                                 </div>
                             </div>
@@ -220,7 +186,7 @@ include '../includes/sidebar.php';
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="birthdate" class="form-label">Date of Birth <span class="req">*</span></label>
-                                    <input type="date" id="birthdate" name="birthdate" class="form-control" required>
+                                    <input type="date" id="birthdate" name="birthdate" class="form-control">
                                     <div class="form-error">Date of birth is required</div>
                                 </div>
                             </div>
@@ -272,7 +238,7 @@ include '../includes/sidebar.php';
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="occupation" class="form-label">Occupation <span class="req">*</span></label>
-                                    <input type="text" id="occupation" name="occupation" class="form-control" placeholder="Your occupation" required>
+                                    <input type="text" id="occupation" name="occupation" class="form-control" placeholder="Your occupation">
                                     <div class="form-error">Occupation is required</div>
                                 </div>
                             </div>
@@ -321,7 +287,7 @@ include '../includes/sidebar.php';
                             <div class="col-md-8">
                                 <div class="form-group">
                                     <label for="homeAddress" class="form-label">Home Address <span class="req">*</span></label>
-                                    <input type="text" id="homeAddress" name="homeAddress" class="form-control" placeholder="Street, Barangay, City" required>
+                                    <input type="text" id="homeAddress" name="homeAddress" class="form-control" placeholder="Street, Barangay, City">
                                     <div class="form-error">Home address is required</div>
                                 </div>
                             </div>
@@ -361,14 +327,14 @@ include '../includes/sidebar.php';
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="mobile" class="form-label">Mobile Phone <span class="req">*</span></label>
-                                    <input type="tel" id="mobile" name="mobile" class="form-control" placeholder="+63 900 000 0000" required>
+                                    <input type="tel" id="mobile" name="mobile" class="form-control" placeholder="+63 900 000 0000">
                                     <div class="form-error">Mobile phone is required</div>
                                 </div>
                             </div>
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="email" class="form-label">Email Address <span class="req">*</span></label>
-                                    <input type="email" id="email" name="email" class="form-control" placeholder="user@example.com" required>
+                                    <input type="email" id="email" name="email" class="form-control" placeholder="user@example.com">
                                     <div class="form-error">Valid email is required</div>
                                 </div>
                             </div>
@@ -437,7 +403,7 @@ include '../includes/sidebar.php';
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="corporateClientName" class="form-label">Client Name <span class="req">*</span></label>
-                                    <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Company Name" required>
+                                    <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Company Name">
                                     <div class="form-error">Client name is required</div>
                                 </div>
                             </div>
@@ -446,10 +412,10 @@ include '../includes/sidebar.php';
                                     <label class="form-label">Business Type <span class="req">*</span></label>
                                     <div style="display:flex;gap:20px;margin-top:8px;">
                                         <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="radio" id="businessPrivate" name="businessType" value="private" required> Private
+                                            <input type="radio" id="businessPrivate" name="businessType" value="private"> Private
                                         </label>
                                         <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="radio" id="businessGov" name="businessType" value="government" required> Government
+                                            <input type="radio" id="businessGov" name="businessType" value="government"> Government
                                         </label>
                                     </div>
                                 </div>
@@ -511,7 +477,7 @@ include '../includes/sidebar.php';
                             <div class="col-md-8">
                                 <div class="form-group">
                                     <label for="corporateBusinessAddress" class="form-label">Business Address <span class="req">*</span></label>
-                                    <input type="text" id="corporateBusinessAddress" name="corporateBusinessAddress" class="form-control" placeholder="Street, Barangay, City" required>
+                                    <input type="text" id="corporateBusinessAddress" name="corporateBusinessAddress" class="form-control" placeholder="Street, Barangay, City">
                                     <div class="form-error">Business address is required</div>
                                 </div>
                             </div>
@@ -539,21 +505,21 @@ include '../includes/sidebar.php';
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="corporatePhone" class="form-label">Phone Number <span class="req">*</span></label>
-                                    <input type="tel" id="corporatePhone" name="corporatePhone" class="form-control" placeholder="(02) 8000 0000" required>
+                                    <input type="tel" id="corporatePhone" name="corporatePhone" class="form-control" placeholder="(02) 8000 0000">
                                     <div class="form-error">Phone number is required</div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="corporateContactPerson" class="form-label">Contact Person <span class="req">*</span></label>
-                                    <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Full Name" required>
+                                    <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Full Name">
                                     <div class="form-error">Contact person is required</div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="corporateEmail" class="form-label">Email Address <span class="req">*</span></label>
-                                    <input type="email" id="corporateEmail" name="corporateEmail" class="form-control" placeholder="user@example.com" required>
+                                    <input type="email" id="corporateEmail" name="corporateEmail" class="form-control" placeholder="user@example.com">
                                     <div class="form-error">Valid email is required</div>
                                 </div>
                             </div>
@@ -583,10 +549,10 @@ include '../includes/sidebar.php';
                                     <label class="form-label">Client Classification <span class="req">*</span></label>
                                     <div style="display:flex;gap:20px;margin-top:8px;">
                                         <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="radio" id="clientType1" name="clientClassification" value="client" required> Client
+                                            <input type="radio" id="clientType1" name="clientClassification" value="client"> Client
                                         </label>
                                         <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="radio" id="agentType1" name="clientClassification" value="agent" required> Agent
+                                            <input type="radio" id="agentType1" name="clientClassification" value="agent"> Agent
                                         </label>
                                     </div>
                                 </div>
@@ -685,6 +651,18 @@ const requiredFieldsCorporate = ['clientType', 'corporateClientName', 'businessT
 function validateField(id) {
     const el = document.getElementById(id);
     if (!el) return true;
+    
+    // Special handling for radio buttons
+    if (el.type === 'radio') {
+        const radioGroup = document.getElementsByName(el.name);
+        const ok = Array.from(radioGroup).some(radio => radio.checked);
+        radioGroup.forEach(radio => {
+            radio.closest('.form-group')?.classList.toggle('is-invalid', !ok);
+            radio.closest('.form-group')?.classList.toggle('is-valid', ok);
+        });
+        return ok;
+    }
+    
     const ok = el.value.trim() !== '';
     el.classList.toggle('is-invalid', !ok);
     el.classList.toggle('is-valid', ok);
@@ -700,18 +678,64 @@ function getAllRequiredFields() {
 [...requiredFieldsIndividual, ...requiredFieldsCorporate].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-        el.addEventListener('blur', () => validateField(id));
-        el.addEventListener('input', () => {
-            if (el.classList.contains('is-invalid')) validateField(id);
-        });
+        if (el.type === 'radio') {
+            // For radio buttons, add listeners to all buttons in the group
+            const radioGroup = document.getElementsByName(el.name);
+            radioGroup.forEach(radio => {
+                radio.addEventListener('change', () => validateField(id));
+            });
+        } else {
+            el.addEventListener('blur', () => validateField(id));
+            el.addEventListener('input', () => {
+                if (el.classList.contains('is-invalid')) validateField(id);
+            });
+        }
     }
 });
 
+// Field label mapping for user-friendly error messages
+const fieldLabels = {
+    clientType: 'Client Type',
+    lastName: 'Last Name',
+    firstName: 'First Name',
+    birthdate: 'Date of Birth',
+    occupation: 'Occupation',
+    email: 'Email Address',
+    mobile: 'Mobile Phone',
+    homeAddress: 'Home Address',
+    corporateClientName: 'Client Name',
+    businessType: 'Business Type',
+    corporateBusinessAddress: 'Business Address',
+    corporatePhone: 'Phone Number',
+    corporateContactPerson: 'Contact Person',
+    corporateEmail: 'Email Address'
+};
+
 function submitForm() {
     const requiredFields = getAllRequiredFields();
-    const allValid = requiredFields.every(id => validateField(id));
-    if (!allValid) {
-        showToast('error', 'Validation Failed', 'Please fill in all required fields.');
+    const missingFields = [];
+    
+    requiredFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        
+        let isEmpty = true;
+        if (el.type === 'radio') {
+            const radioGroup = document.getElementsByName(el.name);
+            isEmpty = !Array.from(radioGroup).some(radio => radio.checked);
+        } else {
+            isEmpty = el.value.trim() === '';
+        }
+        
+        if (isEmpty) {
+            missingFields.push(fieldLabels[id] || id);
+            validateField(id);
+        }
+    });
+    
+    if (missingFields.length > 0) {
+        const fieldList = missingFields.join(', ');
+        showToast('error', 'Missing Required Fields', `Please fill in: ${fieldList}`);
         return;
     }
     
