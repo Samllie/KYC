@@ -18,7 +18,7 @@ requireLogin();
 
 <?php
 $activePage = 'dashboard';
-include 'includes/sidebar.php';
+include '../includes/sidebar.php';
 ?>
 
 <!-- ═══════════════════════════════════════════════ MAIN -->

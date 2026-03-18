@@ -17,7 +17,7 @@ requireLogin();
 
 <?php
 $activePage = 'kyc-verification';
-include 'includes/sidebar.php';
+include '../includes/sidebar.php';
 ?>
 
 <!-- ═══════════════════════════════════════════════ MAIN -->

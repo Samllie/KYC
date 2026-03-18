@@ -19,7 +19,7 @@ requireLogin();
 
 <?php
 $activePage = 'clients';
-include 'includes/sidebar.php';
+include '../includes/sidebar.php';
 ?>
 
 <!-- ═══════════════════════════════════════════════ MAIN -->
