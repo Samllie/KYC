@@ -203,7 +203,7 @@ requireLogin();
                             <div class="form-group">
                                 <label for="clientType" class="form-label">Client Type <span class="req">*</span></label>
                                 <div class="select-wrap">
-                                    <select id="clientType" name="clientType" class="form-select" required>
+                                    <select id="clientType" name="clientType" class="form-select" required onchange="updateFormFields()">
                                         <option value="">Select Type...</option>
                                         <option value="individual">Individual</option>
                                         <option value="corporate">Corporate</option>
@@ -213,178 +213,436 @@ requireLogin();
                         </div>
                     </div>
 
-                    <!-- ── Section: Full Name ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-person"></i> Full Name</span>
-                        <div class="section-divider-line"></div>
-                    </div>
+                    <!-- ════════════════════════════════════════════════════════════════ -->
+                    <!-- INDIVIDUAL CLIENT FORM -->
+                    <!-- ════════════════════════════════════════════════════════════════ -->
+                    <div id="individualSection" style="display:none;">
 
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="lastName" class="form-label">Last Name <span class="req">*</span></label>
-                                <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Dela Cruz" required>
-                                <div class="form-error">Last name is required</div>
-                            </div>
+                        <!-- ── Section: Full Name ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-person"></i> Full Name</span>
+                            <div class="section-divider-line"></div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="firstName" class="form-label">First Name <span class="req">*</span></label>
-                                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Juan" required>
-                                <div class="form-error">First name is required</div>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="lastName" class="form-label">Last Name <span class="req">*</span></label>
+                                    <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Dela Cruz" required>
+                                    <div class="form-error">Last name is required</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="middleName" class="form-label">Middle Name</label>
-                                <input type="text" id="middleName" name="middleName" class="form-control" placeholder="Optional">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="firstName" class="form-label">First Name <span class="req">*</span></label>
+                                    <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Juan" required>
+                                    <div class="form-error">First name is required</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="suffixName" class="form-label">Suffix</label>
-                                <div class="select-wrap">
-                                    <select id="suffixName" name="suffixName" class="form-select">
-                                        <option value="">None</option>
-                                        <option value="jr">Jr.</option>
-                                        <option value="sr">Sr.</option>
-                                        <option value="ii">II</option>
-                                        <option value="iii">III</option>
-                                    </select>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="middleName" class="form-label">Middle Name</label>
+                                    <input type="text" id="middleName" name="middleName" class="form-control" placeholder="Optional">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div style="display:flex;gap:20px;margin:10px 0;">
+                                    <label style="display:flex;align-items:center;gap:8px;">
+                                        <input type="checkbox" id="lastNameFirst" name="lastNameFirst"> Last Name First
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;">
+                                        <input type="checkbox" id="commaSeparated" name="commaSeparated"> Comma Separated
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;">
+                                        <input type="checkbox" id="middleInitialOnly" name="middleInitialOnly"> Middle Name Initial Only
+                                    </label>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- ── Section: Personal Details ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-card-list"></i> Personal Details</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="birthdate" class="form-label">Date of Birth <span class="req">*</span></label>
-                                <input type="date" id="birthdate" name="birthdate" class="form-control" required>
-                                <div class="form-error">Date of birth is required</div>
-                            </div>
+                        <!-- ── Section: Personal Details ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-card-list"></i> Personal Details</span>
+                            <div class="section-divider-line"></div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="gender" class="form-label">Gender</label>
-                                <div class="select-wrap">
-                                    <select id="gender" name="gender" class="form-select">
-                                        <option value="">Select...</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="other">Other</option>
-                                    </select>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="birthdate" class="form-label">Date of Birth <span class="req">*</span></label>
+                                    <input type="date" id="birthdate" name="birthdate" class="form-control" required>
+                                    <div class="form-error">Date of birth is required</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="clientSince" class="form-label">Client Since</label>
+                                    <input type="date" id="clientSince" name="clientSince" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <div class="select-wrap">
+                                        <select id="gender" name="gender" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="nationality" class="form-label">Nationality</label>
+                                    <input type="text" id="nationality" name="nationality" class="form-control" placeholder="Philippine">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="apSlCode" class="form-label">AP SL Code</label>
+                                    <input type="text" id="apSlCode" name="apSlCode" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="arSlCode" class="form-label">AR SL Code</label>
+                                    <input type="text" id="arSlCode" name="arSlCode" class="form-control">
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="nationality" class="form-label">Nationality</label>
-                                <input type="text" id="nationality" name="nationality" class="form-control" placeholder="Philippine">
-                            </div>
+
+                        <!-- ── Section: Occupation ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-briefcase"></i> Occupation</span>
+                            <div class="section-divider-line"></div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="idType" class="form-label">ID Type</label>
-                                <div class="select-wrap">
-                                    <select id="idType" name="idType" class="form-select">
-                                        <option value="">Select ID Type...</option>
-                                        <option value="passport">Passport</option>
-                                        <option value="license">Driver's License</option>
-                                        <option value="nbi">NBI Clearance</option>
-                                        <option value="tin">TIN ID</option>
-                                    </select>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="occupation" class="form-label">Occupation <span class="req">*</span></label>
+                                    <input type="text" id="occupation" name="occupation" class="form-control" placeholder="Your occupation" required>
+                                    <div class="form-error">Occupation is required</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="company" class="form-label">Company Name</label>
+                                    <input type="text" id="company" name="company" class="form-control" placeholder="Company name">
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="idNumber" class="form-label">ID Number</label>
-                                <input type="text" id="idNumber" name="idNumber" class="form-control" placeholder="ID Number">
+
+                        <!-- ── Section: Business Address ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-shop"></i> Business Address</span>
+                            <div class="section-divider-line"></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="businessAddress" class="form-label">Business Address</label>
+                                    <input type="text" id="businessAddress" name="businessAddress" class="form-control" placeholder="Street, Barangay, City">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="businessCtm" class="form-label">CTM</label>
+                                    <input type="text" id="businessCtm" name="businessCtm" class="form-control" placeholder="City Code">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="businessProvince" class="form-label">Province</label>
+                                    <input type="text" id="businessProvince" name="businessProvince" class="form-control" placeholder="Province">
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- ── Section: Occupation ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-briefcase"></i> Occupation</span>
-                        <div class="section-divider-line"></div>
-                    </div>
+                        <!-- ── Section: Home Address ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-house"></i> Home Address</label></span>
+                            <div class="section-divider-line"></div>
+                        </div>
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="occupation" class="form-label">Occupation <span class="req">*</span></label>
-                                <input type="text" id="occupation" name="occupation" class="form-control" placeholder="Your occupation" required>
-                                <div class="form-error">Occupation is required</div>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="homeAddress" class="form-label">Home Address <span class="req">*</span></label>
+                                    <input type="text" id="homeAddress" name="homeAddress" class="form-control" placeholder="Street, Barangay, City" required>
+                                    <div class="form-error">Home address is required</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="homeCtm" class="form-label">CTM</label>
+                                    <input type="text" id="homeCtm" name="homeCtm" class="form-control" placeholder="City Code">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="homeProvince" class="form-label">Province</label>
+                                    <input type="text" id="homeProvince" name="homeProvince" class="form-control" placeholder="Province">
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="company" class="form-label">Company Name</label>
-                                <input type="text" id="company" name="company" class="form-control" placeholder="Company name">
-                            </div>
+
+                        <!-- ── Section: Contact Details ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-telephone"></i> Contact Information</span>
+                            <div class="section-divider-line"></div>
                         </div>
-                    </div>
 
-                    <!-- ── Section: Contact ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-telephone"></i> Contact Information</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="mobile" class="form-label">Mobile Phone <span class="req">*</span></label>
-                                <div class="input-icon-wrap">
-                                    <i class="bi bi-telephone"></i>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="officePhone" class="form-label">Office Phone</label>
+                                    <input type="tel" id="officePhone" name="officePhone" class="form-control" placeholder="(02) 8000 0000">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="homePhone" class="form-label">Home Phone</label>
+                                    <input type="tel" id="homePhone" name="homePhone" class="form-control" placeholder="(02) 8000 0000">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="mobile" class="form-label">Mobile Phone <span class="req">*</span></label>
                                     <input type="tel" id="mobile" name="mobile" class="form-control" placeholder="+63 900 000 0000" required>
-                                </div>
-                                <div class="form-error">Mobile phone is required</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="phone" class="form-label">Landline</label>
-                                <div class="input-icon-wrap">
-                                    <i class="bi bi-telephone"></i>
-                                    <input type="tel" id="phone" name="phone" class="form-control" placeholder="(02) 8000 0000">
+                                    <div class="form-error">Mobile phone is required</div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="email" class="form-label">Email Address <span class="req">*</span></label>
-                                <div class="input-icon-wrap">
-                                    <i class="bi bi-envelope"></i>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="email" class="form-label">Email Address <span class="req">*</span></label>
                                     <input type="email" id="email" name="email" class="form-control" placeholder="user@example.com" required>
+                                    <div class="form-error">Valid email is required</div>
                                 </div>
-                                <div class="form-error">Valid email is required</div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- ── Section: Address ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-pin-map"></i> Address</span>
-                        <div class="section-divider-line"></div>
-                    </div>
+                        <!-- ── Section: Spouse Information ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-person-check"></i> Spouse Information</span>
+                            <div class="section-divider-line"></div>
+                        </div>
 
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label for="address" class="form-label">Full Address <span class="req">*</span></label>
-                                <input type="text" id="address" name="address" class="form-control" placeholder="Street, Barangay, City" required>
-                                <div class="form-error">Full address is required</div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="spouseName" class="form-label">Spouse Name</label>
+                                    <input type="text" id="spouseName" name="spouseName" class="form-control" placeholder="Full name">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="spouseBirthdate" class="form-label">Spouse Birthdate</label>
+                                    <input type="date" id="spouseBirthdate" name="spouseBirthdate" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="spouseOccupation" class="form-label">Spouse Occupation</label>
+                                    <input type="text" id="spouseOccupation" name="spouseOccupation" class="form-control" placeholder="Occupation">
+                                </div>
                             </div>
                         </div>
+
+                        <!-- ── Section: Mailing Address ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-envelope"></i> Mailing Address</span>
+                            <div class="section-divider-line"></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <div style="display:flex;gap:20px;">
+                                    <label style="display:flex;align-items:center;gap:8px;">
+                                        <input type="radio" id="mailingBusiness" name="mailingAddressType" value="business"> Business Address
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;">
+                                        <input type="radio" id="mailingHome" name="mailingAddressType" value="home"> Home Address
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ════════════════════════════════════════════════════════════════ -->
+                    <!-- CORPORATE CLIENT FORM -->
+                    <!-- ════════════════════════════════════════════════════════════════ -->
+                    <div id="corporateSection" style="display:none;">
+
+                        <!-- ── Section: Company Name ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-building"></i> Company Information</span>
+                            <div class="section-divider-line"></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="corporateClientName" class="form-label">Client Name <span class="req">*</span></label>
+                                    <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Company Name" required>
+                                    <div class="form-error">Client name is required</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Business Type <span class="req">*</span></label>
+                                    <div style="display:flex;gap:20px;margin-top:8px;">
+                                        <label style="display:flex;align-items:center;gap:8px;">
+                                            <input type="radio" id="businessPrivate" name="businessType" value="private" required> Private
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:8px;">
+                                            <input type="radio" id="businessGov" name="businessType" value="government" required> Government
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="corporateClientSince" class="form-label">Client Since</label>
+                                    <input type="date" id="corporateClientSince" name="corporateClientSince" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── Section: Business Details ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-info-circle"></i> Business Details</span>
+                            <div class="section-divider-line"></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="region" class="form-label">Region</label>
+                                    <input type="text" id="region" name="region" class="form-control" placeholder="Region">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="tinNumber" class="form-label">TIN Number</label>
+                                    <input type="text" id="tinNumber" name="tinNumber" class="form-control" placeholder="TIN #">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="corporateApSlCode" class="form-label">AP SL Code</label>
+                                    <input type="text" id="corporateApSlCode" name="corporateApSlCode" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="corporateArSlCode" class="form-label">AR SL Code</label>
+                                    <input type="text" id="corporateArSlCode" name="corporateArSlCode" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="designation" class="form-label">Contact Person Designation</label>
+                                    <input type="text" id="designation" name="designation" class="form-control" placeholder="e.g., Manager, Director">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── Section: Business Address ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-shop"></i> Business Address</span>
+                            <div class="section-divider-line"></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="corporateBusinessAddress" class="form-label">Business Address <span class="req">*</span></label>
+                                    <input type="text" id="corporateBusinessAddress" name="corporateBusinessAddress" class="form-control" placeholder="Street, Barangay, City" required>
+                                    <div class="form-error">Business address is required</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="corporateBusinessCtm" class="form-label">CTM</label>
+                                    <input type="text" id="corporateBusinessCtm" name="corporateBusinessCtm" class="form-control" placeholder="City Code">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="corporateBusinessProvince" class="form-label">Province</label>
+                                    <input type="text" id="corporateBusinessProvince" name="corporateBusinessProvince" class="form-control" placeholder="Province">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── Section: Contact Details ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-telephone"></i> Contact Information</span>
+                            <div class="section-divider-line"></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="corporatePhone" class="form-label">Phone Number <span class="req">*</span></label>
+                                    <input type="tel" id="corporatePhone" name="corporatePhone" class="form-control" placeholder="(02) 8000 0000" required>
+                                    <div class="form-error">Phone number is required</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="corporateContactPerson" class="form-label">Contact Person <span class="req">*</span></label>
+                                    <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Full Name" required>
+                                    <div class="form-error">Contact person is required</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="corporateEmail" class="form-label">Email Address <span class="req">*</span></label>
+                                    <input type="email" id="corporateEmail" name="corporateEmail" class="form-control" placeholder="user@example.com" required>
+                                    <div class="form-error">Valid email is required</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── Section: Additional Info ── -->
+                        <div class="section-divider">
+                            <span class="section-divider-label"><i class="bi bi-info-circle"></i> Contact Person Details</span>
+                            <div class="section-divider-line"></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="corporateGender" class="form-label">Gender</label>
+                                    <div class="select-wrap">
+                                        <select id="corporateGender" name="corporateGender" class="form-select">
+                                            <option value="">Select...</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Client Classification <span class="req">*</span></label>
+                                    <div style="display:flex;gap:20px;margin-top:8px;">
+                                        <label style="display:flex;align-items:center;gap:8px;">
+                                            <input type="radio" id="clientType1" name="clientClassification" value="client" required> Client
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:8px;">
+                                            <input type="radio" id="agentType1" name="clientClassification" value="agent" required> Agent
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     <!-- ── Section: Documents ── -->
@@ -452,8 +710,27 @@ function removeToast(el) {
     setTimeout(() => el.remove(), 250);
 }
 
+// ── Update Form Fields Based on Client Type ───────────────
+function updateFormFields() {
+    const clientType = document.getElementById('clientType').value;
+    const individualSection = document.getElementById('individualSection');
+    const corporateSection = document.getElementById('corporateSection');
+    
+    if (clientType === 'individual') {
+        individualSection.style.display = 'block';
+        corporateSection.style.display = 'none';
+    } else if (clientType === 'corporate') {
+        individualSection.style.display = 'none';
+        corporateSection.style.display = 'block';
+    } else {
+        individualSection.style.display = 'none';
+        corporateSection.style.display = 'none';
+    }
+}
+
 // ── Form Validation ────────────────────────────────────────
-const requiredFields = ['lastName','firstName','birthdate','occupation','email','mobile','address'];
+const requiredFieldsIndividual = ['clientType', 'lastName','firstName','birthdate','occupation','email','mobile','homeAddress'];
+const requiredFieldsCorporate = ['clientType', 'corporateClientName', 'businessType', 'corporateBusinessAddress', 'corporatePhone', 'corporateContactPerson', 'corporateEmail'];
 
 function validateField(id) {
     const el = document.getElementById(id);
@@ -464,15 +741,24 @@ function validateField(id) {
     return ok;
 }
 
-requiredFields.forEach(id => {
+function getAllRequiredFields() {
+    const clientType = document.getElementById('clientType').value;
+    return clientType === 'individual' ? requiredFieldsIndividual : requiredFieldsCorporate;
+}
+
+// Add event listeners to all required fields
+[...requiredFieldsIndividual, ...requiredFieldsCorporate].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('blur', () => validateField(id));
-    if (el) el.addEventListener('input', () => {
-        if (el.classList.contains('is-invalid')) validateField(id);
-    });
+    if (el) {
+        el.addEventListener('blur', () => validateField(id));
+        el.addEventListener('input', () => {
+            if (el.classList.contains('is-invalid')) validateField(id);
+        });
+    }
 });
 
 function submitForm() {
+    const requiredFields = getAllRequiredFields();
     const allValid = requiredFields.every(id => validateField(id));
     if (!allValid) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields.');

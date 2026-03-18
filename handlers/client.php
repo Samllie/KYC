@@ -24,19 +24,10 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 // ============================================
 if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $clientType = trim($_POST['clientType'] ?? '');
-    $firstName = trim($_POST['firstName'] ?? '');
-    $lastName = trim($_POST['lastName'] ?? '');
-    $middleName = trim($_POST['middleName'] ?? '');
-    $birthdate = trim($_POST['birthdate'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $mobile = trim($_POST['mobile'] ?? '');
-    $occupation = trim($_POST['occupation'] ?? '');
-    $address = trim($_POST['address'] ?? '');
     
     // Validation
-    if (empty($clientType) || empty($firstName) || empty($lastName) || 
-        empty($birthdate) || empty($email) || empty($mobile) || empty($occupation) || empty($address)) {
-        $response['message'] = 'All required fields must be filled';
+    if (empty($clientType)) {
+        $response['message'] = 'Client type is required';
         echo json_encode($response);
         exit;
     }
@@ -47,23 +38,83 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Generate client number
     $clientNumber = 'CN-' . time();
     
-    // Insert client
-    $result = insert('clients', [
+    // Build insert data based on client type
+    $insertData = [
         'reference_code' => $refCode,
         'client_number' => $clientNumber,
         'client_type' => $clientType,
-        'first_name' => $firstName,
-        'middle_name' => $middleName,
-        'last_name' => $lastName,
-        'date_of_birth' => $birthdate,
-        'email' => $email,
-        'mobile_phone' => $mobile,
-        'occupation' => $occupation,
-        'full_address' => $address,
         'verification_status' => 'pending',
         'submitted_by' => $_SESSION['user_id'],
         'submitted_at' => date('Y-m-d H:i:s')
-    ]);
+    ];
+    
+    // Map all posted fields to database columns
+    $fieldMap = [
+        // Individual fields
+        'firstName' => 'first_name',
+        'lastName' => 'last_name',
+        'middleName' => 'middle_name',
+        'birthdate' => 'date_of_birth',
+        'gender' => 'gender',
+        'nationality' => 'nationality',
+        'clientSince' => 'client_since',
+        'apSlCode' => 'ap_sl_code',
+        'arSlCode' => 'ar_sl_code',
+        'occupation' => 'occupation',
+        'company' => 'company_name',
+        'businessAddress' => 'business_address',
+        'businessCtm' => 'business_ctm',
+        'businessProvince' => 'business_province',
+        'homeAddress' => 'home_address',
+        'homeCtm' => 'home_ctm',
+        'homeProvince' => 'home_province',
+        'officePhone' => 'office_phone',
+        'homePhone' => 'home_phone',
+        'mobile' => 'mobile_phone',
+        'email' => 'email',
+        'spouseName' => 'spouse_name',
+        'spouseBirthdate' => 'spouse_birthdate',
+        'spouseOccupation' => 'spouse_occupation',
+        'mailingAddressType' => 'mailing_address_type',
+        'lastNameFirst' => 'last_name_first',
+        'commaSeparated' => 'comma_separated',
+        'middleInitialOnly' => 'middle_initial_only',
+        // Corporate fields
+        'corporateClientName' => 'client_name',
+        'businessType' => 'business_type',
+        'corporateClientSince' => 'client_since',
+        'region' => 'region',
+        'tinNumber' => 'tin_number',
+        'corporateApSlCode' => 'ap_sl_code',
+        'corporateArSlCode' => 'ar_sl_code',
+        'designation' => 'designation',
+        'corporateBusinessAddress' => 'business_address',
+        'corporateBusinessCtm' => 'business_ctm',
+        'corporateBusinessProvince' => 'business_province',
+        'corporatePhone' => 'office_phone',
+        'corporateContactPerson' => 'contact_person',
+        'corporateEmail' => 'email',
+        'corporateGender' => 'gender',
+        'clientClassification' => 'client_classification'
+    ];
+    
+    // Process all fields
+    foreach ($fieldMap as $postKey => $dbColumn) {
+        if (isset($_POST[$postKey])) {
+            $value = trim($_POST[$postKey]);
+            if (!empty($value)) {
+                // Convert checkboxes to boolean
+                if (in_array($dbColumn, ['last_name_first', 'comma_separated', 'middle_initial_only'])) {
+                    $insertData[$dbColumn] = 1;
+                } else {
+                    $insertData[$dbColumn] = $value;
+                }
+            }
+        }
+    }
+    
+    // Insert client
+    $result = insert('clients', $insertData);
     
     if (!isset($result['success'])) {
         $response['message'] = 'Failed to add client';
