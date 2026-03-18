@@ -37,32 +37,64 @@ CREATE TABLE IF NOT EXISTS clients (
     client_number VARCHAR(30) UNIQUE,
     client_type ENUM('individual', 'corporate') NOT NULL,
     
-    -- Personal Information
-    first_name VARCHAR(50) NOT NULL,
+    -- Name Information
+    first_name VARCHAR(50),
     middle_name VARCHAR(50),
-    last_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50),
     suffix VARCHAR(10),
+    client_name VARCHAR(200),
     
-    -- Details
+    -- Name Format Options (Individual)
+    last_name_first BOOLEAN DEFAULT FALSE,
+    comma_separated BOOLEAN DEFAULT FALSE,
+    middle_initial_only BOOLEAN DEFAULT FALSE,
+    
+    -- Personal Details (Individual)
     date_of_birth DATE,
     gender ENUM('male', 'female', 'other'),
     nationality VARCHAR(50),
+    client_since DATE,
+    
+    -- Spouse Information (Individual)
+    spouse_name VARCHAR(100),
+    spouse_birthdate DATE,
+    spouse_occupation VARCHAR(100),
     
     -- Identification
     id_type VARCHAR(50),
     id_number VARCHAR(50),
+    tin_number VARCHAR(50),
     
-    -- Occupation
+    -- Occupation & Business
     occupation VARCHAR(100),
     company_name VARCHAR(100),
+    designation VARCHAR(100),
+    business_type ENUM('private', 'government'),
+    
+    -- Address Information
+    business_address VARCHAR(255),
+    business_ctm VARCHAR(50),
+    business_province VARCHAR(50),
+    home_address VARCHAR(255),
+    home_ctm VARCHAR(50),
+    home_province VARCHAR(50),
+    mailing_address_type ENUM('business', 'home'),
+    region VARCHAR(100),
     
     -- Contact Information
+    office_phone VARCHAR(20),
+    home_phone VARCHAR(20),
     mobile_phone VARCHAR(20),
     landline_phone VARCHAR(20),
+    contact_person VARCHAR(100),
     email VARCHAR(120),
     
-    -- Address
-    full_address VARCHAR(255),
+    -- SL Codes
+    ap_sl_code VARCHAR(50),
+    ar_sl_code VARCHAR(50),
+    
+    -- Classification
+    client_classification ENUM('client', 'agent'),
     
     -- Submission & Verification Status
     submitted_by INT,
