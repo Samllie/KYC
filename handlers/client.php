@@ -60,7 +60,9 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'mobile_phone' => $mobile,
         'occupation' => $occupation,
         'full_address' => $address,
-        'verification_status' => 'pending'
+        'verification_status' => 'pending',
+        'submitted_by' => $_SESSION['user_id'],
+        'submitted_at' => date('Y-m-d H:i:s')
     ]);
     
     if (!isset($result['success'])) {

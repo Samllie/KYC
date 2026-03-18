@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KYC System - Diagnostics</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .success { background: #e8f5e9; color: green; padding: 10px; border-left: 4px solid green; }
+        .error { background: #ffebee; color: #c62828; padding: 10px; border-left: 4px solid red; }
+        .info { background: #e3f2fd; color: #1565c0; padding: 10px; border-left: 4px solid #1565c0; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <h1>KYC System - Diagnostics Dashboard</h1>
+
+    <div class="section">
+        <h2>1. Test Database Connection</h2>
+        <div id="dbTest"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Test Clients Table Structure</h2>
+        <div id="tableTest"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Test get_clients Handler</h2>
+        <div id="handlerTest"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Fetch & Display Clients</h2>
+        <div id="clientsList"></div>
+    </div>
+
+    <script>
+        // Test 1: Check PHP backend connectivity
+        document.getElementById('dbTest').innerHTML = '<p class="info">Testing database connection...</p>';
+        
+        // Test 2: Check table structure
+        document.getElementById('tableTest').innerHTML = '<p class="info">Checking table structure...</p>';
+
+        // Test 3: Test handler
+        document.getElementById('handlerTest').innerHTML = '<p class="info">Testing get_clients handler...</p>';
+        
+        fetch('handlers/get_clients.php', {
+            method: 'GET',
+            credentials: 'include'
+        })
+            .then(response => response.json())
+            .then(data => {
+                let html = '';
+                if (data.success) {
+                    html += '<div class="success">✓ Handler returned successfully</div>';
+                    html += '<table>';
+                    html += '<tr><th>Property</th><th>Value</th></tr>';
+                    html += '<tr><td>Total Clients</td><td>' + data.count + '</td></tr>';
+                    html += '<tr><td>Row Count</td><td>' + (data.debug?.row_count || 'N/A') + '</td></tr>';
+                    if (data.debug?.prepare_error) {
+                        html += '<tr><td>Prepare Error</td><td>' + data.debug.prepare_error + '</td></tr>';
+                    }
+                    if (data.debug?.execute_error) {
+                        html += '<tr><td>Execute Error</td><td>' + data.debug.execute_error + '</td></tr>';
+                    }
+                    html += '</table>';
+                } else {
+                    html += '<div class="error">✗ Handler failed: ' + (data.message || 'Unknown error') + '</div>';
+                    html += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+                document.getElementById('handlerTest').innerHTML = html;
+
+                // Test 4: Display clients
+                if (data.success && data.data && data.data.length > 0) {
+                    let clientsHtml = '<div class="success">✓ ' + data.count + ' clients found!</div>';
+                    clientsHtml += '<table>';
+                    clientsHtml += '<tr><th>ID</th><th>Ref Code</th><th>Name</th><th>Type</th><th>Email</th><th>Status</th></tr>';
+                    data.data.forEach(client => {
+                        clientsHtml += '<tr>';
+                        clientsHtml += '<td>' + client.client_id + '</td>';
+                        clientsHtml += '<td>' + client.reference_code + '</td>';
+                        clientsHtml += '<td>' + client.first_name + ' ' + client.last_name + '</td>';
+                        clientsHtml += '<td>' + client.client_type + '</td>';
+                        clientsHtml += '<td>' + client.email + '</td>';
+                        clientsHtml += '<td>' + client.verification_status + '</td>';
+                        clientsHtml += '</tr>';
+                    });
+                    clientsHtml += '</table>';
+                    document.getElementById('clientsList').innerHTML = clientsHtml;
+                } else {
+                    document.getElementById('clientsList').innerHTML = '<div class="error">✗ No clients found in database</div>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('handlerTest').innerHTML = '<div class="error">✗ Handler Error: ' + error.message + '</div>';
+                document.getElementById('clientsList').innerHTML = '<div class="error">✗ Fetch Error: ' + error.message + '</div>';
+            });
+    </script>
+</body>
+</html>
