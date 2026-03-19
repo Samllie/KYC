@@ -116,7 +116,11 @@ include '../includes/sidebar.php';
             </div>
         </div>
 
+<<<<<<< HEAD
         <!-- Client Information Card -->
+=======
+        <!-- Individual Client Information Card -->
+>>>>>>> ansel
         <div class="card">
             <div class="card-header">
                 <div>
@@ -158,13 +162,20 @@ include '../includes/sidebar.php';
                         </div>
                     </div>
 
+<<<<<<< HEAD
                     <!-- ── Section: Full Name ── -->
                     <div class="section-divider">
                         <span class="section-divider-label"><i class="bi bi-person"></i> Full Name</span>
+=======
+                    <!-- ── Section: Personal Information ── -->
+                    <div class="section-divider">
+                        <span class="section-divider-label"><i class="bi bi-person"></i> Personal Information</span>
+>>>>>>> ansel
                         <div class="section-divider-line"></div>
                     </div>
 
                     <div class="row g-3">
+<<<<<<< HEAD
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="lastName" class="form-label">Last Name <span class="req">*</span></label>
@@ -176,12 +187,26 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="firstName" class="form-label">First Name <span class="req">*</span></label>
                                 <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Juan" required>
+=======
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="lastName" class="form-label">Last Name <span class="req">*</span></label>
+                                <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Last Name" required>
+                                <div class="form-error">Last name is required</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="firstName" class="form-label">First Name <span class="req">*</span></label>
+                                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="First Name" required>
+>>>>>>> ansel
                                 <div class="form-error">First name is required</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="middleName" class="form-label">Middle Name</label>
+<<<<<<< HEAD
                                 <input type="text" id="middleName" name="middleName" class="form-control" placeholder="Optional">
                             </div>
                         </div>
@@ -207,6 +232,11 @@ include '../includes/sidebar.php';
                     </div>
 
                     <div class="row g-3">
+=======
+                                <input type="text" id="middleName" name="middleName" class="form-control" placeholder="Middle Name">
+                            </div>
+                        </div>
+>>>>>>> ansel
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="birthdate" class="form-label">Date of Birth <span class="req">*</span></label>
@@ -216,12 +246,15 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
+<<<<<<< HEAD
                                 <label for="clientSince" class="form-label">Client Since</label>
                                 <input type="date" id="clientSince" name="clientSince" class="form-control">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
+=======
+>>>>>>> ansel
                                 <label for="gender" class="form-label">Gender</label>
                                 <div class="select-wrap">
                                     <select id="gender" name="gender" class="form-select">
@@ -232,6 +265,7 @@ include '../includes/sidebar.php';
                                 </div>
                             </div>
                         </div>
+<<<<<<< HEAD
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="nationality" class="form-label">Nationality</label>
@@ -250,6 +284,8 @@ include '../includes/sidebar.php';
                                 <input type="text" id="arSlCode" name="arSlCode" class="form-control">
                             </div>
                         </div>
+=======
+>>>>>>> ansel
                     </div>
 
                     <!-- ── Section: Occupation ── -->
@@ -262,25 +298,41 @@ include '../includes/sidebar.php';
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="occupation" class="form-label">Occupation <span class="req">*</span></label>
+<<<<<<< HEAD
                                 <input type="text" id="occupation" name="occupation" class="form-control" placeholder="Your occupation" required>
+=======
+                                <input type="text" id="occupation" name="occupation" class="form-control" placeholder="e.g., Employee, Self-employed, Manager" required>
+>>>>>>> ansel
                                 <div class="form-error">Occupation is required</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
+<<<<<<< HEAD
                                 <label for="company" class="form-label">Company Name</label>
                                 <input type="text" id="company" name="company" class="form-control" placeholder="Company name">
+=======
+                                <label for="employer" class="form-label">Employer</label>
+                                <input type="text" id="employer" name="employer" class="form-control" placeholder="Company Name">
+>>>>>>> ansel
                             </div>
                         </div>
                     </div>
 
+<<<<<<< HEAD
                     <!-- ── Section: Business Address ── -->
                     <div class="section-divider">
                         <span class="section-divider-label"><i class="bi bi-shop"></i> Business Address</span>
+=======
+                    <!-- ── Section: Address Information ── -->
+                    <div class="section-divider">
+                        <span class="section-divider-label"><i class="bi bi-geo-alt"></i> Address Information</span>
+>>>>>>> ansel
                         <div class="section-divider-line"></div>
                     </div>
 
                     <div class="row g-3">
+<<<<<<< HEAD
                         <div class="col-md-8">
                             <div class="form-group">
                                 <label for="businessAddress" class="form-label">Business Address</label>
@@ -311,6 +363,14 @@ include '../includes/sidebar.php';
                         <div class="col-md-8">
                             <div class="form-group">
                                 <label for="homeAddress" class="form-label">Home Address <span class="req">*</span></label>
+=======
+                        <div class="col-md-12">
+                            <div class="form-label"><strong>Home Address <span class="req">*</span></strong></div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="homeAddress" class="form-label">Street Address <span class="req">*</span></label>
+>>>>>>> ansel
                                 <input type="text" id="homeAddress" name="homeAddress" class="form-control" placeholder="Street, Barangay, City" required>
                                 <div class="form-error">Home address is required</div>
                             </div>
@@ -327,9 +387,36 @@ include '../includes/sidebar.php';
                                 <input type="text" id="homeProvince" name="homeProvince" class="form-control" placeholder="Province">
                             </div>
                         </div>
+<<<<<<< HEAD
                     </div>
 
                     <!-- ── Section: Contact Details ── -->
+=======
+                        <div class="col-md-12">
+                            <div class="form-label" style="margin-top:12px;"><strong>Mailing Address (if different)</strong></div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="mailingAddress" class="form-label">Street Address</label>
+                                <input type="text" id="mailingAddress" name="mailingAddress" class="form-control" placeholder="Street, Barangay, City">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="mailingCtm" class="form-label">CTM</label>
+                                <input type="text" id="mailingCtm" name="mailingCtm" class="form-control" placeholder="City Code">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="mailingProvince" class="form-label">Province</label>
+                                <input type="text" id="mailingProvince" name="mailingProvince" class="form-control" placeholder="Province">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Section: Contact Information ── -->
+>>>>>>> ansel
                     <div class="section-divider">
                         <span class="section-divider-label"><i class="bi bi-telephone"></i> Contact Information</span>
                         <div class="section-divider-line"></div>
@@ -338,18 +425,30 @@ include '../includes/sidebar.php';
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="form-group">
+<<<<<<< HEAD
                                 <label for="officePhone" class="form-label">Office Phone</label>
                                 <input type="tel" id="officePhone" name="officePhone" class="form-control" placeholder="(02) 8000 0000">
+=======
+                                <label for="mobile" class="form-label">Mobile Number <span class="req">*</span></label>
+                                <input type="tel" id="mobile" name="mobile" class="form-control" placeholder="09XX-XXXX-XXXX" required>
+                                <div class="form-error">Valid mobile number is required</div>
+>>>>>>> ansel
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
+<<<<<<< HEAD
                                 <label for="homePhone" class="form-label">Home Phone</label>
                                 <input type="tel" id="homePhone" name="homePhone" class="form-control" placeholder="(02) 8000 0000">
+=======
+                                <label for="telephone" class="form-label">Telephone</label>
+                                <input type="tel" id="telephone" name="telephone" class="form-control" placeholder="(02) 8XXX-XXXX">
+>>>>>>> ansel
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
+<<<<<<< HEAD
                                 <label for="mobile" class="form-label">Mobile Phone <span class="req">*</span></label>
                                 <input type="tel" id="mobile" name="mobile" class="form-control" placeholder="+63 900 000 0000" required>
                                 <div class="form-error">Mobile phone is required</div>
@@ -357,6 +456,8 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-12">
                             <div class="form-group">
+=======
+>>>>>>> ansel
                                 <label for="email" class="form-label">Email Address <span class="req">*</span></label>
                                 <input type="email" id="email" name="email" class="form-control" placeholder="user@example.com" required>
                                 <div class="form-error">Valid email is required</div>
@@ -364,6 +465,7 @@ include '../includes/sidebar.php';
                         </div>
                     </div>
 
+<<<<<<< HEAD
                     <!-- ── Section: Spouse Information ── -->
                     <div class="section-divider">
                         <span class="section-divider-label"><i class="bi bi-person-check"></i> Spouse Information</span>
@@ -394,11 +496,17 @@ include '../includes/sidebar.php';
                     <!-- ── Section: Mailing Address ── -->
                     <div class="section-divider">
                         <span class="section-divider-label"><i class="bi bi-envelope"></i> Mailing Address</span>
+=======
+                    <!-- ── Section: Client Classification ── -->
+                    <div class="section-divider">
+                        <span class="section-divider-label"><i class="bi bi-tag"></i> Client Classification</span>
+>>>>>>> ansel
                         <div class="section-divider-line"></div>
                     </div>
 
                     <div class="row g-3">
                         <div class="col-md-12">
+<<<<<<< HEAD
                             <div style="display:flex;gap:20px;">
                                 <label style="display:flex;align-items:center;gap:8px;">
                                     <input type="radio" id="mailingBusiness" name="mailingAddressType" value="business"> Business Address
@@ -406,6 +514,18 @@ include '../includes/sidebar.php';
                                 <label style="display:flex;align-items:center;gap:8px;">
                                     <input type="radio" id="mailingHome" name="mailingAddressType" value="home"> Home Address
                                 </label>
+=======
+                            <div class="form-group">
+                                <label class="form-label">Client Type <span class="req">*</span></label>
+                                <div style="display:flex;gap:20px;margin-top:8px;">
+                                    <label style="display:flex;align-items:center;gap:8px;">
+                                        <input type="radio" id="clientType1" name="clientClassification" value="client" required> Client
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;">
+                                        <input type="radio" id="agentType1" name="clientClassification" value="agent" required> Agent
+                                    </label>
+                                </div>
+>>>>>>> ansel
                             </div>
                         </div>
                     </div>
@@ -493,7 +613,11 @@ function validateField(id) {
     if (ok && el.type === 'email') {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         ok = emailRegex.test(value);
+<<<<<<< HEAD
     } else if (ok && (el.type === 'tel' || id === 'mobile')) {
+=======
+    } else if (ok && el.type === 'tel') {
+>>>>>>> ansel
         // Phone validation: at least 7 digits
         const phoneDigits = value.replace(/\D/g, '');
         ok = phoneDigits.length >= 7;
@@ -504,6 +628,21 @@ function validateField(id) {
     return ok;
 }
 
+<<<<<<< HEAD
+=======
+function validateRadioGroup(name) {
+    const radios = document.querySelectorAll(`input[name="${name}"]`);
+    if (radios.length === 0) return true;
+    
+    const checked = radios.some(radio => radio.checked);
+    radios.forEach(radio => {
+        const label = radio.closest('label');
+        if (label) label.classList.toggle('is-invalid', !checked);
+    });
+    return checked;
+}
+
+>>>>>>> ansel
 function validateAllRequired() {
     const requiredFields = ['lastName', 'firstName', 'birthdate', 'occupation', 'mobile', 'email', 'homeAddress'];
     let allValid = true;
@@ -520,6 +659,12 @@ function validateAllRequired() {
         }
     });
     
+<<<<<<< HEAD
+=======
+    // Validate clientClassification radio
+    if (!validateRadioGroup('clientClassification')) allValid = false;
+    
+>>>>>>> ansel
     if (!allValid && failedFields.length > 0) {
         console.log('Failed fields:', failedFields);
     }
@@ -540,6 +685,16 @@ document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), sel
     });
 });
 
+<<<<<<< HEAD
+=======
+// Add listeners for radio buttons
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        validateRadioGroup(this.name);
+    });
+});
+
+>>>>>>> ansel
 function submitForm() {
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
