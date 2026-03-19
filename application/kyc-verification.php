@@ -7,7 +7,7 @@ requireLogin();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KYC System — Client Registration</title>
+    <title>KYC System — Select Client Type</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,6 +15,65 @@ requireLogin();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/index.css">
     <link rel="stylesheet" href="../css/global.css">
+    <style>
+        .type-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+        
+        .type-card {
+            background: white;
+            border: 2px solid var(--border-gray);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .type-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .type-card-icon {
+            font-size: 4rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        .type-card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+        
+        .type-card-desc {
+            color: var(--gray-500);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .type-card-btn {
+            display: inline-block;
+            padding: 10px 30px;
+            background: var(--primary);
+            color: white;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+        
+        .type-card:hover .type-card-btn {
+            background: var(--primary-dark, #0056b3);
+        }
+    </style>
 </head>
 <body>
 
@@ -32,7 +91,7 @@ include '../includes/sidebar.php';
             <h1>KYC Verification</h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
-                Dashboard &rsaquo; Clients &rsaquo; <span>New Client</span>
+                Dashboard &rsaquo; Clients &rsaquo; <span>Select Client Type</span>
             </div>
         </div>
         <div class="topbar-right">
@@ -49,19 +108,19 @@ include '../includes/sidebar.php';
     <main class="content">
         <!-- Steps -->
         <div class="steps-bar">
-            <div class="step done" id="step-1">
-                <div class="step-num"><i class="bi bi-check" style="font-size:.9rem;"></i></div>
+            <div class="step active" id="step-1">
+                <div class="step-num">1</div>
                 <div class="step-info">
                     <span>Step 1</span>
-                    <strong>Basic Info</strong>
+                    <strong>Client Type</strong>
                 </div>
             </div>
-            <div class="step-line done"></div>
-            <div class="step active" id="step-2">
+            <div class="step-line"></div>
+            <div class="step" id="step-2">
                 <div class="step-num">2</div>
                 <div class="step-info">
                     <span>Step 2</span>
-                    <strong>Personal Details</strong>
+                    <strong>Client Details</strong>
                 </div>
             </div>
             <div class="step-line"></div>
@@ -82,14 +141,13 @@ include '../includes/sidebar.php';
             </div>
         </div>
 
-        <!-- Client Information Card -->
+        <!-- Client Type Selection -->
         <div class="card">
             <div class="card-header">
                 <div>
-                    <div class="card-title">Client Information</div>
-                    <div class="card-subtitle">Fill in all required fields marked with <span style="color:var(--danger)">*</span></div>
+                    <div class="card-title">Select Client Type</div>
+                    <div class="card-subtitle">Choose the type of client you're registering for KYC verification</div>
                 </div>
-                <span class="badge badge-draft"><i class="bi bi-circle-fill" style="font-size:.4rem;"></i> Draft</span>
             </div>
 
             <div class="card-body">
