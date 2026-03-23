@@ -110,16 +110,25 @@ body {
     display: block;
 }
 
+.brand-logo-image {
+    width: 180px;
+    max-width: 82%;
+    height: auto;
+    margin-bottom: 18px;
+    filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.1));
+}
+
 .auth-brand h1 {
     font-size: 1.8rem;
     font-weight: 700;
-    color: var(--gray-900);
+    color: #0f172a;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
     margin-bottom: 4px;
 }
 
 .auth-brand p {
     font-size: 1rem;
-    color: var(--green-500);
+    color: #166534;
     font-weight: 600;
     margin-bottom: 24px;
 }
@@ -130,7 +139,7 @@ body {
 
 .brand-description p {
     font-size: 0.95rem;
-    color: var(--gray-600);
+    color: #334155;
     font-weight: 400;
     line-height: 1.7;
 }
@@ -153,6 +162,84 @@ body {
     box-shadow: none;
     width: 100%;
     max-width: 500px;
+}
+
+/* Register-specific layout polish */
+.auth-container.register-layout {
+    padding: 12px;
+}
+
+.auth-container.register-layout .auth-wrapper {
+    gap: 16px;
+    max-width: 1200px;
+    grid-template-columns: 1fr 1fr;
+}
+
+.auth-container.register-layout .auth-form-container {
+    position: relative;
+    width: 100%;
+    max-width: 430px;
+    justify-self: center;
+    border-radius: 28px;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    background: linear-gradient(165deg, rgba(255, 255, 255, 0.92) 0%, rgba(241, 253, 244, 0.9) 100%);
+    box-shadow: 0 16px 38px rgba(17, 24, 39, 0.14);
+    overflow: hidden;
+}
+
+.auth-container.register-layout .auth-form-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #16a34a 0%, #22c55e 60%, #86efac 100%);
+}
+
+.auth-container.register-layout .auth-form {
+    border-radius: 22px;
+    padding: 18px;
+    max-width: 100%;
+}
+
+.auth-container.register-layout .form-header {
+    margin-bottom: 14px;
+}
+
+.auth-container.register-layout .form-header h2 {
+    font-size: 1.15rem;
+}
+
+.auth-container.register-layout .form-header p {
+    font-size: 0.8rem;
+}
+
+.auth-container.register-layout .form-group {
+    margin-bottom: 11px;
+}
+
+.auth-container.register-layout .form-divider {
+    margin: 16px 0;
+}
+
+.auth-container.register-layout .auth-footer {
+    margin-top: 14px;
+}
+
+.panel-logo-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.panel-logo {
+    width: 140px;
+    max-width: 58%;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.08));
 }
 
 .form-header {
@@ -255,6 +342,38 @@ body {
 
 .input-icon-wrap .form-control {
     padding-left: 37px;
+}
+
+.input-icon-wrap.has-toggle .form-control {
+    padding-right: 38px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: var(--gray-400);
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.password-toggle:hover {
+    color: var(--gray-600);
+    background: var(--gray-100);
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid rgba(34, 145, 109, 0.35);
+    outline-offset: 1px;
 }
 
 /* ─── Select Wrapper ──────────────────────────────– */
@@ -534,6 +653,15 @@ body {
         gap: 32px;
     }
 
+    .auth-container.register-layout .auth-wrapper {
+        grid-template-columns: 1fr;
+        max-width: 560px;
+    }
+
+    .auth-container.register-layout .auth-form-container {
+        max-width: 460px;
+    }
+
     .auth-brand {
         text-align: center;
         align-items: center;
@@ -548,6 +676,14 @@ body {
 @media (max-width: 768px) {
     .auth-container {
         padding: 16px;
+    }
+
+    .auth-container.register-layout {
+        padding: 10px;
+    }
+
+    .auth-container.register-layout .auth-wrapper {
+        max-width: 100%;
     }
 
     .auth-wrapper {
@@ -566,6 +702,10 @@ body {
         padding: 28px;
     }
 
+    .auth-container.register-layout .auth-form {
+        padding: 16px;
+    }
+
     .form-header h2 {
         font-size: 1.3rem;
     }
@@ -578,8 +718,9 @@ body {
 }
 
 @media (max-width: 480px) {
-    .brand-logo-large {
-        font-size: 2.5rem;
+    .brand-logo-image {
+        width: 140px;
+        max-width: 75%;
     }
 
     .auth-brand h1 {
@@ -618,5 +759,10 @@ body {
 
     .auth-footer p {
         font-size: 0.7rem;
+    }
+
+    .panel-logo {
+        width: 120px;
+        max-width: 64%;
     }
 }
