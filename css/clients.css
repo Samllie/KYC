@@ -113,6 +113,10 @@
 /* Table Wrapper */
 .table-wrapper {
     overflow-x: auto;
+    height: 420px;
+    min-height: 420px;
+    max-height: 420px;
+    overflow-y: auto;
 }
 
 /* Clients Table */
@@ -120,6 +124,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
+    table-layout: fixed;
 }
 
 .clients-table thead {
@@ -148,6 +153,9 @@
 .clients-table td {
     padding: 12px;
     color: var(--gray-700);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Column Widths */
@@ -493,6 +501,12 @@
 }
 
 @media (max-width: 768px) {
+    .table-wrapper {
+        height: auto;
+        min-height: 0;
+        max-height: none;
+    }
+
     .clients-table {
         font-size: 0.75rem;
     }

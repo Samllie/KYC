@@ -43,7 +43,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'mobile' => trim($_POST['mobile'] ?? ''),
         'phone' => trim($_POST['phone'] ?? ''),
         'email' => trim($_POST['email'] ?? ''),
-        'address' => trim($_POST['address'] ?? '')
+        'address' => trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
     ];
     
     // Validation of required fields (excluding ref_code since it will be auto-generated)
@@ -170,7 +170,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'mobile' => trim($_POST['mobile'] ?? ''),
         'phone' => trim($_POST['phone'] ?? ''),
         'email' => trim($_POST['email'] ?? ''),
-        'address' => trim($_POST['address'] ?? '')
+        'address' => trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
     ];
     
     // If no reference code provided, generate a unique one
