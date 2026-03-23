@@ -458,9 +458,31 @@ body {
     padding: 20px 28px;
     margin-bottom: 24px;
     box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
 }
 
-.step { display: flex; align-items: center; gap: 10px; flex: 1; }
+/* Sticky minimized progress bar */
+.steps-bar.sticky {
+    position: fixed;
+    top: 64px;
+    left: var(--sidebar-w);
+    right: 0;
+    width: calc(100% - var(--sidebar-w));
+    margin: 0;
+    padding: 0;
+    height: 4px;
+    border: none;
+    border-radius: 0;
+    z-index: 999;
+    box-shadow: none;
+    background: var(--gray-200);
+    display: flex;
+}
+
+.steps-bar.sticky .step { display: none; }
+.steps-bar.sticky .step-line { margin: 0; height: 4px; }
+
+.step { display: flex; align-items: center; gap: 10px; flex: 1; transition: opacity 0.3s ease; }
 
 .step-num {
     width: 34px; height: 34px;
