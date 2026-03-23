@@ -641,6 +641,8 @@ function syncCorporateAddressField() {
 
 function restoreFormData() {
     const savedData = sessionStorage.getItem('kycFormData');
+    const savedAddressData = sessionStorage.getItem('corporateAddressData');
+    
     if (!savedData) return;
     
     try {
@@ -648,7 +650,13 @@ function restoreFormData() {
         const form = document.getElementById('kycForm');
         if (!form) return;
         
+        // Fields to skip in the general restore (we'll handle address fields separately)
+        const addressFields = ['region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateBusinessBarangay', 'corporateStreet', 'corporateBusinessAddress'];
+        
         Object.keys(formData).forEach(key => {
+            // Skip address fields - restore them separately
+            if (addressFields.includes(key)) return;
+            
             const el = form.querySelector(`[name="${key}"]`);
             if (el) {
                 if (el.type === 'radio') {
@@ -663,8 +671,59 @@ function restoreFormData() {
             }
         });
         
-        // Rebuild composed address field after restore
-        syncCorporateAddressField();
+        // Restore address data after API populates options
+        // This requires waiting for PSGC API calls in the correct cascade order
+        if (savedAddressData) {
+            try {
+                const addressData = JSON.parse(savedAddressData);
+                
+                // Restore address components in cascade order with delays for API calls
+                setTimeout(() => {
+                    const regionEl = document.getElementById('region');
+                    if (regionEl && addressData.region) {
+                        regionEl.value = addressData.region;
+                        regionEl.dispatchEvent(new Event('change'));
+                    }
+                    
+                    // Wait for provinces to load, then restore province
+                    setTimeout(() => {
+                        const provinceEl = document.getElementById('corporateBusinessProvince');
+                        if (provinceEl && addressData.province) {
+                            provinceEl.value = addressData.province;
+                            provinceEl.dispatchEvent(new Event('change'));
+                        }
+                        
+                        // Wait for cities to load, then restore city
+                        setTimeout(() => {
+                            const cityEl = document.getElementById('corporateBusinessCtm');
+                            if (cityEl && addressData.city) {
+                                cityEl.value = addressData.city;
+                                cityEl.dispatchEvent(new Event('change'));
+                            }
+                            
+                            // Wait for barangays to load, then restore barangay
+                            setTimeout(() => {
+                                const barangayEl = document.getElementById('corporateBusinessBarangay');
+                                if (barangayEl && addressData.barangay) {
+                                    barangayEl.value = addressData.barangay;
+                                }
+                                
+                                // Finally restore street and rebuild composed address
+                                const streetEl = document.getElementById('corporateStreet');
+                                if (streetEl && addressData.street) {
+                                    streetEl.value = addressData.street;
+                                }
+                                
+                                syncCorporateAddressField();
+                            }, 500);
+                        }, 500);
+                    }, 500);
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error restoring address data:', error);
+            }
+        }
     } catch (error) {
         console.error('Error restoring form data:', error);
     }
@@ -695,6 +754,17 @@ function proceedToReview() {
     
     // Store in sessionStorage
     sessionStorage.setItem('kycFormData', JSON.stringify(formData));
+    
+    // Also store address components separately for reliable restoration
+    const addressData = {
+        region: document.getElementById('region').value,
+        province: document.getElementById('corporateBusinessProvince').value,
+        city: document.getElementById('corporateBusinessCtm').value,
+        barangay: document.getElementById('corporateBusinessBarangay').value,
+        street: document.getElementById('corporateStreet').value,
+        composed: document.getElementById('corporateBusinessAddress').value
+    };
+    sessionStorage.setItem('corporateAddressData', JSON.stringify(addressData));
     
     // Navigate to review page
     window.location.href = 'kyc-corporate-review.php';
