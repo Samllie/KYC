@@ -39,6 +39,7 @@ $query = "
         c.client_id, 
         c.reference_code, 
         c.client_number,
+        c.client_name,
         c.first_name, 
         c.last_name, 
         c.client_type, 
