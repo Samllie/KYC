@@ -320,7 +320,7 @@ include '../includes/sidebar.php';
         clients.forEach(client => {
             const typeClass = client.client_type === 'individual' ? 'individual' : 'corporate';
             const typeText = client.client_type.charAt(0).toUpperCase() + client.client_type.slice(1);
-            const fullName = `${client.first_name} ${client.last_name}`.trim();
+            const fullName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
             const clientNumber = client.client_number || 'N/A';
 
