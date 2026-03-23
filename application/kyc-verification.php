@@ -95,12 +95,6 @@ include '../includes/sidebar.php';
             </div>
         </div>
         <div class="topbar-right">
-            <button class="topbar-btn" title="Search"><i class="bi bi-search"></i></button>
-            <button class="topbar-btn" title="Notifications">
-                <i class="bi bi-bell"></i>
-                <span class="notif-dot"></span>
-            </button>
-            <button class="topbar-btn" title="Help"><i class="bi bi-question-circle"></i></button>
         </div>
     </header>
 

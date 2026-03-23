@@ -33,12 +33,6 @@ include '../includes/sidebar.php';
             </div>
         </div>
         <div class="topbar-right">
-            <button class="topbar-btn" title="Search"><i class="bi bi-search"></i></button>
-            <button class="topbar-btn" title="Notifications">
-                <i class="bi bi-bell"></i>
-                <span class="notif-dot"></span>
-            </button>
-            <button class="topbar-btn" title="Help"><i class="bi bi-question-circle"></i></button>
         </div>
     </header>
 
@@ -167,13 +161,7 @@ include '../includes/sidebar.php';
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="region" class="form-label">Region</label>
-                                <input type="text" id="region" name="region" class="form-control" placeholder="Region">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="form-group">
                                 <label for="tinNumber" class="form-label">TIN Number</label>
                                 <input type="text" id="tinNumber" name="tinNumber" class="form-control" placeholder="TIN #">
@@ -206,23 +194,52 @@ include '../includes/sidebar.php';
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-md-8">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="corporateBusinessAddress" class="form-label">Business Address <span class="req">*</span></label>
-                                <input type="text" id="corporateBusinessAddress" name="corporateBusinessAddress" class="form-control" placeholder="Street, Barangay, City" required>
-                                <div class="form-error">Business address is required</div>
+                                <label for="region" class="form-label">Region</label>
+                                <div class="select-wrap">
+                                    <select id="region" name="region" class="form-select">
+                                        <option value="">Select region...</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label for="corporateBusinessCtm" class="form-label">CTM</label>
-                                <input type="text" id="corporateBusinessCtm" name="corporateBusinessCtm" class="form-control" placeholder="City Code">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="corporateBusinessProvince" class="form-label">Province</label>
-                                <input type="text" id="corporateBusinessProvince" name="corporateBusinessProvince" class="form-control" placeholder="Province">
+                                <div class="select-wrap">
+                                    <select id="corporateBusinessProvince" name="corporateBusinessProvince" class="form-select">
+                                        <option value="">Select province...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="corporateBusinessCtm" class="form-label">City / Municipality</label>
+                                <div class="select-wrap">
+                                    <select id="corporateBusinessCtm" name="corporateBusinessCtm" class="form-select">
+                                        <option value="">Select city/municipality...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="corporateBusinessBarangay" class="form-label">Barangay</label>
+                                <div class="select-wrap">
+                                    <select id="corporateBusinessBarangay" class="form-select">
+                                        <option value="">Select barangay...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="corporateStreet" class="form-label">Street / Unit / Building <span class="req">*</span></label>
+                                <input type="text" id="corporateStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
+                                <input type="hidden" id="corporateBusinessAddress" name="corporateBusinessAddress">
+                                <div class="form-error">Business address is required</div>
                             </div>
                         </div>
                     </div>
@@ -398,7 +415,7 @@ function validateRadioGroup(name) {
 }
 
 function validateAllRequired() {
-    const requiredFields = ['corporateClientName', 'corporateBusinessAddress', 'corporatePhone', 'corporateContactPerson', 'corporateEmail'];
+    const requiredFields = ['corporateClientName', 'region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateBusinessBarangay', 'corporateStreet', 'corporatePhone', 'corporateContactPerson', 'corporateEmail'];
     let allValid = true;
     let failedFields = [];
     
@@ -445,7 +462,173 @@ document.querySelectorAll('input[type="radio"]').forEach(radio => {
     });
 });
 
+// ── PSGC Address API (Philippines) ───────────────────────
+const PSGC_BASE_URL = 'https://psgc.gitlab.io/api';
+
+async function psgcFetch(path) {
+    const response = await fetch(`${PSGC_BASE_URL}${path}`);
+    if (!response.ok) {
+        throw new Error(`PSGC request failed: ${response.status}`);
+    }
+    return response.json();
+}
+
+function fillSelectOptions(selectEl, items, labelKey = 'name', valueKey = 'name', placeholder = 'Select...') {
+    if (!selectEl) return;
+    selectEl.innerHTML = `<option value="">${placeholder}</option>`;
+    items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item[valueKey];
+        option.textContent = item[labelKey];
+        option.dataset.code = item.code;
+        selectEl.appendChild(option);
+    });
+}
+
+function setSelectLoading(selectEl, text) {
+    if (!selectEl) return;
+    selectEl.innerHTML = `<option value="">${text}</option>`;
+    selectEl.disabled = true;
+}
+
+async function initCorporateAddressSelectors() {
+    const regionEl = document.getElementById('region');
+    const provinceEl = document.getElementById('corporateBusinessProvince');
+    const cityEl = document.getElementById('corporateBusinessCtm');
+    const barangayEl = document.getElementById('corporateBusinessBarangay');
+
+    if (!regionEl || !provinceEl || !cityEl || !barangayEl) return;
+
+    setSelectLoading(regionEl, 'Loading regions...');
+    setSelectLoading(provinceEl, 'Select region first...');
+    setSelectLoading(cityEl, 'Select province first...');
+    setSelectLoading(barangayEl, 'Select city first...');
+
+    try {
+        const regions = await psgcFetch('/regions/');
+        fillSelectOptions(regionEl, regions, 'name', 'name', 'Select region...');
+        regionEl.disabled = false;
+    } catch (error) {
+        console.error(error);
+        setSelectLoading(regionEl, 'Unable to load regions');
+        return;
+    }
+
+    regionEl.addEventListener('change', async function () {
+        const selectedRegionCode = this.options[this.selectedIndex]?.dataset?.code || '';
+        fillSelectOptions(provinceEl, [], 'name', 'name', 'Select province...');
+        fillSelectOptions(cityEl, [], 'name', 'name', 'Select city/municipality...');
+        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+
+        if (!selectedRegionCode) {
+            provinceEl.disabled = true;
+            cityEl.disabled = true;
+            barangayEl.disabled = true;
+            return;
+        }
+
+        setSelectLoading(provinceEl, 'Loading provinces...');
+        cityEl.disabled = true;
+        barangayEl.disabled = true;
+
+        try {
+            const provinces = await psgcFetch(`/regions/${selectedRegionCode}/provinces/`);
+            if (provinces.length === 0) {
+                fillSelectOptions(provinceEl, [{ name: 'NCR', code: selectedRegionCode }], 'name', 'name', 'No province (NCR)');
+                provinceEl.value = 'NCR';
+                provinceEl.disabled = true;
+
+                setSelectLoading(cityEl, 'Loading cities/municipalities...');
+                const citiesInRegion = await psgcFetch(`/regions/${selectedRegionCode}/cities-municipalities/`);
+                fillSelectOptions(cityEl, citiesInRegion, 'name', 'name', 'Select city/municipality...');
+                cityEl.disabled = false;
+                fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
+                barangayEl.disabled = true;
+                return;
+            }
+
+            fillSelectOptions(provinceEl, provinces, 'name', 'name', 'Select province...');
+            provinceEl.disabled = false;
+            cityEl.disabled = true;
+            barangayEl.disabled = true;
+        } catch (error) {
+            console.error(error);
+            setSelectLoading(provinceEl, 'Unable to load provinces');
+            cityEl.disabled = true;
+            barangayEl.disabled = true;
+        }
+    });
+
+    provinceEl.addEventListener('change', async function () {
+        const selectedProvinceCode = this.options[this.selectedIndex]?.dataset?.code || '';
+        const selectedRegionCode = regionEl.options[regionEl.selectedIndex]?.dataset?.code || '';
+
+        fillSelectOptions(cityEl, [], 'name', 'name', 'Select city/municipality...');
+        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+
+        if (!selectedProvinceCode && this.value !== 'NCR') {
+            cityEl.disabled = true;
+            barangayEl.disabled = true;
+            return;
+        }
+
+        setSelectLoading(cityEl, 'Loading cities/municipalities...');
+        barangayEl.disabled = true;
+        try {
+            const cities = this.value === 'NCR'
+                ? await psgcFetch(`/regions/${selectedRegionCode}/cities-municipalities/`)
+                : await psgcFetch(`/provinces/${selectedProvinceCode}/cities-municipalities/`);
+
+            fillSelectOptions(cityEl, cities, 'name', 'name', 'Select city/municipality...');
+            cityEl.disabled = false;
+            fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
+            barangayEl.disabled = true;
+        } catch (error) {
+            console.error(error);
+            setSelectLoading(cityEl, 'Unable to load cities/municipalities');
+            barangayEl.disabled = true;
+        }
+    });
+
+    cityEl.addEventListener('change', async function () {
+        const selectedCityCode = this.options[this.selectedIndex]?.dataset?.code || '';
+        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+
+        if (!selectedCityCode) {
+            barangayEl.disabled = true;
+            return;
+        }
+
+        setSelectLoading(barangayEl, 'Loading barangays...');
+        try {
+            const barangays = await psgcFetch(`/cities-municipalities/${selectedCityCode}/barangays/`);
+            fillSelectOptions(barangayEl, barangays, 'name', 'name', 'Select barangay...');
+            barangayEl.disabled = false;
+        } catch (error) {
+            console.error(error);
+            setSelectLoading(barangayEl, 'Unable to load barangays');
+        }
+    });
+}
+
+function buildAddress(street, barangay, city, province, region) {
+    return [street, barangay, city, province, region].filter(part => part && part.trim() !== '').join(', ');
+}
+
+function syncCorporateAddressField() {
+    const street = document.getElementById('corporateStreet')?.value || '';
+    const barangay = document.getElementById('corporateBusinessBarangay')?.value || '';
+    const city = document.getElementById('corporateBusinessCtm')?.value || '';
+    const province = document.getElementById('corporateBusinessProvince')?.value || '';
+    const region = document.getElementById('region')?.value || '';
+    document.getElementById('corporateBusinessAddress').value = buildAddress(street, barangay, city, province, region);
+}
+
+initCorporateAddressSelectors();
+
 function submitForm() {
+    syncCorporateAddressField();
+
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
         return;
@@ -502,6 +685,8 @@ function submitForm() {
 }
 
 function saveDraft() {
+    syncCorporateAddressField();
+
     // Collect form data
     const formData = new FormData();
     formData.append('action', 'save_draft');
