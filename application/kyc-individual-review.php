@@ -275,6 +275,23 @@ function submitForm() {
 
 // Load review on page load
 document.addEventListener('DOMContentLoaded', displayReview);
+
+// ── Sticky Progress Bar on Scroll ────────────────────────────
+const stepsBar = document.querySelector('.steps-bar');
+const mainContent = document.querySelector('.main');
+
+window.addEventListener('scroll', function() {
+    if (!stepsBar) return;
+    
+    const scrollPosition = mainContent?.getBoundingClientRect().top || 0;
+    
+    // If main content top is above viewport, make progress bar sticky
+    if (scrollPosition < 0) {
+        stepsBar.classList.add('sticky');
+    } else {
+        stepsBar.classList.remove('sticky');
+    }
+});
 </script>
 
 </body>
