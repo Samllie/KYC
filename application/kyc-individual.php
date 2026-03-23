@@ -399,8 +399,8 @@ include '../includes/sidebar.php';
                     <button type="button" class="btn btn-outline" onclick="saveDraft()">
                         <i class="bi bi-download"></i> Save Draft
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="submitForm()">
-                        <i class="bi bi-check-circle"></i> Submit & Continue
+                    <button type="button" class="btn btn-primary" onclick="proceedToReview()">
+                        <i class="bi bi-arrow-right"></i> Proceed to Review
                     </button>
                 </div>
             </div>
@@ -682,6 +682,31 @@ function syncComposedAddressFields() {
 initAddressChain('businessRegion', 'businessProvince', 'businessCtm', 'businessBarangay');
 initAddressChain('homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay');
 
+function proceedToReview() {
+    syncComposedAddressFields();
+
+    if (!validateAllRequired()) {
+        showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
+        return;
+    }
+    
+    // Collect form data
+    const formData = {};
+    const form = document.getElementById('kycForm');
+    const elements = form.querySelectorAll('input, select, textarea');
+    elements.forEach(el => {
+        if (el.name && el.value) {
+            formData[el.name] = el.value;
+        }
+    });
+    
+    // Store in sessionStorage
+    sessionStorage.setItem('kycFormData', JSON.stringify(formData));
+    
+    // Navigate to review page
+    window.location.href = 'kyc-individual-review.php';
+}
+
 function submitForm() {
     syncComposedAddressFields();
 
@@ -715,17 +740,10 @@ function submitForm() {
                 document.getElementById('refCode').value = data.reference_code;
                 document.getElementById('refCode').readOnly = true;
             }
-            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Proceeding to Document Verification.');
-            // Advance step indicator
-            const s2 = document.getElementById('step-2');
-            s2.classList.remove('active'); s2.classList.add('done');
-            s2.querySelector('.step-num').innerHTML = '<i class="bi bi-check" style="font-size:.9rem;"></i>';
-            const s3 = document.getElementById('step-3');
-            s3.classList.add('active');
-            document.querySelectorAll('.step-line')[1].classList.add('done');
+            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Client registered successfully.');
             // Increment stat
             const tv = document.getElementById('stat-total');
-            tv.textContent = parseInt(tv.textContent) + 1;
+            if (tv) tv.textContent = parseInt(tv.textContent) + 1;
             
             setTimeout(() => {
                 window.location.href = 'dashboard.php';
