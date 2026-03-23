@@ -125,15 +125,6 @@
                         <div class="form-error"></div>
                     </div>
 
-                    <!-- Terms & Conditions -->
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="terms" name="terms" required>
-                            <span>I agree to the <a href="#" class="link">Terms & Conditions</a></span>
-                        </label>
-                        <div class="form-error"></div>
-                    </div>
-
                     <!-- Register Button -->
                     <button type="submit" class="btn btn-primary btn-block">
                         <i class="bi bi-person-plus"></i> Create Account
@@ -197,7 +188,6 @@ const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const confirmPasswordInput = document.getElementById('confirmPassword');
 const departmentInput = document.getElementById('department');
-const termsInput = document.getElementById('terms');
 
 function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -260,7 +250,6 @@ form.addEventListener('submit', function(e) {
     const passwordValid = passwordInput.value.length >= 8;
     const confirmPasswordValid = confirmPasswordInput.value === passwordInput.value && confirmPasswordInput.value.length >= 8;
     const departmentValid = departmentInput.value !== '';
-    const termsValid = termsInput.checked;
 
     fullnameInput.classList.toggle('is-invalid', !fullnameValid);
     fullnameInput.classList.toggle('is-valid', fullnameValid);
@@ -273,7 +262,7 @@ form.addEventListener('submit', function(e) {
     departmentInput.classList.toggle('is-invalid', !departmentValid);
     departmentInput.classList.toggle('is-valid', departmentValid);
 
-    if (!fullnameValid || !emailValid || !passwordValid || !confirmPasswordValid || !departmentValid || !termsValid) {
+    if (!fullnameValid || !emailValid || !passwordValid || !confirmPasswordValid || !departmentValid) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields correctly.');
         return;
     }
