@@ -110,7 +110,10 @@ include '../includes/sidebar.php';
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label class="form-label">Client Type</label>
-                                <div class="form-control" style="background-color:#f5f5f5;">Corporate</div>
+                                <div class="client-type-display corporate">
+                                    <i class="bi bi-building"></i>
+                                    <span>Corporate Client</span>
+                                </div>
                                 <input type="hidden" name="clientType" value="corporate">
                             </div>
                         </div>
@@ -125,9 +128,9 @@ include '../includes/sidebar.php';
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label for="corporateClientName" class="form-label">Client Name <span class="req">*</span></label>
-                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Company Name" required>
-                                <div class="form-error">Client name is required</div>
+                                <label for="corporateClientName" class="form-label">Business / Company Name <span class="req">*</span></label>
+                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Registered Business/Company Name" required>
+                                <div class="form-error">Business/Company name is required</div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -234,9 +237,9 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporateContactPerson" class="form-label">Contact Person <span class="req">*</span></label>
-                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Full Name" required>
-                                <div class="form-error">Contact person is required</div>
+                                <label for="corporateContactPerson" class="form-label">Company Owner <span class="req">*</span></label>
+                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Owner Full Name" required>
+                                <div class="form-error">Company owner is required</div>
                             </div>
                         </div>
                         <div class="col-md-4">

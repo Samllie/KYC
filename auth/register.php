@@ -14,14 +14,12 @@
 <body>
 
 <!-- ═══════════════════════════════════════════════ AUTH CONTAINER -->
-<div class="auth-container">
+<div class="auth-container register-layout">
     <div class="auth-wrapper">
         
         <!-- Left Side - Branding -->
         <div class="auth-brand">
-            <div class="brand-logo-large">
-                <i class="bi bi-shield-check"></i>
-            </div>
+            <img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="brand-logo-image">
             <h1>Sterling Insurance Company</h1>
             <p>KYC System</p>
             <div class="brand-description">
@@ -32,6 +30,9 @@
         <!-- Right Side - Register Form -->
         <div class="auth-form-container">
             <div class="auth-form">
+                <div class="panel-logo-wrap">
+                    <img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="panel-logo">
+                </div>
                 <div class="form-header">
                     <h2>Create Account</h2>
                     <p>Register as a KYC Officer</p>
@@ -79,7 +80,7 @@
                         <label for="password" class="form-label">
                             Password <span class="req">*</span>
                         </label>
-                        <div class="input-icon-wrap">
+                        <div class="input-icon-wrap has-toggle">
                             <i class="bi bi-lock"></i>
                             <input 
                                 type="password" 
@@ -88,6 +89,9 @@
                                 class="form-control" 
                                 placeholder="At least 8 characters" 
                                 required>
+                            <button type="button" class="password-toggle" data-target="password" aria-label="Show password">
+                                <i class="bi bi-eye"></i>
+                            </button>
                         </div>
                         <div class="form-hint">Password must be at least 8 characters long</div>
                         <div class="form-error"></div>
@@ -98,7 +102,7 @@
                         <label for="confirmPassword" class="form-label">
                             Confirm Password <span class="req">*</span>
                         </label>
-                        <div class="input-icon-wrap">
+                        <div class="input-icon-wrap has-toggle">
                             <i class="bi bi-lock-check"></i>
                             <input 
                                 type="password" 
@@ -107,6 +111,9 @@
                                 class="form-control" 
                                 placeholder="Re-enter your password" 
                                 required>
+                            <button type="button" class="password-toggle" data-target="confirmPassword" aria-label="Show confirm password">
+                                <i class="bi bi-eye"></i>
+                            </button>
                         </div>
                         <div class="form-error"></div>
                     </div>
@@ -125,15 +132,6 @@
                                 <option value="management">Management</option>
                             </select>
                         </div>
-                        <div class="form-error"></div>
-                    </div>
-
-                    <!-- Terms & Conditions -->
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="terms" name="terms" required>
-                            <span>I agree to the <a href="#" class="link">Terms & Conditions</a></span>
-                        </label>
                         <div class="form-error"></div>
                     </div>
 
@@ -200,7 +198,22 @@ const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const confirmPasswordInput = document.getElementById('confirmPassword');
 const departmentInput = document.getElementById('department');
-const termsInput = document.getElementById('terms');
+
+// ── Password Visibility Toggle ─────────────────────────────
+document.querySelectorAll('.password-toggle').forEach(toggleBtn => {
+    toggleBtn.addEventListener('click', function() {
+        const targetId = this.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        const icon = this.querySelector('i');
+
+        if (!input || !icon) return;
+
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        icon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+        this.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+});
 
 function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -263,7 +276,6 @@ form.addEventListener('submit', function(e) {
     const passwordValid = passwordInput.value.length >= 8;
     const confirmPasswordValid = confirmPasswordInput.value === passwordInput.value && confirmPasswordInput.value.length >= 8;
     const departmentValid = departmentInput.value !== '';
-    const termsValid = termsInput.checked;
 
     fullnameInput.classList.toggle('is-invalid', !fullnameValid);
     fullnameInput.classList.toggle('is-valid', fullnameValid);
@@ -276,7 +288,7 @@ form.addEventListener('submit', function(e) {
     departmentInput.classList.toggle('is-invalid', !departmentValid);
     departmentInput.classList.toggle('is-valid', departmentValid);
 
-    if (!fullnameValid || !emailValid || !passwordValid || !confirmPasswordValid || !departmentValid || !termsValid) {
+    if (!fullnameValid || !emailValid || !passwordValid || !confirmPasswordValid || !departmentValid) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields correctly.');
         return;
     }

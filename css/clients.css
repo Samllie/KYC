@@ -162,6 +162,7 @@
 .col-checkbox { width: 40px; }
 .col-ref { width: 120px; }
 .col-name { width: 150px; }
+.col-owner { width: 150px; }
 .col-type { width: 100px; }
 .col-contact { width: 140px; }
 .col-email { width: 160px; }
@@ -493,6 +494,10 @@
     .col-ref,
     .col-contact,
     .col-email {
+        display: none;
+    }
+
+    .col-owner {
         display: none;
     }
 

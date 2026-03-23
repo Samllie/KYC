@@ -19,9 +19,7 @@
         
         <!-- Left Side - Branding -->
         <div class="auth-brand">
-            <div class="brand-logo-large">
-                <i class="bi bi-shield-check"></i>
-            </div>
+            <img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="brand-logo-image">
             <h1>Sterling Insurance Company</h1>
             <p>KYC System</p>
             <div class="brand-description">
@@ -32,6 +30,9 @@
         <!-- Right Side - Login Form -->
         <div class="auth-form-container">
             <div class="auth-form">
+                <div class="panel-logo-wrap">
+                    <img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="panel-logo">
+                </div>
                 <div class="form-header">
                     <h2>Welcome Back</h2>
                     <p>Sign in to your account</p>
@@ -74,13 +75,12 @@
                         <div class="form-error"></div>
                     </div>
 
-                    <!-- Remember & Forgot Password -->
+                    <!-- Remember Me -->
                     <div class="form-options">
                         <label class="checkbox-label">
                             <input type="checkbox" id="remember" name="remember">
                             <span>Remember me</span>
                         </label>
-                        <a href="#" class="forgot-password">Forgot password?</a>
                     </div>
 
                     <!-- Login Button -->

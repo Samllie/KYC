@@ -89,7 +89,8 @@ include '../includes/sidebar.php';
                         <tr>
                             <th class="col-checkbox"><input type="checkbox" id="selectAll"></th>
                             <th class="col-ref">Ref Code</th>
-                            <th class="col-name">Full Name</th>
+                            <th class="col-name">Business / Client Name</th>
+                            <th class="col-owner">Company Owner</th>
                             <th class="col-type">Type</th>
                             <th class="col-contact">Contact</th>
                             <th class="col-email">Email</th>
@@ -128,17 +129,18 @@ include '../includes/sidebar.php';
         </div>
         <div class="modal-body">
             <form id="editForm">
+                <input type="hidden" id="editClientId">
                 <!-- Row 1: Reference & Type -->
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Ref Code</label>
-                        <input type="text" class="form-control" value="KYC-2024-0001" readonly>
+                        <input type="text" id="editRefCode" class="form-control" readonly>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Client Type</label>
-                        <select class="form-select">
-                            <option>Individual</option>
-                            <option>Corporate</option>
+                        <select id="editClientType" class="form-select">
+                            <option value="individual">Individual</option>
+                            <option value="corporate">Corporate</option>
                         </select>
                     </div>
                 </div>
@@ -147,15 +149,15 @@ include '../includes/sidebar.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">First Name</label>
-                        <input type="text" class="form-control" value="Juan">
+                        <input type="text" id="editFirstName" class="form-control">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Middle Name</label>
-                        <input type="text" class="form-control" value="Santos">
+                        <input type="text" id="editMiddleName" class="form-control">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Last Name</label>
-                        <input type="text" class="form-control" value="Dela Cruz">
+                        <input type="text" id="editLastName" class="form-control">
                     </div>
                 </div>
 
@@ -163,19 +165,20 @@ include '../includes/sidebar.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Birthdate</label>
-                        <input type="date" class="form-control" value="1990-05-15">
+                        <input type="date" id="editBirthdate" class="form-control">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Gender</label>
-                        <select class="form-select">
-                            <option>Male</option>
-                            <option>Female</option>
-                            <option>Prefer not to say</option>
+                        <select id="editGender" class="form-select">
+                            <option value="">Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Prefer not to say</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Civil Status</label>
-                        <select class="form-select">
+                        <select id="editCivilStatus" class="form-select">
                             <option>Single</option>
                             <option>Married</option>
                             <option>Widowed</option>
@@ -188,15 +191,15 @@ include '../includes/sidebar.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Occupation</label>
-                        <input type="text" class="form-control" value="Engineer">
+                        <input type="text" id="editOccupation" class="form-control">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Nationality</label>
-                        <input type="text" class="form-control" value="Filipino">
+                        <input type="text" id="editNationality" class="form-control">
                     </div>
                     <div class="form-group">
                         <label class="form-label">TIN / Tax ID</label>
-                        <input type="text" class="form-control" value="000-000-000-000">
+                        <input type="text" id="editTin" class="form-control">
                     </div>
                 </div>
 
@@ -204,15 +207,15 @@ include '../includes/sidebar.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Email Address</label>
-                        <input type="email" class="form-control" value="juan@example.com">
+                        <input type="email" id="editEmail" class="form-control">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Mobile Number</label>
-                        <input type="tel" class="form-control" value="+63 912 345 6789">
+                        <input type="tel" id="editMobile" class="form-control">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Telephone</label>
-                        <input type="tel" class="form-control" value="(02) 8123-4567">
+                        <input type="tel" id="editTelephone" class="form-control">
                     </div>
                 </div>
 
@@ -220,7 +223,7 @@ include '../includes/sidebar.php';
                 <div class="form-row">
                     <div class="form-group full">
                         <label class="form-label">Present Address</label>
-                        <input type="text" class="form-control" value="123 Main St, Barangay San Juan, Manila, NCR 1500">
+                        <input type="text" id="editAddress" class="form-control">
                     </div>
                 </div>
 
@@ -228,10 +231,10 @@ include '../includes/sidebar.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Verification Status</label>
-                        <select class="form-select">
-                            <option>Verified</option>
-                            <option>Pending</option>
-                            <option>Rejected</option>
+                        <select id="editVerificationStatus" class="form-select" disabled>
+                            <option value="verified">Verified</option>
+                            <option value="pending">Pending</option>
+                            <option value="rejected">Rejected</option>
                         </select>
                     </div>
                 </div>
@@ -239,7 +242,7 @@ include '../includes/sidebar.php';
         </div>
         <div class="modal-footer">
             <button class="btn-cancel" id="cancelBtn">Cancel</button>
-            <button class="btn-save">Save Changes</button>
+            <button class="btn-save" id="saveBtn" type="button">Save Changes</button>
         </div>
     </div>
 </div>
@@ -279,11 +282,30 @@ include '../includes/sidebar.php';
     let pageSize = 6;
     let totalPages = 1;
     let totalClients = 0;
+    let currentEditingClientId = null;
+    let searchDebounceTimer = null;
+
+    function getActiveFilters() {
+        return {
+            search: document.getElementById('searchInput').value.trim(),
+            status: document.getElementById('filterStatus').value,
+            type: document.getElementById('filterType').value
+        };
+    }
 
     // Load clients from database on page load
     function loadClients(page = 1) {
+        const filters = getActiveFilters();
+        const query = new URLSearchParams({
+            page: page,
+            pageSize: pageSize,
+            search: filters.search,
+            status: filters.status,
+            type: filters.type
+        });
+
         console.log('loadClients() starting for page:', page);
-        fetch(`../handlers/get_clients.php?page=${page}&pageSize=${pageSize}`, {
+        fetch(`../handlers/get_clients.php?${query.toString()}`, {
             method: 'GET',
             credentials: 'include'  // Include session cookies in the request
         })
@@ -293,25 +315,30 @@ include '../includes/sidebar.php';
             })
             .then(data => {
                 console.log('Data parsed:', data);
-                if (data.success && data.data && data.data.length > 0) {
+                if (data.success) {
                     console.log('Rendering ' + data.data.length + ' clients');
                     currentPage = data.page;
                     totalPages = data.totalPages;
                     totalClients = data.total;
-                    renderClientsTable(data.data);
-                    attachClientEventListeners();
+                    if (data.data && data.data.length > 0) {
+                        renderClientsTable(data.data);
+                        attachClientEventListeners();
+                    } else {
+                        document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">No clients found</td></tr>';
+                    }
+
                     updatePaginationInfo(data);
                     generatePaginationButtons(data);
                 } else {
                     console.log('No clients found or fetch failed');
-                    document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px;">No clients found</td></tr>';
+                    document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">No clients found</td></tr>';
                     updatePaginationInfo({ page: 1, total: 0, pageSize: 6, totalPages: 0 });
                     generatePaginationButtons({ page: 1, totalPages: 0 });
                 }
             })
             .catch(error => {
                 console.error('Error loading clients:', error);
-                document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: red;">Error loading clients: ' + error.message + '</td></tr>';
+                document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px; color: red;">Error loading clients: ' + error.message + '</td></tr>';
             });
     }
 
@@ -323,17 +350,27 @@ include '../includes/sidebar.php';
         clients.forEach(client => {
             const typeClass = client.client_type === 'individual' ? 'individual' : 'corporate';
             const typeText = client.client_type.charAt(0).toUpperCase() + client.client_type.slice(1);
-            const fullName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
+            const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
+            const ownerName = client.client_type === 'corporate'
+                ? (client.contact_person || 'N/A')
+                : 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
             const clientNumber = client.client_number || 'N/A';
+            const contactNumber = client.client_type === 'corporate'
+                ? (client.office_phone || 'N/A')
+                : (client.mobile_phone || 'N/A');
 
             const row = document.createElement('tr');
+            row.dataset.clientId = client.client_id;
+            row.dataset.clientType = client.client_type || '';
+            row.dataset.status = client.verification_status || '';
             row.innerHTML = `
                 <td class="col-checkbox"><input type="checkbox"></td>
                 <td class="col-ref"><span class="ref-badge">${client.reference_code}</span></td>
-                <td class="col-name">${fullName}</td>
+                <td class="col-name">${displayName}</td>
+                <td class="col-owner">${ownerName}</td>
                 <td class="col-type"><span class="type-badge ${typeClass}">${typeText}</span></td>
-                <td class="col-contact">${client.mobile_phone || 'N/A'}</td>
+                <td class="col-contact">${contactNumber}</td>
                 <td class="col-email">${client.email}</td>
                 <td class="col-status">${clientNumber}</td>
                 <td class="col-verified">${submittedByName}</td>
@@ -412,32 +449,31 @@ include '../includes/sidebar.php';
 
     // Attach event listeners to dynamically loaded rows
     function attachClientEventListeners() {
-        // View Client
-        document.querySelectorAll('.action-icon:not(.delete)').forEach((btn, index) => {
-            if (index % 3 === 0) {
-                // View
-                btn.addEventListener('click', function(e) {
-                    const row = this.closest('tr');
+        document.querySelectorAll('#clientsTableBody tr').forEach(row => {
+            const viewBtn = row.querySelector('.action-icon[title="View"]');
+            const editBtn = row.querySelector('.action-icon[title="Edit"]');
+            const deleteBtn = row.querySelector('.action-icon.delete');
+
+            if (viewBtn) {
+                viewBtn.addEventListener('click', function() {
                     const data = getClientDataFromRow(row);
                     viewClient(data);
                 });
-            } else if (index % 3 === 1) {
-                // Edit
-                btn.addEventListener('click', function(e) {
-                    const row = this.closest('tr');
+            }
+
+            if (editBtn) {
+                editBtn.addEventListener('click', function() {
                     const data = getClientDataFromRow(row);
                     editClient(data);
                 });
             }
-        });
 
-        // Delete Client
-        document.querySelectorAll('.action-icon.delete').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const row = this.closest('tr');
-                const refCode = row.querySelector('.col-ref span').textContent;
-                deleteClient(refCode, row);
-            });
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function() {
+                    const clientId = row.dataset.clientId;
+                    deleteClient(clientId, row);
+                });
+            }
         });
     }
 
@@ -447,15 +483,19 @@ include '../includes/sidebar.php';
     // Get client data from row
     function getClientDataFromRow(row) {
         const cells = row.querySelectorAll('td');
+        const displayName = cells[2].textContent.trim();
+        const nameParts = displayName.split(' ');
         return {
+            clientId: row.dataset.clientId,
             refCode: cells[1].textContent.trim(),
-            firstName: cells[2].textContent.split(' ')[0],
-            lastName: cells[2].textContent.split(' ').pop(),
-            type: cells[3].textContent.trim(),
-            contact: cells[4].textContent.trim(),
-            email: cells[5].textContent.trim(),
-            clientNumber: cells[6].textContent.trim(),
-            submittedBy: cells[7].textContent.trim()
+            firstName: nameParts[0] || '',
+            lastName: nameParts.length > 1 ? nameParts[nameParts.length - 1] : '',
+            displayName: displayName,
+            ownerName: cells[3].textContent.trim(),
+            type: cells[4].textContent.trim(),
+            contact: cells[5].textContent.trim(),
+            email: cells[6].textContent.trim(),
+            clientNumber: cells[7].textContent.trim()
         };
     }
 
@@ -463,49 +503,108 @@ include '../includes/sidebar.php';
     const editModal = document.getElementById('editModal');
     const cancelBtn = document.getElementById('cancelBtn');
 
-    // View Client
-    document.querySelectorAll('.action-icon:not(.delete)').forEach((btn, index) => {
-        // Only add event listener to first icon (View) and second icon (Edit)
-        if (index % 3 === 0) {
-            // View
-            btn.addEventListener('click', function(e) {
-                const row = this.closest('tr');
-                const data = getClientDataFromRow(row);
-                viewClient(data);
-            });
-        } else if (index % 3 === 1) {
-            // Edit
-            btn.addEventListener('click', function(e) {
-                const row = this.closest('tr');
-                const data = getClientDataFromRow(row);
-                editClient(data);
-            });
-        }
-    });
-
-    // Delete Client
-    document.querySelectorAll('.action-icon.delete').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const row = this.closest('tr');
-            const refCode = row.querySelector('.col-ref span').textContent;
-            deleteClient(refCode, row);
-        });
-    });
-
     // View Client Function
     function viewClient(data) {
-        alert('Client Details:\n\nRef Code: ' + data.refCode + '\nName: ' + data.firstName + ' ' + data.lastName + '\nType: ' + data.type + '\nEmail: ' + data.email + '\nContact: ' + data.contact);
+        alert('Client Details:\n\nRef Code: ' + data.refCode + '\nName: ' + data.displayName + '\nOwner: ' + data.ownerName + '\nType: ' + data.type + '\nEmail: ' + data.email + '\nContact: ' + data.contact);
     }
 
     // Edit Client Function
     function editClient(data) {
-        // Populate edit modal with data
-        // For now just show in edit modal
-        editModal.style.display = 'block';
+        currentEditingClientId = data.clientId;
+
+        if (!currentEditingClientId) {
+            createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
+            return;
+        }
+
+        fetch(`../handlers/client.php?action=get_client&client_id=${encodeURIComponent(currentEditingClientId)}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (!result.success || !result.data) {
+                createToast('error', 'Error', result.message || 'Failed to load client details.', 'toastContainer');
+                return;
+            }
+
+            const client = result.data;
+            const fallbackName = (client.client_name || '').trim();
+
+            document.getElementById('editClientId').value = client.client_id || '';
+            document.getElementById('editRefCode').value = client.reference_code || '';
+            document.getElementById('editClientType').value = client.client_type || 'individual';
+            document.getElementById('editFirstName').value = client.first_name || fallbackName;
+            document.getElementById('editMiddleName').value = client.middle_name || '';
+            document.getElementById('editLastName').value = client.last_name || '';
+            document.getElementById('editBirthdate').value = client.date_of_birth || '';
+            document.getElementById('editGender').value = (client.gender || '').toLowerCase();
+            document.getElementById('editCivilStatus').value = client.civil_status || 'Single';
+            document.getElementById('editOccupation').value = client.occupation || '';
+            document.getElementById('editNationality').value = client.nationality || '';
+            document.getElementById('editTin').value = client.tin_number || '';
+            document.getElementById('editEmail').value = client.email || '';
+            document.getElementById('editMobile').value = client.mobile_phone || client.office_phone || '';
+            document.getElementById('editTelephone').value = client.landline_phone || client.office_phone || '';
+            document.getElementById('editAddress').value = client.full_address || client.home_address || client.business_address || '';
+            document.getElementById('editVerificationStatus').value = client.verification_status || 'pending';
+
+            editModal.style.display = 'block';
+        })
+        .catch(error => {
+            createToast('error', 'Error', 'Failed to load client details.', 'toastContainer');
+            console.error('Error loading client details:', error);
+        });
+    }
+
+    function saveClientChanges() {
+        const clientId = document.getElementById('editClientId').value;
+        if (!clientId) {
+            createToast('error', 'Error', 'No client selected for update.', 'toastContainer');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('action', 'edit_client');
+        formData.append('client_id', clientId);
+        formData.append('firstName', document.getElementById('editFirstName').value.trim());
+        formData.append('middleName', document.getElementById('editMiddleName').value.trim());
+        formData.append('lastName', document.getElementById('editLastName').value.trim());
+        formData.append('email', document.getElementById('editEmail').value.trim());
+        formData.append('mobile', document.getElementById('editMobile').value.trim());
+        formData.append('occupation', document.getElementById('editOccupation').value.trim());
+        formData.append('address', document.getElementById('editAddress').value.trim());
+        formData.append('clientType', document.getElementById('editClientType').value);
+
+        fetch('../handlers/client.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (!result.success) {
+                createToast('error', 'Error', result.message || 'Failed to save changes.', 'toastContainer');
+                return;
+            }
+
+            editModal.style.display = 'none';
+            createToast('success', 'Updated', 'Client information saved successfully.', 'toastContainer');
+            loadClients(currentPage);
+        })
+        .catch(error => {
+            createToast('error', 'Error', 'Failed to save client changes.', 'toastContainer');
+            console.error('Error saving client:', error);
+        });
     }
 
     // Delete Client Function
-    function deleteClient(refCode, row) {
+    function deleteClient(clientId, row) {
+        if (!clientId) {
+            createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
+            return;
+        }
+
+        const refCode = row.querySelector('.col-ref span').textContent;
         if (!confirm('Are you sure you want to delete this client?\n\n' + refCode)) {
             return;
         }
@@ -515,7 +614,7 @@ include '../includes/sidebar.php';
         
         const formData = new FormData();
         formData.append('action', 'delete_client');
-        formData.append('client_id', refCode);
+        formData.append('client_id', clientId);
         
         fetch('../handlers/client.php', {
             method: 'POST',
@@ -577,6 +676,8 @@ include '../includes/sidebar.php';
         editModal.style.display = 'none';
     });
 
+    document.getElementById('saveBtn').addEventListener('click', saveClientChanges);
+
     window.addEventListener('click', function(event) {
         if (event.target === editModal) {
             editModal.style.display = 'none';
@@ -590,52 +691,99 @@ include '../includes/sidebar.php';
         });
     });
 
-    // Search functionality
+    function applyServerFilters() {
+        loadClients(1);
+    }
+
     document.getElementById('searchInput').addEventListener('keyup', function() {
-        const searchTerm = this.value.toLowerCase();
-        document.querySelectorAll('tbody tr').forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
-        });
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            applyServerFilters();
+        }, 300);
     });
+
+    document.getElementById('filterStatus').addEventListener('change', applyServerFilters);
+    document.getElementById('filterType').addEventListener('change', applyServerFilters);
 
     // Export Clients functionality
     let exportData = [];
 
-    function getTableData() {
-        const table = document.querySelector('.clients-table');
-        const data = [];
-        
-        // Add data rows (only visible rows)
-        table.querySelectorAll('tbody tr').forEach(tr => {
-            if (tr.style.display !== 'none') {
-                const cells = [];
-                let cellIndex = 0;
-                tr.querySelectorAll('td').forEach(td => {
-                    // Skip checkbox column
-                    if (cellIndex === 0) {
-                        cellIndex++;
-                        return;
-                    }
-                    cellIndex++;
-                    const content = td.textContent.trim();
-                    cells.push(content);
-                });
-                if (cells.length > 0) {
-                    data.push(cells);
-                }
-            }
-        });
-        return data;
+    const exportHeaders = ['Ref Code', 'Business / Client Name', 'Company Owner', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
+
+    function getFilterSummaryText() {
+        const filters = getActiveFilters();
+        const parts = [];
+
+        if (filters.search) {
+            parts.push(`Search: ${filters.search}`);
+        }
+        if (filters.status) {
+            parts.push(`Status: ${filters.status.charAt(0).toUpperCase() + filters.status.slice(1)}`);
+        }
+        if (filters.type) {
+            parts.push(`Type: ${filters.type.charAt(0).toUpperCase() + filters.type.slice(1)}`);
+        }
+
+        return parts.length > 0 ? parts.join(' | ') : 'No filters applied';
     }
 
-    function showExportPreview() {
-        const table = document.querySelector('.clients-table');
+    function mapClientToExportRow(client) {
+        const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
+        const ownerName = client.client_type === 'corporate'
+            ? (client.contact_person || 'N/A')
+            : 'N/A';
+        const typeText = (client.client_type || '').charAt(0).toUpperCase() + (client.client_type || '').slice(1);
+        const contactNumber = client.client_type === 'corporate'
+            ? (client.office_phone || 'N/A')
+            : (client.mobile_phone || 'N/A');
+
+        return {
+            refCode: client.reference_code || 'N/A',
+            displayName: displayName,
+            ownerName: ownerName,
+            type: typeText || 'N/A',
+            contact: contactNumber,
+            email: client.email || 'N/A',
+            clientNumber: client.client_number || 'N/A',
+            submittedBy: client.submitted_by_name || 'N/A'
+        };
+    }
+
+    async function getExportData() {
+        const filters = getActiveFilters();
+        const query = new URLSearchParams({
+            page: '1',
+            pageSize: String(pageSize),
+            search: filters.search,
+            status: filters.status,
+            type: filters.type,
+            exportAll: '1'
+        });
+
+        const response = await fetch(`../handlers/get_clients.php?${query.toString()}`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+
+        const payload = await response.json();
+        if (!payload.success) {
+            throw new Error(payload.message || 'Failed to load export data');
+        }
+
+        return (payload.data || []).map(mapClientToExportRow);
+    }
+
+    async function showExportPreview() {
         const modal = document.getElementById('exportPreviewModal');
         const previewContent = document.getElementById('previewContent');
-        
-        // Get visible rows
-        const data = getTableData();
+
+        let data = [];
+        try {
+            data = await getExportData();
+        } catch (error) {
+            createToast('error', 'Error', error.message || 'Failed to prepare export.', 'toastContainer');
+            return;
+        }
         
         if (data.length === 0) {
             alert('No clients to export!');
@@ -644,25 +792,31 @@ include '../includes/sidebar.php';
 
         // Build HTML preview table
         let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
+        html += `<caption style="caption-side: top; text-align: left; margin-bottom: 8px; font-size: 0.85rem; color: #4b5563;"><strong>Active Filters:</strong> ${getFilterSummaryText()}</caption>`;
         html += '<thead><tr style="background: #f3f4f6; border: 1px solid #d1d5db;">';
-        
-        const headers = ['Ref Code', 'Full Name', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By', 'Actions'];
-        headers.forEach(header => {
+
+        exportHeaders.forEach(header => {
             html += `<th style="padding: 10px; text-align: left; border: 1px solid #d1d5db; font-weight: 600;">${header}</th>`;
         });
         html += '</tr></thead><tbody>';
         
         data.forEach((row, index) => {
             html += `<tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'}; border: 1px solid #d1d5db;">`;
-            row.forEach(cell => {
-                html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${cell}</td>`;
-            });
+            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.refCode}</td>`;
+            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.displayName}</td>`;
+            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.ownerName}</td>`;
+            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.type}</td>`;
+            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.contact}</td>`;
+            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.email}</td>`;
+            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.clientNumber}</td>`;
+            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.submittedBy}</td>`;
             html += '</tr>';
         });
         
         html += '</tbody></table>';
         html += `<div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #d1d5db; font-size: 0.85rem; color: #6b7280;">`;
         html += `<p><strong>Total Records:</strong> ${data.length}</p>`;
+        html += `<p><strong>Active Filters:</strong> ${getFilterSummaryText()}</p>`;
         html += `<p><strong>Export Date:</strong> ${new Date().toLocaleString()}</p>`;
         html += `</div>`;
 
@@ -673,30 +827,29 @@ include '../includes/sidebar.php';
 
     function exportAsCSV() {
         if (exportData.length === 0) return;
-
-        const table = document.querySelector('.clients-table');
         const rows = [];
-        
-        // Add header row
-        const headers = [];
-        table.querySelectorAll('thead th').forEach(th => {
-            const text = th.textContent.trim();
-            if (text && text !== '') {
-                headers.push(text);
-            }
-        });
-        rows.push(headers.slice(0, -2).join(','));
+
+        rows.push(exportHeaders.join(','));
 
         // Add data rows
         exportData.forEach(row => {
-            const cells = row.map(cell => {
+            const cells = [
+                row.refCode,
+                row.displayName,
+                row.ownerName,
+                row.type,
+                row.contact,
+                row.email,
+                row.clientNumber,
+                row.submittedBy
+            ].map(cell => {
                 let content = cell.replace(/\s+/g, ' ').replace(/,/g, ';');
                 if (content.includes(',') || content.includes('"')) {
                     content = '"' + content.replace(/"/g, '""') + '"';
                 }
                 return content;
             });
-            rows.push(cells.slice(0, -1).join(','));
+            rows.push(cells.join(','));
         });
 
         const csvContent = rows.join('\n');
