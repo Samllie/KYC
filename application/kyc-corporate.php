@@ -74,25 +74,35 @@ include '../includes/sidebar.php';
             </div>
         </div>
 
-        <!-- Client Information Card -->
-        <div class="card">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">Corporate Client Information</div>
-                    <div class="card-subtitle">Fill in all required fields marked with <span style="color:var(--danger)">*</span></div>
+        <!-- Form Start -->
+        <form id="kycForm" novalidate>
+
+            <!-- Client Type Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-list"></i> Client Type</div>
                 </div>
-                <span class="badge badge-draft"><i class="bi bi-circle-fill" style="font-size:.4rem;"></i> Draft</span>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <div class="client-type-display corporate">
+                                    <i class="bi bi-building"></i>
+                                    <span>Corporate Client</span>
+                                </div>
+                                <input type="hidden" name="clientType" value="corporate">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="card-body">
-                <form id="kycForm" novalidate>
-
-                    <!-- ── Section: Reference ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-hash"></i> Reference</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Reference Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-hash"></i> Reference</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="form-group">
@@ -107,24 +117,16 @@ include '../includes/sidebar.php';
                                 <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="Auto-generated" readonly>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">Client Type</label>
-                                <div class="client-type-display corporate">
-                                    <i class="bi bi-building"></i>
-                                    <span>Corporate Client</span>
-                                </div>
-                                <input type="hidden" name="clientType" value="corporate">
-                            </div>
-                        </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- ── Section: Company Information ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-building"></i> Company Information</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Company Information Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-building"></i> Company Information</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="form-group">
@@ -153,13 +155,15 @@ include '../includes/sidebar.php';
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- ── Section: Business Details ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-info-circle"></i> Business Details</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Business Details Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-info-circle"></i> Business Details</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="form-group">
@@ -186,13 +190,15 @@ include '../includes/sidebar.php';
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- ── Section: Business Address ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-shop"></i> Business Address</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Business Address Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-shop"></i> Business Address</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3">
                             <div class="form-group">
@@ -243,13 +249,15 @@ include '../includes/sidebar.php';
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- ── Section: Contact Details ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-telephone"></i> Contact Information</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Contact Information Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-telephone"></i> Contact Information</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="form-group">
@@ -273,13 +281,15 @@ include '../includes/sidebar.php';
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- ── Section: Contact Person Details ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-info-circle"></i> Contact Person Details</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Contact Person Details Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-info-circle"></i> Contact Person Details</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -307,13 +317,15 @@ include '../includes/sidebar.php';
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- ── Section: Documents ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-file-earmark"></i> Supporting Documents</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Documents Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-file-earmark"></i> Supporting Documents</div>
+                </div>
+                <div class="card-body">
                     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
                         <i class="bi bi-cloud-arrow-up upload-icon"></i>
                         <p><strong>Click to upload</strong> or drag and drop</p>
@@ -321,10 +333,13 @@ include '../includes/sidebar.php';
                     </div>
                     <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.pdf" style="display:none;">
                     <div class="file-list" id="fileList"></div>
-
-                </form>
+                </div>
             </div>
 
+        </form>
+
+        <!-- Action Buttons Card -->
+        <div class="card">
             <div class="card-footer">
                 <div style="font-size:.75rem;color:var(--gray-500);">
                     <i class="bi bi-info-circle" style="margin-right:4px;"></i>
