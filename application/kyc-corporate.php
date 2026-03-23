@@ -234,7 +234,7 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="corporateBusinessBarangay" class="form-label">Barangay</label>
                                 <div class="select-wrap">
-                                    <select id="corporateBusinessBarangay" class="form-select">
+                                    <select id="corporateBusinessBarangay" name="corporateBusinessBarangay" class="form-select">
                                         <option value="">Select barangay...</option>
                                     </select>
                                 </div>
@@ -639,7 +639,41 @@ function syncCorporateAddressField() {
     document.getElementById('corporateBusinessAddress').value = buildAddress(street, barangay, city, province, region);
 }
 
+function restoreFormData() {
+    const savedData = sessionStorage.getItem('kycFormData');
+    if (!savedData) return;
+    
+    try {
+        const formData = JSON.parse(savedData);
+        const form = document.getElementById('kycForm');
+        if (!form) return;
+        
+        Object.keys(formData).forEach(key => {
+            const el = form.querySelector(`[name="${key}"]`);
+            if (el) {
+                if (el.type === 'radio') {
+                    const selectedRadio = form.querySelector(`[name="${key}"][value="${formData[key]}"]`);
+                    if (selectedRadio) selectedRadio.checked = true;
+                } else if (el.tagName === 'SELECT') {
+                    el.value = formData[key];
+                    el.dispatchEvent(new Event('change'));
+                } else {
+                    el.value = formData[key];
+                }
+            }
+        });
+        
+        // Rebuild composed address field after restore
+        syncCorporateAddressField();
+    } catch (error) {
+        console.error('Error restoring form data:', error);
+    }
+}
+
 initCorporateAddressSelectors();
+
+// Restore form data on page load
+document.addEventListener('DOMContentLoaded', restoreFormData);
 
 function proceedToReview() {
     syncCorporateAddressField();

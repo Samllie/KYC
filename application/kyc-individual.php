@@ -205,7 +205,7 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="businessRegion" class="form-label">Region</label>
                                 <div class="select-wrap">
-                                    <select id="businessRegion" class="form-select">
+                                    <select id="businessRegion" name="businessRegion" class="form-select">
                                         <option value="">Select region...</option>
                                     </select>
                                 </div>
@@ -235,7 +235,7 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="businessBarangay" class="form-label">Barangay</label>
                                 <div class="select-wrap">
-                                    <select id="businessBarangay" class="form-select">
+                                    <select id="businessBarangay" name="businessBarangay" class="form-select">
                                         <option value="">Select barangay...</option>
                                     </select>
                                 </div>
@@ -244,7 +244,7 @@ include '../includes/sidebar.php';
                         <div class="col-md-12">
                             <div class="form-group">
                                 <label for="businessStreet" class="form-label">Street / Unit / Building</label>
-                                <input type="text" id="businessStreet" class="form-control" placeholder="House/Unit No., Street, Building">
+                                <input type="text" id="businessStreet" name="businessStreet" class="form-control" placeholder="House/Unit No., Street, Building">
                                 <input type="hidden" id="businessAddress" name="businessAddress">
                             </div>
                         </div>
@@ -262,7 +262,7 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="homeRegion" class="form-label">Region</label>
                                 <div class="select-wrap">
-                                    <select id="homeRegion" class="form-select">
+                                    <select id="homeRegion" name="homeRegion" class="form-select">
                                         <option value="">Select region...</option>
                                     </select>
                                 </div>
@@ -292,7 +292,7 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="homeBarangay" class="form-label">Barangay</label>
                                 <div class="select-wrap">
-                                    <select id="homeBarangay" class="form-select">
+                                    <select id="homeBarangay" name="homeBarangay" class="form-select">
                                         <option value="">Select barangay...</option>
                                     </select>
                                 </div>
@@ -301,7 +301,7 @@ include '../includes/sidebar.php';
                         <div class="col-md-12">
                             <div class="form-group">
                                 <label for="homeStreet" class="form-label">Street / Unit / Building <span class="req">*</span></label>
-                                <input type="text" id="homeStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
+                                <input type="text" id="homeStreet" name="homeStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
                                 <input type="hidden" id="homeAddress" name="homeAddress">
                                 <div class="form-error">Home street/unit is required</div>
                             </div>
@@ -681,6 +681,40 @@ function syncComposedAddressFields() {
 
 initAddressChain('businessRegion', 'businessProvince', 'businessCtm', 'businessBarangay');
 initAddressChain('homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay');
+
+function restoreFormData() {
+    const savedData = sessionStorage.getItem('kycFormData');
+    if (!savedData) return;
+    
+    try {
+        const formData = JSON.parse(savedData);
+        const form = document.getElementById('kycForm');
+        if (!form) return;
+        
+        Object.keys(formData).forEach(key => {
+            const el = form.querySelector(`[name="${key}"]`);
+            if (el) {
+                if (el.type === 'radio') {
+                    const selectedRadio = form.querySelector(`[name="${key}"][value="${formData[key]}"]`);
+                    if (selectedRadio) selectedRadio.checked = true;
+                } else if (el.tagName === 'SELECT') {
+                    el.value = formData[key];
+                    el.dispatchEvent(new Event('change'));
+                } else {
+                    el.value = formData[key];
+                }
+            }
+        });
+        
+        // Rebuild composed address fields after restore
+        syncComposedAddressFields();
+    } catch (error) {
+        console.error('Error restoring form data:', error);
+    }
+}
+
+// Restore form data on page load
+document.addEventListener('DOMContentLoaded', restoreFormData);
 
 function proceedToReview() {
     syncComposedAddressFields();
