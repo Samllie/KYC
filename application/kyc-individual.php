@@ -33,12 +33,6 @@ include '../includes/sidebar.php';
             </div>
         </div>
         <div class="topbar-right">
-            <button class="topbar-btn" title="Search"><i class="bi bi-search"></i></button>
-            <button class="topbar-btn" title="Notifications">
-                <i class="bi bi-bell"></i>
-                <span class="notif-dot"></span>
-            </button>
-            <button class="topbar-btn" title="Help"><i class="bi bi-question-circle"></i></button>
         </div>
     </header>
 
@@ -299,23 +293,51 @@ include '../includes/sidebar.php';
                     </div>
 
                     <div class="row g-3">
-<<<<<<< HEAD
-                        <div class="col-md-8">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="businessAddress" class="form-label">Business Address</label>
-                                <input type="text" id="businessAddress" name="businessAddress" class="form-control" placeholder="Street, Barangay, City">
+                                <label for="businessRegion" class="form-label">Region</label>
+                                <div class="select-wrap">
+                                    <select id="businessRegion" class="form-select">
+                                        <option value="">Select region...</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label for="businessCtm" class="form-label">CTM</label>
-                                <input type="text" id="businessCtm" name="businessCtm" class="form-control" placeholder="City Code">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="businessProvince" class="form-label">Province</label>
-                                <input type="text" id="businessProvince" name="businessProvince" class="form-control" placeholder="Province">
+                                <div class="select-wrap">
+                                    <select id="businessProvince" name="businessProvince" class="form-select">
+                                        <option value="">Select province...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="businessCtm" class="form-label">City / Municipality</label>
+                                <div class="select-wrap">
+                                    <select id="businessCtm" name="businessCtm" class="form-select">
+                                        <option value="">Select city/municipality...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="businessBarangay" class="form-label">Barangay</label>
+                                <div class="select-wrap">
+                                    <select id="businessBarangay" class="form-select">
+                                        <option value="">Select barangay...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="businessStreet" class="form-label">Street / Unit / Building</label>
+                                <input type="text" id="businessStreet" class="form-control" placeholder="House/Unit No., Street, Building">
+                                <input type="hidden" id="businessAddress" name="businessAddress">
                             </div>
                         </div>
                     </div>
@@ -327,63 +349,57 @@ include '../includes/sidebar.php';
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-md-8">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="homeAddress" class="form-label">Home Address <span class="req">*</span></label>
-=======
-                        <div class="col-md-12">
-                            <div class="form-label"><strong>Home Address <span class="req">*</span></strong></div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="form-group">
-                                <label for="homeAddress" class="form-label">Street Address <span class="req">*</span></label>
->>>>>>> ansel
-                                <input type="text" id="homeAddress" name="homeAddress" class="form-control" placeholder="Street, Barangay, City" required>
-                                <div class="form-error">Home address is required</div>
+                                <label for="homeRegion" class="form-label">Region</label>
+                                <div class="select-wrap">
+                                    <select id="homeRegion" class="form-select">
+                                        <option value="">Select region...</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label for="homeCtm" class="form-label">CTM</label>
-                                <input type="text" id="homeCtm" name="homeCtm" class="form-control" placeholder="City Code">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="homeProvince" class="form-label">Province</label>
-                                <input type="text" id="homeProvince" name="homeProvince" class="form-control" placeholder="Province">
+                                <div class="select-wrap">
+                                    <select id="homeProvince" name="homeProvince" class="form-select">
+                                        <option value="">Select province...</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-<<<<<<< HEAD
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="homeCtm" class="form-label">City / Municipality</label>
+                                <div class="select-wrap">
+                                    <select id="homeCtm" name="homeCtm" class="form-select">
+                                        <option value="">Select city/municipality...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="homeBarangay" class="form-label">Barangay</label>
+                                <div class="select-wrap">
+                                    <select id="homeBarangay" class="form-select">
+                                        <option value="">Select barangay...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="homeStreet" class="form-label">Street / Unit / Building <span class="req">*</span></label>
+                                <input type="text" id="homeStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
+                                <input type="hidden" id="homeAddress" name="homeAddress">
+                                <div class="form-error">Home street/unit is required</div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- ── Section: Contact Details ── -->
-=======
-                        <div class="col-md-12">
-                            <div class="form-label" style="margin-top:12px;"><strong>Mailing Address (if different)</strong></div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="form-group">
-                                <label for="mailingAddress" class="form-label">Street Address</label>
-                                <input type="text" id="mailingAddress" name="mailingAddress" class="form-control" placeholder="Street, Barangay, City">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label for="mailingCtm" class="form-label">CTM</label>
-                                <input type="text" id="mailingCtm" name="mailingCtm" class="form-control" placeholder="City Code">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label for="mailingProvince" class="form-label">Province</label>
-                                <input type="text" id="mailingProvince" name="mailingProvince" class="form-control" placeholder="Province">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ── Section: Contact Information ── -->
->>>>>>> ansel
                     <div class="section-divider">
                         <span class="section-divider-label"><i class="bi bi-telephone"></i> Contact Information</span>
                         <div class="section-divider-line"></div>
@@ -611,7 +627,7 @@ function validateRadioGroup(name) {
 
 >>>>>>> ansel
 function validateAllRequired() {
-    const requiredFields = ['lastName', 'firstName', 'birthdate', 'occupation', 'mobile', 'email', 'homeAddress'];
+    const requiredFields = ['lastName', 'firstName', 'birthdate', 'occupation', 'mobile', 'email', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet'];
     let allValid = true;
     let failedFields = [];
     
@@ -652,17 +668,180 @@ document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), sel
     });
 });
 
-<<<<<<< HEAD
-=======
-// Add listeners for radio buttons
-document.querySelectorAll('input[type="radio"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        validateRadioGroup(this.name);
-    });
-});
+// ── PSGC Address API (Philippines) ───────────────────────
+const PSGC_BASE_URL = 'https://psgc.gitlab.io/api';
 
->>>>>>> ansel
+async function psgcFetch(path) {
+    const response = await fetch(`${PSGC_BASE_URL}${path}`);
+    if (!response.ok) {
+        throw new Error(`PSGC request failed: ${response.status}`);
+    }
+    return response.json();
+}
+
+function fillSelectOptions(selectEl, items, labelKey = 'name', valueKey = 'name', placeholder = 'Select...') {
+    if (!selectEl) return;
+    selectEl.innerHTML = `<option value="">${placeholder}</option>`;
+    items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item[valueKey];
+        option.textContent = item[labelKey];
+        option.dataset.code = item.code;
+        selectEl.appendChild(option);
+    });
+}
+
+function setSelectLoading(selectEl, text) {
+    if (!selectEl) return;
+    selectEl.innerHTML = `<option value="">${text}</option>`;
+    selectEl.disabled = true;
+}
+
+async function initAddressChain(regionId, provinceId, cityId, barangayId) {
+    const regionEl = document.getElementById(regionId);
+    const provinceEl = document.getElementById(provinceId);
+    const cityEl = document.getElementById(cityId);
+    const barangayEl = document.getElementById(barangayId);
+    if (!regionEl || !provinceEl || !cityEl || !barangayEl) return;
+
+    setSelectLoading(regionEl, 'Loading regions...');
+    setSelectLoading(provinceEl, 'Select region first...');
+    setSelectLoading(cityEl, 'Select province first...');
+    setSelectLoading(barangayEl, 'Select city first...');
+
+    try {
+        const regions = await psgcFetch('/regions/');
+        fillSelectOptions(regionEl, regions, 'name', 'name', 'Select region...');
+        regionEl.disabled = false;
+    } catch (error) {
+        console.error(error);
+        setSelectLoading(regionEl, 'Unable to load regions');
+        return;
+    }
+
+    regionEl.addEventListener('change', async function () {
+        const selectedRegionCode = this.options[this.selectedIndex]?.dataset?.code || '';
+        fillSelectOptions(provinceEl, [], 'name', 'name', 'Select province...');
+        fillSelectOptions(cityEl, [], 'name', 'name', 'Select city/municipality...');
+        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+
+        if (!selectedRegionCode) {
+            provinceEl.disabled = true;
+            cityEl.disabled = true;
+            barangayEl.disabled = true;
+            return;
+        }
+
+        setSelectLoading(provinceEl, 'Loading provinces...');
+        cityEl.disabled = true;
+        barangayEl.disabled = true;
+
+        try {
+            const provinces = await psgcFetch(`/regions/${selectedRegionCode}/provinces/`);
+            if (provinces.length === 0) {
+                fillSelectOptions(provinceEl, [{ name: 'NCR', code: selectedRegionCode }], 'name', 'name', 'No province (NCR)');
+                provinceEl.value = 'NCR';
+                provinceEl.disabled = true;
+
+                setSelectLoading(cityEl, 'Loading cities/municipalities...');
+                const citiesInRegion = await psgcFetch(`/regions/${selectedRegionCode}/cities-municipalities/`);
+                fillSelectOptions(cityEl, citiesInRegion, 'name', 'name', 'Select city/municipality...');
+                cityEl.disabled = false;
+                fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
+                barangayEl.disabled = true;
+                return;
+            }
+
+            fillSelectOptions(provinceEl, provinces, 'name', 'name', 'Select province...');
+            provinceEl.disabled = false;
+            cityEl.disabled = true;
+            barangayEl.disabled = true;
+        } catch (error) {
+            console.error(error);
+            setSelectLoading(provinceEl, 'Unable to load provinces');
+            cityEl.disabled = true;
+            barangayEl.disabled = true;
+        }
+    });
+
+    provinceEl.addEventListener('change', async function () {
+        const selectedProvinceCode = this.options[this.selectedIndex]?.dataset?.code || '';
+        const selectedRegionCode = regionEl.options[regionEl.selectedIndex]?.dataset?.code || '';
+
+        fillSelectOptions(cityEl, [], 'name', 'name', 'Select city/municipality...');
+        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+
+        if (!selectedProvinceCode && this.value !== 'NCR') {
+            cityEl.disabled = true;
+            barangayEl.disabled = true;
+            return;
+        }
+
+        setSelectLoading(cityEl, 'Loading cities/municipalities...');
+        barangayEl.disabled = true;
+        try {
+            const cities = this.value === 'NCR'
+                ? await psgcFetch(`/regions/${selectedRegionCode}/cities-municipalities/`)
+                : await psgcFetch(`/provinces/${selectedProvinceCode}/cities-municipalities/`);
+
+            fillSelectOptions(cityEl, cities, 'name', 'name', 'Select city/municipality...');
+            cityEl.disabled = false;
+            fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
+            barangayEl.disabled = true;
+        } catch (error) {
+            console.error(error);
+            setSelectLoading(cityEl, 'Unable to load cities/municipalities');
+            barangayEl.disabled = true;
+        }
+    });
+
+    cityEl.addEventListener('change', async function () {
+        const selectedCityCode = this.options[this.selectedIndex]?.dataset?.code || '';
+        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+
+        if (!selectedCityCode) {
+            barangayEl.disabled = true;
+            return;
+        }
+
+        setSelectLoading(barangayEl, 'Loading barangays...');
+        try {
+            const barangays = await psgcFetch(`/cities-municipalities/${selectedCityCode}/barangays/`);
+            fillSelectOptions(barangayEl, barangays, 'name', 'name', 'Select barangay...');
+            barangayEl.disabled = false;
+        } catch (error) {
+            console.error(error);
+            setSelectLoading(barangayEl, 'Unable to load barangays');
+        }
+    });
+}
+
+function buildAddress(street, barangay, city, province, region) {
+    return [street, barangay, city, province, region].filter(part => part && part.trim() !== '').join(', ');
+}
+
+function syncComposedAddressFields() {
+    const businessStreet = document.getElementById('businessStreet')?.value || '';
+    const businessBarangay = document.getElementById('businessBarangay')?.value || '';
+    const businessCity = document.getElementById('businessCtm')?.value || '';
+    const businessProvince = document.getElementById('businessProvince')?.value || '';
+    const businessRegion = document.getElementById('businessRegion')?.value || '';
+    document.getElementById('businessAddress').value = buildAddress(businessStreet, businessBarangay, businessCity, businessProvince, businessRegion);
+
+    const homeStreet = document.getElementById('homeStreet')?.value || '';
+    const homeBarangay = document.getElementById('homeBarangay')?.value || '';
+    const homeCity = document.getElementById('homeCtm')?.value || '';
+    const homeProvince = document.getElementById('homeProvince')?.value || '';
+    const homeRegion = document.getElementById('homeRegion')?.value || '';
+    document.getElementById('homeAddress').value = buildAddress(homeStreet, homeBarangay, homeCity, homeProvince, homeRegion);
+}
+
+initAddressChain('businessRegion', 'businessProvince', 'businessCtm', 'businessBarangay');
+initAddressChain('homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay');
+
 function submitForm() {
+    syncComposedAddressFields();
+
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
         return;
@@ -719,6 +898,8 @@ function submitForm() {
 }
 
 function saveDraft() {
+    syncComposedAddressFields();
+
     // Collect form data
     const formData = new FormData();
     formData.append('action', 'save_draft');
