@@ -19,6 +19,15 @@ if (isset($_SESSION['user_id']) && $isSwitchMode) {
 
 $prefillEmail = trim($_GET['email'] ?? '');
 $prefillEmail = filter_var($prefillEmail, FILTER_VALIDATE_EMAIL) ? $prefillEmail : '';
+
+$rememberedEmail = trim($_COOKIE['remembered_email'] ?? '');
+$rememberedEmail = filter_var($rememberedEmail, FILTER_VALIDATE_EMAIL) ? $rememberedEmail : '';
+
+if ($prefillEmail === '' && $rememberedEmail !== '') {
+    $prefillEmail = $rememberedEmail;
+}
+
+$isRememberChecked = $rememberedEmail !== '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,22 +50,17 @@ $prefillEmail = filter_var($prefillEmail, FILTER_VALIDATE_EMAIL) ? $prefillEmail
         
         <!-- Left Side - Branding -->
         <div class="auth-brand">
-            <img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="brand-logo-image">
-            <h1>Sterling Insurance Company</h1>
-            <p>KYC System</p>
+            <h1>Sterling Insurance Company Incorporated</h1>
             <div class="brand-description">
-                <p>Secure Know Your Customer verification system for streamlined client onboarding and compliance.</p>
+                <p>Ensuring Integrity, Security, and Compliance in Every Client Engagement.</p>
             </div>
         </div>
 
         <!-- Right Side - Login Form -->
         <div class="auth-form-container">
             <div class="auth-form">
-                <div class="panel-logo-wrap">
-                    <img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="panel-logo">
-                </div>
                 <div class="form-header">
-                    <h2>Welcome Back</h2>
+                    <h2>Welcome</h2>
                     <p>Sign in to your account</p>
                 </div>
 
@@ -109,7 +113,7 @@ $prefillEmail = filter_var($prefillEmail, FILTER_VALIDATE_EMAIL) ? $prefillEmail
                     <!-- Remember Me -->
                     <div class="form-options">
                         <label class="checkbox-label">
-                            <input type="checkbox" id="remember" name="remember">
+                            <input type="checkbox" id="remember" name="remember" <?php echo $isRememberChecked ? 'checked' : ''; ?>>
                             <span>Remember me</span>
                         </label>
                     </div>

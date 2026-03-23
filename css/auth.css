@@ -117,11 +117,11 @@ body {
 }
 
 .auth-brand h1 {
-    font-size: 1.8rem;
+    font-size: 1.95rem;
     font-weight: 700;
-    color: #0f172a;
+    color: #15803d;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
 
 .auth-brand p {
@@ -136,10 +136,10 @@ body {
 }
 
 .brand-description p {
-    font-size: 0.95rem;
-    color: #334155;
+    font-size: 1.04rem;
+    color: #111111;
     font-weight: 400;
-    line-height: 1.7;
+    line-height: 1.65;
 }
 
 /* ─── Form Container ──────────────────────────────── */
@@ -147,6 +147,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
     background: var(--white);
     border-radius: 20px;
     padding: 4px;
@@ -176,7 +177,7 @@ body {
 .auth-container.register-layout .auth-form-container {
     position: relative;
     width: 100%;
-    max-width: 430px;
+    max-width: 455px;
     justify-self: center;
     border-radius: 28px;
     padding: 6px;
@@ -186,16 +187,6 @@ body {
     overflow: hidden;
 }
 
-.auth-container.register-layout .auth-form-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #16a34a 0%, #22c55e 60%, #86efac 100%);
-}
-
 .auth-container.register-layout .auth-form {
     border-radius: 22px;
     padding: 18px;
@@ -203,7 +194,7 @@ body {
 }
 
 .auth-container.register-layout .form-header {
-    margin-bottom: 14px;
+    margin-bottom: 18px;
 }
 
 .auth-container.register-layout .form-header h2 {
@@ -241,7 +232,7 @@ body {
 }
 
 .form-header {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     text-align: center;
 }
 
@@ -249,7 +240,7 @@ body {
     font-size: 1.3rem;
     font-weight: 700;
     color: var(--gray-900);
-    margin-bottom: 4px;
+    margin-bottom: 0;
 }
 
 .form-header p {
@@ -657,7 +648,7 @@ body {
     }
 
     .auth-container.register-layout .auth-form-container {
-        max-width: 460px;
+        max-width: 485px;
     }
 
     .auth-brand {
@@ -693,7 +684,7 @@ body {
     }
 
     .auth-brand h1 {
-        font-size: 1.5rem;
+        font-size: 1.62rem;
     }
 
     .auth-form {
@@ -722,7 +713,7 @@ body {
     }
 
     .auth-brand h1 {
-        font-size: 1.2rem;
+        font-size: 1.34rem;
     }
 
     .auth-brand p {
@@ -735,7 +726,7 @@ body {
     }
 
     .form-header {
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
 
     .form-header h2 {
@@ -763,4 +754,5 @@ body {
         width: 120px;
         max-width: 64%;
     }
+
 }
