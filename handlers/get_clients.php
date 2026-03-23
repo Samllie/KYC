@@ -33,23 +33,27 @@ $countResult = $countStmt->get_result();
 $countRow = $countResult->fetch_assoc();
 $totalClients = intval($countRow['total']);
 
-// Get paginated clients with verified_by user name
+// Get paginated clients with submitted_by and verified_by user names
 $query = "
     SELECT 
         c.client_id, 
         c.reference_code, 
         c.client_number,
+        c.client_name,
         c.first_name, 
         c.last_name, 
         c.client_type, 
         c.mobile_phone, 
         c.email, 
         c.verification_status,
+        c.submitted_by,
         c.verified_by,
         c.created_at,
-        u.full_name as verified_by_name
+        su.full_name as submitted_by_name,
+        vu.full_name as verified_by_name
     FROM clients c
-    LEFT JOIN users u ON c.verified_by = u.user_id
+    LEFT JOIN users su ON c.submitted_by = su.user_id
+    LEFT JOIN users vu ON c.verified_by = vu.user_id
     ORDER BY c.created_at DESC
     LIMIT ? OFFSET ?
 ";

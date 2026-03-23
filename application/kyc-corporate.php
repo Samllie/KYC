@@ -422,7 +422,7 @@ function validateRadioGroup(name) {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
     if (radios.length === 0) return true;
     
-    const checked = radios.some(radio => radio.checked);
+    const checked = Array.from(radios).some(radio => radio.checked);
     radios.forEach(radio => {
         const label = radio.closest('label');
         if (label) label.classList.toggle('is-invalid', !checked);
@@ -486,7 +486,7 @@ function submitForm() {
     
     // Collect form data
     const formData = new FormData();
-    formData.append('action', 'submit_kyc');
+    formData.append('action', 'add_client');
     
     // Add all form fields
     const form = document.getElementById('kycForm');
@@ -498,7 +498,7 @@ function submitForm() {
     });
     
     // Submit to handler
-    fetch('../handlers/kyc.php', {
+    fetch('../handlers/client.php', {
         method: 'POST',
         body: formData
     })

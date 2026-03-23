@@ -44,28 +44,11 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'mobile' => trim($_POST['mobile'] ?? ''),
         'phone' => trim($_POST['phone'] ?? ''),
         'email' => trim($_POST['email'] ?? ''),
-        'address' => trim($_POST['address'] ?? ''),
-        // Corporate fields
-        'corporate_client_name' => trim($_POST['corporateClientName'] ?? ''),
-        'business_type' => trim($_POST['businessType'] ?? ''),
-        'corporate_business_address' => trim($_POST['corporateBusinessAddress'] ?? ''),
-        'corporate_phone' => trim($_POST['corporatePhone'] ?? ''),
-        'corporate_contact_person' => trim($_POST['corporateContactPerson'] ?? ''),
-        'corporate_email' => trim($_POST['corporateEmail'] ?? '')
+        'address' => trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
     ];
     
-    // Validation of required fields based on client type
-    if ($clientType === 'individual') {
-        $required = ['client_type', 'last_name', 'first_name', 'birthdate', 'occupation', 'email', 'mobile', 'address'];
-    } elseif ($clientType === 'corporate') {
-        $required = ['client_type', 'corporate_client_name', 'business_type', 'corporate_business_address', 'corporate_phone', 'corporate_contact_person', 'corporate_email'];
-    } else {
-        $response['message'] = 'Invalid client type';
-        echo json_encode($response);
-        exit;
-    }
-    
-    // Check required fields
+    // Validation of required fields (excluding ref_code since it will be auto-generated)
+    $required = ['client_type', 'last_name', 'first_name', 'birthdate', 'occupation', 'email', 'mobile', 'address'];
     foreach ($required as $field) {
         if (empty($formData[$field])) {
             $response['message'] = 'All required fields must be filled';
@@ -187,14 +170,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'mobile' => trim($_POST['mobile'] ?? ''),
         'phone' => trim($_POST['phone'] ?? ''),
         'email' => trim($_POST['email'] ?? ''),
-        'address' => trim($_POST['address'] ?? ''),
-        // Corporate fields
-        'corporate_client_name' => trim($_POST['corporateClientName'] ?? ''),
-        'business_type' => trim($_POST['businessType'] ?? ''),
-        'corporate_business_address' => trim($_POST['corporateBusinessAddress'] ?? ''),
-        'corporate_phone' => trim($_POST['corporatePhone'] ?? ''),
-        'corporate_contact_person' => trim($_POST['corporateContactPerson'] ?? ''),
-        'corporate_email' => trim($_POST['corporateEmail'] ?? '')
+        'address' => trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
     ];
     
     // If no reference code provided, generate a unique one
