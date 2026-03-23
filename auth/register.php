@@ -16,20 +16,15 @@
         
         <!-- Left Side - Branding -->
         <div class="auth-brand">
-            <img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="brand-logo-image">
-            <h1>Sterling Insurance Company</h1>
-            <p>KYC System</p>
+            <h1>Sterling Insurance Company Incorporated</h1>
             <div class="brand-description">
-                <p>Secure Know Your Customer verification system for streamlined client onboarding and compliance.</p>
+                <p>Ensuring Integrity, Security, and Compliance in Every Client Engagement.</p>
             </div>
         </div>
 
         <!-- Right Side - Register Form -->
         <div class="auth-form-container">
             <div class="auth-form">
-                <div class="panel-logo-wrap">
-                    <img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="panel-logo">
-                </div>
                 <div class="form-header">
                     <h2>Create Account</h2>
                     <p>Register as a KYC Officer</p>
@@ -96,39 +91,23 @@
 
                     <!-- Confirm Password Field -->
                     <div class="form-group">
-                        <label for="confirmPassword" class="form-label">
+                        <label for="confirm_password" class="form-label">
                             Confirm Password <span class="req">*</span>
                         </label>
                         <div class="input-icon-wrap has-toggle">
-                            <i class="bi bi-lock-check"></i>
+                            <i class="bi bi-lock"></i>
                             <input 
                                 type="password" 
-                                id="confirmPassword" 
-                                name="confirmPassword" 
+                                id="confirm_password" 
+                                name="confirm_password" 
                                 class="form-control" 
-                                placeholder="Re-enter your password" 
+                                placeholder="At least 8 characters" 
                                 required>
-                            <button type="button" class="password-toggle" data-target="confirmPassword" aria-label="Show confirm password">
+                            <button type="button" class="password-toggle" data-target="confirm_password" aria-label="Show password">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
-                        <div class="form-error"></div>
-                    </div>
-
-                    <!-- Department Field -->
-                    <div class="form-group">
-                        <label for="department" class="form-label">
-                            Department <span class="req">*</span>
-                        </label>
-                        <div class="select-wrap">
-                            <select id="department" name="department" class="form-select" required>
-                                <option value="">Select department...</option>
-                                <option value="kyc-officer">KYC Officer</option>
-                                <option value="compliance">Compliance</option>
-                                <option value="operations">Operations</option>
-                                <option value="management">Management</option>
-                            </select>
-                        </div>
+                        <div class="form-hint">Password must be at least 8 characters long</div>
                         <div class="form-error"></div>
                     </div>
 
@@ -150,7 +129,7 @@
 
                 <!-- Footer -->
                 <div class="auth-footer">
-                    <p>&copy; 2026 STerling Insurance Company. All rights reserved.</p>
+                    <p>&copy; 2026 Sterling Insurance Company. All rights reserved.</p>
                 </div>
             </div>
         </div>

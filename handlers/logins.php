@@ -17,6 +17,7 @@ $response = ['success' => false, 'message' => ''];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = trim($_POST['password'] ?? '');
+    $rememberMe = isset($_POST['remember']) && $_POST['remember'] === 'on';
     
     // Validation
     if (empty($email) || empty($password)) {
@@ -68,6 +69,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['email'] = $user['email'];
     $_SESSION['department'] = $user['department'];
     $_SESSION['role'] = $user['role'];
+
+    // Remember email for future logins (including after logout)
+    if ($rememberMe) {
+        setcookie('remembered_email', $user['email'], time() + (60 * 60 * 24 * 30), '/');
+    } else {
+        setcookie('remembered_email', '', time() - 3600, '/');
+    }
     
     $response['success'] = true;
     $response['message'] = 'Login successful';
