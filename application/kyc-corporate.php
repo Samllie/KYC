@@ -167,9 +167,9 @@ include '../includes/sidebar.php';
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label for="corporateClientName" class="form-label">Client Name <span class="req">*</span></label>
-                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Company Name" required>
-                                <div class="form-error">Client name is required</div>
+                                <label for="corporateClientName" class="form-label">Business / Company Name <span class="req">*</span></label>
+                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Registered Business/Company Name" required>
+                                <div class="form-error">Business/Company name is required</div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -276,9 +276,9 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporateContactPerson" class="form-label">Contact Person <span class="req">*</span></label>
-                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Full Name" required>
-                                <div class="form-error">Contact person is required</div>
+                                <label for="corporateContactPerson" class="form-label">Company Owner <span class="req">*</span></label>
+                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Owner Full Name" required>
+                                <div class="form-error">Company owner is required</div>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -422,7 +422,7 @@ function validateRadioGroup(name) {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
     if (radios.length === 0) return true;
     
-    const checked = radios.some(radio => radio.checked);
+    const checked = Array.from(radios).some(radio => radio.checked);
     radios.forEach(radio => {
         const label = radio.closest('label');
         if (label) label.classList.toggle('is-invalid', !checked);
@@ -486,7 +486,7 @@ function submitForm() {
     
     // Collect form data
     const formData = new FormData();
-    formData.append('action', 'submit_kyc');
+    formData.append('action', 'add_client');
     
     // Add all form fields
     const form = document.getElementById('kycForm');
@@ -498,7 +498,7 @@ function submitForm() {
     });
     
     // Submit to handler
-    fetch('../handlers/kyc.php', {
+    fetch('../handlers/client.php', {
         method: 'POST',
         body: formData
     })

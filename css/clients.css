@@ -113,6 +113,10 @@
 /* Table Wrapper */
 .table-wrapper {
     overflow-x: auto;
+    height: 420px;
+    min-height: 420px;
+    max-height: 420px;
+    overflow-y: auto;
 }
 
 /* Clients Table */
@@ -120,6 +124,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
+    table-layout: fixed;
 }
 
 .clients-table thead {
@@ -148,12 +153,16 @@
 .clients-table td {
     padding: 12px;
     color: var(--gray-700);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Column Widths */
 .col-checkbox { width: 40px; }
 .col-ref { width: 120px; }
 .col-name { width: 150px; }
+.col-owner { width: 150px; }
 .col-type { width: 100px; }
 .col-contact { width: 140px; }
 .col-email { width: 160px; }
@@ -488,11 +497,21 @@
         display: none;
     }
 
+    .col-owner {
+        display: none;
+    }
+
     .col-name { width: 200px; }
     .col-actions { width: 100px; }
 }
 
 @media (max-width: 768px) {
+    .table-wrapper {
+        height: auto;
+        min-height: 0;
+        max-height: none;
+    }
+
     .clients-table {
         font-size: 0.75rem;
     }
