@@ -684,6 +684,8 @@ initAddressChain('homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay');
 
 function restoreFormData() {
     const savedData = sessionStorage.getItem('kycFormData');
+    const savedAddressData = sessionStorage.getItem('individualAddressData');
+    
     if (!savedData) return;
     
     try {
@@ -691,7 +693,13 @@ function restoreFormData() {
         const form = document.getElementById('kycForm');
         if (!form) return;
         
+        // Fields to skip in the general restore (we'll handle address fields separately)
+        const addressFields = ['businessRegion', 'businessProvince', 'businessCtm', 'businessBarangay', 'businessStreet', 'businessAddress', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet', 'homeAddress'];
+        
         Object.keys(formData).forEach(key => {
+            // Skip address fields - restore them separately
+            if (addressFields.includes(key)) return;
+            
             const el = form.querySelector(`[name="${key}"]`);
             if (el) {
                 if (el.type === 'radio') {
@@ -706,11 +714,106 @@ function restoreFormData() {
             }
         });
         
-        // Rebuild composed address fields after restore
-        syncComposedAddressFields();
+        // Restore address data after API populates options
+        // This requires waiting for PSGC API calls in the correct cascade order
+        if (savedAddressData) {
+            try {
+                const addressData = JSON.parse(savedAddressData);
+                
+                // Restore BUSINESS address in cascade order with delays for API calls
+                setTimeout(() => {
+                    const businessRegionEl = document.getElementById('businessRegion');
+                    if (businessRegionEl && addressData.businessRegion) {
+                        businessRegionEl.value = addressData.businessRegion;
+                        businessRegionEl.dispatchEvent(new Event('change'));
+                    }
+                    
+                    // Wait for provinces to load, then restore province
+                    setTimeout(() => {
+                        const businessProvinceEl = document.getElementById('businessProvince');
+                        if (businessProvinceEl && addressData.businessProvince) {
+                            businessProvinceEl.value = addressData.businessProvince;
+                            businessProvinceEl.dispatchEvent(new Event('change'));
+                        }
+                        
+                        // Wait for cities to load, then restore city
+                        setTimeout(() => {
+                            const businessCityEl = document.getElementById('businessCtm');
+                            if (businessCityEl && addressData.businessCity) {
+                                businessCityEl.value = addressData.businessCity;
+                                businessCityEl.dispatchEvent(new Event('change'));
+                            }
+                            
+                            // Wait for barangays to load, then restore barangay
+                            setTimeout(() => {
+                                const businessBarangayEl = document.getElementById('businessBarangay');
+                                if (businessBarangayEl && addressData.businessBarangay) {
+                                    businessBarangayEl.value = addressData.businessBarangay;
+                                }
+                                
+                                const businessStreetEl = document.getElementById('businessStreet');
+                                if (businessStreetEl && addressData.businessStreet) {
+                                    businessStreetEl.value = addressData.businessStreet;
+                                }
+                                
+                                // Now restore HOME address in cascade order
+                                restoreHomeAddress(addressData);
+                                
+                            }, 500);
+                        }, 500);
+                    }, 500);
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error restoring address data:', error);
+            }
+        }
     } catch (error) {
         console.error('Error restoring form data:', error);
     }
+}
+
+function restoreHomeAddress(addressData) {
+    setTimeout(() => {
+        const homeRegionEl = document.getElementById('homeRegion');
+        if (homeRegionEl && addressData.homeRegion) {
+            homeRegionEl.value = addressData.homeRegion;
+            homeRegionEl.dispatchEvent(new Event('change'));
+        }
+        
+        // Wait for provinces to load, then restore province
+        setTimeout(() => {
+            const homeProvinceEl = document.getElementById('homeProvince');
+            if (homeProvinceEl && addressData.homeProvince) {
+                homeProvinceEl.value = addressData.homeProvince;
+                homeProvinceEl.dispatchEvent(new Event('change'));
+            }
+            
+            // Wait for cities to load, then restore city
+            setTimeout(() => {
+                const homeCityEl = document.getElementById('homeCtm');
+                if (homeCityEl && addressData.homeCity) {
+                    homeCityEl.value = addressData.homeCity;
+                    homeCityEl.dispatchEvent(new Event('change'));
+                }
+                
+                // Wait for barangays to load, then restore barangay
+                setTimeout(() => {
+                    const homeBarangayEl = document.getElementById('homeBarangay');
+                    if (homeBarangayEl && addressData.homeBarangay) {
+                        homeBarangayEl.value = addressData.homeBarangay;
+                    }
+                    
+                    const homeStreetEl = document.getElementById('homeStreet');
+                    if (homeStreetEl && addressData.homeStreet) {
+                        homeStreetEl.value = addressData.homeStreet;
+                    }
+                    
+                    syncComposedAddressFields();
+                }, 500);
+            }, 500);
+        }, 500);
+    }, 500);
 }
 
 // Restore form data on page load
@@ -736,6 +839,23 @@ function proceedToReview() {
     
     // Store in sessionStorage
     sessionStorage.setItem('kycFormData', JSON.stringify(formData));
+    
+    // Also store address components separately for reliable restoration
+    const addressData = {
+        businessRegion: document.getElementById('businessRegion').value,
+        businessProvince: document.getElementById('businessProvince').value,
+        businessCity: document.getElementById('businessCtm').value,
+        businessBarangay: document.getElementById('businessBarangay').value,
+        businessStreet: document.getElementById('businessStreet').value,
+        businessAddress: document.getElementById('businessAddress').value,
+        homeRegion: document.getElementById('homeRegion').value,
+        homeProvince: document.getElementById('homeProvince').value,
+        homeCity: document.getElementById('homeCtm').value,
+        homeBarangay: document.getElementById('homeBarangay').value,
+        homeStreet: document.getElementById('homeStreet').value,
+        homeAddress: document.getElementById('homeAddress').value
+    };
+    sessionStorage.setItem('individualAddressData', JSON.stringify(addressData));
     
     // Navigate to review page
     window.location.href = 'kyc-individual-review.php';
