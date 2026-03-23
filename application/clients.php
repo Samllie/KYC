@@ -90,8 +90,8 @@ include '../includes/sidebar.php';
                             <th class="col-type">Type</th>
                             <th class="col-contact">Contact</th>
                             <th class="col-email">Email</th>
-                            <th class="col-status">Status</th>
-                            <th class="col-verified">Verified By</th>
+                            <th class="col-status">Client Number</th>
+                            <th class="col-verified">Submitted By</th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
@@ -318,15 +318,11 @@ include '../includes/sidebar.php';
         tbody.innerHTML = '';
 
         clients.forEach(client => {
-            const statusClass = client.verification_status === 'verified' ? 'verified' : 
-                               client.verification_status === 'pending' ? 'pending' : 'rejected';
-            const statusText = client.verification_status.charAt(0).toUpperCase() + client.verification_status.slice(1);
-            const statusIcon = client.verification_status === 'verified' ? 'bi-check-circle' : 
-                              client.verification_status === 'pending' ? 'bi-hourglass-split' : 'bi-x-circle';
             const typeClass = client.client_type === 'individual' ? 'individual' : 'corporate';
             const typeText = client.client_type.charAt(0).toUpperCase() + client.client_type.slice(1);
             const fullName = `${client.first_name} ${client.last_name}`.trim();
-            const verifiedByName = client.verified_by_name || 'N/A';
+            const submittedByName = client.submitted_by_name || 'N/A';
+            const clientNumber = client.client_number || 'N/A';
 
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -336,8 +332,8 @@ include '../includes/sidebar.php';
                 <td class="col-type"><span class="type-badge ${typeClass}">${typeText}</span></td>
                 <td class="col-contact">${client.mobile_phone || 'N/A'}</td>
                 <td class="col-email">${client.email}</td>
-                <td class="col-status"><span class="status-badge ${statusClass}"><i class="bi ${statusIcon}"></i> ${statusText}</span></td>
-                <td class="col-verified">${verifiedByName}</td>
+                <td class="col-status">${clientNumber}</td>
+                <td class="col-verified">${submittedByName}</td>
                 <td class="col-actions">
                     <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
                     <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
@@ -455,8 +451,8 @@ include '../includes/sidebar.php';
             type: cells[3].textContent.trim(),
             contact: cells[4].textContent.trim(),
             email: cells[5].textContent.trim(),
-            status: cells[6].textContent.trim(),
-            verifiedBy: cells[7].textContent.trim()
+            clientNumber: cells[6].textContent.trim(),
+            submittedBy: cells[7].textContent.trim()
         };
     }
 
@@ -647,7 +643,7 @@ include '../includes/sidebar.php';
         let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
         html += '<thead><tr style="background: #f3f4f6; border: 1px solid #d1d5db;">';
         
-        const headers = ['Ref Code', 'Full Name', 'Type', 'Contact', 'Email', 'Status', 'Verified By', 'Actions'];
+        const headers = ['Ref Code', 'Full Name', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By', 'Actions'];
         headers.forEach(header => {
             html += `<th style="padding: 10px; text-align: left; border: 1px solid #d1d5db; font-weight: 600;">${header}</th>`;
         });
