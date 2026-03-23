@@ -25,10 +25,11 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Collect all form data
     $userProvidedRefCode = trim($_POST['refCode'] ?? '');
+    $clientType = trim($_POST['clientType'] ?? '');
     
     $formData = [
         'ref_code' => $userProvidedRefCode,
-        'client_type' => trim($_POST['clientType'] ?? ''),
+        'client_type' => $clientType,
         'last_name' => trim($_POST['lastName'] ?? ''),
         'first_name' => trim($_POST['firstName'] ?? ''),
         'middle_name' => trim($_POST['middleName'] ?? ''),
@@ -64,53 +65,52 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check if client already exists using provided/generated reference code
     $existingClient = fetchOne("SELECT client_id FROM clients WHERE reference_code = ?", [$formData['ref_code']]);
     
+    // Prepare client data for insertion/update based on type
+    if ($clientType === 'individual') {
+        $clientUpdateData = [
+            'client_type' => $formData['client_type'],
+            'first_name' => $formData['first_name'],
+            'middle_name' => $formData['middle_name'],
+            'last_name' => $formData['last_name'],
+            'suffix' => $formData['suffix'],
+            'date_of_birth' => $formData['birthdate'],
+            'gender' => $formData['gender'],
+            'nationality' => $formData['nationality'],
+            'id_type' => $formData['id_type'],
+            'id_number' => $formData['id_number'],
+            'occupation' => $formData['occupation'],
+            'company_name' => $formData['company'],
+            'mobile_phone' => $formData['mobile'],
+            'landline_phone' => $formData['phone'],
+            'email' => $formData['email'],
+            'home_address' => $formData['address'],
+            'verification_status' => 'pending'
+        ];
+    } else {
+        // Corporate client
+        $clientUpdateData = [
+            'client_type' => $formData['client_type'],
+            'company_name' => $formData['corporate_client_name'],
+            'business_type' => $formData['business_type'],
+            'business_address' => $formData['corporate_business_address'],
+            'office_phone' => $formData['corporate_phone'],
+            'email' => $formData['corporate_email'],
+            'contact_person' => $formData['corporate_contact_person'],
+            'verification_status' => 'pending'
+        ];
+    }
+    
     if ($existingClient) {
         $clientId = $existingClient['client_id'];
-        
-        // Update existing client
-        update('clients', [
-            'client_type' => $formData['client_type'],
-            'first_name' => $formData['first_name'],
-            'middle_name' => $formData['middle_name'],
-            'last_name' => $formData['last_name'],
-            'suffix' => $formData['suffix'],
-            'date_of_birth' => $formData['birthdate'],
-            'gender' => $formData['gender'],
-            'nationality' => $formData['nationality'],
-            'id_type' => $formData['id_type'],
-            'id_number' => $formData['id_number'],
-            'occupation' => $formData['occupation'],
-            'company_name' => $formData['company'],
-            'mobile_phone' => $formData['mobile'],
-            'landline_phone' => $formData['phone'],
-            'email' => $formData['email'],
-            'full_address' => $formData['address'],
-            'verification_status' => 'pending'
-        ], 'client_id = ?', [$clientId]);
+        update('clients', $clientUpdateData, 'client_id = ?', [$clientId]);
     } else {
         // Create new client
-        $result = insert('clients', [
+        $clientInsertData = array_merge([
             'reference_code' => $formData['ref_code'],
             'client_number' => 'CN-' . time(),
-            'client_type' => $formData['client_type'],
-            'first_name' => $formData['first_name'],
-            'middle_name' => $formData['middle_name'],
-            'last_name' => $formData['last_name'],
-            'suffix' => $formData['suffix'],
-            'date_of_birth' => $formData['birthdate'],
-            'gender' => $formData['gender'],
-            'nationality' => $formData['nationality'],
-            'id_type' => $formData['id_type'],
-            'id_number' => $formData['id_number'],
-            'occupation' => $formData['occupation'],
-            'company_name' => $formData['company'],
-            'mobile_phone' => $formData['mobile'],
-            'landline_phone' => $formData['phone'],
-            'email' => $formData['email'],
-            'full_address' => $formData['address'],
-            'verification_status' => 'pending'
-        ]);
+        ], $clientUpdateData);
         
+        $result = insert('clients', $clientInsertData);
         $clientId = $result['id'] ?? 0;
     }
     

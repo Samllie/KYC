@@ -74,29 +74,35 @@ include '../includes/sidebar.php';
             </div>
         </div>
 
-<<<<<<< HEAD
-        <!-- Client Information Card -->
-=======
-        <!-- Individual Client Information Card -->
->>>>>>> ansel
-        <div class="card">
-            <div class="card-header">
-                <div>
-                    <div class="card-title">Individual Client Information</div>
-                    <div class="card-subtitle">Fill in all required fields marked with <span style="color:var(--danger)">*</span></div>
+        <!-- Form Start -->
+        <form id="kycForm" novalidate>
+
+            <!-- Client Type Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-list"></i> Client Type</div>
                 </div>
-                <span class="badge badge-draft"><i class="bi bi-circle-fill" style="font-size:.4rem;"></i> Draft</span>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <div class="client-type-display individual">
+                                    <i class="bi bi-person-fill"></i>
+                                    <span>Individual Client</span>
+                                </div>
+                                <input type="hidden" name="clientType" value="individual">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="card-body">
-                <form id="kycForm" novalidate>
-
-                    <!-- ── Section: Reference ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-hash"></i> Reference</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Reference Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-hash"></i> Reference</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="form-group">
@@ -111,44 +117,17 @@ include '../includes/sidebar.php';
                                 <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="Auto-generated" readonly>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">Client Type</label>
-                                <div class="client-type-display individual">
-                                    <i class="bi bi-person-fill"></i>
-                                    <span>Individual Client</span>
-                                </div>
-                                <input type="hidden" name="clientType" value="individual">
-                            </div>
-                        </div>
                     </div>
+                </div>
+            </div>
 
-<<<<<<< HEAD
-                    <!-- ── Section: Full Name ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-person"></i> Full Name</span>
-=======
-                    <!-- ── Section: Personal Information ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-person"></i> Personal Information</span>
->>>>>>> ansel
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Personal Information Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-person"></i> Personal Information</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
-<<<<<<< HEAD
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="lastName" class="form-label">Last Name <span class="req">*</span></label>
-                                <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Dela Cruz" required>
-                                <div class="form-error">Last name is required</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="firstName" class="form-label">First Name <span class="req">*</span></label>
-                                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Juan" required>
-=======
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="lastName" class="form-label">Last Name <span class="req">*</span></label>
@@ -160,62 +139,24 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="firstName" class="form-label">First Name <span class="req">*</span></label>
                                 <input type="text" id="firstName" name="firstName" class="form-control" placeholder="First Name" required>
->>>>>>> ansel
                                 <div class="form-error">First name is required</div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="middleName" class="form-label">Middle Name</label>
-<<<<<<< HEAD
-                                <input type="text" id="middleName" name="middleName" class="form-control" placeholder="Optional">
-                            </div>
-                        </div>
-                        <div class="col-md-12">
-                            <div style="display:flex;gap:20px;margin:10px 0;">
-                                <label style="display:flex;align-items:center;gap:8px;">
-                                    <input type="checkbox" id="lastNameFirst" name="lastNameFirst"> Last Name First
-                                </label>
-                                <label style="display:flex;align-items:center;gap:8px;">
-                                    <input type="checkbox" id="commaSeparated" name="commaSeparated"> Comma Separated
-                                </label>
-                                <label style="display:flex;align-items:center;gap:8px;">
-                                    <input type="checkbox" id="middleInitialOnly" name="middleInitialOnly"> Middle Name Initial Only
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ── Section: Personal Details ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-card-list"></i> Personal Details</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
-                    <div class="row g-3">
-=======
                                 <input type="text" id="middleName" name="middleName" class="form-control" placeholder="Middle Name">
                             </div>
                         </div>
->>>>>>> ansel
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="birthdate" class="form-label">Date of Birth <span class="req">*</span></label>
                                 <input type="date" id="birthdate" name="birthdate" class="form-control" required>
                                 <div class="form-error">Date of birth is required</div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-12">
                             <div class="form-group">
-<<<<<<< HEAD
-                                <label for="clientSince" class="form-label">Client Since</label>
-                                <input type="date" id="clientSince" name="clientSince" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-=======
->>>>>>> ansel
                                 <label for="gender" class="form-label">Gender</label>
                                 <div class="select-wrap">
                                     <select id="gender" name="gender" class="form-select">
@@ -226,78 +167,45 @@ include '../includes/sidebar.php';
                                 </div>
                             </div>
                         </div>
-<<<<<<< HEAD
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="nationality" class="form-label">Nationality</label>
-                                <input type="text" id="nationality" name="nationality" class="form-control" placeholder="Philippine">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="apSlCode" class="form-label">AP SL Code</label>
-                                <input type="text" id="apSlCode" name="apSlCode" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="arSlCode" class="form-label">AR SL Code</label>
-                                <input type="text" id="arSlCode" name="arSlCode" class="form-control">
-                            </div>
-                        </div>
-=======
->>>>>>> ansel
                     </div>
+                </div>
+            </div>
 
-                    <!-- ── Section: Occupation ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-briefcase"></i> Occupation</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Occupation Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-briefcase"></i> Occupation</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="occupation" class="form-label">Occupation <span class="req">*</span></label>
-<<<<<<< HEAD
-                                <input type="text" id="occupation" name="occupation" class="form-control" placeholder="Your occupation" required>
-=======
                                 <input type="text" id="occupation" name="occupation" class="form-control" placeholder="e.g., Employee, Self-employed, Manager" required>
->>>>>>> ansel
                                 <div class="form-error">Occupation is required</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-<<<<<<< HEAD
-                                <label for="company" class="form-label">Company Name</label>
-                                <input type="text" id="company" name="company" class="form-control" placeholder="Company name">
-=======
                                 <label for="employer" class="form-label">Employer</label>
                                 <input type="text" id="employer" name="employer" class="form-control" placeholder="Company Name">
->>>>>>> ansel
                             </div>
                         </div>
                     </div>
-
-<<<<<<< HEAD
-                    <!-- ── Section: Business Address ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-shop"></i> Business Address</span>
-=======
-                    <!-- ── Section: Address Information ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-geo-alt"></i> Address Information</span>
->>>>>>> ansel
-                        <div class="section-divider-line"></div>
-                    </div>
-
+                </div>
+            </div>
+            <!-- Address Information Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-geo-alt"></i> Address Information</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="businessRegion" class="form-label">Region</label>
                                 <div class="select-wrap">
-                                    <select id="businessRegion" class="form-select">
+                                    <select id="businessRegion" name="businessRegion" class="form-select">
                                         <option value="">Select region...</option>
                                     </select>
                                 </div>
@@ -327,7 +235,7 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="businessBarangay" class="form-label">Barangay</label>
                                 <div class="select-wrap">
-                                    <select id="businessBarangay" class="form-select">
+                                    <select id="businessBarangay" name="businessBarangay" class="form-select">
                                         <option value="">Select barangay...</option>
                                     </select>
                                 </div>
@@ -336,24 +244,25 @@ include '../includes/sidebar.php';
                         <div class="col-md-12">
                             <div class="form-group">
                                 <label for="businessStreet" class="form-label">Street / Unit / Building</label>
-                                <input type="text" id="businessStreet" class="form-control" placeholder="House/Unit No., Street, Building">
+                                <input type="text" id="businessStreet" name="businessStreet" class="form-control" placeholder="House/Unit No., Street, Building">
                                 <input type="hidden" id="businessAddress" name="businessAddress">
                             </div>
                         </div>
                     </div>
-
-                    <!-- ── Section: Home Address ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-house"></i> Home Address</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+                </div>
+            </div>
+            <!-- Home Address Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-house"></i> Home Address</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="homeRegion" class="form-label">Region</label>
                                 <div class="select-wrap">
-                                    <select id="homeRegion" class="form-select">
+                                    <select id="homeRegion" name="homeRegion" class="form-select">
                                         <option value="">Select region...</option>
                                     </select>
                                 </div>
@@ -383,7 +292,7 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="homeBarangay" class="form-label">Barangay</label>
                                 <div class="select-wrap">
-                                    <select id="homeBarangay" class="form-select">
+                                    <select id="homeBarangay" name="homeBarangay" class="form-select">
                                         <option value="">Select barangay...</option>
                                     </select>
                                 </div>
@@ -392,112 +301,53 @@ include '../includes/sidebar.php';
                         <div class="col-md-12">
                             <div class="form-group">
                                 <label for="homeStreet" class="form-label">Street / Unit / Building <span class="req">*</span></label>
-                                <input type="text" id="homeStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
+                                <input type="text" id="homeStreet" name="homeStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
                                 <input type="hidden" id="homeAddress" name="homeAddress">
                                 <div class="form-error">Home street/unit is required</div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- ── Section: Contact Details ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-telephone"></i> Contact Information</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+                </div>
+            </div>
+            <!-- Contact Information Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-telephone"></i> Contact Information</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="form-group">
-<<<<<<< HEAD
-                                <label for="officePhone" class="form-label">Office Phone</label>
-                                <input type="tel" id="officePhone" name="officePhone" class="form-control" placeholder="(02) 8000 0000">
-=======
                                 <label for="mobile" class="form-label">Mobile Number <span class="req">*</span></label>
                                 <input type="tel" id="mobile" name="mobile" class="form-control" placeholder="09XX-XXXX-XXXX" required>
                                 <div class="form-error">Valid mobile number is required</div>
->>>>>>> ansel
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-<<<<<<< HEAD
-                                <label for="homePhone" class="form-label">Home Phone</label>
-                                <input type="tel" id="homePhone" name="homePhone" class="form-control" placeholder="(02) 8000 0000">
-=======
                                 <label for="telephone" class="form-label">Telephone</label>
                                 <input type="tel" id="telephone" name="telephone" class="form-control" placeholder="(02) 8XXX-XXXX">
->>>>>>> ansel
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-<<<<<<< HEAD
-                                <label for="mobile" class="form-label">Mobile Phone <span class="req">*</span></label>
-                                <input type="tel" id="mobile" name="mobile" class="form-control" placeholder="+63 900 000 0000" required>
-                                <div class="form-error">Mobile phone is required</div>
-                            </div>
-                        </div>
-                        <div class="col-md-12">
-                            <div class="form-group">
-=======
->>>>>>> ansel
                                 <label for="email" class="form-label">Email Address <span class="req">*</span></label>
                                 <input type="email" id="email" name="email" class="form-control" placeholder="user@example.com" required>
                                 <div class="form-error">Valid email is required</div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-<<<<<<< HEAD
-                    <!-- ── Section: Spouse Information ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-person-check"></i> Spouse Information</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="spouseName" class="form-label">Spouse Name</label>
-                                <input type="text" id="spouseName" name="spouseName" class="form-control" placeholder="Full name">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="spouseBirthdate" class="form-label">Spouse Birthdate</label>
-                                <input type="date" id="spouseBirthdate" name="spouseBirthdate" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="spouseOccupation" class="form-label">Spouse Occupation</label>
-                                <input type="text" id="spouseOccupation" name="spouseOccupation" class="form-control" placeholder="Occupation">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ── Section: Mailing Address ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-envelope"></i> Mailing Address</span>
-=======
-                    <!-- ── Section: Client Classification ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-tag"></i> Client Classification</span>
->>>>>>> ansel
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Client Classification Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-tag"></i> Client Classification</div>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-12">
-<<<<<<< HEAD
-                            <div style="display:flex;gap:20px;">
-                                <label style="display:flex;align-items:center;gap:8px;">
-                                    <input type="radio" id="mailingBusiness" name="mailingAddressType" value="business"> Business Address
-                                </label>
-                                <label style="display:flex;align-items:center;gap:8px;">
-                                    <input type="radio" id="mailingHome" name="mailingAddressType" value="home"> Home Address
-                                </label>
-=======
                             <div class="form-group">
                                 <label class="form-label">Client Type <span class="req">*</span></label>
                                 <div style="display:flex;gap:20px;margin-top:8px;">
@@ -508,17 +358,18 @@ include '../includes/sidebar.php';
                                         <input type="radio" id="agentType1" name="clientClassification" value="agent" required> Agent
                                     </label>
                                 </div>
->>>>>>> ansel
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- ── Section: Documents ── -->
-                    <div class="section-divider">
-                        <span class="section-divider-label"><i class="bi bi-file-earmark"></i> Supporting Documents</span>
-                        <div class="section-divider-line"></div>
-                    </div>
-
+            <!-- Documents Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-file-earmark"></i> Supporting Documents</div>
+                </div>
+                <div class="card-body">
                     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
                         <i class="bi bi-cloud-arrow-up upload-icon"></i>
                         <p><strong>Click to upload</strong> or drag and drop</p>
@@ -526,10 +377,13 @@ include '../includes/sidebar.php';
                     </div>
                     <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.pdf" style="display:none;">
                     <div class="file-list" id="fileList"></div>
-
-                </form>
+                </div>
             </div>
 
+        </form>
+
+        <!-- Action Buttons Card -->
+        <div class="card">
             <div class="card-footer">
                 <div style="font-size:.75rem;color:var(--gray-500);">
                     <i class="bi bi-info-circle" style="margin-right:4px;"></i>
@@ -545,8 +399,8 @@ include '../includes/sidebar.php';
                     <button type="button" class="btn btn-outline" onclick="saveDraft()">
                         <i class="bi bi-download"></i> Save Draft
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="submitForm()">
-                        <i class="bi bi-check-circle"></i> Submit & Continue
+                    <button type="button" class="btn btn-primary" onclick="proceedToReview()">
+                        <i class="bi bi-arrow-right"></i> Proceed to Review
                     </button>
                 </div>
             </div>
@@ -596,11 +450,7 @@ function validateField(id) {
     if (ok && el.type === 'email') {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         ok = emailRegex.test(value);
-<<<<<<< HEAD
-    } else if (ok && (el.type === 'tel' || id === 'mobile')) {
-=======
     } else if (ok && el.type === 'tel') {
->>>>>>> ansel
         // Phone validation: at least 7 digits
         const phoneDigits = value.replace(/\D/g, '');
         ok = phoneDigits.length >= 7;
@@ -611,8 +461,6 @@ function validateField(id) {
     return ok;
 }
 
-<<<<<<< HEAD
-=======
 function validateRadioGroup(name) {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
     if (radios.length === 0) return true;
@@ -625,7 +473,6 @@ function validateRadioGroup(name) {
     return checked;
 }
 
->>>>>>> ansel
 function validateAllRequired() {
     const requiredFields = ['lastName', 'firstName', 'birthdate', 'occupation', 'mobile', 'email', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet'];
     let allValid = true;
@@ -642,12 +489,8 @@ function validateAllRequired() {
         }
     });
     
-<<<<<<< HEAD
-=======
     // Validate clientClassification radio
     if (!validateRadioGroup('clientClassification')) allValid = false;
-    
->>>>>>> ansel
     if (!allValid && failedFields.length > 0) {
         console.log('Failed fields:', failedFields);
     }
@@ -839,6 +682,65 @@ function syncComposedAddressFields() {
 initAddressChain('businessRegion', 'businessProvince', 'businessCtm', 'businessBarangay');
 initAddressChain('homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay');
 
+function restoreFormData() {
+    const savedData = sessionStorage.getItem('kycFormData');
+    if (!savedData) return;
+    
+    try {
+        const formData = JSON.parse(savedData);
+        const form = document.getElementById('kycForm');
+        if (!form) return;
+        
+        Object.keys(formData).forEach(key => {
+            const el = form.querySelector(`[name="${key}"]`);
+            if (el) {
+                if (el.type === 'radio') {
+                    const selectedRadio = form.querySelector(`[name="${key}"][value="${formData[key]}"]`);
+                    if (selectedRadio) selectedRadio.checked = true;
+                } else if (el.tagName === 'SELECT') {
+                    el.value = formData[key];
+                    el.dispatchEvent(new Event('change'));
+                } else {
+                    el.value = formData[key];
+                }
+            }
+        });
+        
+        // Rebuild composed address fields after restore
+        syncComposedAddressFields();
+    } catch (error) {
+        console.error('Error restoring form data:', error);
+    }
+}
+
+// Restore form data on page load
+document.addEventListener('DOMContentLoaded', restoreFormData);
+
+function proceedToReview() {
+    syncComposedAddressFields();
+
+    if (!validateAllRequired()) {
+        showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
+        return;
+    }
+    
+    // Collect form data
+    const formData = {};
+    const form = document.getElementById('kycForm');
+    const elements = form.querySelectorAll('input, select, textarea');
+    elements.forEach(el => {
+        if (el.name && el.value) {
+            formData[el.name] = el.value;
+        }
+    });
+    
+    // Store in sessionStorage
+    sessionStorage.setItem('kycFormData', JSON.stringify(formData));
+    
+    // Navigate to review page
+    window.location.href = 'kyc-individual-review.php';
+}
+
 function submitForm() {
     syncComposedAddressFields();
 
@@ -872,17 +774,10 @@ function submitForm() {
                 document.getElementById('refCode').value = data.reference_code;
                 document.getElementById('refCode').readOnly = true;
             }
-            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Proceeding to Document Verification.');
-            // Advance step indicator
-            const s2 = document.getElementById('step-2');
-            s2.classList.remove('active'); s2.classList.add('done');
-            s2.querySelector('.step-num').innerHTML = '<i class="bi bi-check" style="font-size:.9rem;"></i>';
-            const s3 = document.getElementById('step-3');
-            s3.classList.add('active');
-            document.querySelectorAll('.step-line')[1].classList.add('done');
+            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Client registered successfully.');
             // Increment stat
             const tv = document.getElementById('stat-total');
-            tv.textContent = parseInt(tv.textContent) + 1;
+            if (tv) tv.textContent = parseInt(tv.textContent) + 1;
             
             setTimeout(() => {
                 window.location.href = 'dashboard.php';
