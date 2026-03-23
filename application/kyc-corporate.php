@@ -45,42 +45,6 @@ include '../includes/sidebar.php';
     <!-- Content -->
     <main class="content">
 
-        <!-- Stat Cards -->
-        <div class="stats-row">
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="stat-value" id="stat-total">248</div>
-                    <div class="stat-label">Total Clients</div>
-                    <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> +12 this month</div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="stat-value">37</div>
-                    <div class="stat-label">Pending KYC</div>
-                    <div class="stat-change down"><i class="bi bi-arrow-down-short"></i> -5 from last week</div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="stat-value">194</div>
-                    <div class="stat-label">Verified</div>
-                    <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> +8 this month</div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-patch-check-fill"></i></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <div class="stat-value">17</div>
-                    <div class="stat-label">Rejected</div>
-                    <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> +2 this week</div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-x-circle-fill"></i></div>
-            </div>
-        </div>
-
         <!-- Steps -->
         <div class="steps-bar">
             <div class="step done" id="step-1">
@@ -152,7 +116,10 @@ include '../includes/sidebar.php';
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label class="form-label">Client Type</label>
-                                <div class="form-control" style="background-color:#f5f5f5;">Corporate</div>
+                                <div class="client-type-display corporate">
+                                    <i class="bi bi-building"></i>
+                                    <span>Corporate Client</span>
+                                </div>
                                 <input type="hidden" name="clientType" value="corporate">
                             </div>
                         </div>
@@ -167,9 +134,9 @@ include '../includes/sidebar.php';
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label for="corporateClientName" class="form-label">Client Name <span class="req">*</span></label>
-                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Company Name" required>
-                                <div class="form-error">Client name is required</div>
+                                <label for="corporateClientName" class="form-label">Business / Company Name <span class="req">*</span></label>
+                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Registered Business/Company Name" required>
+                                <div class="form-error">Business/Company name is required</div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -276,9 +243,9 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporateContactPerson" class="form-label">Contact Person <span class="req">*</span></label>
-                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Full Name" required>
-                                <div class="form-error">Contact person is required</div>
+                                <label for="corporateContactPerson" class="form-label">Company Owner <span class="req">*</span></label>
+                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Owner Full Name" required>
+                                <div class="form-error">Company owner is required</div>
                             </div>
                         </div>
                         <div class="col-md-4">
