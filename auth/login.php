@@ -1,3 +1,25 @@
+<?php
+require_once '../config/session.php';
+
+$isSwitchMode = isset($_GET['switch']);
+
+if (isset($_SESSION['user_id']) && !$isSwitchMode) {
+    header('Location: ../application/dashboard.php');
+    exit();
+}
+
+if (isset($_SESSION['user_id']) && $isSwitchMode) {
+    $_SESSION = [];
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_unset();
+        session_destroy();
+    }
+    session_start();
+}
+
+$prefillEmail = trim($_GET['email'] ?? '');
+$prefillEmail = filter_var($prefillEmail, FILTER_VALIDATE_EMAIL) ? $prefillEmail : '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,6 +57,13 @@
                     <p>Sign in to your account</p>
                 </div>
 
+                <?php if ($isSwitchMode): ?>
+                    <div class="status-message status-info" style="display:block; margin-bottom: 14px;">
+                        <i class="bi bi-arrow-left-right"></i>
+                        Switch account mode: sign in to continue.
+                    </div>
+                <?php endif; ?>
+
                 <form id="loginForm" method="POST">
                     <!-- Email Field -->
                     <div class="form-group">
@@ -49,6 +78,7 @@
                                 name="email" 
                                 class="form-control" 
                                 placeholder="your@email.com" 
+                                value="<?php echo htmlspecialchars($prefillEmail); ?>"
                                 required>
                         </div>
                         <div class="form-error"></div>
@@ -67,6 +97,7 @@
                                 name="password" 
                                 class="form-control" 
                                 placeholder="Enter your password" 
+                                <?php echo $prefillEmail ? 'autofocus' : ''; ?>
                                 required>
                         </div>
                         <div class="form-error"></div>
