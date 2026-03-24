@@ -12,7 +12,11 @@ session_start();
  */
 function requireLogin() {
     if (!isset($_SESSION['user_id'])) {
-        header('Location: login.php');
+        // Redirect to auth folder login
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'];
+        $scriptPath = dirname(dirname($_SERVER['PHP_SELF']));
+        header('Location: ' . $protocol . '://' . $host . $scriptPath . '/auth/login.php');
         exit;
     }
 }
@@ -63,7 +67,11 @@ function getAvatarInitials($fullName) {
  */
 function logout() {
     session_destroy();
-    header('Location: login.php');
+    // Redirect to auth folder login
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'];
+    $scriptPath = dirname(dirname($_SERVER['PHP_SELF']));
+    header('Location: ' . $protocol . '://' . $host . $scriptPath . '/auth/login.php');
     exit;
 }
 

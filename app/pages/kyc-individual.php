@@ -7,11 +7,11 @@ requireLogin();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KYC System — Corporate Client Registration</title>
+    <title>KYC System — Individual Client Registration</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/index.css">
-    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../../public/css/index.css">
+    <link rel="stylesheet" href="../../public/css/global.css">
     <style>
         .card-header {
             display: flex;
@@ -63,10 +63,10 @@ include '../includes/sidebar.php';
     <!-- Topbar -->
     <header class="topbar">
         <div class="topbar-left">
-            <h1>KYC Verification — Corporate Client</h1>
+            <h1>KYC Verification — Individual Client</h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
-                Dashboard &rsaquo; Clients &rsaquo; <span>New Corporate Client</span>
+                Dashboard &rsaquo; Clients &rsaquo; <span>New Individual Client</span>
             </div>
         </div>
         <div class="topbar-right">
@@ -90,7 +90,7 @@ include '../includes/sidebar.php';
                 <div class="step-num">2</div>
                 <div class="step-info">
                     <span>Step 2</span>
-                    <strong>Business Details</strong>
+                    <strong>Personal Details</strong>
                 </div>
             </div>
             <div class="step-line"></div>
@@ -127,11 +127,11 @@ include '../includes/sidebar.php';
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="form-group">
-                                <div class="client-type-display corporate">
-                                    <i class="bi bi-building"></i>
-                                    <span>Corporate Client</span>
+                                <div class="client-type-display individual">
+                                    <i class="bi bi-person-fill"></i>
+                                    <span>Individual Client</span>
                                 </div>
-                                <input type="hidden" name="clientType" value="corporate">
+                                <input type="hidden" name="clientType" value="individual">
                             </div>
                         </div>
                     </div>
@@ -162,90 +162,91 @@ include '../includes/sidebar.php';
                 </div>
             </div>
 
-            <!-- Company Information Card -->
+            <!-- Personal Information Card -->
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-building"></i> Company Information</div>
+                    <div class="card-title"><i class="bi bi-person"></i> Personal Information</div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <div class="form-group">
-                                <label for="corporateClientName" class="form-label">Business / Company Name <span class="req">*</span></label>
-                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Registered Business/Company Name" required>
-                                <div class="form-error">Business/Company name is required</div>
+                                <label for="lastName" class="form-label">Last Name <span class="req">*</span></label>
+                                <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Last Name" required>
+                                <div class="form-error">Last name is required</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="form-label">Business Type <span class="req">*</span></label>
-                                <div style="display:flex;gap:20px;margin-top:8px;">
-                                    <label style="display:flex;align-items:center;gap:8px;">
-                                        <input type="radio" id="businessPrivate" name="businessType" value="private" required> Private
-                                    </label>
-                                    <label style="display:flex;align-items:center;gap:8px;">
-                                        <input type="radio" id="businessGov" name="businessType" value="government" required> Government
-                                    </label>
+                                <label for="firstName" class="form-label">First Name <span class="req">*</span></label>
+                                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="First Name" required>
+                                <div class="form-error">First name is required</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="middleName" class="form-label">Middle Name</label>
+                                <input type="text" id="middleName" name="middleName" class="form-control" placeholder="Middle Name">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="birthdate" class="form-label">Date of Birth <span class="req">*</span></label>
+                                <input type="date" id="birthdate" name="birthdate" class="form-control" required>
+                                <div class="form-error">Date of birth is required</div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="gender" class="form-label">Gender</label>
+                                <div class="select-wrap">
+                                    <select id="gender" name="gender" class="form-select">
+                                        <option value="">Select...</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="corporateClientSince" class="form-label">Client Since</label>
-                                <input type="date" id="corporateClientSince" name="corporateClientSince" class="form-control">
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Business Details Card -->
+            <!-- Occupation Card -->
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-info-circle"></i> Business Details</div>
+                    <div class="card-title"><i class="bi bi-briefcase"></i> Occupation</div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <div class="form-group">
-                                <label for="tinNumber" class="form-label">TIN Number</label>
-                                <input type="text" id="tinNumber" name="tinNumber" class="form-control" placeholder="TIN #">
+                                <label for="occupation" class="form-label">Occupation <span class="req">*</span></label>
+                                <input type="text" id="occupation" name="occupation" class="form-control" placeholder="e.g., Employee, Self-employed, Manager" required>
+                                <div class="form-error">Occupation is required</div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
-                                <label for="corporateApSlCode" class="form-label">AP SL Code</label>
-                                <input type="text" id="corporateApSlCode" name="corporateApSlCode" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="corporateArSlCode" class="form-label">AR SL Code</label>
-                                <input type="text" id="corporateArSlCode" name="corporateArSlCode" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="designation" class="form-label">Contact Person Designation</label>
-                                <input type="text" id="designation" name="designation" class="form-control" placeholder="e.g., Manager, Director">
+                                <label for="employer" class="form-label">Employer</label>
+                                <input type="text" id="employer" name="employer" class="form-control" placeholder="Company Name">
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Business Address Card -->
+            <!-- Address Information Card -->
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-shop"></i> Business Address</div>
+                    <div class="card-title"><i class="bi bi-geo-alt"></i> Address Information</div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="region" class="form-label">Region</label>
+                                <label for="businessRegion" class="form-label">Region</label>
                                 <div class="select-wrap">
-                                    <select id="region" name="region" class="form-select">
+                                    <select id="businessRegion" name="businessRegion" class="form-select">
                                         <option value="">Select region...</option>
                                     </select>
                                 </div>
@@ -253,9 +254,9 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="corporateBusinessProvince" class="form-label">Province</label>
+                                <label for="businessProvince" class="form-label">Province</label>
                                 <div class="select-wrap">
-                                    <select id="corporateBusinessProvince" name="corporateBusinessProvince" class="form-select">
+                                    <select id="businessProvince" name="businessProvince" class="form-select">
                                         <option value="">Select province...</option>
                                     </select>
                                 </div>
@@ -263,9 +264,9 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="corporateBusinessCtm" class="form-label">City / Municipality</label>
+                                <label for="businessCtm" class="form-label">City / Municipality</label>
                                 <div class="select-wrap">
-                                    <select id="corporateBusinessCtm" name="corporateBusinessCtm" class="form-select">
+                                    <select id="businessCtm" name="businessCtm" class="form-select">
                                         <option value="">Select city/municipality...</option>
                                     </select>
                                 </div>
@@ -273,9 +274,9 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="corporateBusinessBarangay" class="form-label">Barangay</label>
+                                <label for="businessBarangay" class="form-label">Barangay</label>
                                 <div class="select-wrap">
-                                    <select id="corporateBusinessBarangay" name="corporateBusinessBarangay" class="form-select">
+                                    <select id="businessBarangay" name="businessBarangay" class="form-select">
                                         <option value="">Select barangay...</option>
                                     </select>
                                 </div>
@@ -283,16 +284,72 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label for="corporateStreet" class="form-label">Street / Unit / Building <span class="req">*</span></label>
-                                <input type="text" id="corporateStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
-                                <input type="hidden" id="corporateBusinessAddress" name="corporateBusinessAddress">
-                                <div class="form-error">Business address is required</div>
+                                <label for="businessStreet" class="form-label">Street / Unit / Building</label>
+                                <input type="text" id="businessStreet" name="businessStreet" class="form-control" placeholder="House/Unit No., Street, Building">
+                                <input type="hidden" id="businessAddress" name="businessAddress">
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
+            <!-- Home Address Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-house"></i> Home Address</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="homeRegion" class="form-label">Region</label>
+                                <div class="select-wrap">
+                                    <select id="homeRegion" name="homeRegion" class="form-select">
+                                        <option value="">Select region...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="homeProvince" class="form-label">Province</label>
+                                <div class="select-wrap">
+                                    <select id="homeProvince" name="homeProvince" class="form-select">
+                                        <option value="">Select province...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="homeCtm" class="form-label">City / Municipality</label>
+                                <div class="select-wrap">
+                                    <select id="homeCtm" name="homeCtm" class="form-select">
+                                        <option value="">Select city/municipality...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="homeBarangay" class="form-label">Barangay</label>
+                                <div class="select-wrap">
+                                    <select id="homeBarangay" name="homeBarangay" class="form-select">
+                                        <option value="">Select barangay...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="homeStreet" class="form-label">Street / Unit / Building <span class="req">*</span></label>
+                                <input type="text" id="homeStreet" name="homeStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
+                                <input type="hidden" id="homeAddress" name="homeAddress">
+                                <div class="form-error">Home street/unit is required</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Contact Information Card -->
             <div class="card">
                 <div class="card-header">
@@ -302,22 +359,21 @@ include '../includes/sidebar.php';
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporatePhone" class="form-label">Phone Number <span class="req">*</span></label>
-                                <input type="tel" id="corporatePhone" name="corporatePhone" class="form-control" placeholder="(02) 8000 0000" required>
-                                <div class="form-error">Phone number is required</div>
+                                <label for="mobile" class="form-label">Mobile Number <span class="req">*</span></label>
+                                <input type="tel" id="mobile" name="mobile" class="form-control" placeholder="09XX-XXXX-XXXX" required>
+                                <div class="form-error">Valid mobile number is required</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporateContactPerson" class="form-label">Company Owner <span class="req">*</span></label>
-                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Owner Full Name" required>
-                                <div class="form-error">Company owner is required</div>
+                                <label for="telephone" class="form-label">Telephone</label>
+                                <input type="tel" id="telephone" name="telephone" class="form-control" placeholder="(02) 8XXX-XXXX">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporateEmail" class="form-label">Email Address <span class="req">*</span></label>
-                                <input type="email" id="corporateEmail" name="corporateEmail" class="form-control" placeholder="user@example.com" required>
+                                <label for="email" class="form-label">Email Address <span class="req">*</span></label>
+                                <input type="email" id="email" name="email" class="form-control" placeholder="user@example.com" required>
                                 <div class="form-error">Valid email is required</div>
                             </div>
                         </div>
@@ -325,28 +381,16 @@ include '../includes/sidebar.php';
                 </div>
             </div>
 
-            <!-- Contact Person Details Card -->
+            <!-- Client Classification Card -->
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-info-circle"></i> Contact Person Details</div>
+                    <div class="card-title"><i class="bi bi-tag"></i> Client Classification</div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="form-group">
-                                <label for="corporateGender" class="form-label">Gender</label>
-                                <div class="select-wrap">
-                                    <select id="corporateGender" name="corporateGender" class="form-select">
-                                        <option value="">Select...</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Client Classification <span class="req">*</span></label>
+                                <label class="form-label">Client Type <span class="req">*</span></label>
                                 <div style="display:flex;gap:20px;margin-top:8px;">
                                     <label style="display:flex;align-items:center;gap:8px;">
                                         <input type="radio" id="clientType1" name="clientClassification" value="client" required> Client
@@ -462,7 +506,7 @@ function validateRadioGroup(name) {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
     if (radios.length === 0) return true;
     
-    const checked = Array.from(radios).some(radio => radio.checked);
+    const checked = radios.some(radio => radio.checked);
     radios.forEach(radio => {
         const label = radio.closest('label');
         if (label) label.classList.toggle('is-invalid', !checked);
@@ -471,7 +515,7 @@ function validateRadioGroup(name) {
 }
 
 function validateAllRequired() {
-    const requiredFields = ['corporateClientName', 'region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateBusinessBarangay', 'corporateStreet', 'corporatePhone', 'corporateContactPerson', 'corporateEmail'];
+    const requiredFields = ['lastName', 'firstName', 'birthdate', 'occupation', 'mobile', 'email', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet'];
     let allValid = true;
     let failedFields = [];
     
@@ -486,11 +530,8 @@ function validateAllRequired() {
         }
     });
     
-    // Validate businessType radio
-    if (!validateRadioGroup('businessType')) allValid = false;
     // Validate clientClassification radio
     if (!validateRadioGroup('clientClassification')) allValid = false;
-    
     if (!allValid && failedFields.length > 0) {
         console.log('Failed fields:', failedFields);
     }
@@ -508,13 +549,6 @@ document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), sel
     });
     el.addEventListener('change', function() {
         if (this.id) validateField(this.id);
-    });
-});
-
-// Add listeners for radio buttons
-document.querySelectorAll('input[type="radio"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        validateRadioGroup(this.name);
     });
 });
 
@@ -547,12 +581,11 @@ function setSelectLoading(selectEl, text) {
     selectEl.disabled = true;
 }
 
-async function initCorporateAddressSelectors() {
-    const regionEl = document.getElementById('region');
-    const provinceEl = document.getElementById('corporateBusinessProvince');
-    const cityEl = document.getElementById('corporateBusinessCtm');
-    const barangayEl = document.getElementById('corporateBusinessBarangay');
-
+async function initAddressChain(regionId, provinceId, cityId, barangayId) {
+    const regionEl = document.getElementById(regionId);
+    const provinceEl = document.getElementById(provinceId);
+    const cityEl = document.getElementById(cityId);
+    const barangayEl = document.getElementById(barangayId);
     if (!regionEl || !provinceEl || !cityEl || !barangayEl) return;
 
     setSelectLoading(regionEl, 'Loading regions...');
@@ -671,18 +704,28 @@ function buildAddress(street, barangay, city, province, region) {
     return [street, barangay, city, province, region].filter(part => part && part.trim() !== '').join(', ');
 }
 
-function syncCorporateAddressField() {
-    const street = document.getElementById('corporateStreet')?.value || '';
-    const barangay = document.getElementById('corporateBusinessBarangay')?.value || '';
-    const city = document.getElementById('corporateBusinessCtm')?.value || '';
-    const province = document.getElementById('corporateBusinessProvince')?.value || '';
-    const region = document.getElementById('region')?.value || '';
-    document.getElementById('corporateBusinessAddress').value = buildAddress(street, barangay, city, province, region);
+function syncComposedAddressFields() {
+    const businessStreet = document.getElementById('businessStreet')?.value || '';
+    const businessBarangay = document.getElementById('businessBarangay')?.value || '';
+    const businessCity = document.getElementById('businessCtm')?.value || '';
+    const businessProvince = document.getElementById('businessProvince')?.value || '';
+    const businessRegion = document.getElementById('businessRegion')?.value || '';
+    document.getElementById('businessAddress').value = buildAddress(businessStreet, businessBarangay, businessCity, businessProvince, businessRegion);
+
+    const homeStreet = document.getElementById('homeStreet')?.value || '';
+    const homeBarangay = document.getElementById('homeBarangay')?.value || '';
+    const homeCity = document.getElementById('homeCtm')?.value || '';
+    const homeProvince = document.getElementById('homeProvince')?.value || '';
+    const homeRegion = document.getElementById('homeRegion')?.value || '';
+    document.getElementById('homeAddress').value = buildAddress(homeStreet, homeBarangay, homeCity, homeProvince, homeRegion);
 }
+
+initAddressChain('businessRegion', 'businessProvince', 'businessCtm', 'businessBarangay');
+initAddressChain('homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay');
 
 function restoreFormData() {
     const savedData = sessionStorage.getItem('kycFormData');
-    const savedAddressData = sessionStorage.getItem('corporateAddressData');
+    const savedAddressData = sessionStorage.getItem('individualAddressData');
     
     if (!savedData) return;
     
@@ -692,7 +735,7 @@ function restoreFormData() {
         if (!form) return;
         
         // Fields to skip in the general restore (we'll handle address fields separately)
-        const addressFields = ['region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateBusinessBarangay', 'corporateStreet', 'corporateBusinessAddress'];
+        const addressFields = ['businessRegion', 'businessProvince', 'businessCtm', 'businessBarangay', 'businessStreet', 'businessAddress', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet', 'homeAddress'];
         
         Object.keys(formData).forEach(key => {
             // Skip address fields - restore them separately
@@ -718,44 +761,45 @@ function restoreFormData() {
             try {
                 const addressData = JSON.parse(savedAddressData);
                 
-                // Restore address components in cascade order with delays for API calls
+                // Restore BUSINESS address in cascade order with delays for API calls
                 setTimeout(() => {
-                    const regionEl = document.getElementById('region');
-                    if (regionEl && addressData.region) {
-                        regionEl.value = addressData.region;
-                        regionEl.dispatchEvent(new Event('change'));
+                    const businessRegionEl = document.getElementById('businessRegion');
+                    if (businessRegionEl && addressData.businessRegion) {
+                        businessRegionEl.value = addressData.businessRegion;
+                        businessRegionEl.dispatchEvent(new Event('change'));
                     }
                     
                     // Wait for provinces to load, then restore province
                     setTimeout(() => {
-                        const provinceEl = document.getElementById('corporateBusinessProvince');
-                        if (provinceEl && addressData.province) {
-                            provinceEl.value = addressData.province;
-                            provinceEl.dispatchEvent(new Event('change'));
+                        const businessProvinceEl = document.getElementById('businessProvince');
+                        if (businessProvinceEl && addressData.businessProvince) {
+                            businessProvinceEl.value = addressData.businessProvince;
+                            businessProvinceEl.dispatchEvent(new Event('change'));
                         }
                         
                         // Wait for cities to load, then restore city
                         setTimeout(() => {
-                            const cityEl = document.getElementById('corporateBusinessCtm');
-                            if (cityEl && addressData.city) {
-                                cityEl.value = addressData.city;
-                                cityEl.dispatchEvent(new Event('change'));
+                            const businessCityEl = document.getElementById('businessCtm');
+                            if (businessCityEl && addressData.businessCity) {
+                                businessCityEl.value = addressData.businessCity;
+                                businessCityEl.dispatchEvent(new Event('change'));
                             }
                             
                             // Wait for barangays to load, then restore barangay
                             setTimeout(() => {
-                                const barangayEl = document.getElementById('corporateBusinessBarangay');
-                                if (barangayEl && addressData.barangay) {
-                                    barangayEl.value = addressData.barangay;
+                                const businessBarangayEl = document.getElementById('businessBarangay');
+                                if (businessBarangayEl && addressData.businessBarangay) {
+                                    businessBarangayEl.value = addressData.businessBarangay;
                                 }
                                 
-                                // Finally restore street and rebuild composed address
-                                const streetEl = document.getElementById('corporateStreet');
-                                if (streetEl && addressData.street) {
-                                    streetEl.value = addressData.street;
+                                const businessStreetEl = document.getElementById('businessStreet');
+                                if (businessStreetEl && addressData.businessStreet) {
+                                    businessStreetEl.value = addressData.businessStreet;
                                 }
                                 
-                                syncCorporateAddressField();
+                                // Now restore HOME address in cascade order
+                                restoreHomeAddress(addressData);
+                                
                             }, 500);
                         }, 500);
                     }, 500);
@@ -770,13 +814,54 @@ function restoreFormData() {
     }
 }
 
-initCorporateAddressSelectors();
+function restoreHomeAddress(addressData) {
+    setTimeout(() => {
+        const homeRegionEl = document.getElementById('homeRegion');
+        if (homeRegionEl && addressData.homeRegion) {
+            homeRegionEl.value = addressData.homeRegion;
+            homeRegionEl.dispatchEvent(new Event('change'));
+        }
+        
+        // Wait for provinces to load, then restore province
+        setTimeout(() => {
+            const homeProvinceEl = document.getElementById('homeProvince');
+            if (homeProvinceEl && addressData.homeProvince) {
+                homeProvinceEl.value = addressData.homeProvince;
+                homeProvinceEl.dispatchEvent(new Event('change'));
+            }
+            
+            // Wait for cities to load, then restore city
+            setTimeout(() => {
+                const homeCityEl = document.getElementById('homeCtm');
+                if (homeCityEl && addressData.homeCity) {
+                    homeCityEl.value = addressData.homeCity;
+                    homeCityEl.dispatchEvent(new Event('change'));
+                }
+                
+                // Wait for barangays to load, then restore barangay
+                setTimeout(() => {
+                    const homeBarangayEl = document.getElementById('homeBarangay');
+                    if (homeBarangayEl && addressData.homeBarangay) {
+                        homeBarangayEl.value = addressData.homeBarangay;
+                    }
+                    
+                    const homeStreetEl = document.getElementById('homeStreet');
+                    if (homeStreetEl && addressData.homeStreet) {
+                        homeStreetEl.value = addressData.homeStreet;
+                    }
+                    
+                    syncComposedAddressFields();
+                }, 500);
+            }, 500);
+        }, 500);
+    }, 500);
+}
 
 // Restore form data on page load
 document.addEventListener('DOMContentLoaded', restoreFormData);
 
 function proceedToReview() {
-    syncCorporateAddressField();
+    syncComposedAddressFields();
 
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
@@ -798,21 +883,27 @@ function proceedToReview() {
     
     // Also store address components separately for reliable restoration
     const addressData = {
-        region: document.getElementById('region').value,
-        province: document.getElementById('corporateBusinessProvince').value,
-        city: document.getElementById('corporateBusinessCtm').value,
-        barangay: document.getElementById('corporateBusinessBarangay').value,
-        street: document.getElementById('corporateStreet').value,
-        composed: document.getElementById('corporateBusinessAddress').value
+        businessRegion: document.getElementById('businessRegion').value,
+        businessProvince: document.getElementById('businessProvince').value,
+        businessCity: document.getElementById('businessCtm').value,
+        businessBarangay: document.getElementById('businessBarangay').value,
+        businessStreet: document.getElementById('businessStreet').value,
+        businessAddress: document.getElementById('businessAddress').value,
+        homeRegion: document.getElementById('homeRegion').value,
+        homeProvince: document.getElementById('homeProvince').value,
+        homeCity: document.getElementById('homeCtm').value,
+        homeBarangay: document.getElementById('homeBarangay').value,
+        homeStreet: document.getElementById('homeStreet').value,
+        homeAddress: document.getElementById('homeAddress').value
     };
-    sessionStorage.setItem('corporateAddressData', JSON.stringify(addressData));
+    sessionStorage.setItem('individualAddressData', JSON.stringify(addressData));
     
     // Navigate to review page
-    window.location.href = 'kyc-corporate-review.php';
+    window.location.href = 'kyc-individual-review.php';
 }
 
 function submitForm() {
-    syncCorporateAddressField();
+    syncComposedAddressFields();
 
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
@@ -821,7 +912,7 @@ function submitForm() {
     
     // Collect form data
     const formData = new FormData();
-    formData.append('action', 'add_client');
+    formData.append('action', 'submit_kyc');
     
     // Add all form fields
     const form = document.getElementById('kycForm');
@@ -833,7 +924,7 @@ function submitForm() {
     });
     
     // Submit to handler
-    fetch('../handlers/client.php', {
+    fetch('../handlers/kyc.php', {
         method: 'POST',
         body: formData
     })
@@ -844,7 +935,7 @@ function submitForm() {
                 document.getElementById('refCode').value = data.reference_code;
                 document.getElementById('refCode').readOnly = true;
             }
-            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Proceeding to Document Verification.');
+            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Client registered successfully.');
             // Increment stat
             const tv = document.getElementById('stat-total');
             if (tv) tv.textContent = parseInt(tv.textContent) + 1;
@@ -863,7 +954,7 @@ function submitForm() {
 }
 
 function saveDraft() {
-    syncCorporateAddressField();
+    syncComposedAddressFields();
 
     // Collect form data
     const formData = new FormData();

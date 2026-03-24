@@ -10,8 +10,8 @@ requireLogin();
 	<title>KYC System — Policy</title>
 
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-	<link rel="stylesheet" href="../css/index.css">
-	<link rel="stylesheet" href="../css/global.css">
+	<link rel="stylesheet" href="../../public/css/index.css">
+	<link rel="stylesheet" href="../../public/css/global.css">
 	<style>
 		.policy-coming-wrap {
 			min-height: calc(100vh - 150px);

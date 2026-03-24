@@ -27,7 +27,7 @@ try {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>KYC System - Switch Account</title>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-	<link rel="stylesheet" href="../css/auth.css">
+	<link rel="stylesheet" href="../../public/css/auth.css">
 	<style>
 		.switch-accounts {
 			display: grid;
@@ -95,7 +95,7 @@ try {
 <div class="auth-container">
 	<div class="auth-wrapper">
 		<div class="auth-brand">
-			<img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="brand-logo-image">
+			<img src="../../public/images/SterlingLogo2.png" alt="Sterling Insurance Logo" class="brand-logo-image">
 			<h1>Sterling Insurance Company</h1>
 			<p>KYC System</p>
 			<div class="brand-description">
@@ -106,7 +106,7 @@ try {
 		<div class="auth-form-container">
 			<div class="auth-form">
 				<div class="panel-logo-wrap">
-					<img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="panel-logo">
+					<img src="../../public/images/SterlingLogo2.png" alt="Sterling Insurance Logo" class="panel-logo">
 				</div>
 				<div class="form-header">
 					<h2>Switch Account</h2>
@@ -142,7 +142,7 @@ try {
 				</a>
 
 				<?php if ($hasActiveSession): ?>
-					<a href="../application/dashboard.php" class="btn btn-outline btn-block" style="margin-top: 10px;">
+					<a href="../pages/dashboard.php" class="btn btn-outline btn-block" style="margin-top: 10px;">
 						<i class="bi bi-arrow-left"></i> Back to Dashboard
 					</a>
 				<?php endif; ?>

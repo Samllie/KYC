@@ -53,7 +53,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     <div class="sidebar-brand">
         <a href="#" class="brand-logo">
             <div class="brand-icon">
-                <img src="../SterlingLogo.png" alt="Sterling Insurance" style="width: 100%; height: 100%; object-fit: contain;">
+                <img src="../../public/images/SterlingLogo.png" alt="Sterling Insurance" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
             <div class="brand-text">
                 <span>STerling Insurance Company</span>

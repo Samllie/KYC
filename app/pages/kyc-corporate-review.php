@@ -7,11 +7,11 @@ requireLogin();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KYC System — Individual Client Review</title>
+    <title>KYC System — Corporate Client Review</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/index.css">
-    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../../public/css/index.css">
+    <link rel="stylesheet" href="../../public/css/global.css">
 </head>
 <body>
 
@@ -26,7 +26,7 @@ include '../includes/sidebar.php';
     <!-- Topbar -->
     <header class="topbar">
         <div class="topbar-left">
-            <h1>KYC Verification — Individual Client Review</h1>
+            <h1>KYC Verification — Corporate Client Review</h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
                 Dashboard &rsaquo; Clients &rsaquo; <span>Review Information</span>
@@ -53,7 +53,7 @@ include '../includes/sidebar.php';
                 <div class="step-num"><i class="bi bi-check" style="font-size:.9rem;"></i></div>
                 <div class="step-info">
                     <span>Step 2</span>
-                    <strong>Personal Details</strong>
+                    <strong>Business Details</strong>
                 </div>
             </div>
             <div class="step-line done"></div>
@@ -143,7 +143,7 @@ function displayReview() {
         {
             title: 'Client Type',
             fields: [
-                { label: 'Client Type', key: 'clientType', format: 'individual' }
+                { label: 'Client Type', key: 'clientType', format: 'corporate' }
             ]
         },
         {
@@ -154,55 +154,47 @@ function displayReview() {
             ]
         },
         {
-            title: 'Personal Information',
+            title: 'Company Information',
             fields: [
-                { label: 'Last Name', key: 'lastName' },
-                { label: 'First Name', key: 'firstName' },
-                { label: 'Middle Name', key: 'middleName' },
-                { label: 'Date of Birth', key: 'birthdate' },
-                { label: 'Gender', key: 'gender' }
+                { label: 'Business / Company Name', key: 'corporateClientName' },
+                { label: 'Business Type', key: 'businessType' },
+                { label: 'Client Since', key: 'corporateClientSince' }
             ]
         },
         {
-            title: 'Occupation',
+            title: 'Business Details',
             fields: [
-                { label: 'Occupation', key: 'occupation' },
-                { label: 'Employer', key: 'employer' }
+                { label: 'TIN Number', key: 'tinNumber' },
+                { label: 'AP SL Code', key: 'corporateApSlCode' },
+                { label: 'AR SL Code', key: 'corporateArSlCode' },
+                { label: 'Contact Person Designation', key: 'designation' }
             ]
         },
         {
-            title: 'Address Information',
+            title: 'Business Address',
             fields: [
-                { label: 'Business Address', key: 'businessAddress' }
-            ]
-        },
-        {
-            title: 'Home Address',
-            fields: [
-                { label: 'Home Address', key: 'homeAddress' }
+                { label: 'Full Address', key: 'corporateBusinessAddress' }
             ]
         },
         {
             title: 'Contact Information',
             fields: [
-                { label: 'Mobile Number', key: 'mobile' },
-                { label: 'Telephone', key: 'telephone' },
-                { label: 'Email Address', key: 'email' }
+                { label: 'Phone Number', key: 'corporatePhone' },
+                { label: 'Company Owner', key: 'corporateContactPerson' },
+                { label: 'Email Address', key: 'corporateEmail' }
             ]
         },
         {
-            title: 'Client Classification',
+            title: 'Contact Person Details',
             fields: [
-                { label: 'Classification', key: 'clientClassification' }
+                { label: 'Gender', key: 'corporateGender' },
+                { label: 'Client Classification', key: 'clientClassification' }
             ]
         }
     ];
     
     let html = '';
     sections.forEach((section, idx) => {
-        const hasFields = section.fields.some(f => formData[f.key]);
-        if (!hasFields) return;
-        
         html += `
             <div style="margin-bottom: 30px;">
                 <div style="font-weight: 700; color: var(--primary); margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">
@@ -230,7 +222,7 @@ function displayReview() {
 }
 
 function goBackToEdit() {
-    window.location.href = 'kyc-individual.php';
+    window.location.href = 'kyc-corporate.php';
 }
 
 function submitForm() {
@@ -242,13 +234,13 @@ function submitForm() {
     }
     
     const formDataObj = new FormData();
-    formDataObj.append('action', 'submit_kyc');
+    formDataObj.append('action', 'add_client');
     
     Object.keys(formData).forEach(key => {
         formDataObj.append(key, formData[key]);
     });
     
-    fetch('../handlers/kyc.php', {
+    fetch('../handlers/client.php', {
         method: 'POST',
         body: formDataObj
     })
