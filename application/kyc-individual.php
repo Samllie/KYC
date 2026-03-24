@@ -12,6 +12,43 @@ requireLogin();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/index.css">
     <link rel="stylesheet" href="../css/global.css">
+    <style>
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-to-type-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .back-to-type-btn:hover {
+            background-color: #e8e8e8;
+            border-color: #d0d0d0;
+            transform: translateX(-2px);
+        }
+
+        .back-to-type-btn i {
+            transition: transform 0.2s ease;
+        }
+
+        .back-to-type-btn:hover i {
+            transform: translateX(-3px);
+        }
+    </style>
 </head>
 <body>
 
@@ -81,6 +118,10 @@ include '../includes/sidebar.php';
             <div class="card">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-list"></i> Client Type</div>
+                    <a href="kyc-verification.php" class="back-to-type-btn">
+                        <i class="bi bi-arrow-left"></i>
+                        Change Type
+                    </a>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">

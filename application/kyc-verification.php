@@ -35,10 +35,41 @@ requireLogin();
             color: inherit;
         }
         
+        .type-card:nth-child(1) {
+            border-color: #64b5f6;
+        }
+        
+        .type-card:nth-child(2) {
+            border-color: #66bb6a;
+        }
+        
         .type-card:hover {
-            border-color: var(--primary);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             transform: translateY(-2px);
+        }
+        
+        .type-card:nth-child(1):hover {
+            background: #e3f2fd;
+        }
+        
+        .type-card:nth-child(2):hover {
+            background: #e8f5e9;
+        }
+        
+        .type-card:nth-child(1) .type-card-btn {
+            background: #64b5f6;
+        }
+        
+        .type-card:nth-child(2) .type-card-btn {
+            background: #66bb6a;
+        }
+        
+        .type-card:nth-child(1):hover .type-card-btn {
+            background: #2196f3;
+        }
+        
+        .type-card:nth-child(2):hover .type-card-btn {
+            background: #4caf50;
         }
         
         .type-card-icon {
