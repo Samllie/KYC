@@ -4,7 +4,7 @@ require_once '../config/session.php';
 $isSwitchMode = isset($_GET['switch']);
 
 if (isset($_SESSION['user_id']) && !$isSwitchMode) {
-    header('Location: ../application/dashboard.php');
+    header('Location: ../pages/dashboard.php');
     exit();
 }
 
@@ -41,7 +41,7 @@ $isRememberChecked = $rememberedEmail !== '';
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/auth.css">
+    <link rel="stylesheet" href="../../public/css/auth.css">
 </head>
 <body>
 
@@ -243,7 +243,7 @@ form.addEventListener('submit', function(e) {
         if (data.success) {
             showToast('success', 'Login Successful', 'Redirecting to dashboard...');
             setTimeout(() => {
-                window.location.href = data.redirect || '../application/dashboard.php';
+                window.location.href = data.redirect || '../pages/dashboard.php';
             }, 1500);
         } else {
             showToast('error', 'Login Failed', data.message || 'Invalid credentials');

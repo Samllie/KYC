@@ -31,7 +31,7 @@ try {
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-	<link rel="stylesheet" href="../css/auth.css">
+	<link rel="stylesheet" href="../../public/css/auth.css">
 	<style>
 		.switch-accounts {
 			display: grid;
@@ -103,7 +103,13 @@ try {
 
 	<div class="auth-wrapper">
 		<div class="auth-brand">
+<<<<<<< HEAD:auth/switch_account.php
 			<h1>Sterling Insurance Company Incorporated</h1>
+=======
+			<img src="../../public/images/SterlingLogo2.png" alt="Sterling Insurance Logo" class="brand-logo-image">
+			<h1>Sterling Insurance Company</h1>
+			<p>KYC System</p>
+>>>>>>> ansel:app/auth/switch_account.php
 			<div class="brand-description">
 				<p>Ensuring Integrity, Security, and Compliance in Every Client Engagement.</p>
 			</div>
@@ -111,6 +117,12 @@ try {
 
 		<div class="auth-form-container">
 			<div class="auth-form">
+<<<<<<< HEAD:auth/switch_account.php
+=======
+				<div class="panel-logo-wrap">
+					<img src="../../public/images/SterlingLogo2.png" alt="Sterling Insurance Logo" class="panel-logo">
+				</div>
+>>>>>>> ansel:app/auth/switch_account.php
 				<div class="form-header">
 					<h2>Switch Account</h2>
 					<p>Choose an account or sign in with another one</p>
@@ -145,7 +157,7 @@ try {
 				</a>
 
 				<?php if ($hasActiveSession): ?>
-					<a href="../application/dashboard.php" class="btn btn-outline btn-block" style="margin-top: 10px;">
+					<a href="../pages/dashboard.php" class="btn btn-outline btn-block" style="margin-top: 10px;">
 						<i class="bi bi-arrow-left"></i> Back to Dashboard
 					</a>
 				<?php endif; ?>

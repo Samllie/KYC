@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $response['success'] = true;
     $response['message'] = 'Login successful';
-    $response['redirect'] = '../application/dashboard.php';
+    $response['redirect'] = '../pages/dashboard.php';
 }
 
 echo json_encode($response);
