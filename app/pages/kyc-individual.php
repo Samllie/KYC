@@ -506,12 +506,16 @@ function validateField(id) {
 function validateRadioGroup(name) {
     const radios = document.querySelectorAll(`input[name="${name}"]`);
     if (radios.length === 0) return true;
-    
-    const checked = radios.some(radio => radio.checked);
-    radios.forEach(radio => {
+
+    const radiosArr = Array.from(radios);
+    const checked = radiosArr.some(radio => radio.checked);
+
+    radiosArr.forEach(radio => {
         const label = radio.closest('label');
         if (label) label.classList.toggle('is-invalid', !checked);
+        radio.classList.toggle('is-invalid', !checked);
     });
+
     return checked;
 }
 
