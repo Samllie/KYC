@@ -60,7 +60,7 @@ body {
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background-image: url('../css/images/wave-bg.jpg');
+    background-image: url('../../css/images/building_stock.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -76,7 +76,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.62);
     pointer-events: none;
     z-index: 1;
 }

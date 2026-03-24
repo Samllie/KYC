@@ -26,7 +26,7 @@ try {
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Sterling insurance Company Incorporated</title>
-    <link rel='icon' type='image/png' href='../css/images/SterlingLogo.png'>
+    <link rel='icon' type='image/png' href='../../css/images/SterlingLogo.png'>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -98,18 +98,12 @@ try {
 <body>
 <div class="auth-container">
 	<div class="page-corner-logo-wrap" aria-hidden="true">
-		<img src="../css/images/SterlingLogo2.jpg" alt="" class="page-corner-logo">
+		<img src="../../css/images/SterlingLogo2.jpg" alt="" class="page-corner-logo">
 	</div>
 
 	<div class="auth-wrapper">
 		<div class="auth-brand">
-<<<<<<< HEAD:auth/switch_account.php
 			<h1>Sterling Insurance Company Incorporated</h1>
-=======
-			<img src="../../public/images/SterlingLogo2.png" alt="Sterling Insurance Logo" class="brand-logo-image">
-			<h1>Sterling Insurance Company</h1>
-			<p>KYC System</p>
->>>>>>> ansel:app/auth/switch_account.php
 			<div class="brand-description">
 				<p>Ensuring Integrity, Security, and Compliance in Every Client Engagement.</p>
 			</div>
@@ -117,12 +111,6 @@ try {
 
 		<div class="auth-form-container">
 			<div class="auth-form">
-<<<<<<< HEAD:auth/switch_account.php
-=======
-				<div class="panel-logo-wrap">
-					<img src="../../public/images/SterlingLogo2.png" alt="Sterling Insurance Logo" class="panel-logo">
-				</div>
->>>>>>> ansel:app/auth/switch_account.php
 				<div class="form-header">
 					<h2>Switch Account</h2>
 					<p>Choose an account or sign in with another one</p>
