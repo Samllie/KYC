@@ -7,7 +7,8 @@ requireLogin();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KYC System — Clients Management</title>
+    <title>Sterling insurance Company Incorporated</title>
+    <link rel='icon' type='image/png' href='../css/images/SterlingLogo.png'>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -886,7 +887,8 @@ include '../includes/sidebar.php';
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Clients Report - KYC System</title>
+                <title>Sterling insurance Company Incorporated</title>
+    <link rel='icon' type='image/png' href='../css/images/SterlingLogo.png'>
                 <style>
                     body { font-family: Arial, sans-serif; padding: 20px; }
                     h1 { text-align: center; color: #374151; margin-bottom: 20px; }

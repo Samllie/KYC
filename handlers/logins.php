@@ -18,10 +18,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = trim($_POST['password'] ?? '');
     $rememberMe = isset($_POST['remember']) && $_POST['remember'] === 'on';
+    $maxCredentialLength = 32;
     
     // Validation
     if (empty($email) || empty($password)) {
         $response['message'] = 'Email and password are required';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (strlen($email) > $maxCredentialLength || strlen($password) > $maxCredentialLength) {
+        $response['message'] = 'Email and password must not exceed 32 characters';
         echo json_encode($response);
         exit;
     }

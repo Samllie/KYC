@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KYC System — Register</title>
+    <title>Sterling insurance Company Incorporated</title>
+    <link rel='icon' type='image/png' href='../css/images/SterlingLogo.png'>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,6 +16,10 @@
 
 <!-- ═══════════════════════════════════════════════ AUTH CONTAINER -->
 <div class="auth-container register-layout">
+    <div class="page-corner-logo-wrap" aria-hidden="true">
+        <img src="../css/images/SterlingLogo2.jpg" alt="" class="page-corner-logo">
+    </div>
+
     <div class="auth-wrapper">
         
         <!-- Left Side - Branding -->
@@ -28,9 +33,9 @@
         <!-- Right Side - Register Form -->
         <div class="auth-form-container">
             <div class="auth-form">
-                <div class="form-header">
+                <div class="form-header register-form-header">
                     <h2>Create Account</h2>
-                    <p>Register as a KYC Officer</p>
+                    <p>Fill in the details below to create your account.</p>
                 </div>
 
                 <form id="registerForm" method="POST">
@@ -47,6 +52,7 @@
                                 name="fullname" 
                                 class="form-control" 
                                 placeholder="Juan Dela Cruz" 
+                                maxlength="32"
                                 required>
                         </div>
                         <div class="form-error"></div>
@@ -65,6 +71,7 @@
                                 name="email" 
                                 class="form-control" 
                                 placeholder="your@email.com" 
+                                maxlength="32"
                                 required>
                         </div>
                         <div class="form-error"></div>
@@ -83,6 +90,7 @@
                                 name="password" 
                                 class="form-control" 
                                 placeholder="At least 8 characters" 
+                                maxlength="32"
                                 required>
                             <button type="button" class="password-toggle" data-target="password" aria-label="Show password">
                                 <i class="bi bi-eye"></i>
@@ -105,6 +113,7 @@
                                 name="confirm_password" 
                                 class="form-control" 
                                 placeholder="At least 8 characters" 
+                                maxlength="32"
                                 required>
                             <button type="button" class="password-toggle" data-target="confirm_password" aria-label="Show password">
                                 <i class="bi bi-eye"></i>
@@ -175,8 +184,8 @@ const form = document.getElementById('registerForm');
 const fullnameInput = document.getElementById('fullname');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
-const confirmPasswordInput = document.getElementById('confirmPassword');
-const departmentInput = document.getElementById('department');
+const confirmPasswordInput = document.getElementById('confirm_password');
+const MAX_CREDENTIAL_LENGTH = 32;
 
 // ── Password Visibility Toggle ─────────────────────────────
 document.querySelectorAll('.password-toggle').forEach(toggleBtn => {
@@ -204,27 +213,24 @@ function validateField(field) {
     let isValid = false;
 
     if (field.id === 'fullname') {
-        isValid = value.length >= 3;
+        isValid = value.length >= 3 && value.length <= MAX_CREDENTIAL_LENGTH;
     } else if (field.id === 'email') {
-        isValid = validateEmail(value);
+        isValid = value.length <= MAX_CREDENTIAL_LENGTH && validateEmail(value);
     } else if (field.id === 'password') {
-        isValid = value.length >= 8;
-    } else if (field.id === 'confirmPassword') {
-        isValid = value === passwordInput.value && value.length >= 8;
-    } else if (field.id === 'department') {
-        isValid = value !== '';
+        isValid = value.length >= 8 && value.length <= MAX_CREDENTIAL_LENGTH;
+    } else if (field.id === 'confirm_password') {
+        isValid = value === passwordInput.value && value.length >= 8 && value.length <= MAX_CREDENTIAL_LENGTH;
     }
 
     field.classList.toggle('is-invalid', !isValid && value !== '');
     field.classList.toggle('is-valid', isValid);
-    return isValid || (field.id !== 'fullname' && field.id !== 'department' && value === '');
+    return isValid || (field.id !== 'fullname' && value === '');
 }
 
 fullnameInput.addEventListener('blur', () => validateField(fullnameInput));
 emailInput.addEventListener('blur', () => validateField(emailInput));
 passwordInput.addEventListener('blur', () => validateField(passwordInput));
 confirmPasswordInput.addEventListener('blur', () => validateField(confirmPasswordInput));
-departmentInput.addEventListener('blur', () => validateField(departmentInput));
 
 fullnameInput.addEventListener('input', () => {
     if (fullnameInput.classList.contains('is-invalid')) validateField(fullnameInput);
@@ -243,18 +249,17 @@ confirmPasswordInput.addEventListener('input', () => {
     if (confirmPasswordInput.classList.contains('is-invalid')) validateField(confirmPasswordInput);
 });
 
-departmentInput.addEventListener('change', () => {
-    if (departmentInput.classList.contains('is-invalid')) validateField(departmentInput);
-});
-
 form.addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const fullnameValid = fullnameInput.value.trim().length >= 3;
-    const emailValid = validateEmail(emailInput.value);
-    const passwordValid = passwordInput.value.length >= 8;
-    const confirmPasswordValid = confirmPasswordInput.value === passwordInput.value && confirmPasswordInput.value.length >= 8;
-    const departmentValid = departmentInput.value !== '';
+    const fullnameValue = fullnameInput.value.trim();
+    const fullnameValid = fullnameValue.length >= 3 && fullnameValue.length <= MAX_CREDENTIAL_LENGTH;
+    const emailValue = emailInput.value.trim();
+    const passwordValue = passwordInput.value;
+    const confirmPasswordValue = confirmPasswordInput.value;
+    const emailValid = emailValue.length <= MAX_CREDENTIAL_LENGTH && validateEmail(emailValue);
+    const passwordValid = passwordValue.length >= 8 && passwordValue.length <= MAX_CREDENTIAL_LENGTH;
+    const confirmPasswordValid = confirmPasswordValue === passwordValue && confirmPasswordValue.length >= 8 && confirmPasswordValue.length <= MAX_CREDENTIAL_LENGTH;
 
     fullnameInput.classList.toggle('is-invalid', !fullnameValid);
     fullnameInput.classList.toggle('is-valid', fullnameValid);
@@ -264,10 +269,8 @@ form.addEventListener('submit', function(e) {
     passwordInput.classList.toggle('is-valid', passwordValid);
     confirmPasswordInput.classList.toggle('is-invalid', !confirmPasswordValid);
     confirmPasswordInput.classList.toggle('is-valid', confirmPasswordValid);
-    departmentInput.classList.toggle('is-invalid', !departmentValid);
-    departmentInput.classList.toggle('is-valid', departmentValid);
 
-    if (!fullnameValid || !emailValid || !passwordValid || !confirmPasswordValid || !departmentValid) {
+    if (!fullnameValid || !emailValid || !passwordValid || !confirmPasswordValid) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields correctly.');
         return;
     }
