@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="refresh" content="0; url=auth/login.php">
-    <title>KYC System — Login</title>
+    <title>Sterling insurance Company Incorporated</title>
+    <link rel='icon' type='image/png' href='css/images/SterlingLogo.png'>
 </head>
 <body>
     <p>If you are not redirected, <a href="auth/login.php">click here</a>.</p>

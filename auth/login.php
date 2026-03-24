@@ -34,7 +34,8 @@ $isRememberChecked = $rememberedEmail !== '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KYC System — Login</title>
+    <title>Sterling insurance Company Incorporated</title>
+    <link rel='icon' type='image/png' href='../css/images/SterlingLogo.png'>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,6 +47,10 @@ $isRememberChecked = $rememberedEmail !== '';
 
 <!-- ═══════════════════════════════════════════════ AUTH CONTAINER -->
 <div class="auth-container">
+    <div class="page-corner-logo-wrap" aria-hidden="true">
+        <img src="../css/images/SterlingLogo2.jpg" alt="" class="page-corner-logo">
+    </div>
+
     <div class="auth-wrapper">
         
         <!-- Left Side - Branding -->
@@ -120,7 +125,7 @@ $isRememberChecked = $rememberedEmail !== '';
 
                     <!-- Login Button -->
                     <button type="submit" class="btn btn-primary btn-block">
-                        <i class="bi bi-box-arrow-right"></i> Sign In
+                        <i class="bi bi-box-arrow-right"></i> Login
                     </button>
                 </form>
 

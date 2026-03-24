@@ -13,11 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fullname = trim($_POST['fullname'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = trim($_POST['password'] ?? '');
-    $confirmPassword = trim($_POST['confirmPassword'] ?? '');
-    $department = trim($_POST['department'] ?? '');
+    $confirmPassword = trim($_POST['confirm_password'] ?? '');
+    $department = trim($_POST['department'] ?? 'KYC');
+    $maxCredentialLength = 32;
     
     // Validation
-    if (empty($fullname) || empty($email) || empty($password) || empty($department)) {
+    if (empty($fullname) || empty($email) || empty($password) || empty($confirmPassword)) {
         $response['message'] = 'All fields are required';
         echo json_encode($response);
         exit;
@@ -28,9 +29,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($response);
         exit;
     }
+
+    if (strlen($fullname) > $maxCredentialLength) {
+        $response['message'] = 'Full name must not exceed 32 characters';
+        echo json_encode($response);
+        exit;
+    }
     
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $response['message'] = 'Invalid email format';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (strlen($email) > $maxCredentialLength || strlen($password) > $maxCredentialLength || strlen($confirmPassword) > $maxCredentialLength) {
+        $response['message'] = 'Email and password must not exceed 32 characters';
         echo json_encode($response);
         exit;
     }

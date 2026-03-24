@@ -25,7 +25,11 @@ try {
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>KYC System - Switch Account</title>
+	<title>Sterling insurance Company Incorporated</title>
+    <link rel='icon' type='image/png' href='../css/images/SterlingLogo.png'>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<link rel="stylesheet" href="../css/auth.css">
 	<style>
@@ -93,21 +97,20 @@ try {
 </head>
 <body>
 <div class="auth-container">
+	<div class="page-corner-logo-wrap" aria-hidden="true">
+		<img src="../css/images/SterlingLogo2.jpg" alt="" class="page-corner-logo">
+	</div>
+
 	<div class="auth-wrapper">
 		<div class="auth-brand">
-			<img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="brand-logo-image">
-			<h1>Sterling Insurance Company</h1>
-			<p>KYC System</p>
+			<h1>Sterling Insurance Company Incorporated</h1>
 			<div class="brand-description">
-				<p>Select an account to continue or sign in with another account.</p>
+				<p>Ensuring Integrity, Security, and Compliance in Every Client Engagement.</p>
 			</div>
 		</div>
 
 		<div class="auth-form-container">
 			<div class="auth-form">
-				<div class="panel-logo-wrap">
-					<img src="../SterlingLogo2.png" alt="Sterling Insurance Logo" class="panel-logo">
-				</div>
 				<div class="form-header">
 					<h2>Switch Account</h2>
 					<p>Choose an account or sign in with another one</p>
