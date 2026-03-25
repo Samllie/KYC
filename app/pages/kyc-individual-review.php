@@ -236,6 +236,7 @@ function goBackToEdit() {
 
 function submitForm() {
     const formData = JSON.parse(sessionStorage.getItem('kycFormData') || '{}');
+    const uploadedFiles = JSON.parse(sessionStorage.getItem('kycUploadedFiles') || '[]');
     
     if (Object.keys(formData).length === 0) {
         showToast('error', 'No Data', 'Form data not found. Please fill the form first.');
@@ -244,6 +245,7 @@ function submitForm() {
     
     const formDataObj = new FormData();
     formDataObj.append('action', 'submit_kyc');
+    formDataObj.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
     
     Object.keys(formData).forEach(key => {
         formDataObj.append(key, formData[key]);
@@ -260,6 +262,7 @@ function submitForm() {
             
             // Clear sessionStorage
             sessionStorage.removeItem('kycFormData');
+            sessionStorage.removeItem('kycUploadedFiles');
             
             setTimeout(() => {
                 window.location.href = 'dashboard.php';
