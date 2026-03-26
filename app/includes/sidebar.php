@@ -55,7 +55,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
             <div class="brand-icon">
                 <img src="../../public/images/SterlingLogo.png" alt="Sterling Insurance" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
-            <div class="brand-text">
+            <div class="brand-text sidebar-text">
                 <span>STerling Insurance Company</span>
                 <strong>KYC System</strong>
             </div>
@@ -63,12 +63,12 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     </div>
 
     <nav class="sidebar-nav">
-        <div class="nav-label">Main Menu</div>
+        <div class="nav-label sidebar-text">Main Menu</div>
 
         <?php foreach ($menuItems as $item): ?>
             <a href="<?php echo htmlspecialchars($item['href']); ?>" class="nav-item <?php echo ($activePage === $item['page']) ? 'active' : ''; ?>">
                 <i class="bi <?php echo htmlspecialchars($item['icon']); ?>"></i> 
-                <?php echo htmlspecialchars($item['label']); ?>
+                <span class="nav-text sidebar-text"><?php echo htmlspecialchars($item['label']); ?></span>
                 <?php if ($item['badge']): ?>
                     <span class="nav-badge"><?php echo htmlspecialchars($item['badge']); ?></span>
                 <?php endif; ?>
@@ -79,7 +79,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     <div class="sidebar-footer">
         <div class="user-card">
             <div class="user-avatar"><?php echo htmlspecialchars($avatarInitials); ?></div>
-            <div class="user-info">
+            <div class="user-info sidebar-text">
                 <span><?php echo htmlspecialchars($displayName); ?></span>
                 <span><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $displayRole))); ?></span>
             </div>
@@ -98,6 +98,16 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
         </div>
     </div>
 </aside>
+
+<button
+    type="button"
+    id="sidebarToggle"
+    class="sidebar-toggle"
+    aria-label="Collapse sidebar"
+    aria-expanded="true"
+>
+    <i class="bi bi-arrow-left"></i>
+</button>
 
 <div id="logoutConfirmModal" class="logout-modal" aria-hidden="true">
     <div class="logout-modal-card" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle">
@@ -182,6 +192,39 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 
     confirmBtn.addEventListener('click', function () {
         window.location.href = pendingActionUrl;
+    });
+})();
+</script>
+
+<script>
+(function () {
+    const toggleBtn = document.getElementById('sidebarToggle');
+    if (!toggleBtn) return;
+
+    const body = document.body;
+    const ICON_CLASS = 'bi-arrow-left';
+    const STORAGE_KEY = 'sidebarCollapsed';
+
+    function setCollapsed(isCollapsed) {
+        body.classList.toggle('sidebar-collapsed', isCollapsed);
+        toggleBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+
+        // Keep the icon purely CSS-driven (rotate), but ensure it exists.
+        const icon = toggleBtn.querySelector('i');
+        if (icon && ICON_CLASS) {
+            // No-op if the icon already matches; safe to leave.
+        }
+    }
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const initialCollapsed = stored === '1';
+    setCollapsed(initialCollapsed);
+
+    toggleBtn.addEventListener('click', function () {
+        const isCollapsed = body.classList.contains('sidebar-collapsed');
+        const nextCollapsed = !isCollapsed;
+        setCollapsed(nextCollapsed);
+        localStorage.setItem(STORAGE_KEY, nextCollapsed ? '1' : '0');
     });
 })();
 </script>
