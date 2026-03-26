@@ -9,6 +9,24 @@ require_once '../config/db.php';
 require_once __DIR__ . '/upload_utils.php';
 session_start();
 
+if (!function_exists('kyc_finalize_temp_uploads')) {
+    function kyc_finalize_temp_uploads($userId, $uploadedFiles, $clientId, $kycId) {
+        if (function_exists('finalize_temp_uploads')) {
+            return finalize_temp_uploads($userId, $uploadedFiles, $clientId, $kycId);
+        }
+
+        if (function_exists('kyc_finalize_uploads')) {
+            return kyc_finalize_uploads($userId, $uploadedFiles, $clientId, $kycId);
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Upload finalizer function is not available',
+            'files' => []
+        ];
+    }
+}
+
 $response = ['success' => false, 'message' => ''];
 
 // Check user session
