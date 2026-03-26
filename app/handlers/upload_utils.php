@@ -230,6 +230,18 @@ function kyc_finalize_temp_uploads($userId, $uploadedFiles, $clientId, $kycId) {
         if (is_string($entry)) {
             $tempPath = $entry;
         } elseif (is_array($entry)) {
+            // If the entry already has a finalized `file_path`, keep it as-is.
+            // This allows resuming drafts where attachments already exist in `documents`
+            // (not only those stored temporarily under `uploads/tmp/user_{id}`).
+            if (!empty($entry['file_path'])) {
+                $finalized[] = [
+                    'file_name' => $entry['file_name'] ?? ($entry['original_name'] ?? basename((string)$entry['file_path'])),
+                    'file_type' => $entry['file_type'] ?? null,
+                    'file_size' => isset($entry['file_size']) ? intval($entry['file_size']) : null,
+                    'file_path' => $entry['file_path'],
+                ];
+                continue;
+            }
             $tempPath = $entry['temp_path'] ?? $entry['tempPath'] ?? '';
             $original = $entry['original_name'] ?? $entry['originalName'] ?? '';
             $size = isset($entry['file_size']) ? intval($entry['file_size']) : null;

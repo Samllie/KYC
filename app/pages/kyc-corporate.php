@@ -49,6 +49,37 @@ requireLogin();
         .back-to-type-btn:hover i {
             transform: translateX(-3px);
         }
+
+        /* Saved Drafts floating panel */
+        #draftsCard {
+            position: fixed;
+            top: 78px; /* below topbar */
+            right: 18px;
+            width: 440px;
+            max-width: calc(100vw - 36px);
+            max-height: 72vh;
+            overflow: auto;
+            z-index: 9999;
+            display: none;
+        }
+        #draftsCard.open {
+            display: block;
+        }
+
+        .drafts-toggle-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.08);
+            background: rgba(255,255,255,0.65);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .drafts-toggle-btn:hover {
+            background: rgba(0,0,0,0.03);
+        }
     </style>
 </head>
 <body>
@@ -71,6 +102,9 @@ include '../includes/sidebar.php';
             </div>
         </div>
         <div class="topbar-right">
+            <button type="button" class="drafts-toggle-btn" title="Saved Drafts" onclick="toggleDraftsPanel()">
+                <i class="bi bi-inbox"></i>
+            </button>
         </div>
     </header>
 
@@ -159,6 +193,36 @@ include '../includes/sidebar.php';
                                 <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="Auto-generated" readonly>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drafts Card -->
+            <div class="card" id="draftsCard">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-inbox"></i> Saved Drafts</div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshDrafts()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <label for="draftSelect" class="form-label">Drafts</label>
+                            <select id="draftSelect" class="form-select">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
+                                <i class="bi bi-box-arrow-in-right"></i> Load Draft
+                            </button>
+                        </div>
+                    </div>
+                    <div id="draftInfo" style="margin-top:10px; color: var(--gray-500); font-size: .85rem;"></div>
+                    <div id="draftDocsWrapper" style="margin-top:14px;">
+                        <div style="color: var(--gray-500); font-size:.85rem;">Attachments saved to the selected draft:</div>
+                        <div id="draftDocsContainer" style="margin-top:8px;"></div>
                     </div>
                 </div>
             </div>
@@ -776,6 +840,252 @@ initCorporateAddressSelectors();
 // Restore form data on page load
 document.addEventListener('DOMContentLoaded', restoreFormData);
 
+// ── Drafts UI (resume/load) ─────────────────────────────────────────────
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function parseComposedAddress(addressStr) {
+    // Expected format from buildAddress(): "street, barangay, city, province, region"
+    if (!addressStr) return null;
+    const parts = String(addressStr).split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length < 5) return null;
+    return {
+        street: parts[0],
+        barangay: parts[1],
+        city: parts[2],
+        province: parts[3],
+        region: parts.slice(4).join(', ')
+    };
+}
+
+function waitForSelectReady(selectEl, minOptions = 2, timeoutMs = 8000) {
+    return new Promise(resolve => {
+        const start = Date.now();
+        const timer = setInterval(() => {
+            const ok = selectEl && selectEl.options && selectEl.options.length >= minOptions && !selectEl.disabled;
+            if (ok) {
+                clearInterval(timer);
+                resolve(true);
+                return;
+            }
+            if (Date.now() - start >= timeoutMs) {
+                clearInterval(timer);
+                resolve(false);
+            }
+        }, 200);
+    });
+}
+
+async function restoreCorporateAddressFromDraftAddress(addressStr) {
+    const parsed = parseComposedAddress(addressStr);
+    if (!parsed) return;
+
+    const regionEl = document.getElementById('region');
+    const provinceEl = document.getElementById('corporateBusinessProvince');
+    const cityEl = document.getElementById('corporateBusinessCtm');
+    const barangayEl = document.getElementById('corporateBusinessBarangay');
+    const streetEl = document.getElementById('corporateStreet');
+
+    if (!regionEl || !provinceEl || !cityEl || !barangayEl || !streetEl) return;
+
+    const regionReady = await waitForSelectReady(regionEl, 2);
+    if (!regionReady) return;
+
+    regionEl.value = parsed.region;
+    regionEl.dispatchEvent(new Event('change'));
+
+    const provinceReady = await waitForSelectReady(provinceEl, 2);
+    if (!provinceReady) return;
+    provinceEl.value = parsed.province;
+    provinceEl.dispatchEvent(new Event('change'));
+
+    const cityReady = await waitForSelectReady(cityEl, 2);
+    if (!cityReady) return;
+    cityEl.value = parsed.city;
+    cityEl.dispatchEvent(new Event('change'));
+
+    const barangayReady = await waitForSelectReady(barangayEl, 2);
+    if (!barangayReady) return;
+    barangayEl.value = parsed.barangay;
+
+    streetEl.value = parsed.street;
+    syncCorporateAddressField();
+}
+
+async function loadSelectedDraft() {
+    const draftSelect = document.getElementById('draftSelect');
+    const loadDraftBtn = document.getElementById('loadDraftBtn');
+    const draftDocsContainer = document.getElementById('draftDocsContainer');
+    const draftInfoEl = document.getElementById('draftInfo');
+
+    if (!draftSelect || !loadDraftBtn) return;
+    const refCode = draftSelect.value;
+    if (!refCode) return;
+
+    loadDraftBtn.disabled = true;
+    if (draftDocsContainer) draftDocsContainer.innerHTML = 'Loading attachments...';
+    if (draftInfoEl) draftInfoEl.textContent = 'Loading draft...';
+
+    try {
+        const kycResp = await fetch(`../handlers/kyc.php?action=get_kyc&ref_code=${encodeURIComponent(refCode)}`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        const kycData = await kycResp.json();
+        if (!kycData || !kycData.success) {
+            showToast('error', 'Load Draft Failed', kycData?.message || 'Unable to load the selected draft.');
+            return;
+        }
+
+        const draft = kycData.data || {};
+
+        // Apply fields (only those present/mapped for the corporate form).
+        const refInput = document.getElementById('refCode');
+        if (refInput) {
+            refInput.value = draft.ref_code || draft.reference_code || refCode;
+            refInput.readOnly = true;
+        }
+
+        const setIfEl = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.value = value ?? '';
+        };
+
+        setIfEl('corporateClientName', draft.company);
+        setIfEl('corporatePhone', draft.mobile || draft.phone);
+        setIfEl('corporateEmail', draft.email);
+        setIfEl('corporateContactPerson', draft.occupation);
+        setIfEl('corporateGender', draft.gender);
+
+        await restoreCorporateAddressFromDraftAddress(draft.address);
+
+        if (draftInfoEl) {
+            const updatedAt = draft.updated_at ? new Date(draft.updated_at).toLocaleString() : '';
+            draftInfoEl.textContent = `Loaded ${refCode}${updatedAt ? ` (updated: ${escapeHtml(updatedAt)})` : ''}.`;
+        }
+
+        const docsResp = await fetch(`../handlers/kyc.php?action=get_draft_documents&ref_code=${encodeURIComponent(refCode)}`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        const docsData = await docsResp.json();
+        const docs = (docsData && docsData.success) ? (docsData.data || []) : [];
+
+        if (!draftDocsContainer) return;
+        if (!docs.length) {
+            draftDocsContainer.innerHTML = `<div style="color: var(--gray-500);">No saved attachments for this draft yet.</div>`;
+        } else {
+            draftDocsContainer.innerHTML = docs.map(doc => {
+                const fileUrl = `../../${doc.file_path}`;
+                const name = escapeHtml(doc.file_name || 'file');
+                const ext = (doc.file_name || '').split('.').pop().toLowerCase();
+                const icon = ext === 'pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark';
+                const size = doc.file_size ? ` (${escapeHtml(String(doc.file_size))} bytes)` : '';
+
+                return `
+                    <div class="file-item" style="margin-bottom:10px;">
+                        <i class="bi ${icon}"></i>
+                        <span>${name}</span>
+                        <span style="color: var(--gray-500); font-size: .8rem;">${escapeHtml(size)}</span>
+                        <div style="margin-top:6px;">
+                            <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Open</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Also load attachments into the form's attachment holder.
+        const draftSessionUploads = docs.map(doc => ({
+            file_name: doc.file_name || '',
+            original_name: doc.file_name || '',
+            file_type: doc.file_type || null,
+            file_size: doc.file_size || null,
+            file_path: doc.file_path || null
+        }));
+
+        if (typeof setStoredUploads === 'function' && typeof renderStoredUploads === 'function') {
+            setStoredUploads(draftSessionUploads || []);
+            renderStoredUploads();
+        }
+    } catch (error) {
+        console.error('Error loading draft:', error);
+        showToast('error', 'Load Draft Failed', 'Unexpected error while loading the draft.');
+    } finally {
+        loadDraftBtn.disabled = false;
+    }
+}
+
+async function refreshDrafts() {
+    const draftSelect = document.getElementById('draftSelect');
+    const loadDraftBtn = document.getElementById('loadDraftBtn');
+    const draftDocsContainer = document.getElementById('draftDocsContainer');
+    const draftInfoEl = document.getElementById('draftInfo');
+
+    if (!draftSelect) return;
+
+    draftSelect.innerHTML = `<option value="">Loading...</option>`;
+    draftSelect.value = '';
+    if (loadDraftBtn) loadDraftBtn.disabled = true;
+    if (draftDocsContainer) draftDocsContainer.innerHTML = '';
+    if (draftInfoEl) draftInfoEl.textContent = '';
+
+    try {
+        const resp = await fetch(`../handlers/kyc.php?action=get_drafts&draftType=corporate`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        const data = await resp.json();
+        const drafts = (data && data.success) ? (data.data || []) : [];
+
+        if (!drafts.length) {
+            draftSelect.innerHTML = `<option value="">No drafts found</option>`;
+            if (loadDraftBtn) loadDraftBtn.disabled = true;
+            return;
+        }
+
+        draftSelect.innerHTML = `
+            <option value="">Select a draft...</option>
+        ` + drafts.map(d => {
+            const refCode = d.ref_code || d.reference_code || '';
+            const label = (d.company || d.email || 'Draft');
+            return `<option value="${escapeHtml(refCode)}">${escapeHtml(refCode)} - ${escapeHtml(label)}</option>`;
+        }).join('');
+
+        draftSelect.onchange = function () {
+            if (loadDraftBtn) loadDraftBtn.disabled = !this.value;
+        };
+    } catch (error) {
+        console.error('Error loading drafts:', error);
+        draftSelect.innerHTML = `<option value="">Failed to load drafts</option>`;
+        if (loadDraftBtn) loadDraftBtn.disabled = true;
+    }
+}
+
+// Load drafts list on page open.
+document.addEventListener('DOMContentLoaded', () => {
+    const draftSelect = document.getElementById('draftSelect');
+    if (!draftSelect) return;
+    refreshDrafts();
+});
+
+function toggleDraftsPanel() {
+    const panel = document.getElementById('draftsCard');
+    if (!panel) return;
+    const willOpen = !panel.classList.contains('open');
+    panel.classList.toggle('open', willOpen);
+    if (willOpen && typeof refreshDrafts === 'function') {
+        refreshDrafts();
+    }
+}
+
 function proceedToReview() {
     syncCorporateAddressField();
 
@@ -878,6 +1188,10 @@ function saveDraft() {
             formData.append(el.name, el.value);
         }
     });
+
+    // Persist attachments into `documents` for this draft.
+    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
+    formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
     
     // Submit to handler
     fetch('../handlers/kyc.php', {
@@ -908,6 +1222,15 @@ async function clearForm() {
         el.value = '';
         el.classList.remove('is-invalid','is-valid');
     });
+
+    const draftSelect = document.getElementById('draftSelect');
+    if (draftSelect) draftSelect.value = '';
+    const loadDraftBtn = document.getElementById('loadDraftBtn');
+    if (loadDraftBtn) loadDraftBtn.disabled = true;
+    const draftInfoEl = document.getElementById('draftInfo');
+    if (draftInfoEl) draftInfoEl.textContent = '';
+    const draftDocsContainer = document.getElementById('draftDocsContainer');
+    if (draftDocsContainer) draftDocsContainer.innerHTML = '';
 
     // Clear any temp-uploaded documents
     const uploads = (typeof getStoredUploads === 'function') ? getStoredUploads() : [];
@@ -977,10 +1300,15 @@ function renderStoredUploads() {
 
         const name = f.original_name || f.file_name || 'file';
         const size = Number(f.file_size || 0);
+        const openUrl = f.file_path ? `../../${f.file_path}` : '';
+        const openBtnHtml = openUrl
+            ? `<a href="${openUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" style="padding:4px 10px; margin-left:auto;">Open</a>`
+            : '';
         item.innerHTML = `
             <i class="bi ${fileIconClass(name)}"></i>
             <span>${name}</span>
             <small>${size ? formatSize(size) : ''}</small>
+            ${openBtnHtml}
             <i class="bi bi-trash file-remove" title="Remove"></i>
         `;
 
@@ -989,7 +1317,9 @@ function renderStoredUploads() {
             const removed = current.splice(idx, 1)[0];
             setStoredUploads(current);
             renderStoredUploads();
-            await deleteTempUpload(removed?.temp_path);
+            if (removed?.temp_path) {
+                await deleteTempUpload(removed?.temp_path);
+            }
             showToast('info', 'File Removed', `${name} was removed.`);
         });
 

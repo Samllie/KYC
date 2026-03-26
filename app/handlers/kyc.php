@@ -158,6 +158,15 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $finalize = kyc_finalize_temp_uploads($_SESSION['user_id'], $uploadedFiles, $clientId, $kycId);
         if (($finalize['success'] ?? false) && !empty($finalize['files'])) {
             foreach ($finalize['files'] as $doc) {
+                $filePath = $doc['file_path'] ?? null;
+                // Avoid duplicating rows when resuming drafts (attachments may already be finalized).
+                if ($filePath) {
+                    $already = fetchOne(
+                        "SELECT document_id FROM documents WHERE kyc_id = ? AND file_path = ? LIMIT 1",
+                        [$kycId, $filePath]
+                    );
+                    if ($already) continue;
+                }
                 // Best-effort insert (do not fail submission if documents table is missing)
                 insert('documents', [
                     'kyc_id' => $kycId,
@@ -195,16 +204,18 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'middle_name' => trim($_POST['middleName'] ?? ''),
         'suffix' => trim($_POST['suffixName'] ?? ''),
         'birthdate' => trim($_POST['birthdate'] ?? ''),
-        'gender' => trim($_POST['gender'] ?? ''),
+        'gender' => trim($_POST['gender'] ?? $_POST['corporateGender'] ?? ''),
         'nationality' => trim($_POST['nationality'] ?? ''),
         'id_type' => trim($_POST['idType'] ?? ''),
         'id_number' => trim($_POST['idNumber'] ?? ''),
-        'occupation' => trim($_POST['occupation'] ?? ''),
-        'company' => trim($_POST['company'] ?? $_POST['employer'] ?? ''),  // Handle form field name mismatch
-        'mobile' => trim($_POST['mobile'] ?? ''),
-        'phone' => trim($_POST['phone'] ?? $_POST['telephone'] ?? ''),  // Handle form field name mismatch
-        'email' => trim($_POST['email'] ?? ''),
-        'address' => trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
+        // Corporate form uses corporateContactPerson/designation, while individual uses occupation/employer.
+        'occupation' => trim($_POST['occupation'] ?? $_POST['corporateContactPerson'] ?? $_POST['designation'] ?? ''),
+        // Handle form field name mismatches for both individual + corporate forms.
+        'company' => trim($_POST['company'] ?? $_POST['employer'] ?? $_POST['corporateClientName'] ?? ''),
+        'mobile' => trim($_POST['mobile'] ?? $_POST['corporatePhone'] ?? ''),
+        'phone' => trim($_POST['phone'] ?? $_POST['telephone'] ?? $_POST['corporatePhone'] ?? ''),
+        'email' => trim($_POST['email'] ?? $_POST['corporateEmail'] ?? ''),
+        'address' => trim($_POST['homeAddress'] ?? $_POST['address'] ?? $_POST['corporateBusinessAddress'] ?? '')
     ];
     
     // If no reference code provided, generate a unique one
@@ -274,6 +285,15 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $finalize = kyc_finalize_temp_uploads($_SESSION['user_id'], $uploadedFiles, $clientId, $kycId);
         if (($finalize['success'] ?? false) && !empty($finalize['files'])) {
             foreach ($finalize['files'] as $doc) {
+                $filePath = $doc['file_path'] ?? null;
+                // Avoid duplicating rows when resuming drafts.
+                if ($filePath) {
+                    $already = fetchOne(
+                        "SELECT document_id FROM documents WHERE kyc_id = ? AND file_path = ? LIMIT 1",
+                        [$kycId, $filePath]
+                    );
+                    if ($already) continue;
+                }
                 insert('documents', [
                     'kyc_id' => $kycId,
                     'client_id' => $clientId,
@@ -295,6 +315,83 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ============================================
+// LIST DRAFTS
+// ============================================
+else if ($action === 'get_drafts' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    $draftType = trim($_GET['draftType'] ?? '');
+
+    $params = [$_SESSION['user_id']];
+    $whereSql = "WHERE k.status = 'draft' AND c.submitted_by = ?";
+
+    if (!empty($draftType)) {
+        $whereSql .= " AND k.client_type = ?";
+        $params[] = $draftType;
+    }
+
+    $sql = "
+        SELECT
+            k.kyc_id,
+            COALESCE(k.ref_code, k.reference_code) AS ref_code,
+            k.client_type,
+            k.status,
+            k.updated_at,
+            k.first_name,
+            k.last_name,
+            k.company,
+            k.mobile,
+            k.email
+        FROM kyc_verifications k
+        INNER JOIN clients c ON c.client_id = k.client_id
+        $whereSql
+        ORDER BY k.updated_at DESC
+    ";
+
+    $drafts = fetchAll($sql, $params);
+
+    $response['success'] = true;
+    $response['data'] = $drafts;
+    echo json_encode($response);
+    exit;
+}
+
+// ============================================
+// GET DRAFT DOCUMENTS
+// ============================================
+else if ($action === 'get_draft_documents' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    $refCode = trim($_GET['ref_code'] ?? '');
+    if (empty($refCode)) {
+        $response['message'] = 'Reference code is required';
+        echo json_encode($response);
+        exit;
+    }
+
+    $sql = "
+        SELECT
+            d.document_id,
+            d.file_name,
+            d.file_type,
+            d.file_size,
+            d.file_path,
+            d.uploaded_at,
+            d.status
+        FROM documents d
+        INNER JOIN kyc_verifications k ON k.kyc_id = d.kyc_id
+        INNER JOIN clients c ON c.client_id = k.client_id
+        WHERE k.status = 'draft'
+          AND c.submitted_by = ?
+          AND COALESCE(k.ref_code, k.reference_code) = ?
+        ORDER BY d.uploaded_at DESC
+    ";
+
+    $docs = fetchAll($sql, [$_SESSION['user_id'], $refCode]);
+
+    $response['success'] = true;
+    $response['data'] = $docs;
+    echo json_encode($response);
+    exit;
+}
+
+// ============================================
 // GET KYC RECORD
 // ============================================
 else if ($action === 'get_kyc' && $_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -306,7 +403,7 @@ else if ($action === 'get_kyc' && $_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
     
-    $kyc = fetchOne("SELECT * FROM kyc_verifications WHERE ref_code = ?", [$refCode]);
+    $kyc = fetchOne("SELECT * FROM kyc_verifications WHERE COALESCE(ref_code, reference_code) = ?", [$refCode]);
     
     if (!$kyc) {
         $response['message'] = 'KYC record not found';
