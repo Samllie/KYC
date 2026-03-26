@@ -28,6 +28,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $userProvidedRefCode = trim($_POST['refCode'] ?? '');
     $clientType = trim($_POST['clientType'] ?? '');
     
+    // Map form field names to database field names (handling form field mismatches)
     $formData = [
         'ref_code' => $userProvidedRefCode,
         'client_type' => $clientType,
@@ -41,9 +42,9 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'id_type' => trim($_POST['idType'] ?? ''),
         'id_number' => trim($_POST['idNumber'] ?? ''),
         'occupation' => trim($_POST['occupation'] ?? ''),
-        'company' => trim($_POST['company'] ?? ''),
+        'company' => trim($_POST['company'] ?? $_POST['employer'] ?? ''),  // Handle form field name mismatch
         'mobile' => trim($_POST['mobile'] ?? ''),
-        'phone' => trim($_POST['phone'] ?? ''),
+        'phone' => trim($_POST['phone'] ?? $_POST['telephone'] ?? ''),  // Handle form field name mismatch
         'email' => trim($_POST['email'] ?? ''),
         'address' => trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
     ];
@@ -185,6 +186,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $userProvidedRefCode = trim($_POST['refCode'] ?? '');
     
+    // Map form field names to database field names (handling form field mismatches)
     $formData = [
         'ref_code' => $userProvidedRefCode,
         'client_type' => trim($_POST['clientType'] ?? ''),
@@ -198,9 +200,9 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'id_type' => trim($_POST['idType'] ?? ''),
         'id_number' => trim($_POST['idNumber'] ?? ''),
         'occupation' => trim($_POST['occupation'] ?? ''),
-        'company' => trim($_POST['company'] ?? ''),
+        'company' => trim($_POST['company'] ?? $_POST['employer'] ?? ''),  // Handle form field name mismatch
         'mobile' => trim($_POST['mobile'] ?? ''),
-        'phone' => trim($_POST['phone'] ?? ''),
+        'phone' => trim($_POST['phone'] ?? $_POST['telephone'] ?? ''),  // Handle form field name mismatch
         'email' => trim($_POST['email'] ?? ''),
         'address' => trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
     ];
@@ -220,21 +222,21 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'reference_code' => $formData['ref_code'],
             'client_number' => 'CN-' . time(),
             'client_type' => $formData['client_type'] ?: 'individual',
-            'first_name' => $formData['first_name'] ?: null,
-            'middle_name' => $formData['middle_name'] ?: null,
-            'last_name' => $formData['last_name'] ?: null,
-            'suffix' => $formData['suffix'] ?: null,
-            'date_of_birth' => $formData['birthdate'] ?: null,
-            'gender' => $formData['gender'] ?: null,
-            'nationality' => $formData['nationality'] ?: null,
-            'id_type' => $formData['id_type'] ?: null,
-            'id_number' => $formData['id_number'] ?: null,
-            'occupation' => $formData['occupation'] ?: null,
-            'company_name' => $formData['company'] ?: null,
-            'mobile_phone' => $formData['mobile'] ?: null,
-            'landline_phone' => $formData['phone'] ?: null,
-            'email' => $formData['email'] ?: null,
-            'home_address' => $formData['address'] ?: null,
+            'first_name' => $formData['first_name'] ?: '',
+            'middle_name' => $formData['middle_name'] ?: '',
+            'last_name' => $formData['last_name'] ?: '',
+            'suffix' => $formData['suffix'] ?: '',
+            'date_of_birth' => !empty($formData['birthdate']) ? $formData['birthdate'] : null,
+            'gender' => $formData['gender'] ?: '',
+            'nationality' => $formData['nationality'] ?: '',
+            'id_type' => $formData['id_type'] ?: '',
+            'id_number' => $formData['id_number'] ?: '',
+            'occupation' => $formData['occupation'] ?: '',
+            'company_name' => $formData['company'] ?: '',
+            'mobile_phone' => $formData['mobile'] ?: '',
+            'landline_phone' => $formData['phone'] ?: '',
+            'email' => $formData['email'] ?: '',
+            'home_address' => $formData['address'] ?: '',
             'verification_status' => 'draft',
             'submitted_by' => $_SESSION['user_id'],
             'submitted_at' => date('Y-m-d H:i:s')

@@ -285,7 +285,7 @@ include '../includes/sidebar.php';
                         <div class="col-md-12">
                             <div class="form-group">
                                 <label for="corporateStreet" class="form-label">Street / Unit / Building <span class="req">*</span></label>
-                                <input type="text" id="corporateStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
+                                <input type="text" id="corporateStreet" name="corporateStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
                                 <input type="hidden" id="corporateBusinessAddress" name="corporateBusinessAddress">
                                 <div class="form-error">Business address is required</div>
                             </div>
