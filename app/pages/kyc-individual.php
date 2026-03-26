@@ -256,6 +256,12 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
+                                <label for="salutation" class="form-label">Salutations</label>
+                                <input type="text" id="salutation" name="salutation" class="form-control" placeholder="e.g., Mr., Ms., Dr.">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
                                 <label for="birthdate" class="form-label">Date of Birth <span class="req">*</span></label>
                                 <input type="date" id="birthdate" name="birthdate" class="form-control" required>
                                 <div class="form-error">Date of birth is required</div>
@@ -271,6 +277,53 @@ include '../includes/sidebar.php';
                                         <option value="female">Female</option>
                                     </select>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="apSlCode" class="form-label">AP SL Code</label>
+                                <input type="text" id="apSlCode" name="apSlCode" class="form-control" placeholder="Enter AP SL Code">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="arSlCode" class="form-label">AR SL Code</label>
+                                <input type="text" id="arSlCode" name="arSlCode" class="form-control" placeholder="Enter AR SL Code">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="clientSince" class="form-label">Client Since</label>
+                                <input type="date" id="clientSince" name="clientSince" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spouse Information Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-people"></i> Spouse Information</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="spouseName" class="form-label">Spouse Name</label>
+                                <input type="text" id="spouseName" name="spouseName" class="form-control" placeholder="Spouse Full Name">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="spouseBirthdate" class="form-label">Spouse Birthdate</label>
+                                <input type="date" id="spouseBirthdate" name="spouseBirthdate" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="spouseOccupation" class="form-label">Spouse Occupation</label>
+                                <input type="text" id="spouseOccupation" name="spouseOccupation" class="form-control" placeholder="Spouse Occupation">
                             </div>
                         </div>
                     </div>
@@ -295,6 +348,12 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="employer" class="form-label">Employer</label>
                                 <input type="text" id="employer" name="employer" class="form-control" placeholder="Company Name">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="officePhone" class="form-label">Office Phone</label>
+                                <input type="tel" id="officePhone" name="officePhone" class="form-control" placeholder="(02) 8XXX-XXXX">
                             </div>
                         </div>
                     </div>
@@ -446,22 +505,22 @@ include '../includes/sidebar.php';
                 </div>
             </div>
 
-            <!-- Client Classification Card -->
+            <!-- Mailing Address Preference Card -->
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-tag"></i> Client Classification</div>
+                    <div class="card-title"><i class="bi bi-mailbox"></i> Mailing Address</div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label class="form-label">Client Type <span class="req">*</span></label>
+                                <label class="form-label">Use Which Mailing Address? <span class="req">*</span></label>
                                 <div style="display:flex;gap:20px;margin-top:8px;">
                                     <label style="display:flex;align-items:center;gap:8px;">
-                                        <input type="radio" id="clientType1" name="clientClassification" value="client" required> Client
+                                        <input type="radio" id="mailingBusiness" name="mailingAddressType" value="business" required> Business
                                     </label>
                                     <label style="display:flex;align-items:center;gap:8px;">
-                                        <input type="radio" id="agentType1" name="clientClassification" value="agent" required> Agent
+                                        <input type="radio" id="mailingHome" name="mailingAddressType" value="home" required> Home
                                     </label>
                                 </div>
                             </div>
@@ -599,8 +658,8 @@ function validateAllRequired() {
         }
     });
     
-    // Validate clientClassification radio
-    if (!validateRadioGroup('clientClassification')) allValid = false;
+    // Validate mailingAddressType radio
+    if (!validateRadioGroup('mailingAddressType')) allValid = false;
     if (!allValid && failedFields.length > 0) {
         console.log('Failed fields:', failedFields);
     }

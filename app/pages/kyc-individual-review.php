@@ -160,15 +160,28 @@ function displayReview() {
                 { label: 'Last Name', key: 'lastName' },
                 { label: 'First Name', key: 'firstName' },
                 { label: 'Middle Name', key: 'middleName' },
+                { label: 'Salutations', key: 'salutation' },
                 { label: 'Date of Birth', key: 'birthdate' },
-                { label: 'Gender', key: 'gender' }
+                { label: 'Gender', key: 'gender' },
+                { label: 'AP SL Code', key: 'apSlCode' },
+                { label: 'AR SL Code', key: 'arSlCode' },
+                { label: 'Client Since', key: 'clientSince' }
             ]
         },
         {
             title: 'Occupation',
             fields: [
                 { label: 'Occupation', key: 'occupation' },
-                { label: 'Employer', key: 'employer' }
+                { label: 'Employer', key: 'employer' },
+                { label: 'Office Phone', key: 'officePhone' }
+            ]
+        },
+        {
+            title: 'Spouse Information',
+            fields: [
+                { label: 'Spouse Name', key: 'spouseName' },
+                { label: 'Spouse Birthdate', key: 'spouseBirthdate' },
+                { label: 'Spouse Occupation', key: 'spouseOccupation' }
             ]
         },
         {
@@ -192,9 +205,9 @@ function displayReview() {
             ]
         },
         {
-            title: 'Client Classification',
+            title: 'Mailing Address',
             fields: [
-                { label: 'Classification', key: 'clientClassification' }
+                { label: 'Address Type', key: 'mailingAddressType' }
             ]
         }
     ];
