@@ -87,6 +87,7 @@ body.sidebar-collapsed {
 body.sidebar-collapsed .sidebar-text {
     opacity: 0;
     visibility: hidden;
+    display: none;
 }
 
 /* ─── Sidebar ────────────────────────────────────── */
@@ -524,6 +525,8 @@ body.sidebar-collapsed .user-card {
 body.sidebar-collapsed .user-menu-btn {
     display: none;
 }
+
+/* In collapsed mode the dropdown is positioned via JS (fixed) */
 
 body.sidebar-collapsed .sidebar-footer {
     padding: 10px 8px;
