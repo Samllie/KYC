@@ -53,18 +53,23 @@ requireLogin();
         /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
-            top: 78px; /* below topbar */
+            top: 82px;
             right: 18px;
-            width: 440px;
-            max-width: calc(100vw - 36px);
-            max-height: 72vh;
-            overflow: auto;
+            width: 420px;
+            max-width: calc(100vw - 28px);
+            max-height: 76vh;
+            overflow: hidden;
             z-index: 9999;
             display: block;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transform: translateY(-8px) scale(0.98);
+            transform: translateY(-8px) scale(0.985);
+            transform-origin: top right;
+            border: 1px solid #d8dee6;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: 0 20px 44px rgba(17, 24, 39, 0.16), 0 4px 14px rgba(17, 24, 39, 0.08);
             transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
         }
         #draftsCard.open {
@@ -72,6 +77,57 @@ requireLogin();
             visibility: visible;
             pointer-events: auto;
             transform: translateY(0) scale(1);
+        }
+
+        #draftsCard .card-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e7ebf0;
+            background: #f9fafb;
+        }
+
+        #draftsCard .card-title {
+            font-size: .9rem;
+            color: #1f2937;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #draftsCard .card-body {
+            padding: 14px 16px 18px;
+            overflow: auto;
+            max-height: calc(76vh - 62px);
+        }
+
+        .drafts-fields {
+            display: grid;
+            grid-template-columns: 1fr;
+            row-gap: 10px;
+        }
+
+        .drafts-action-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+
+        #loadDraftBtn {
+            min-width: 120px;
+            height: 34px;
+            padding: 0 12px;
+            font-size: .78rem;
+            border-radius: 9px;
+        }
+
+        #draftInfo,
+        #draftDocsWrapper,
+        #draftDocsContainer {
+            font-size: .82rem;
+        }
+
+        #draftSelect {
+            height: 40px;
+            font-size: .84rem;
         }
 
         .drafts-toggle-btn {
@@ -243,14 +299,14 @@ include '../includes/sidebar.php';
                     </button>
                 </div>
                 <div class="card-body">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-8">
+                    <div class="drafts-fields">
+                        <div>
                             <label for="draftSelect" class="form-label">Drafts</label>
                             <select id="draftSelect" class="form-select">
                                 <option value="">Loading...</option>
                             </select>
                         </div>
-                        <div class="col-md-4 d-grid">
+                        <div class="drafts-action-row">
                             <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
                                 <i class="bi bi-box-arrow-in-right"></i> Load Draft
                             </button>
@@ -1312,13 +1368,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function toggleDraftsPanel() {
     const panel = document.getElementById('draftsCard');
+    const toggleBtn = document.querySelector('.drafts-toggle-btn');
     if (!panel) return;
     const willOpen = !panel.classList.contains('open');
     panel.classList.toggle('open', willOpen);
+    if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    }
     if (willOpen && typeof refreshDrafts === 'function') {
         refreshDrafts();
     }
 }
+
+function closeDraftsPanel() {
+    const panel = document.getElementById('draftsCard');
+    const toggleBtn = document.querySelector('.drafts-toggle-btn');
+    if (!panel) return;
+    panel.classList.remove('open');
+    if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+}
+
+document.addEventListener('click', function (event) {
+    const panel = document.getElementById('draftsCard');
+    const toggleBtn = document.querySelector('.drafts-toggle-btn');
+    if (!panel || !panel.classList.contains('open')) return;
+
+    const clickedInsidePanel = panel.contains(event.target);
+    const clickedToggle = !!(toggleBtn && (toggleBtn === event.target || toggleBtn.contains(event.target)));
+    if (!clickedInsidePanel && !clickedToggle) {
+        closeDraftsPanel();
+    }
+});
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeDraftsPanel();
+    }
+});
 
 function proceedToReview() {
     const proceedBtn = document.getElementById('proceedBtn');

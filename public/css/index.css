@@ -27,6 +27,10 @@
     --info:     #3B82F6;
 
     --sidebar-w: 228px;
+    --sidebar-toggle-top: 330px;
+    --sidebar-toggle-left-offset: -58px;
+    --sidebar-toggle-shift-x: 0px;
+    --sidebar-toggle-shift-y: 0px;
     --radius-lg: 16px;
     --radius-md: 10px;
     --radius-sm: 6px;
@@ -405,7 +409,7 @@ body.sidebar-collapsed .sidebar-text {
 .sidebar-toggle {
     width: 42px;
     height: 42px;
-    border: 2px solid rgba(255,255,255,.85);
+    border: none;
     border-radius: 50%;
     background: var(--green-500);
     color: var(--white);
@@ -415,8 +419,8 @@ body.sidebar-collapsed .sidebar-text {
     transition: left var(--transition), transform var(--transition), background var(--transition), box-shadow var(--transition);
     flex-shrink: 0;
     position: fixed;
-    top: 26px;
-    left: calc(var(--sidebar-w) - 21px);
+    top: calc(var(--sidebar-toggle-top) + var(--sidebar-toggle-shift-y));
+    left: calc(var(--sidebar-w) + var(--sidebar-toggle-left-offset) + var(--sidebar-toggle-shift-x));
     z-index: 120;
     box-shadow: 0 10px 22px rgba(12, 67, 24, 0.34);
 }
@@ -432,6 +436,7 @@ body.sidebar-collapsed .sidebar-text {
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-bottom: -2px;
     line-height: 1;
     width: 100%;
     height: 100%;
@@ -439,6 +444,7 @@ body.sidebar-collapsed .sidebar-text {
 }
 
 body.sidebar-collapsed .sidebar-toggle i {
+    margin-bottom: 1px;
     transform: rotate(180deg);
 }
 
