@@ -156,7 +156,7 @@ include '../includes/sidebar.php';
                 <div class="step-num">3</div>
                 <div class="step-info">
                     <span>Step 3</span>
-                    <strong>Documents</strong>
+                    <strong>Contact Details</strong>
                 </div>
             </div>
             <div class="step-line"></div>

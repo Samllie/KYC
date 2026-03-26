@@ -130,6 +130,40 @@ requireLogin();
             font-size: .84rem;
         }
 
+        #kycForm {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+            align-items: stretch;
+        }
+
+        #kycForm > .card {
+            margin-bottom: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #kycForm > .card .card-body,
+        #kycForm > .card .card-footer {
+            flex: 1;
+        }
+
+        #kycForm > .card.card-span-2 {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 1100px) {
+            #kycForm {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        #kycForm > .card.wizard-hidden {
+            display: none;
+        }
+
         .drafts-toggle-btn {
             width: 38px;
             height: 38px;
@@ -172,6 +206,14 @@ requireLogin();
         .drafts-toggle-btn:active,
         .back-to-type-btn:active {
             transform: translateY(1px) scale(0.98);
+        }
+
+        .steps-bar .step.step-clickable {
+            cursor: pointer;
+        }
+
+        .steps-bar .step.step-clickable .step-num {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -226,7 +268,7 @@ include '../includes/sidebar.php';
                 <div class="step-num">3</div>
                 <div class="step-info">
                     <span>Step 3</span>
-                    <strong>Documents</strong>
+                    <strong>Contact Details</strong>
                 </div>
             </div>
             <div class="step-line"></div>
@@ -243,7 +285,7 @@ include '../includes/sidebar.php';
         <form id="kycForm" novalidate>
 
             <!-- Client Type Card -->
-            <div class="card">
+            <div class="card card-span-2" data-wizard-step="2">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-list"></i> Client Type</div>
                     <a href="kyc-verification.php" class="back-to-type-btn">
@@ -267,7 +309,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Reference Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="2">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-hash"></i> Reference</div>
                 </div>
@@ -321,7 +363,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Company Information Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="2">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-building"></i> Company Information</div>
                 </div>
@@ -358,7 +400,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Business Details Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="2">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-info-circle"></i> Business Details</div>
                 </div>
@@ -393,7 +435,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Business Address Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="2">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-shop"></i> Business Address</div>
                 </div>
@@ -452,7 +494,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Contact Information Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-telephone"></i> Contact Information</div>
                 </div>
@@ -484,7 +526,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Contact Person Details Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-info-circle"></i> Contact Person Details</div>
                 </div>
@@ -520,7 +562,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Documents Card -->
-            <div class="card">
+            <div class="card card-span-2" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-file-earmark"></i> Supporting Documents</div>
                 </div>
@@ -548,14 +590,20 @@ include '../includes/sidebar.php';
                     <button type="button" id="backBtn" class="btn btn-outline" onclick="goBack()">
                         <i class="bi bi-arrow-left"></i> Back to Type Selection
                     </button>
+                    <button type="button" id="wizardPrevBtn" class="btn btn-outline">
+                        <i class="bi bi-chevron-left"></i> Previous
+                    </button>
                     <button type="button" id="clearBtn" class="btn btn-outline" onclick="clearForm()">
                         <i class="bi bi-arrow-counterclockwise"></i> Clear Form
                     </button>
                     <button type="button" id="saveDraftBtn" class="btn btn-outline" onclick="saveDraft()">
                         <i class="bi bi-download"></i> Save Draft
                     </button>
+                    <button type="button" id="wizardNextBtn" class="btn btn-primary">
+                        Next <i class="bi bi-chevron-right"></i>
+                    </button>
                     <button type="button" id="proceedBtn" class="btn btn-primary" onclick="proceedToReview()">
-                        <i class="bi bi-arrow-right"></i> Proceed to Review
+                        <i class="bi bi-arrow-right"></i> Go to Summary Page
                     </button>
                 </div>
             </div>
@@ -1237,6 +1285,145 @@ document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         closeDraftsPanel();
     }
+});
+
+const WIZARD_MIN_STEP = 2;
+const WIZARD_MAX_STEP = 4;
+let currentWizardStep = WIZARD_MIN_STEP;
+
+function validateWizardStep(step) {
+    const stepCards = document.querySelectorAll(`#kycForm > .card[data-wizard-step="${step}"]`);
+    if (!stepCards.length) return true;
+
+    let allValid = true;
+    const requiredRadioNames = new Set();
+
+    stepCards.forEach((card) => {
+        const requiredInputs = card.querySelectorAll('input[required], select[required], textarea[required]');
+
+        requiredInputs.forEach((el) => {
+            if (el.type === 'radio') {
+                if (el.name) requiredRadioNames.add(el.name);
+                return;
+            }
+
+            if (el.id) {
+                if (!validateField(el.id)) allValid = false;
+            } else {
+                const value = (el.value || '').trim();
+                if (!value) {
+                    allValid = false;
+                    el.classList.add('is-invalid');
+                } else {
+                    el.classList.remove('is-invalid');
+                }
+            }
+        });
+    });
+
+    requiredRadioNames.forEach((name) => {
+        if (!validateRadioGroup(name)) allValid = false;
+    });
+
+    return allValid;
+}
+
+function updateWizardProgress(step) {
+    const steps = {
+        2: document.getElementById('step-2'),
+        3: document.getElementById('step-3'),
+        4: document.getElementById('step-4')
+    };
+    const lines = document.querySelectorAll('.steps-bar .step-line');
+
+    Object.entries(steps).forEach(([key, el]) => {
+        if (!el) return;
+        const n = Number(key);
+        el.classList.toggle('done', n < step);
+        el.classList.toggle('active', n === step);
+    });
+
+    if (lines[1]) lines[1].classList.toggle('done', step >= 3);
+    if (lines[2]) lines[2].classList.toggle('done', step >= 4);
+}
+
+function applyWizardStep(step) {
+    const cards = document.querySelectorAll('#kycForm > .card[data-wizard-step]');
+    cards.forEach((card) => {
+        const cardStep = Number(card.getAttribute('data-wizard-step'));
+        card.classList.toggle('wizard-hidden', cardStep !== step);
+    });
+
+    const prevBtn = document.getElementById('wizardPrevBtn');
+    const nextBtn = document.getElementById('wizardNextBtn');
+    const proceedBtn = document.getElementById('proceedBtn');
+
+    if (prevBtn) prevBtn.style.display = step > WIZARD_MIN_STEP ? '' : 'none';
+    if (nextBtn) nextBtn.style.display = step < WIZARD_MAX_STEP ? '' : 'none';
+    if (proceedBtn) proceedBtn.style.display = step === WIZARD_MAX_STEP ? '' : 'none';
+
+    updateWizardProgress(step);
+}
+
+function goToWizardStep(step) {
+    const bounded = Math.max(WIZARD_MIN_STEP, Math.min(WIZARD_MAX_STEP, step));
+
+    if (bounded > currentWizardStep + 1) {
+        showToast('info', 'Step Locked', 'Complete the current step before jumping ahead.');
+        return;
+    }
+
+    if (bounded > currentWizardStep && !validateWizardStep(currentWizardStep)) {
+        showToast('error', 'Validation Failed', 'Please complete required fields in the current step first.');
+        return;
+    }
+
+    currentWizardStep = bounded;
+    applyWizardStep(currentWizardStep);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const prevBtn = document.getElementById('wizardPrevBtn');
+    const nextBtn = document.getElementById('wizardNextBtn');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => goToWizardStep(currentWizardStep - 1));
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => goToWizardStep(currentWizardStep + 1));
+    }
+
+    const stepOne = document.getElementById('step-1');
+    if (stepOne) {
+        stepOne.classList.add('step-clickable');
+        stepOne.setAttribute('role', 'button');
+        stepOne.setAttribute('tabindex', '0');
+        stepOne.addEventListener('click', () => goBack());
+        stepOne.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                goBack();
+            }
+        });
+    }
+
+    [2, 3, 4].forEach((step) => {
+        const stepEl = document.getElementById(`step-${step}`);
+        if (!stepEl) return;
+        stepEl.classList.add('step-clickable');
+        stepEl.setAttribute('role', 'button');
+        stepEl.setAttribute('tabindex', '0');
+        stepEl.addEventListener('click', () => goToWizardStep(step));
+        stepEl.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                goToWizardStep(step);
+            }
+        });
+    });
+
+    applyWizardStep(currentWizardStep);
 });
 
 function proceedToReview() {

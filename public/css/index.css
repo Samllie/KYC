@@ -685,8 +685,8 @@ body.sidebar-collapsed .sidebar-footer {
 }
 
 body.sidebar-collapsed .steps-bar.sticky {
-    left: var(--sidebar-collapsed-w);
-    width: calc(100% - var(--sidebar-collapsed-w));
+    left: var(--sidebar-w);
+    width: calc(100% - var(--sidebar-w));
 }
 
 .steps-bar.sticky .step { display: none; }
@@ -746,7 +746,7 @@ body.sidebar-collapsed .steps-bar.sticky {
 
 .card-footer {
     padding: 16px 28px;
-    background: #f3faf5;
+    background: #fff;
     border-top: 1px solid #d7e4dc;
     display: flex;
     align-items: center;

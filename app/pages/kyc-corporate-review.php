@@ -136,7 +136,7 @@ include '../includes/sidebar.php';
                 <div class="step-num"><i class="bi bi-check" style="font-size:.9rem;"></i></div>
                 <div class="step-info">
                     <span>Step 3</span>
-                    <strong>Documents</strong>
+                    <strong>Contact Details</strong>
                 </div>
             </div>
             <div class="step-line done"></div>
