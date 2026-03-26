@@ -56,11 +56,12 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
                 <img src="../../public/images/SterlingLogo.png" alt="Sterling Insurance" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
             <div class="brand-text sidebar-text">
+
                 <strong>KYC System</strong>
             </div>
         </a>
         <button type="button" id="sidebarToggleBtn" class="sidebar-toggle" aria-label="Toggle sidebar" title="Toggle sidebar">
-            <i class="bi bi-stars"></i>
+            <i class="bi bi-arrow-left"></i>
         </button>
     </div>
 
@@ -100,16 +101,6 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
         </div>
     </div>
 </aside>
-
-<button
-    type="button"
-    id="sidebarToggle"
-    class="sidebar-toggle"
-    aria-label="Collapse sidebar"
-    aria-expanded="true"
->
-    <i class="bi bi-arrow-left"></i>
-</button>
 
 <div id="logoutConfirmModal" class="logout-modal" aria-hidden="true">
     <div class="logout-modal-card" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle">
@@ -192,13 +183,15 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     const dropdown = document.getElementById('userMenuDropdown');
     const logoutItem = document.getElementById('logoutMenuItem');
     const switchAccountItem = document.getElementById('switchAccountMenuItem');
+    const userCard = document.querySelector('.user-card');
+    const userAvatar = document.querySelector('.user-avatar');
     const modal = document.getElementById('logoutConfirmModal');
     const cancelBtn = document.getElementById('logoutCancelBtn');
     const confirmBtn = document.getElementById('logoutConfirmBtn');
     const confirmTitle = document.getElementById('logoutConfirmTitle');
     const accountConfirmMessage = document.getElementById('accountConfirmMessage');
 
-    if (!menuBtn || !dropdown || !logoutItem || !switchAccountItem || !modal || !cancelBtn || !confirmBtn || !confirmTitle || !accountConfirmMessage) {
+    if (!menuBtn || !dropdown || !logoutItem || !switchAccountItem || !modal || !cancelBtn || !confirmBtn || !confirmTitle || !accountConfirmMessage || !userCard || !userAvatar) {
         return;
     }
 
@@ -208,6 +201,54 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
         dropdown.classList.toggle('open', isOpen);
         menuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         dropdown.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+
+        // When collapsed, render dropdown outside the sidebar using fixed positioning
+        positionDropdown();
+    }
+
+    function resetDropdownPosition() {
+        dropdown.style.position = '';
+        dropdown.style.left = '';
+        dropdown.style.top = '';
+        dropdown.style.right = '';
+        dropdown.style.bottom = '';
+    }
+
+    function positionDropdown() {
+        if (!dropdown.classList.contains('open')) {
+            resetDropdownPosition();
+            return;
+        }
+
+        if (!document.body.classList.contains('sidebar-collapsed')) {
+            resetDropdownPosition();
+            return;
+        }
+
+        // Make it fixed relative to viewport so it doesn't affect sidebar scrolling
+        dropdown.style.position = 'fixed';
+        dropdown.style.right = 'auto';
+        dropdown.style.bottom = 'auto';
+
+        const gap = 12;
+        const pad = 8;
+        const cardRect = userCard.getBoundingClientRect();
+
+        // After opening, dropdown has measurable size
+        const dropRect = dropdown.getBoundingClientRect();
+
+        let left = cardRect.right + gap;
+        let top = cardRect.bottom - dropRect.height;
+
+        const maxLeft = window.innerWidth - dropRect.width - pad;
+        const maxTop = window.innerHeight - dropRect.height - pad;
+
+        if (left > maxLeft) left = Math.max(pad, maxLeft);
+        if (top < pad) top = pad;
+        if (top > maxTop) top = Math.max(pad, maxTop);
+
+        dropdown.style.left = `${left}px`;
+        dropdown.style.top = `${top}px`;
     }
 
     function setModalOpen(isOpen) {
@@ -221,11 +262,34 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
         setMenuOpen(!isOpen);
     });
 
+    function toggleMenuFromCollapsed(event) {
+        // In collapsed sidebar, the "..." button is hidden; make avatar/card open the menu.
+        if (!document.body.classList.contains('sidebar-collapsed')) {
+            return;
+        }
+
+        event.stopPropagation();
+        const isOpen = dropdown.classList.contains('open');
+        setMenuOpen(!isOpen);
+    }
+
+    userAvatar.addEventListener('click', toggleMenuFromCollapsed);
+    userCard.addEventListener('click', function (event) {
+        // Avoid double-toggle when clicking the (visible) menu button.
+        if (event.target === menuBtn || menuBtn.contains(event.target)) {
+            return;
+        }
+        toggleMenuFromCollapsed(event);
+    });
+
     document.addEventListener('click', function (event) {
         if (!dropdown.contains(event.target) && event.target !== menuBtn && !menuBtn.contains(event.target)) {
             setMenuOpen(false);
         }
     });
+
+    window.addEventListener('resize', positionDropdown);
+    window.addEventListener('scroll', positionDropdown, true);
 
     logoutItem.addEventListener('click', function () {
         setMenuOpen(false);
@@ -257,39 +321,6 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 
     confirmBtn.addEventListener('click', function () {
         window.location.href = pendingActionUrl;
-    });
-})();
-</script>
-
-<script>
-(function () {
-    const toggleBtn = document.getElementById('sidebarToggle');
-    if (!toggleBtn) return;
-
-    const body = document.body;
-    const ICON_CLASS = 'bi-arrow-left';
-    const STORAGE_KEY = 'sidebarCollapsed';
-
-    function setCollapsed(isCollapsed) {
-        body.classList.toggle('sidebar-collapsed', isCollapsed);
-        toggleBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
-
-        // Keep the icon purely CSS-driven (rotate), but ensure it exists.
-        const icon = toggleBtn.querySelector('i');
-        if (icon && ICON_CLASS) {
-            // No-op if the icon already matches; safe to leave.
-        }
-    }
-
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const initialCollapsed = stored === '1';
-    setCollapsed(initialCollapsed);
-
-    toggleBtn.addEventListener('click', function () {
-        const isCollapsed = body.classList.contains('sidebar-collapsed');
-        const nextCollapsed = !isCollapsed;
-        setCollapsed(nextCollapsed);
-        localStorage.setItem(STORAGE_KEY, nextCollapsed ? '1' : '0');
     });
 })();
 </script>
