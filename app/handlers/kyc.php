@@ -236,26 +236,41 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ============================================
 else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $userProvidedRefCode = trim($_POST['refCode'] ?? '');
-    
-    // Map form field names to database field names (handling form field mismatches)
+    $clientType = trim($_POST['clientType'] ?? '');
+
+    $isCorporate = ($clientType === 'corporate');
+
+    // Keep kyc_verifications values in a unified shape so get_kyc/load draft works for both client types.
     $formData = [
         'ref_code' => $userProvidedRefCode,
-        'client_type' => trim($_POST['clientType'] ?? ''),
-        'last_name' => trim($_POST['lastName'] ?? ''),
-        'first_name' => trim($_POST['firstName'] ?? ''),
-        'middle_name' => trim($_POST['middleName'] ?? ''),
-        'suffix' => trim($_POST['suffixName'] ?? ''),
-        'birthdate' => trim($_POST['birthdate'] ?? ''),
+        'client_type' => $clientType,
+        'last_name' => $isCorporate ? '' : trim($_POST['lastName'] ?? ''),
+        'first_name' => $isCorporate ? '' : trim($_POST['firstName'] ?? ''),
+        'middle_name' => $isCorporate ? '' : trim($_POST['middleName'] ?? ''),
+        'suffix' => $isCorporate ? '' : trim($_POST['suffixName'] ?? ''),
+        'birthdate' => $isCorporate ? null : trim($_POST['birthdate'] ?? ''),
         'gender' => trim($_POST['gender'] ?? $_POST['corporateGender'] ?? ''),
-        'nationality' => trim($_POST['nationality'] ?? ''),
-        'id_type' => trim($_POST['idType'] ?? ''),
-        'id_number' => trim($_POST['idNumber'] ?? ''),
-        'occupation' => trim($_POST['occupation'] ?? ''),
-        'company' => trim($_POST['employer'] ?? $_POST['company'] ?? ''),
-        'mobile' => trim($_POST['mobile'] ?? ''),
-        'phone' => trim($_POST['telephone'] ?? $_POST['phone'] ?? ''),
-        'email' => trim($_POST['email'] ?? ''),
-        'address' => trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
+        'nationality' => $isCorporate ? '' : trim($_POST['nationality'] ?? ''),
+        'id_type' => $isCorporate ? '' : trim($_POST['idType'] ?? ''),
+        'id_number' => $isCorporate ? '' : trim($_POST['idNumber'] ?? ''),
+        'occupation' => $isCorporate
+            ? trim($_POST['corporateContactPerson'] ?? '')
+            : trim($_POST['occupation'] ?? ''),
+        'company' => $isCorporate
+            ? trim($_POST['corporateClientName'] ?? '')
+            : trim($_POST['employer'] ?? $_POST['company'] ?? ''),
+        'mobile' => $isCorporate
+            ? trim($_POST['corporatePhone'] ?? '')
+            : trim($_POST['mobile'] ?? ''),
+        'phone' => $isCorporate
+            ? trim($_POST['corporatePhone'] ?? '')
+            : trim($_POST['telephone'] ?? $_POST['phone'] ?? ''),
+        'email' => $isCorporate
+            ? trim($_POST['corporateEmail'] ?? '')
+            : trim($_POST['email'] ?? ''),
+        'address' => $isCorporate
+            ? trim($_POST['corporateBusinessAddress'] ?? $_POST['address'] ?? '')
+            : trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
     ];
     
     // If no reference code provided, generate a unique one
@@ -263,14 +278,32 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $formData['ref_code'] = generateUniqueReferenceCode();
     }
 
-    // Ensure a client exists for this ref_code (kyc_verifications.client_id is NOT NULL)
-    $clientId = 0;
-    $existingClient = fetchOne("SELECT client_id FROM clients WHERE reference_code = ?", [$formData['ref_code']]);
-    if ($existingClient) {
-        $clientId = intval($existingClient['client_id']);
+    if (empty($formData['client_type'])) {
+        $formData['client_type'] = 'individual';
+    }
 
-        update('clients', [
-            'client_type' => $formData['client_type'] ?: 'individual',
+    if ($isCorporate) {
+        $clientUpdateData = [
+            'client_type' => 'corporate',
+            'company_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
+            'business_type' => trim($_POST['businessType'] ?? '') ?: null,
+            'client_since' => trim($_POST['corporateClientSince'] ?? '') ?: null,
+            'tin_number' => trim($_POST['tinNumber'] ?? '') ?: null,
+            'ap_sl_code' => trim($_POST['corporateApSlCode'] ?? '') ?: null,
+            'ar_sl_code' => trim($_POST['corporateArSlCode'] ?? '') ?: null,
+            'designation' => trim($_POST['designation'] ?? '') ?: null,
+            'business_address' => trim($_POST['corporateBusinessAddress'] ?? '') ?: null,
+            'business_ctm' => trim($_POST['corporateBusinessCtm'] ?? '') ?: null,
+            'business_province' => trim($_POST['corporateBusinessProvince'] ?? '') ?: null,
+            'office_phone' => trim($_POST['corporatePhone'] ?? '') ?: null,
+            'email' => trim($_POST['corporateEmail'] ?? '') ?: null,
+            'contact_person' => trim($_POST['corporateContactPerson'] ?? '') ?: null,
+            'gender' => trim($_POST['corporateGender'] ?? '') ?: null,
+            'verification_status' => 'draft'
+        ];
+    } else {
+        $clientUpdateData = [
+            'client_type' => $formData['client_type'],
             'first_name' => $formData['first_name'] ?: null,
             'middle_name' => $formData['middle_name'] ?: null,
             'last_name' => $formData['last_name'] ?: null,
@@ -302,46 +335,28 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'landline_phone' => $formData['phone'] ?: null,
             'email' => $formData['email'] ?: null,
             'verification_status' => 'draft'
-        ], 'client_id = ?', [$clientId]);
+        ];
+    }
+
+    // Ensure a client exists for this ref_code (kyc_verifications.client_id is NOT NULL)
+    $clientId = 0;
+    $existingClient = fetchOne("SELECT client_id, submitted_by FROM clients WHERE reference_code = ?", [$formData['ref_code']]);
+    if ($existingClient) {
+        $clientId = intval($existingClient['client_id']);
+
+        if (empty($existingClient['submitted_by'])) {
+            $clientUpdateData['submitted_by'] = intval($_SESSION['user_id']);
+            $clientUpdateData['submitted_at'] = date('Y-m-d H:i:s');
+        }
+
+        update('clients', $clientUpdateData, 'client_id = ?', [$clientId]);
     } else {
-        $clientInsert = insert('clients', [
+        $clientInsert = insert('clients', array_merge([
             'reference_code' => $formData['ref_code'],
             'client_number' => 'CN-' . time(),
-            'client_type' => $formData['client_type'] ?: 'individual',
-            'first_name' => $formData['first_name'] ?: null,
-            'middle_name' => $formData['middle_name'] ?: null,
-            'last_name' => $formData['last_name'] ?: null,
-            'suffix' => $formData['suffix'] ?: null,
-            'salutation' => trim($_POST['salutation'] ?? '') ?: null,
-            'date_of_birth' => $formData['birthdate'] ?: null,
-            'gender' => $formData['gender'] ?: null,
-            'nationality' => $formData['nationality'] ?: null,
-            'client_since' => trim($_POST['clientSince'] ?? '') ?: null,
-            'spouse_name' => trim($_POST['spouseName'] ?? '') ?: null,
-            'spouse_birthdate' => trim($_POST['spouseBirthdate'] ?? '') ?: null,
-            'spouse_occupation' => trim($_POST['spouseOccupation'] ?? '') ?: null,
-            'id_type' => $formData['id_type'] ?: null,
-            'id_number' => $formData['id_number'] ?: null,
-            'occupation' => $formData['occupation'] ?: null,
-            'company_name' => $formData['company'] ?: null,
-            'ap_sl_code' => trim($_POST['apSlCode'] ?? '') ?: null,
-            'ar_sl_code' => trim($_POST['arSlCode'] ?? $_POST['apSlCode2'] ?? '') ?: null,
-            'mailing_address_type' => trim($_POST['mailingAddressType'] ?? '') ?: null,
-            'business_address' => trim($_POST['businessAddress'] ?? '') ?: null,
-            'business_ctm' => trim($_POST['businessCtm'] ?? '') ?: null,
-            'business_province' => trim($_POST['businessProvince'] ?? '') ?: null,
-            'mobile_phone' => $formData['mobile'] ?: null,
-            'office_phone' => trim($_POST['officePhone'] ?? '') ?: null,
-            'home_phone' => $formData['phone'] ?: null,
-            'landline_phone' => $formData['phone'] ?: null,
-            'email' => $formData['email'] ?: null,
-            'home_address' => $formData['address'] ?: null,
-            'home_ctm' => trim($_POST['homeCtm'] ?? '') ?: null,
-            'home_province' => trim($_POST['homeProvince'] ?? '') ?: null,
-            'verification_status' => 'draft',
-            'submitted_by' => $_SESSION['user_id'],
+            'submitted_by' => intval($_SESSION['user_id']),
             'submitted_at' => date('Y-m-d H:i:s')
-        ]);
+        ], $clientUpdateData));
         $clientId = intval($clientInsert['id'] ?? 0);
     }
     
