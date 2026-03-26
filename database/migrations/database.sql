@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS clients (
     first_name VARCHAR(50),
     middle_name VARCHAR(50),
     last_name VARCHAR(50),
+    salutation VARCHAR(20),
     suffix VARCHAR(10),
     client_name VARCHAR(200),
     

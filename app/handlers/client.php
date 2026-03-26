@@ -52,6 +52,7 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Map all posted fields to database columns
     $fieldMap = [
         // Individual fields
+        'salutation' => 'salutation',
         'firstName' => 'first_name',
         'lastName' => 'last_name',
         'middleName' => 'middle_name',
@@ -60,6 +61,7 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'nationality' => 'nationality',
         'clientSince' => 'client_since',
         'apSlCode' => 'ap_sl_code',
+        'apSlCode2' => 'ar_sl_code',
         'arSlCode' => 'ar_sl_code',
         'occupation' => 'occupation',
         'company' => 'company_name',

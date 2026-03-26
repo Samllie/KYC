@@ -4,6 +4,7 @@
 -- =====================================================
 
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS business_type ENUM('private', 'government') AFTER designation;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS salutation VARCHAR(20) AFTER last_name;
 
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS business_address VARCHAR(255) AFTER business_type;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS business_ctm VARCHAR(50) AFTER business_address;
@@ -18,9 +19,10 @@ ALTER TABLE clients ADD COLUMN IF NOT EXISTS mailing_address_type ENUM('business
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS office_phone VARCHAR(20) AFTER contact_person;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS home_phone VARCHAR(20) AFTER office_phone;
 
-ALTER TABLE clients ADD COLUMN IF NOT EXISTS ap_sl_code VARCHAR(50) AFTER ar_sl_code;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS ar_sl_code VARCHAR(50) AFTER ap_sl_code;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS ap_sl_code VARCHAR(50) AFTER contact_person;
 
-ALTER TABLE clients ADD COLUMN IF NOT EXISTS client_classification ENUM('client', 'agent') AFTER ap_sl_code;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS client_classification ENUM('client', 'agent') AFTER ar_sl_code;
 
 -- Verify the columns were added
 DESCRIBE clients;

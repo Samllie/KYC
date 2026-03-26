@@ -3,6 +3,7 @@
 
 ALTER TABLE clients 
 ADD COLUMN client_name VARCHAR(200) AFTER client_type,
+ADD COLUMN salutation VARCHAR(20) AFTER last_name,
 ADD COLUMN last_name_first BOOLEAN DEFAULT FALSE AFTER suffix,
 ADD COLUMN comma_separated BOOLEAN DEFAULT FALSE AFTER last_name_first,
 ADD COLUMN middle_initial_only BOOLEAN DEFAULT FALSE AFTER comma_separated,
