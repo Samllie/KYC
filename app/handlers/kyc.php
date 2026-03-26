@@ -6,6 +6,7 @@
 
 header('Content-Type: application/json');
 require_once '../config/db.php';
+require_once __DIR__ . '/upload_utils.php';
 session_start();
 
 $response = ['success' => false, 'message' => ''];
@@ -117,7 +118,9 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Create/Update KYC verification record
     $existingKyc = fetchOne("SELECT kyc_id FROM kyc_verifications WHERE client_id = ?", [$clientId]);
     
+    $kycId = 0;
     if ($existingKyc) {
+        $kycId = intval($existingKyc['kyc_id']);
         update('kyc_verifications', array_merge($formData, [
             'status' => 'submitted',
             'submitted_at' => date('Y-m-d H:i:s'),
@@ -128,7 +131,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'step_4_completed' => true
         ]), 'kyc_id = ?', [$existingKyc['kyc_id']]);
     } else {
-        insert('kyc_verifications', array_merge($formData, [
+        $kycInsert = insert('kyc_verifications', array_merge($formData, [
             'client_id' => $clientId,
             'reference_code' => $formData['ref_code'],
             'status' => 'submitted',
@@ -139,6 +142,35 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'step_3_completed' => true,
             'step_4_completed' => true
         ]));
+        $kycId = intval($kycInsert['id'] ?? 0);
+    }
+
+    // Finalize any temp-uploaded files (from form page) and record documents
+    $uploadedFilesRaw = $_POST['uploadedFiles'] ?? '[]';
+    $uploadedFiles = [];
+    if (is_string($uploadedFilesRaw) && $uploadedFilesRaw !== '') {
+        $decoded = json_decode($uploadedFilesRaw, true);
+        if (is_array($decoded)) $uploadedFiles = $decoded;
+    }
+
+    if (!empty($uploadedFiles) && $clientId && $kycId) {
+        $finalize = kyc_finalize_temp_uploads($_SESSION['user_id'], $uploadedFiles, $clientId, $kycId);
+        if (($finalize['success'] ?? false) && !empty($finalize['files'])) {
+            foreach ($finalize['files'] as $doc) {
+                // Best-effort insert (do not fail submission if documents table is missing)
+                insert('documents', [
+                    'kyc_id' => $kycId,
+                    'client_id' => $clientId,
+                    'file_name' => $doc['file_name'] ?? '',
+                    'file_type' => $doc['file_type'] ?? null,
+                    'file_size' => $doc['file_size'] ?? null,
+                    'file_path' => $doc['file_path'] ?? null,
+                    'document_type' => 'supporting',
+                    'uploaded_by' => $_SESSION['user_id'],
+                    'status' => 'pending'
+                ]);
+            }
+        }
     }
     
     $response['success'] = true;
@@ -177,17 +209,82 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($userProvidedRefCode)) {
         $formData['ref_code'] = generateUniqueReferenceCode();
     }
+
+    // Ensure a client exists for this ref_code (kyc_verifications.client_id is NOT NULL)
+    $clientId = 0;
+    $existingClient = fetchOne("SELECT client_id FROM clients WHERE reference_code = ?", [$formData['ref_code']]);
+    if ($existingClient) {
+        $clientId = intval($existingClient['client_id']);
+    } else {
+        $clientInsert = insert('clients', [
+            'reference_code' => $formData['ref_code'],
+            'client_number' => 'CN-' . time(),
+            'client_type' => $formData['client_type'] ?: 'individual',
+            'first_name' => $formData['first_name'] ?: null,
+            'middle_name' => $formData['middle_name'] ?: null,
+            'last_name' => $formData['last_name'] ?: null,
+            'suffix' => $formData['suffix'] ?: null,
+            'date_of_birth' => $formData['birthdate'] ?: null,
+            'gender' => $formData['gender'] ?: null,
+            'nationality' => $formData['nationality'] ?: null,
+            'id_type' => $formData['id_type'] ?: null,
+            'id_number' => $formData['id_number'] ?: null,
+            'occupation' => $formData['occupation'] ?: null,
+            'company_name' => $formData['company'] ?: null,
+            'mobile_phone' => $formData['mobile'] ?: null,
+            'landline_phone' => $formData['phone'] ?: null,
+            'email' => $formData['email'] ?: null,
+            'home_address' => $formData['address'] ?: null,
+            'verification_status' => 'draft',
+            'submitted_by' => $_SESSION['user_id'],
+            'submitted_at' => date('Y-m-d H:i:s')
+        ]);
+        $clientId = intval($clientInsert['id'] ?? 0);
+    }
     
     // Check if KYC record exists
-    $existingKyc = fetchOne("SELECT kyc_id, client_id FROM kyc_verifications WHERE ref_code = ?", [$formData['ref_code']]);
-    
+    $existingKyc = fetchOne("SELECT kyc_id FROM kyc_verifications WHERE ref_code = ?", [$formData['ref_code']]);
+
+    $kycId = 0;
     if ($existingKyc) {
+        $kycId = intval($existingKyc['kyc_id']);
         update('kyc_verifications', array_merge($formData, ['status' => 'draft']), 'kyc_id = ?', [$existingKyc['kyc_id']]);
     } else {
-        insert('kyc_verifications', array_merge($formData, [
+        // Create draft record
+        $kycInsert = insert('kyc_verifications', array_merge($formData, [
+            'client_id' => $clientId,
+            'reference_code' => $formData['ref_code'],
             'status' => 'draft',
             'step_current' => 1
         ]));
+        $kycId = intval($kycInsert['id'] ?? 0);
+    }
+
+    // Finalize any temp-uploaded files even for drafts (optional)
+    $uploadedFilesRaw = $_POST['uploadedFiles'] ?? '[]';
+    $uploadedFiles = [];
+    if (is_string($uploadedFilesRaw) && $uploadedFilesRaw !== '') {
+        $decoded = json_decode($uploadedFilesRaw, true);
+        if (is_array($decoded)) $uploadedFiles = $decoded;
+    }
+
+    if (!empty($uploadedFiles) && $clientId && $kycId) {
+        $finalize = kyc_finalize_temp_uploads($_SESSION['user_id'], $uploadedFiles, $clientId, $kycId);
+        if (($finalize['success'] ?? false) && !empty($finalize['files'])) {
+            foreach ($finalize['files'] as $doc) {
+                insert('documents', [
+                    'kyc_id' => $kycId,
+                    'client_id' => $clientId,
+                    'file_name' => $doc['file_name'] ?? '',
+                    'file_type' => $doc['file_type'] ?? null,
+                    'file_size' => $doc['file_size'] ?? null,
+                    'file_path' => $doc['file_path'] ?? null,
+                    'document_type' => 'supporting',
+                    'uploaded_by' => $_SESSION['user_id'],
+                    'status' => 'pending'
+                ]);
+            }
+        }
     }
     
     $response['success'] = true;

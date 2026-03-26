@@ -6,6 +6,7 @@
 
 header('Content-Type: application/json');
 require_once '../config/db.php';
+require_once __DIR__ . '/upload_utils.php';
 session_start();
 
 $response = ['success' => false, 'message' => ''];
@@ -122,9 +123,61 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
+    $clientId = intval($result['id'] ?? 0);
+
+    // Finalize any temp-uploaded files (from form page) and record documents
+    $uploadedFilesRaw = $_POST['uploadedFiles'] ?? '[]';
+    $uploadedFiles = [];
+    if (is_string($uploadedFilesRaw) && $uploadedFilesRaw !== '') {
+        $decoded = json_decode($uploadedFilesRaw, true);
+        if (is_array($decoded)) $uploadedFiles = $decoded;
+    }
+
+    if (!empty($uploadedFiles) && $clientId) {
+        // Ensure a KYC record exists to satisfy documents.kyc_id NOT NULL
+        $existingKyc = fetchOne("SELECT kyc_id FROM kyc_verifications WHERE client_id = ?", [$clientId]);
+        $kycId = intval($existingKyc['kyc_id'] ?? 0);
+
+        if (!$kycId) {
+            $kycInsert = insert('kyc_verifications', [
+                'client_id' => $clientId,
+                'reference_code' => $refCode,
+                'ref_code' => $refCode,
+                'client_type' => $clientType,
+                'status' => 'submitted',
+                'submitted_at' => date('Y-m-d H:i:s'),
+                'step_current' => 4,
+                'step_1_completed' => true,
+                'step_2_completed' => true,
+                'step_3_completed' => true,
+                'step_4_completed' => true,
+            ]);
+            $kycId = intval($kycInsert['id'] ?? 0);
+        }
+
+        if ($kycId) {
+            $finalize = kyc_finalize_temp_uploads($_SESSION['user_id'], $uploadedFiles, $clientId, $kycId);
+            if (($finalize['success'] ?? false) && !empty($finalize['files'])) {
+                foreach ($finalize['files'] as $doc) {
+                    insert('documents', [
+                        'kyc_id' => $kycId,
+                        'client_id' => $clientId,
+                        'file_name' => $doc['file_name'] ?? '',
+                        'file_type' => $doc['file_type'] ?? null,
+                        'file_size' => $doc['file_size'] ?? null,
+                        'file_path' => $doc['file_path'] ?? null,
+                        'document_type' => 'supporting',
+                        'uploaded_by' => $_SESSION['user_id'],
+                        'status' => 'pending'
+                    ]);
+                }
+            }
+        }
+    }
+
     $response['success'] = true;
     $response['message'] = 'Client added successfully';
-    $response['client_id'] = $result['id'];
+    $response['client_id'] = $clientId;
     $response['reference_code'] = $refCode;
 }
 

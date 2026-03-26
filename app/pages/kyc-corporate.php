@@ -373,7 +373,7 @@ include '../includes/sidebar.php';
                         <p><strong>Click to upload</strong> or drag and drop</p>
                         <small>PDF, JPG, PNG (Max 5MB each)</small>
                     </div>
-                    <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.pdf" style="display:none;">
+                    <input type="file" id="fileInput" name="documents[]" multiple accept=".jpg,.jpeg,.png,.pdf" style="display:none;">
                     <div class="file-list" id="fileList"></div>
                 </div>
             </div>
@@ -902,12 +902,17 @@ function saveDraft() {
     });
 }
 
-function clearForm() {
+async function clearForm() {
     document.getElementById('kycForm').querySelectorAll('input, select').forEach(el => {
         if (el.readOnly) return;
         el.value = '';
         el.classList.remove('is-invalid','is-valid');
     });
+
+    // Clear any temp-uploaded documents
+    const uploads = (typeof getStoredUploads === 'function') ? getStoredUploads() : [];
+    await Promise.all((uploads || []).map(u => deleteTempUpload(u?.temp_path)));
+    sessionStorage.removeItem('kycUploadedFiles');
     document.getElementById('fileList').innerHTML = '';
     showToast('info', 'Form Cleared', 'All fields have been reset.');
 }
@@ -921,38 +926,123 @@ const zone   = document.getElementById('uploadZone');
 const input  = document.getElementById('fileInput');
 const list   = document.getElementById('fileList');
 
+const UPLOAD_STORAGE_KEY = 'kycUploadedFiles';
+
+function getStoredUploads() {
+    try {
+        const raw = sessionStorage.getItem(UPLOAD_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function setStoredUploads(files) {
+    sessionStorage.setItem(UPLOAD_STORAGE_KEY, JSON.stringify(files || []));
+}
+
+function fileIconClass(filename) {
+    const ext = (filename || '').split('.').pop().toLowerCase();
+    const icons = { pdf:'bi-file-earmark-pdf', jpg:'bi-file-earmark-image', jpeg:'bi-file-earmark-image', png:'bi-file-earmark-image' };
+    return icons[ext] || 'bi-file-earmark';
+}
+
 function formatSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
     return (bytes/1048576).toFixed(1) + ' MB';
 }
 
-function addFile(file) {
-    const ext = file.name.split('.').pop().toLowerCase();
-    const icons = { pdf:'bi-file-earmark-pdf', jpg:'bi-file-earmark-image', jpeg:'bi-file-earmark-image', png:'bi-file-earmark-image' };
-    const item = document.createElement('div');
-    item.className = 'file-item';
-    item.innerHTML = `
-        <i class="bi ${icons[ext] || 'bi-file-earmark'}"></i>
-        <span>${file.name}</span>
-        <small>${formatSize(file.size)}</small>
-        <i class="bi bi-trash file-remove" onclick="this.parentElement.remove(); showToast('info','File Removed','${file.name} was removed.');"></i>`;
-    list.appendChild(item);
+async function deleteTempUpload(tempPath) {
+    if (!tempPath) return;
+    const fd = new FormData();
+    fd.append('action', 'delete_temp');
+    fd.append('path', tempPath);
+    try {
+        await fetch('../handlers/upload.php', { method: 'POST', body: fd });
+    } catch {
+        // Best-effort cleanup
+    }
 }
 
-input.addEventListener('change', () => {
-    Array.from(input.files).forEach(addFile);
-    if (input.files.length) showToast('success', 'Files Attached', `${input.files.length} file(s) added.`);
+function renderStoredUploads() {
+    const stored = getStoredUploads();
+    list.innerHTML = '';
+
+    stored.forEach((f, idx) => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.dataset.idx = String(idx);
+
+        const name = f.original_name || f.file_name || 'file';
+        const size = Number(f.file_size || 0);
+        item.innerHTML = `
+            <i class="bi ${fileIconClass(name)}"></i>
+            <span>${name}</span>
+            <small>${size ? formatSize(size) : ''}</small>
+            <i class="bi bi-trash file-remove" title="Remove"></i>
+        `;
+
+        item.querySelector('.file-remove')?.addEventListener('click', async () => {
+            const current = getStoredUploads();
+            const removed = current.splice(idx, 1)[0];
+            setStoredUploads(current);
+            renderStoredUploads();
+            await deleteTempUpload(removed?.temp_path);
+            showToast('info', 'File Removed', `${name} was removed.`);
+        });
+
+        list.appendChild(item);
+    });
+}
+
+async function uploadTempFiles(files) {
+    if (!files || !files.length) return;
+    const fd = new FormData();
+    fd.append('action', 'upload_temp');
+    files.forEach(file => fd.append('documents[]', file, file.name));
+
+    const resp = await fetch('../handlers/upload.php', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!data || !data.success) {
+        throw new Error(data?.message || 'Upload failed');
+    }
+
+    const stored = getStoredUploads();
+    const newlySaved = Array.isArray(data.files) ? data.files : [];
+    newlySaved.forEach(f => stored.push(f));
+    setStoredUploads(stored);
+    renderStoredUploads();
+
+    showToast('success', 'Files Uploaded', `${newlySaved.length} file(s) uploaded.`);
+}
+
+input.addEventListener('change', async () => {
+    const files = Array.from(input.files || []);
     input.value = '';
+    try {
+        await uploadTempFiles(files);
+    } catch (e) {
+        showToast('error', 'Upload Failed', e?.message || 'Please try again.');
+    }
 });
 
 zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
 zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-zone.addEventListener('drop', e => {
+zone.addEventListener('drop', async e => {
     e.preventDefault();
     zone.classList.remove('dragover');
-    Array.from(e.dataTransfer.files).forEach(addFile);
+    const files = Array.from(e.dataTransfer?.files || []);
+    try {
+        await uploadTempFiles(files);
+    } catch (err) {
+        showToast('error', 'Upload Failed', err?.message || 'Please try again.');
+    }
 });
+
+// Render any existing temp uploads (e.g., returning from review)
+document.addEventListener('DOMContentLoaded', renderStoredUploads);
 
 // ── Auto-gen Client Number ─────────────────────────────────
 document.getElementById('refCode').addEventListener('input', function() {
