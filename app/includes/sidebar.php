@@ -60,15 +60,18 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
                 <strong>KYC System</strong>
             </div>
         </a>
+        <button type="button" id="sidebarToggleBtn" class="sidebar-toggle" aria-label="Toggle sidebar" title="Toggle sidebar">
+            <i class="bi bi-stars"></i>
+        </button>
     </div>
 
     <nav class="sidebar-nav">
         <div class="nav-label">Main Menu</div>
 
         <?php foreach ($menuItems as $item): ?>
-            <a href="<?php echo htmlspecialchars($item['href']); ?>" class="nav-item <?php echo ($activePage === $item['page']) ? 'active' : ''; ?>">
+            <a href="<?php echo htmlspecialchars($item['href']); ?>" class="nav-item <?php echo ($activePage === $item['page']) ? 'active' : ''; ?>" title="<?php echo htmlspecialchars($item['label']); ?>">
                 <i class="bi <?php echo htmlspecialchars($item['icon']); ?>"></i> 
-                <?php echo htmlspecialchars($item['label']); ?>
+                <span class="nav-text"><?php echo htmlspecialchars($item['label']); ?></span>
                 <?php if ($item['badge']): ?>
                     <span class="nav-badge"><?php echo htmlspecialchars($item['badge']); ?></span>
                 <?php endif; ?>
@@ -115,6 +118,67 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 
 <script>
 (function () {
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const COLLAPSE_KEY = 'kyc.sidebar.collapsed';
+    const isMobile = function () {
+        return window.matchMedia('(max-width: 768px)').matches;
+    };
+
+    function readCollapsedState() {
+        try {
+            return localStorage.getItem(COLLAPSE_KEY) === '1';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function persistCollapsedState(collapsed) {
+        try {
+            localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
+        } catch (error) {
+            // Ignore storage failures so sidebar interactions keep working.
+        }
+    }
+
+    function syncToggleA11y(collapsed) {
+        if (!sidebarToggleBtn) {
+            return;
+        }
+
+        sidebarToggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        sidebarToggleBtn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        sidebarToggleBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    }
+
+    function applyCollapsedState(collapsed) {
+        if (isMobile()) {
+            document.body.classList.remove('sidebar-collapsed');
+            syncToggleA11y(false);
+            return;
+        }
+
+        document.body.classList.toggle('sidebar-collapsed', collapsed);
+        syncToggleA11y(collapsed);
+    }
+
+    function initSidebarState() {
+        applyCollapsedState(readCollapsedState());
+    }
+
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', function () {
+            const willCollapse = !document.body.classList.contains('sidebar-collapsed');
+            applyCollapsedState(willCollapse);
+            persistCollapsedState(willCollapse);
+        });
+    }
+
+    window.addEventListener('resize', function () {
+        applyCollapsedState(readCollapsedState());
+    });
+
+    initSidebarState();
+
     const menuBtn = document.getElementById('userMenuBtn');
     const dropdown = document.getElementById('userMenuDropdown');
     const logoutItem = document.getElementById('logoutMenuItem');
@@ -125,7 +189,9 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     const confirmTitle = document.getElementById('logoutConfirmTitle');
     const accountConfirmMessage = document.getElementById('accountConfirmMessage');
 
-    if (!menuBtn || !dropdown || !logoutItem || !switchAccountItem || !modal || !cancelBtn || !confirmBtn || !confirmTitle || !accountConfirmMessage) return;
+    if (!menuBtn || !dropdown || !logoutItem || !switchAccountItem || !modal || !cancelBtn || !confirmBtn || !confirmTitle || !accountConfirmMessage) {
+        return;
+    }
 
     let pendingActionUrl = '../auth/logout.php';
 

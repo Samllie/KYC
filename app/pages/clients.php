@@ -281,6 +281,27 @@ include '../includes/sidebar.php';
     let currentEditingClientId = null;
     let searchDebounceTimer = null;
 
+    function setTableLoading(isLoading) {
+        const wrapper = document.querySelector('.table-wrapper');
+        if (!wrapper) return;
+        wrapper.classList.toggle('is-loading', isLoading);
+    }
+
+    function setButtonBusy(button, isBusy, busyText = 'Working...') {
+        if (!button) return;
+        if (isBusy) {
+            button.dataset.originalText = button.innerHTML;
+            button.innerHTML = `<span class="spinner" style="width:14px;height:14px;"></span> ${busyText}`;
+            button.disabled = true;
+        } else {
+            button.disabled = false;
+            if (button.dataset.originalText) {
+                button.innerHTML = button.dataset.originalText;
+                delete button.dataset.originalText;
+            }
+        }
+    }
+
     function getActiveFilters() {
         return {
             search: document.getElementById('searchInput').value.trim(),
@@ -291,6 +312,7 @@ include '../includes/sidebar.php';
 
     // Load clients from database on page load
     function loadClients(page = 1) {
+        setTableLoading(true);
         const filters = getActiveFilters();
         const query = new URLSearchParams({
             page: page,
@@ -335,6 +357,9 @@ include '../includes/sidebar.php';
             .catch(error => {
                 console.error('Error loading clients:', error);
                 document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px; color: red;">Error loading clients: ' + error.message + '</td></tr>';
+            })
+            .finally(() => {
+                setTableLoading(false);
             });
     }
 
@@ -357,9 +382,11 @@ include '../includes/sidebar.php';
                 : (client.mobile_phone || 'N/A');
 
             const row = document.createElement('tr');
+            row.classList.add('row-enter');
             row.dataset.clientId = client.client_id;
             row.dataset.clientType = client.client_type || '';
             row.dataset.status = client.verification_status || '';
+            row.style.animationDelay = `${Math.min(tbody.children.length * 35, 220)}ms`;
             row.innerHTML = `
                 <td class="col-checkbox"><input type="checkbox"></td>
                 <td class="col-ref"><span class="ref-badge">${client.reference_code}</span></td>
@@ -554,11 +581,14 @@ include '../includes/sidebar.php';
     }
 
     function saveClientChanges() {
+        const saveBtn = document.getElementById('saveBtn');
         const clientId = document.getElementById('editClientId').value;
         if (!clientId) {
             createToast('error', 'Error', 'No client selected for update.', 'toastContainer');
             return;
         }
+
+        setButtonBusy(saveBtn, true, 'Saving...');
 
         const formData = new FormData();
         formData.append('action', 'edit_client');
@@ -590,6 +620,9 @@ include '../includes/sidebar.php';
         .catch(error => {
             createToast('error', 'Error', 'Failed to save client changes.', 'toastContainer');
             console.error('Error saving client:', error);
+        })
+        .finally(() => {
+            setButtonBusy(saveBtn, false);
         });
     }
 
@@ -611,6 +644,9 @@ include '../includes/sidebar.php';
         const formData = new FormData();
         formData.append('action', 'delete_client');
         formData.append('client_id', clientId);
+
+        const deleteBtn = row.querySelector('.action-icon.delete');
+        setButtonBusy(deleteBtn, true, '');
         
         fetch('../handlers/client.php', {
             method: 'POST',
@@ -631,6 +667,9 @@ include '../includes/sidebar.php';
         .catch(error => {
             const toast = createToast('error', 'Error', 'An error occurred.', 'toastContainer');
             console.error('Error:', error);
+        })
+        .finally(() => {
+            setButtonBusy(deleteBtn, false);
         });
     }
 
@@ -772,17 +811,22 @@ include '../includes/sidebar.php';
     async function showExportPreview() {
         const modal = document.getElementById('exportPreviewModal');
         const previewContent = document.getElementById('previewContent');
+        const exportBtn = document.querySelector('.btn-export');
+
+        setButtonBusy(exportBtn, true, 'Preparing...');
 
         let data = [];
         try {
             data = await getExportData();
         } catch (error) {
             createToast('error', 'Error', error.message || 'Failed to prepare export.', 'toastContainer');
+            setButtonBusy(exportBtn, false);
             return;
         }
         
         if (data.length === 0) {
             alert('No clients to export!');
+            setButtonBusy(exportBtn, false);
             return;
         }
 
@@ -819,6 +863,7 @@ include '../includes/sidebar.php';
         previewContent.innerHTML = html;
         exportData = data;
         modal.style.display = 'block';
+        setButtonBusy(exportBtn, false);
     }
 
     function exportAsCSV() {

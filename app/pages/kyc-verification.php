@@ -25,57 +25,57 @@ requireLogin();
         }
         
         .type-card {
-            background: white;      
-            border: 2px solid var(--border-gray);
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid #d8e7de;
+            border-radius: 16px;
             padding: 40px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
             color: inherit;
+            box-shadow: 0 8px 24px rgba(20, 58, 41, 0.1);
         }
         
         .type-card:nth-child(1) {
-            border-color: #64b5f6;
+            border-color: #c8ddf6;
         }
         
         .type-card:nth-child(2) {
-            border-color: #66bb6a;
+            border-color: #bbe6c9;
         }
         
         .type-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
+            box-shadow: 0 16px 34px rgba(20, 58, 41, 0.17);
+            transform: translateY(-4px);
         }
         
         .type-card:nth-child(1):hover {
-            background: #e3f2fd;
+            background: #f3f9ff;
         }
         
         .type-card:nth-child(2):hover {
-            background: #e8f5e9;
+            background: #f1fdf4;
         }
         
         .type-card:nth-child(1) .type-card-btn {
-            background: #64b5f6;
+            background: #2c75cc;
         }
         
         .type-card:nth-child(2) .type-card-btn {
-            background: #66bb6a;
+            background: #157345;
         }
         
         .type-card:nth-child(1):hover .type-card-btn {
-            background: #2196f3;
+            background: #1f5ea9;
         }
         
         .type-card:nth-child(2):hover .type-card-btn {
-            background: #4caf50;
+            background: #0f5a35;
         }
         
         .type-card-icon {
             font-size: 4rem;
-            color: var(--primary);
             margin-bottom: 20px;
         }
         
@@ -83,7 +83,7 @@ requireLogin();
             font-size: 1.5rem;
             font-weight: 600;
             margin-bottom: 10px;
-            color: var(--text-dark);
+            color: #142c21;
         }
         
         .type-card-desc {
@@ -95,15 +95,15 @@ requireLogin();
         .type-card-btn {
             display: inline-block;
             padding: 10px 30px;
-            background: var(--primary);
+            background: #12663d;
             color: white;
-            border-radius: 4px;
+            border-radius: 10px;
             font-weight: 500;
             transition: background 0.2s ease;
         }
         
         .type-card:hover .type-card-btn {
-            background: var(--primary-dark, #0056b3);
+            background: #0f5a35;
         }
     </style>
 </head>

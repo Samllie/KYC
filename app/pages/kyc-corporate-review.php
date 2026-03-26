@@ -13,6 +13,80 @@ requireLogin();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../../public/css/index.css">
     <link rel="stylesheet" href="../../public/css/global.css">
+    <style>
+        .review-section {
+            margin-bottom: 20px;
+            padding: 16px;
+            border: 1px solid #d8e5dd;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.92);
+            opacity: 0;
+            transform: translateY(8px);
+            animation: reviewSlideIn 0.3s ease forwards;
+        }
+
+        .review-title {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #d7e5dc;
+        }
+
+        .review-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .review-label {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            margin-bottom: 3px;
+        }
+
+        .review-value {
+            font-weight: 600;
+            color: #1e352b;
+            word-break: break-word;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .review-empty {
+            text-align: center;
+            color: var(--gray-500);
+            padding: 18px;
+            border: 1px dashed #d0ded6;
+            border-radius: 10px;
+            background: #fbfdfb;
+        }
+
+        @keyframes reviewSlideIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .review-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-group {
+                width: 100%;
+            }
+
+            .action-group .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -82,7 +156,7 @@ include '../includes/sidebar.php';
                 <div class="card-subtitle">Please review the information before submitting</div>
             </div>
             <div class="card-body" id="reviewBody">
-                <p style="text-align: center; color: var(--gray-500);">
+                <p class="review-empty">
                     <i class="bi bi-hourglass-split"></i> Loading information...
                 </p>
             </div>
@@ -91,11 +165,11 @@ include '../includes/sidebar.php';
         <!-- Action Buttons Card -->
         <div class="card">
             <div class="card-footer">
-                <div style="display:flex;gap:10px;">
-                    <button type="button" class="btn btn-outline" onclick="goBackToEdit()">
+                <div class="action-group">
+                    <button type="button" id="backBtn" class="btn btn-outline" onclick="goBackToEdit()">
                         <i class="bi bi-pencil"></i> Back to Edit
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="submitForm()">
+                    <button type="button" id="submitBtn" class="btn btn-primary" onclick="submitForm()">
                         <i class="bi bi-check-circle"></i> Submit & Continue
                     </button>
                 </div>
@@ -136,7 +210,7 @@ function displayReview() {
     const formData = JSON.parse(sessionStorage.getItem('kycFormData') || '{}');
     
     if (Object.keys(formData).length === 0) {
-        document.getElementById('reviewBody').innerHTML = '<p style="color: red;">No data found. Please fill the form first.</p>';
+        document.getElementById('reviewBody').innerHTML = '<div class="review-empty">No data found. Please fill the form first.</div>';
         return;
     }
     
@@ -197,11 +271,9 @@ function displayReview() {
     let html = '';
     sections.forEach((section, idx) => {
         html += `
-            <div style="margin-bottom: 30px;">
-                <div style="font-weight: 700; color: var(--primary); margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">
-                    ${section.title}
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <section class="review-section" style="animation-delay:${Math.min(idx * 70, 350)}ms;">
+                <div class="review-title">${section.title}</div>
+                <div class="review-grid">
         `;
         
         section.fields.forEach(field => {
@@ -209,14 +281,14 @@ function displayReview() {
             if (value) {
                 html += `
                     <div>
-                        <div style="font-size: 0.85rem; color: var(--gray-500); margin-bottom: 4px;">${field.label}</div>
-                        <div style="font-weight: 600; color: var(--gray-800);">${value}</div>
+                        <div class="review-label">${field.label}</div>
+                        <div class="review-value">${value}</div>
                     </div>
                 `;
             }
         });
         
-        html += '</div></div>';
+        html += '</div></section>';
     });
     
     document.getElementById('reviewBody').innerHTML = html;
@@ -227,6 +299,9 @@ function goBackToEdit() {
 }
 
 function submitForm() {
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn.disabled) return;
+
     const formData = JSON.parse(sessionStorage.getItem('kycFormData') || '{}');
     const uploadedFiles = JSON.parse(sessionStorage.getItem('kycUploadedFiles') || '[]');
     
@@ -234,6 +309,10 @@ function submitForm() {
         showToast('error', 'No Data', 'Form data not found. Please fill the form first.');
         return;
     }
+
+    submitBtn.disabled = true;
+    submitBtn.dataset.defaultHtml = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span class="spinner"></span> Submitting...';
     
     const formDataObj = new FormData();
     formDataObj.append('action', 'add_client');
@@ -266,6 +345,10 @@ function submitForm() {
     .catch(error => {
         showToast('error', 'Error', 'An error occurred. Please try again.');
         console.error('Error:', error);
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = submitBtn.dataset.defaultHtml || '<i class="bi bi-check-circle"></i> Submit & Continue';
     });
 }
 

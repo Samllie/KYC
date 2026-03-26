@@ -25,10 +25,10 @@ requireLogin();
             align-items: center;
             gap: 6px;
             padding: 8px 14px;
-            background-color: #f0f0f0;
-            color: #333;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.88);
+            color: #183026;
+            border: 1px solid #d2e0d8;
+            border-radius: 10px;
             font-size: 0.9rem;
             font-weight: 500;
             text-decoration: none;
@@ -37,8 +37,8 @@ requireLogin();
         }
 
         .back-to-type-btn:hover {
-            background-color: #e8e8e8;
-            border-color: #d0d0d0;
+            background-color: #eef8f2;
+            border-color: #b8d5c6;
             transform: translateX(-2px);
         }
 
@@ -60,25 +60,62 @@ requireLogin();
             max-height: 72vh;
             overflow: auto;
             z-index: 9999;
-            display: none;
+            display: block;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-8px) scale(0.98);
+            transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
         }
         #draftsCard.open {
-            display: block;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
         }
 
         .drafts-toggle-btn {
             width: 38px;
             height: 38px;
             border-radius: 10px;
-            border: 1px solid rgba(0,0,0,0.08);
-            background: rgba(255,255,255,0.65);
+            border: 1px solid #d2e0d8;
+            background: rgba(255,255,255,0.85);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: all 0.2s ease;
         }
         .drafts-toggle-btn:hover {
-            background: rgba(0,0,0,0.03);
+            background: #eef8f2;
+            border-color: #b9d6c7;
+        }
+
+        .card.flow-reveal {
+            animation: flowCardIn 0.28s ease both;
+        }
+
+        @keyframes flowCardIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .upload-zone.is-uploading {
+            pointer-events: none;
+            opacity: 0.75;
+            border-color: #9ecfb3;
+        }
+
+        .flow-actions .btn:active,
+        .drafts-toggle-btn:active,
+        .back-to-type-btn:active {
+            transform: translateY(1px) scale(0.98);
         }
     </style>
 </head>
@@ -201,7 +238,7 @@ include '../includes/sidebar.php';
             <div class="card" id="draftsCard">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-inbox"></i> Saved Drafts</div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshDrafts()">
+                    <button type="button" id="refreshDraftBtn" class="btn btn-sm btn-outline-secondary" onclick="refreshDrafts()">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
@@ -451,17 +488,17 @@ include '../includes/sidebar.php';
                     <i class="bi bi-info-circle" style="margin-right:4px;"></i>
                     All fields marked <span style="color:var(--danger);font-weight:700;">*</span> are required.
                 </div>
-                <div style="display:flex;gap:10px;">
-                    <button type="button" class="btn btn-outline" onclick="goBack()">
+                <div class="flow-actions" style="display:flex;gap:10px;">
+                    <button type="button" id="backBtn" class="btn btn-outline" onclick="goBack()">
                         <i class="bi bi-arrow-left"></i> Back to Type Selection
                     </button>
-                    <button type="button" class="btn btn-outline" onclick="clearForm()">
+                    <button type="button" id="clearBtn" class="btn btn-outline" onclick="clearForm()">
                         <i class="bi bi-arrow-counterclockwise"></i> Clear Form
                     </button>
-                    <button type="button" class="btn btn-outline" onclick="saveDraft()">
+                    <button type="button" id="saveDraftBtn" class="btn btn-outline" onclick="saveDraft()">
                         <i class="bi bi-download"></i> Save Draft
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="proceedToReview()">
+                    <button type="button" id="proceedBtn" class="btn btn-primary" onclick="proceedToReview()">
                         <i class="bi bi-arrow-right"></i> Proceed to Review
                     </button>
                 </div>
@@ -495,6 +532,29 @@ function showToast(type, title, msg) {
 function removeToast(el) {
     el.classList.add('out');
     setTimeout(() => el.remove(), 250);
+}
+
+function setButtonBusy(button, isBusy, label = 'Working...') {
+    if (!button) return;
+    if (isBusy) {
+        button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `<span class="spinner" style="width:14px;height:14px;"></span> ${label}`;
+    } else {
+        button.disabled = false;
+        if (button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+    }
+}
+
+function revealFlowCards() {
+    const cards = document.querySelectorAll('main.content .card');
+    cards.forEach((card, idx) => {
+        card.classList.add('flow-reveal');
+        card.style.animationDelay = `${Math.min(idx * 45, 280)}ms`;
+    });
 }
 
 // ── Form Validation ────────────────────────────────────────
@@ -929,7 +989,7 @@ async function loadSelectedDraft() {
     const refCode = draftSelect.value;
     if (!refCode) return;
 
-    loadDraftBtn.disabled = true;
+    setButtonBusy(loadDraftBtn, true, 'Loading...');
     if (draftDocsContainer) draftDocsContainer.innerHTML = 'Loading attachments...';
     if (draftInfoEl) draftInfoEl.textContent = 'Loading draft...';
 
@@ -1019,17 +1079,20 @@ async function loadSelectedDraft() {
         console.error('Error loading draft:', error);
         showToast('error', 'Load Draft Failed', 'Unexpected error while loading the draft.');
     } finally {
-        loadDraftBtn.disabled = false;
+        setButtonBusy(loadDraftBtn, false);
     }
 }
 
 async function refreshDrafts() {
     const draftSelect = document.getElementById('draftSelect');
     const loadDraftBtn = document.getElementById('loadDraftBtn');
+    const refreshDraftBtn = document.getElementById('refreshDraftBtn');
     const draftDocsContainer = document.getElementById('draftDocsContainer');
     const draftInfoEl = document.getElementById('draftInfo');
 
     if (!draftSelect) return;
+
+    setButtonBusy(refreshDraftBtn, true, 'Refreshing...');
 
     draftSelect.innerHTML = `<option value="">Loading...</option>`;
     draftSelect.value = '';
@@ -1066,6 +1129,8 @@ async function refreshDrafts() {
         console.error('Error loading drafts:', error);
         draftSelect.innerHTML = `<option value="">Failed to load drafts</option>`;
         if (loadDraftBtn) loadDraftBtn.disabled = true;
+    } finally {
+        setButtonBusy(refreshDraftBtn, false);
     }
 }
 
@@ -1087,12 +1152,17 @@ function toggleDraftsPanel() {
 }
 
 function proceedToReview() {
+    const proceedBtn = document.getElementById('proceedBtn');
+    if (proceedBtn?.disabled) return;
+
     syncCorporateAddressField();
 
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
         return;
     }
+
+    setButtonBusy(proceedBtn, true, 'Preparing...');
     
     // Collect form data
     const formData = {};
@@ -1174,7 +1244,11 @@ function submitForm() {
 }
 
 function saveDraft() {
+    const saveDraftBtn = document.getElementById('saveDraftBtn');
+    if (saveDraftBtn?.disabled) return;
+
     syncCorporateAddressField();
+    setButtonBusy(saveDraftBtn, true, 'Saving...');
 
     // Collect form data
     const formData = new FormData();
@@ -1213,10 +1287,16 @@ function saveDraft() {
     .catch(error => {
         showToast('error', 'Error', 'An error occurred. Please try again.');
         console.error('Error:', error);
+    })
+    .finally(() => {
+        setButtonBusy(saveDraftBtn, false);
     });
 }
 
 async function clearForm() {
+    const clearBtn = document.getElementById('clearBtn');
+    setButtonBusy(clearBtn, true, 'Clearing...');
+
     document.getElementById('kycForm').querySelectorAll('input, select').forEach(el => {
         if (el.readOnly) return;
         el.value = '';
@@ -1238,6 +1318,7 @@ async function clearForm() {
     sessionStorage.removeItem('kycUploadedFiles');
     document.getElementById('fileList').innerHTML = '';
     showToast('info', 'Form Cleared', 'All fields have been reset.');
+    setButtonBusy(clearBtn, false);
 }
 
 function goBack() {
@@ -1329,23 +1410,28 @@ function renderStoredUploads() {
 
 async function uploadTempFiles(files) {
     if (!files || !files.length) return;
-    const fd = new FormData();
-    fd.append('action', 'upload_temp');
-    files.forEach(file => fd.append('documents[]', file, file.name));
+    zone.classList.add('is-uploading');
+    try {
+        const fd = new FormData();
+        fd.append('action', 'upload_temp');
+        files.forEach(file => fd.append('documents[]', file, file.name));
 
-    const resp = await fetch('../handlers/upload.php', { method: 'POST', body: fd });
-    const data = await resp.json();
-    if (!data || !data.success) {
-        throw new Error(data?.message || 'Upload failed');
+        const resp = await fetch('../handlers/upload.php', { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (!data || !data.success) {
+            throw new Error(data?.message || 'Upload failed');
+        }
+
+        const stored = getStoredUploads();
+        const newlySaved = Array.isArray(data.files) ? data.files : [];
+        newlySaved.forEach(f => stored.push(f));
+        setStoredUploads(stored);
+        renderStoredUploads();
+
+        showToast('success', 'Files Uploaded', `${newlySaved.length} file(s) uploaded.`);
+    } finally {
+        zone.classList.remove('is-uploading');
     }
-
-    const stored = getStoredUploads();
-    const newlySaved = Array.isArray(data.files) ? data.files : [];
-    newlySaved.forEach(f => stored.push(f));
-    setStoredUploads(stored);
-    renderStoredUploads();
-
-    showToast('success', 'Files Uploaded', `${newlySaved.length} file(s) uploaded.`);
 }
 
 input.addEventListener('change', async () => {
@@ -1373,6 +1459,7 @@ zone.addEventListener('drop', async e => {
 
 // Render any existing temp uploads (e.g., returning from review)
 document.addEventListener('DOMContentLoaded', renderStoredUploads);
+document.addEventListener('DOMContentLoaded', revealFlowCards);
 
 // ── Auto-gen Client Number ─────────────────────────────────
 document.getElementById('refCode').addEventListener('input', function() {
