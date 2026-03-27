@@ -251,6 +251,14 @@ include '../includes/sidebar.php';
             <button class="modal-close" title="Close" onclick="document.getElementById('exportPreviewModal').style.display='none'"><i class="bi bi-x"></i></button>
         </div>
         <div class="modal-body" style="flex: 1; overflow-y: auto;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px;">
+                <label for="exportScope" style="font-weight: 600; color: #374151;">Export Scope</label>
+                <select id="exportScope" class="filter-select" style="min-width: 250px;">
+                    <option value="selected">Selected Clients (Checked)</option>
+                    <option value="filtered" selected>Filtered Clients</option>
+                    <option value="all">All Clients (Unfiltered)</option>
+                </select>
+            </div>
             <div id="previewContent" style="background: white; padding: 20px; border-radius: 8px;"></div>
         </div>
         <div class="modal-footer" style="justify-content: space-between;">
@@ -280,6 +288,30 @@ include '../includes/sidebar.php';
     let totalClients = 0;
     let currentEditingClientId = null;
     let searchDebounceTimer = null;
+    let currentPageClients = [];
+    const selectedClientIds = new Set();
+    const selectedClientRows = new Map();
+
+    function setTableLoading(isLoading) {
+        const wrapper = document.querySelector('.table-wrapper');
+        if (!wrapper) return;
+        wrapper.classList.toggle('is-loading', isLoading);
+    }
+
+    function setButtonBusy(button, isBusy, busyText = 'Working...') {
+        if (!button) return;
+        if (isBusy) {
+            button.dataset.originalText = button.innerHTML;
+            button.innerHTML = `<span class="spinner" style="width:14px;height:14px;"></span> ${busyText}`;
+            button.disabled = true;
+        } else {
+            button.disabled = false;
+            if (button.dataset.originalText) {
+                button.innerHTML = button.dataset.originalText;
+                delete button.dataset.originalText;
+            }
+        }
+    }
 
     function getActiveFilters() {
         return {
@@ -291,6 +323,7 @@ include '../includes/sidebar.php';
 
     // Load clients from database on page load
     function loadClients(page = 1) {
+        setTableLoading(true);
         const filters = getActiveFilters();
         const query = new URLSearchParams({
             page: page,
@@ -316,16 +349,20 @@ include '../includes/sidebar.php';
                     currentPage = data.page;
                     totalPages = data.totalPages;
                     totalClients = data.total;
+                    currentPageClients = Array.isArray(data.data) ? data.data : [];
                     if (data.data && data.data.length > 0) {
                         renderClientsTable(data.data);
                         attachClientEventListeners();
+                        syncSelectAllCheckbox();
                     } else {
                         document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">No clients found</td></tr>';
+                        syncSelectAllCheckbox();
                     }
 
                     updatePaginationInfo(data);
                     generatePaginationButtons(data);
                 } else {
+                    currentPageClients = [];
                     console.log('No clients found or fetch failed');
                     document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">No clients found</td></tr>';
                     updatePaginationInfo({ page: 1, total: 0, pageSize: 6, totalPages: 0 });
@@ -333,8 +370,13 @@ include '../includes/sidebar.php';
                 }
             })
             .catch(error => {
+                currentPageClients = [];
                 console.error('Error loading clients:', error);
                 document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px; color: red;">Error loading clients: ' + error.message + '</td></tr>';
+                syncSelectAllCheckbox();
+            })
+            .finally(() => {
+                setTableLoading(false);
             });
     }
 
@@ -357,11 +399,13 @@ include '../includes/sidebar.php';
                 : (client.mobile_phone || 'N/A');
 
             const row = document.createElement('tr');
+            row.classList.add('row-enter');
             row.dataset.clientId = client.client_id;
             row.dataset.clientType = client.client_type || '';
             row.dataset.status = client.verification_status || '';
+            row.style.animationDelay = `${Math.min(tbody.children.length * 35, 220)}ms`;
             row.innerHTML = `
-                <td class="col-checkbox"><input type="checkbox"></td>
+                <td class="col-checkbox"><input type="checkbox" class="row-select" data-client-id="${client.client_id}"></td>
                 <td class="col-ref"><span class="ref-badge">${client.reference_code}</span></td>
                 <td class="col-name">${displayName}</td>
                 <td class="col-owner">${ownerName}</td>
@@ -376,8 +420,52 @@ include '../includes/sidebar.php';
                     <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
                 </td>
             `;
+
+            const rowCheckbox = row.querySelector('.row-select');
+            if (rowCheckbox) {
+                rowCheckbox.checked = selectedClientIds.has(String(client.client_id));
+            }
+
             tbody.appendChild(row);
         });
+    }
+
+    function getCurrentPageClientById(clientId) {
+        const id = String(clientId);
+        return currentPageClients.find(client => String(client.client_id) === id) || null;
+    }
+
+    function updateSelection(clientId, isSelected) {
+        const id = String(clientId);
+        const client = getCurrentPageClientById(id);
+
+        if (isSelected) {
+            selectedClientIds.add(id);
+            if (client) {
+                selectedClientRows.set(id, mapClientToExportRow(client));
+            }
+        } else {
+            selectedClientIds.delete(id);
+            selectedClientRows.delete(id);
+        }
+    }
+
+    function syncSelectAllCheckbox() {
+        const selectAll = document.getElementById('selectAll');
+        if (!selectAll) return;
+
+        const rowCheckboxes = document.querySelectorAll('#clientsTableBody .row-select');
+        const totalVisible = rowCheckboxes.length;
+        const checkedVisible = Array.from(rowCheckboxes).filter(cb => cb.checked).length;
+
+        if (totalVisible === 0) {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+            return;
+        }
+
+        selectAll.checked = checkedVisible === totalVisible;
+        selectAll.indeterminate = checkedVisible > 0 && checkedVisible < totalVisible;
     }
 
     // Update pagination info
@@ -470,6 +558,14 @@ include '../includes/sidebar.php';
                     deleteClient(clientId, row);
                 });
             }
+
+            const rowCheckbox = row.querySelector('.row-select');
+            if (rowCheckbox) {
+                rowCheckbox.addEventListener('change', function() {
+                    updateSelection(this.dataset.clientId, this.checked);
+                    syncSelectAllCheckbox();
+                });
+            }
         });
     }
 
@@ -554,11 +650,14 @@ include '../includes/sidebar.php';
     }
 
     function saveClientChanges() {
+        const saveBtn = document.getElementById('saveBtn');
         const clientId = document.getElementById('editClientId').value;
         if (!clientId) {
             createToast('error', 'Error', 'No client selected for update.', 'toastContainer');
             return;
         }
+
+        setButtonBusy(saveBtn, true, 'Saving...');
 
         const formData = new FormData();
         formData.append('action', 'edit_client');
@@ -590,6 +689,9 @@ include '../includes/sidebar.php';
         .catch(error => {
             createToast('error', 'Error', 'Failed to save client changes.', 'toastContainer');
             console.error('Error saving client:', error);
+        })
+        .finally(() => {
+            setButtonBusy(saveBtn, false);
         });
     }
 
@@ -611,6 +713,9 @@ include '../includes/sidebar.php';
         const formData = new FormData();
         formData.append('action', 'delete_client');
         formData.append('client_id', clientId);
+
+        const deleteBtn = row.querySelector('.action-icon.delete');
+        setButtonBusy(deleteBtn, true, '');
         
         fetch('../handlers/client.php', {
             method: 'POST',
@@ -619,6 +724,10 @@ include '../includes/sidebar.php';
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                selectedClientIds.delete(String(clientId));
+                selectedClientRows.delete(String(clientId));
+                syncSelectAllCheckbox();
+
                 // Show toast
                 const toast = createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
                 // Fade out and remove row
@@ -631,6 +740,9 @@ include '../includes/sidebar.php';
         .catch(error => {
             const toast = createToast('error', 'Error', 'An error occurred.', 'toastContainer');
             console.error('Error:', error);
+        })
+        .finally(() => {
+            setButtonBusy(deleteBtn, false);
         });
     }
 
@@ -682,9 +794,12 @@ include '../includes/sidebar.php';
 
     // Select All functionality
     document.getElementById('selectAll').addEventListener('change', function() {
-        document.querySelectorAll('tbody input[type="checkbox"]').forEach(checkbox => {
+        document.querySelectorAll('#clientsTableBody .row-select').forEach(checkbox => {
             checkbox.checked = this.checked;
+            updateSelection(checkbox.dataset.clientId, checkbox.checked);
         });
+
+        this.indeterminate = false;
     });
 
     function applyServerFilters() {
@@ -703,6 +818,7 @@ include '../includes/sidebar.php';
 
     // Export Clients functionality
     let exportData = [];
+    let exportScopeLabel = 'Filtered clients';
 
     const exportHeaders = ['Ref Code', 'Business / Client Name', 'Company Owner', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
 
@@ -745,16 +861,26 @@ include '../includes/sidebar.php';
         };
     }
 
-    async function getExportData() {
+    function getSelectedExportData() {
+        const orderedIds = Array.from(selectedClientIds);
+        return orderedIds
+            .map(id => selectedClientRows.get(id))
+            .filter(Boolean);
+    }
+
+    async function getServerExportData(useFilters = true) {
         const filters = getActiveFilters();
         const query = new URLSearchParams({
             page: '1',
             pageSize: String(pageSize),
-            search: filters.search,
-            status: filters.status,
-            type: filters.type,
             exportAll: '1'
         });
+
+        if (useFilters) {
+            query.set('search', filters.search);
+            query.set('status', filters.status);
+            query.set('type', filters.type);
+        }
 
         const response = await fetch(`../handlers/get_clients.php?${query.toString()}`, {
             method: 'GET',
@@ -769,26 +895,66 @@ include '../includes/sidebar.php';
         return (payload.data || []).map(mapClientToExportRow);
     }
 
-    async function showExportPreview() {
-        const modal = document.getElementById('exportPreviewModal');
-        const previewContent = document.getElementById('previewContent');
+    function getDefaultExportScope() {
+        return selectedClientIds.size > 0 ? 'selected' : 'filtered';
+    }
 
-        let data = [];
-        try {
-            data = await getExportData();
-        } catch (error) {
-            createToast('error', 'Error', error.message || 'Failed to prepare export.', 'toastContainer');
-            return;
+    async function resolveExportPayload(scope) {
+        const selectedRows = getSelectedExportData();
+
+        if (scope === 'selected') {
+            if (selectedRows.length > 0) {
+                return {
+                    data: selectedRows,
+                    scope: 'selected',
+                    label: 'Selected clients only (checked rows)'
+                };
+            }
+
+            const filteredRows = await getServerExportData(true);
+            const scopeSelect = document.getElementById('exportScope');
+            if (scopeSelect) scopeSelect.value = 'filtered';
+
+            createToast('info', 'No Selection', 'No checked clients found. Export switched to filtered clients.', 'toastContainer');
+            return {
+                data: filteredRows,
+                scope: 'filtered',
+                label: `Filtered clients (${getFilterSummaryText()})`
+            };
         }
-        
+
+        if (scope === 'all') {
+            const allRows = await getServerExportData(false);
+            return {
+                data: allRows,
+                scope: 'all',
+                label: 'All clients (unfiltered)'
+            };
+        }
+
+        const filteredRows = await getServerExportData(true);
+        return {
+            data: filteredRows,
+            scope: 'filtered',
+            label: `Filtered clients (${getFilterSummaryText()})`
+        };
+    }
+
+    async function renderExportPreview(scope) {
+        const previewContent = document.getElementById('previewContent');
+        const resolved = await resolveExportPayload(scope);
+        const data = resolved.data;
+
         if (data.length === 0) {
-            alert('No clients to export!');
+            exportData = [];
+            exportScopeLabel = resolved.label;
+            previewContent.innerHTML = `<div style="padding: 20px; color: #6b7280;"><strong>No clients found</strong> for ${resolved.label}.</div>`;
             return;
         }
 
         // Build HTML preview table
         let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
-        html += `<caption style="caption-side: top; text-align: left; margin-bottom: 8px; font-size: 0.85rem; color: #4b5563;"><strong>Active Filters:</strong> ${getFilterSummaryText()}</caption>`;
+        html += `<caption style="caption-side: top; text-align: left; margin-bottom: 8px; font-size: 0.85rem; color: #4b5563;"><strong>Scope:</strong> ${resolved.label}</caption>`;
         html += '<thead><tr style="background: #f3f4f6; border: 1px solid #d1d5db;">';
 
         exportHeaders.forEach(header => {
@@ -812,13 +978,39 @@ include '../includes/sidebar.php';
         html += '</tbody></table>';
         html += `<div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #d1d5db; font-size: 0.85rem; color: #6b7280;">`;
         html += `<p><strong>Total Records:</strong> ${data.length}</p>`;
-        html += `<p><strong>Active Filters:</strong> ${getFilterSummaryText()}</p>`;
+        html += `<p><strong>Scope:</strong> ${resolved.label}</p>`;
         html += `<p><strong>Export Date:</strong> ${new Date().toLocaleString()}</p>`;
         html += `</div>`;
 
-        previewContent.innerHTML = html;
         exportData = data;
-        modal.style.display = 'block';
+        exportScopeLabel = resolved.label;
+        previewContent.innerHTML = html;
+    }
+
+    async function showExportPreview() {
+        const modal = document.getElementById('exportPreviewModal');
+        const exportBtn = document.querySelector('.btn-export');
+        const scopeSelect = document.getElementById('exportScope');
+
+        setButtonBusy(exportBtn, true, 'Preparing...');
+
+        const scope = scopeSelect ? scopeSelect.value || getDefaultExportScope() : getDefaultExportScope();
+        if (scopeSelect && !scopeSelect.value) {
+            scopeSelect.value = scope;
+        }
+
+        if (scopeSelect && scopeSelect.value === 'selected' && selectedClientIds.size === 0) {
+            scopeSelect.value = getDefaultExportScope();
+        }
+
+        try {
+            await renderExportPreview(scopeSelect ? scopeSelect.value : scope);
+            modal.style.display = 'block';
+        } catch (error) {
+            createToast('error', 'Error', error.message || 'Failed to prepare export.', 'toastContainer');
+        } finally {
+            setButtonBusy(exportBtn, false);
+        }
     }
 
     function exportAsCSV() {
@@ -906,6 +1098,7 @@ include '../includes/sidebar.php';
                 <div class="footer">
                     <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
                     <p><strong>Total Records:</strong> ${exportData.length}</p>
+                    <p><strong>Scope:</strong> ${exportScopeLabel}</p>
                 </div>
             </body>
             </html>
@@ -916,6 +1109,14 @@ include '../includes/sidebar.php';
             printWindow.print();
         }, 250);
     }
+
+    document.getElementById('exportScope').addEventListener('change', async function() {
+        try {
+            await renderExportPreview(this.value || getDefaultExportScope());
+        } catch (error) {
+            createToast('error', 'Error', error.message || 'Failed to refresh export preview.', 'toastContainer');
+        }
+    });
 </script>
 
 </body>

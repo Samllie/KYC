@@ -32,10 +32,11 @@
 
 .search-input {
     padding: 8px 12px 8px 32px;
-    border: 1px solid var(--gray-300);
+    border: 1px solid #d2e0d8;
     border-radius: var(--radius-md);
     font-size: 0.85rem;
     width: 250px;
+    background: rgba(255, 255, 255, 0.92);
     transition: all var(--transition);
 }
 
@@ -52,10 +53,10 @@
 
 .filter-select {
     padding: 8px 12px;
-    border: 1px solid var(--gray-300);
+    border: 1px solid #d2e0d8;
     border-radius: var(--radius-md);
     font-size: 0.85rem;
-    background: var(--white);
+    background: rgba(255, 255, 255, 0.94);
     cursor: pointer;
     transition: all var(--transition);
 }
@@ -90,33 +91,71 @@
 }
 
 .btn-export {
-    background: var(--gray-100);
+    background: rgba(255, 255, 255, 0.92);
     color: var(--gray-700);
-    border: 1px solid var(--gray-300);
+    border: 1px solid #d2e0d8;
 }
 
 .btn-export:hover {
-    background: var(--gray-200);
+    background: #eef8f2;
+}
+
+.btn-export:active,
+.btn-add-client:active,
+.pagination-btn:active,
+.action-icon:active {
+    transform: translateY(1px) scale(0.98);
 }
 
 .btn-add-client {
-    background: var(--green-500);
+    background: #116a3a;
     color: var(--white);
 }
 
 .btn-add-client:hover {
-    background: var(--green-600);
+    background: #0d562f;
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
 
 /* Table Wrapper */
 .table-wrapper {
+    position: relative;
     overflow-x: auto;
     height: 420px;
     min-height: 420px;
     max-height: 420px;
     overflow-y: auto;
+}
+
+.table-wrapper.is-loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(1px);
+    z-index: 2;
+}
+
+.table-wrapper.is-loading::before {
+    content: '';
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid #d5e7dc;
+    border-top-color: #157345;
+    animation: clientSpin 0.7s linear infinite;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+}
+
+@keyframes clientSpin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
 }
 
 /* Clients Table */
@@ -128,9 +167,9 @@
 }
 
 .clients-table thead {
-    background: var(--gray-50);
-    border-top: 1px solid var(--gray-200);
-    border-bottom: 2px solid var(--gray-200);
+    background: #f4fbf6;
+    border-top: 1px solid #d8e6de;
+    border-bottom: 2px solid #d8e6de;
 }
 
 .clients-table th {
@@ -142,12 +181,27 @@
 }
 
 .clients-table tbody tr {
-    border-bottom: 1px solid var(--gray-200);
-    transition: background var(--transition);
+    border-bottom: 1px solid #e0ebe4;
+    transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
 }
 
 .clients-table tbody tr:hover {
-    background: var(--gray-50);
+    background: #f6fcf8;
+    transform: translateY(-1px);
+    box-shadow: inset 0 0 0 1px #d8e8df;
+}
+
+.clients-table tbody tr.row-enter {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: rowEnter 0.26s ease forwards;
+}
+
+@keyframes rowEnter {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .clients-table td {
@@ -181,8 +235,8 @@
 .ref-badge {
     display: inline-block;
     padding: 4px 8px;
-    background: var(--green-100);
-    color: var(--green-700);
+    background: #e5f8ec;
+    color: #146b40;
     border-radius: 4px;
     font-weight: 600;
     font-size: 0.75rem;
@@ -199,15 +253,15 @@
 }
 
 .type-badge.individual {
-    background: var(--info);
-    color: var(--white);
-    opacity: 0.85;
+    background: #ddeefe;
+    color: #1e4f92;
+    opacity: 1;
 }
 
 .type-badge.corporate {
-    background: #8B5CF6;
-    color: var(--white);
-    opacity: 0.85;
+    background: #e7f9ee;
+    color: #135c35;
+    opacity: 1;
 }
 
 /* Status Badges */
@@ -256,6 +310,11 @@
     color: var(--green-500);
 }
 
+.action-icon:focus-visible {
+    outline: 2px solid rgba(21, 115, 69, 0.35);
+    outline-offset: 1px;
+}
+
 .action-icon.delete:hover {
     background: #FEE2E2;
     color: var(--danger);
@@ -267,8 +326,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px;
-    border-top: 1px solid var(--gray-200);
-    background: var(--gray-50);
+    border-top: 1px solid #dce9e1;
+    background: #f4fbf6;
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
@@ -284,8 +343,8 @@
 }
 
 .pagination-btn {
-    background: var(--white);
-    border: 1px solid var(--gray-300);
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid #d0ddd5;
     color: var(--gray-700);
     width: 32px;
     height: 32px;
@@ -302,8 +361,8 @@
 }
 
 .pagination-btn.active {
-    background: var(--green-500);
-    border-color: var(--green-500);
+    background: #116a3a;
+    border-color: #116a3a;
     color: var(--white);
 }
 
@@ -331,13 +390,13 @@
 }
 
 .modal-content {
-    background-color: var(--white);
+    background-color: rgba(255, 255, 255, 0.96);
     margin: 5% auto;
     padding: 0;
     border-radius: var(--radius-lg);
     width: 90%;
     max-width: 700px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 24px 56px rgba(20, 49, 35, 0.22);
     animation: slideDown 0.3s ease;
 }
 
@@ -456,12 +515,12 @@
 }
 
 .btn-save {
-    background: var(--green-500);
+    background: #116a3a;
     color: var(--white);
 }
 
 .btn-save:hover {
-    background: var(--green-600);
+    background: #0d562f;
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }

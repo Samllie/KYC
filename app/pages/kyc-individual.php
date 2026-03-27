@@ -25,10 +25,10 @@ requireLogin();
             align-items: center;
             gap: 6px;
             padding: 8px 14px;
-            background-color: #f0f0f0;
-            color: #333;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.88);
+            color: #183026;
+            border: 1px solid #d2e0d8;
+            border-radius: 10px;
             font-size: 0.9rem;
             font-weight: 500;
             text-decoration: none;
@@ -37,8 +37,8 @@ requireLogin();
         }
 
         .back-to-type-btn:hover {
-            background-color: #e8e8e8;
-            border-color: #d0d0d0;
+            background-color: #eef8f2;
+            border-color: #b8d5c6;
             transform: translateX(-2px);
         }
 
@@ -53,32 +53,167 @@ requireLogin();
         /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
-            top: 78px; /* below topbar */
+            top: 82px;
             right: 18px;
-            width: 440px;
-            max-width: calc(100vw - 36px);
-            max-height: 72vh;
-            overflow: auto;
+            width: 420px;
+            max-width: calc(100vw - 28px);
+            max-height: 76vh;
+            overflow: hidden;
             z-index: 9999;
-            display: none;
+            display: block;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-8px) scale(0.985);
+            transform-origin: top right;
+            border: 1px solid #d8dee6;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: 0 20px 44px rgba(17, 24, 39, 0.16), 0 4px 14px rgba(17, 24, 39, 0.08);
+            transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
         }
         #draftsCard.open {
-            display: block;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        #draftsCard .card-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e7ebf0;
+            background: #f9fafb;
+        }
+
+        #draftsCard .card-title {
+            font-size: .9rem;
+            color: #1f2937;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #draftsCard .card-body {
+            padding: 14px 16px 18px;
+            overflow: auto;
+            max-height: calc(76vh - 62px);
+        }
+
+        .drafts-fields {
+            display: grid;
+            grid-template-columns: 1fr;
+            row-gap: 10px;
+        }
+
+        .drafts-action-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+
+        #loadDraftBtn {
+            min-width: 120px;
+            height: 34px;
+            padding: 0 12px;
+            font-size: .78rem;
+            border-radius: 9px;
+        }
+
+        #draftInfo,
+        #draftDocsWrapper,
+        #draftDocsContainer {
+            font-size: .82rem;
+        }
+
+        #draftSelect {
+            height: 40px;
+            font-size: .84rem;
+        }
+
+        #kycForm {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+            align-items: stretch;
+        }
+
+        #kycForm > .card {
+            margin-bottom: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #kycForm > .card .card-body,
+        #kycForm > .card .card-footer {
+            flex: 1;
+        }
+
+        #kycForm > .card.card-span-2 {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 1100px) {
+            #kycForm {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        #kycForm > .card.wizard-hidden {
+            display: none;
         }
 
         .drafts-toggle-btn {
             width: 38px;
             height: 38px;
             border-radius: 10px;
-            border: 1px solid rgba(0,0,0,0.08);
-            background: rgba(255,255,255,0.65);
+            border: 1px solid #d2e0d8;
+            background: rgba(255,255,255,0.85);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: all 0.2s ease;
         }
         .drafts-toggle-btn:hover {
-            background: rgba(0,0,0,0.03);
+            background: #eef8f2;
+            border-color: #b9d6c7;
+        }
+
+        .card.flow-reveal {
+            animation: flowCardIn 0.28s ease both;
+        }
+
+        @keyframes flowCardIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .upload-zone.is-uploading {
+            pointer-events: none;
+            opacity: 0.75;
+            border-color: #9ecfb3;
+        }
+
+        .flow-actions .btn:active,
+        .drafts-toggle-btn:active,
+        .back-to-type-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .steps-bar .step.step-clickable {
+            cursor: pointer;
+        }
+
+        .steps-bar .step.step-clickable .step-num {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -133,7 +268,7 @@ include '../includes/sidebar.php';
                 <div class="step-num">3</div>
                 <div class="step-info">
                     <span>Step 3</span>
-                    <strong>Documents</strong>
+                    <strong>Contact Details</strong>
                 </div>
             </div>
             <div class="step-line"></div>
@@ -150,7 +285,7 @@ include '../includes/sidebar.php';
         <form id="kycForm" novalidate>
 
             <!-- Client Type Card -->
-            <div class="card">
+            <div class="card card-span-2" data-wizard-step="2">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-list"></i> Client Type</div>
                     <a href="kyc-verification.php" class="back-to-type-btn">
@@ -174,7 +309,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Reference Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="2">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-hash"></i> Reference</div>
                 </div>
@@ -201,19 +336,19 @@ include '../includes/sidebar.php';
             <div class="card" id="draftsCard">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-inbox"></i> Saved Drafts</div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshDrafts()">
+                    <button type="button" id="refreshDraftBtn" class="btn btn-sm btn-outline-secondary" onclick="refreshDrafts()">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
                 <div class="card-body">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-8">
+                    <div class="drafts-fields">
+                        <div>
                             <label for="draftSelect" class="form-label">Drafts</label>
                             <select id="draftSelect" class="form-select">
                                 <option value="">Loading...</option>
                             </select>
                         </div>
-                        <div class="col-md-4 d-grid">
+                        <div class="drafts-action-row">
                             <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
                                 <i class="bi bi-box-arrow-in-right"></i> Load Draft
                             </button>
@@ -228,7 +363,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Personal Information Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="2">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-person"></i> Personal Information</div>
                 </div>
@@ -256,6 +391,12 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
+                                <label for="salutation" class="form-label">Salutations</label>
+                                <input type="text" id="salutation" name="salutation" class="form-control" placeholder="e.g., Mr., Ms., Dr.">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
                                 <label for="birthdate" class="form-label">Date of Birth <span class="req">*</span></label>
                                 <input type="date" id="birthdate" name="birthdate" class="form-control" required>
                                 <div class="form-error">Date of birth is required</div>
@@ -273,12 +414,59 @@ include '../includes/sidebar.php';
                                 </div>
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="apSlCode" class="form-label">AP SL Code</label>
+                                <input type="text" id="apSlCode" name="apSlCode" class="form-control" placeholder="Enter AP SL Code">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="arSlCode" class="form-label">AR SL Code</label>
+                                <input type="text" id="arSlCode" name="arSlCode" class="form-control" placeholder="Enter AR SL Code">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="clientSince" class="form-label">Client Since</label>
+                                <input type="date" id="clientSince" name="clientSince" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spouse Information Card -->
+            <div class="card" data-wizard-step="2">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-people"></i> Spouse Information</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="spouseName" class="form-label">Spouse Name</label>
+                                <input type="text" id="spouseName" name="spouseName" class="form-control" placeholder="Spouse Full Name">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="spouseBirthdate" class="form-label">Spouse Birthdate</label>
+                                <input type="date" id="spouseBirthdate" name="spouseBirthdate" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="spouseOccupation" class="form-label">Spouse Occupation</label>
+                                <input type="text" id="spouseOccupation" name="spouseOccupation" class="form-control" placeholder="Spouse Occupation">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Occupation Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-briefcase"></i> Occupation</div>
                 </div>
@@ -297,11 +485,17 @@ include '../includes/sidebar.php';
                                 <input type="text" id="employer" name="employer" class="form-control" placeholder="Company Name">
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="officePhone" class="form-label">Office Phone</label>
+                                <input type="tel" id="officePhone" name="officePhone" class="form-control" placeholder="(02) 8XXX-XXXX">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             <!-- Address Information Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-geo-alt"></i> Address Information</div>
                 </div>
@@ -358,7 +552,7 @@ include '../includes/sidebar.php';
                 </div>
             </div>
             <!-- Home Address Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-house"></i> Home Address</div>
                 </div>
@@ -416,7 +610,7 @@ include '../includes/sidebar.php';
                 </div>
             </div>
             <!-- Contact Information Card -->
-            <div class="card">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-telephone"></i> Contact Information</div>
                 </div>
@@ -446,22 +640,22 @@ include '../includes/sidebar.php';
                 </div>
             </div>
 
-            <!-- Client Classification Card -->
-            <div class="card">
+            <!-- Mailing Address Preference Card -->
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-tag"></i> Client Classification</div>
+                    <div class="card-title"><i class="bi bi-mailbox"></i> Mailing Address</div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label class="form-label">Client Type <span class="req">*</span></label>
+                                <label class="form-label">Use Which Mailing Address? <span class="req">*</span></label>
                                 <div style="display:flex;gap:20px;margin-top:8px;">
                                     <label style="display:flex;align-items:center;gap:8px;">
-                                        <input type="radio" id="clientType1" name="clientClassification" value="client" required> Client
+                                        <input type="radio" id="mailingBusiness" name="mailingAddressType" value="business" required> Business
                                     </label>
                                     <label style="display:flex;align-items:center;gap:8px;">
-                                        <input type="radio" id="agentType1" name="clientClassification" value="agent" required> Agent
+                                        <input type="radio" id="mailingHome" name="mailingAddressType" value="home" required> Home
                                     </label>
                                 </div>
                             </div>
@@ -471,7 +665,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Documents Card -->
-            <div class="card">
+            <div class="card card-span-2" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-file-earmark"></i> Supporting Documents</div>
                 </div>
@@ -495,18 +689,24 @@ include '../includes/sidebar.php';
                     <i class="bi bi-info-circle" style="margin-right:4px;"></i>
                     All fields marked <span style="color:var(--danger);font-weight:700;">*</span> are required.
                 </div>
-                <div style="display:flex;gap:10px;">
-                    <button type="button" class="btn btn-outline" onclick="goBack()">
+                <div class="flow-actions" style="display:flex;gap:10px;">
+                    <button type="button" id="backBtn" class="btn btn-outline" onclick="goBack()">
                         <i class="bi bi-arrow-left"></i> Back to Type Selection
                     </button>
-                    <button type="button" class="btn btn-outline" onclick="clearForm()">
+                    <button type="button" id="wizardPrevBtn" class="btn btn-outline">
+                        <i class="bi bi-chevron-left"></i> Previous
+                    </button>
+                    <button type="button" id="clearBtn" class="btn btn-outline" onclick="clearForm()">
                         <i class="bi bi-arrow-counterclockwise"></i> Clear Form
                     </button>
-                    <button type="button" class="btn btn-outline" onclick="saveDraft()">
+                    <button type="button" id="saveDraftBtn" class="btn btn-outline" onclick="saveDraft()">
                         <i class="bi bi-download"></i> Save Draft
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="proceedToReview()">
-                        <i class="bi bi-arrow-right"></i> Proceed to Review
+                    <button type="button" id="wizardNextBtn" class="btn btn-primary">
+                        Next <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <button type="button" id="proceedBtn" class="btn btn-primary" onclick="proceedToReview()">
+                        <i class="bi bi-arrow-right"></i> Go to Summary Page
                     </button>
                 </div>
             </div>
@@ -539,6 +739,29 @@ function showToast(type, title, msg) {
 function removeToast(el) {
     el.classList.add('out');
     setTimeout(() => el.remove(), 250);
+}
+
+function setButtonBusy(button, isBusy, label = 'Working...') {
+    if (!button) return;
+    if (isBusy) {
+        button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `<span class="spinner" style="width:14px;height:14px;"></span> ${label}`;
+    } else {
+        button.disabled = false;
+        if (button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+    }
+}
+
+function revealFlowCards() {
+    const cards = document.querySelectorAll('main.content .card');
+    cards.forEach((card, idx) => {
+        card.classList.add('flow-reveal');
+        card.style.animationDelay = `${Math.min(idx * 45, 280)}ms`;
+    });
 }
 
 // ── Form Validation ────────────────────────────────────────
@@ -599,8 +822,8 @@ function validateAllRequired() {
         }
     });
     
-    // Validate clientClassification radio
-    if (!validateRadioGroup('clientClassification')) allValid = false;
+    // Validate mailingAddressType radio
+    if (!validateRadioGroup('mailingAddressType')) allValid = false;
     if (!allValid && failedFields.length > 0) {
         console.log('Failed fields:', failedFields);
     }
@@ -1019,7 +1242,7 @@ async function loadSelectedDraft() {
     const refCode = draftSelect.value;
     if (!refCode) return;
 
-    loadDraftBtn.disabled = true;
+    setButtonBusy(loadDraftBtn, true, 'Loading...');
     if (draftDocsContainer) draftDocsContainer.innerHTML = 'Loading attachments...';
     if (draftInfoEl) draftInfoEl.textContent = 'Loading draft...';
 
@@ -1127,17 +1350,20 @@ async function loadSelectedDraft() {
         console.error('Error loading draft:', error);
         showToast('error', 'Load Draft Failed', 'Unexpected error while loading the draft.');
     } finally {
-        loadDraftBtn.disabled = false;
+        setButtonBusy(loadDraftBtn, false);
     }
 }
 
 async function refreshDrafts() {
     const draftSelect = document.getElementById('draftSelect');
     const loadDraftBtn = document.getElementById('loadDraftBtn');
+    const refreshDraftBtn = document.getElementById('refreshDraftBtn');
     const draftDocsContainer = document.getElementById('draftDocsContainer');
     const draftInfoEl = document.getElementById('draftInfo');
 
     if (!draftSelect) return;
+
+    setButtonBusy(refreshDraftBtn, true, 'Refreshing...');
 
     draftSelect.innerHTML = `<option value="">Loading...</option>`;
     draftSelect.value = '';
@@ -1176,6 +1402,8 @@ async function refreshDrafts() {
         console.error('Error loading drafts:', error);
         draftSelect.innerHTML = `<option value="">Failed to load drafts</option>`;
         if (loadDraftBtn) loadDraftBtn.disabled = true;
+    } finally {
+        setButtonBusy(refreshDraftBtn, false);
     }
 }
 
@@ -1188,21 +1416,197 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function toggleDraftsPanel() {
     const panel = document.getElementById('draftsCard');
+    const toggleBtn = document.querySelector('.drafts-toggle-btn');
     if (!panel) return;
     const willOpen = !panel.classList.contains('open');
     panel.classList.toggle('open', willOpen);
+    if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    }
     if (willOpen && typeof refreshDrafts === 'function') {
         refreshDrafts();
     }
 }
 
+function closeDraftsPanel() {
+    const panel = document.getElementById('draftsCard');
+    const toggleBtn = document.querySelector('.drafts-toggle-btn');
+    if (!panel) return;
+    panel.classList.remove('open');
+    if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+}
+
+document.addEventListener('click', function (event) {
+    const panel = document.getElementById('draftsCard');
+    const toggleBtn = document.querySelector('.drafts-toggle-btn');
+    if (!panel || !panel.classList.contains('open')) return;
+
+    const clickedInsidePanel = panel.contains(event.target);
+    const clickedToggle = !!(toggleBtn && (toggleBtn === event.target || toggleBtn.contains(event.target)));
+    if (!clickedInsidePanel && !clickedToggle) {
+        closeDraftsPanel();
+    }
+});
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeDraftsPanel();
+    }
+});
+
+const WIZARD_MIN_STEP = 2;
+const WIZARD_MAX_STEP = 4;
+let currentWizardStep = WIZARD_MIN_STEP;
+
+function validateWizardStep(step) {
+    const stepCards = document.querySelectorAll(`#kycForm > .card[data-wizard-step="${step}"]`);
+    if (!stepCards.length) return true;
+
+    let allValid = true;
+    const requiredRadioNames = new Set();
+
+    stepCards.forEach((card) => {
+        const requiredInputs = card.querySelectorAll('input[required], select[required], textarea[required]');
+
+        requiredInputs.forEach((el) => {
+            if (el.type === 'radio') {
+                if (el.name) requiredRadioNames.add(el.name);
+                return;
+            }
+
+            if (el.id) {
+                if (!validateField(el.id)) allValid = false;
+            } else {
+                const value = (el.value || '').trim();
+                if (!value) {
+                    allValid = false;
+                    el.classList.add('is-invalid');
+                } else {
+                    el.classList.remove('is-invalid');
+                }
+            }
+        });
+    });
+
+    requiredRadioNames.forEach((name) => {
+        if (!validateRadioGroup(name)) allValid = false;
+    });
+
+    return allValid;
+}
+
+function updateWizardProgress(step) {
+    const steps = {
+        2: document.getElementById('step-2'),
+        3: document.getElementById('step-3'),
+        4: document.getElementById('step-4')
+    };
+    const lines = document.querySelectorAll('.steps-bar .step-line');
+
+    Object.entries(steps).forEach(([key, el]) => {
+        if (!el) return;
+        const n = Number(key);
+        el.classList.toggle('done', n < step);
+        el.classList.toggle('active', n === step);
+    });
+
+    if (lines[1]) lines[1].classList.toggle('done', step >= 3);
+    if (lines[2]) lines[2].classList.toggle('done', step >= 4);
+}
+
+function applyWizardStep(step) {
+    const cards = document.querySelectorAll('#kycForm > .card[data-wizard-step]');
+    cards.forEach((card) => {
+        const cardStep = Number(card.getAttribute('data-wizard-step'));
+        card.classList.toggle('wizard-hidden', cardStep !== step);
+    });
+
+    const prevBtn = document.getElementById('wizardPrevBtn');
+    const nextBtn = document.getElementById('wizardNextBtn');
+    const proceedBtn = document.getElementById('proceedBtn');
+
+    if (prevBtn) prevBtn.style.display = step > WIZARD_MIN_STEP ? '' : 'none';
+    if (nextBtn) nextBtn.style.display = step < WIZARD_MAX_STEP ? '' : 'none';
+    if (proceedBtn) proceedBtn.style.display = step === WIZARD_MAX_STEP ? '' : 'none';
+
+    updateWizardProgress(step);
+}
+
+function goToWizardStep(step) {
+    const bounded = Math.max(WIZARD_MIN_STEP, Math.min(WIZARD_MAX_STEP, step));
+
+    if (bounded > currentWizardStep + 1) {
+        showToast('info', 'Step Locked', 'Complete the current step before jumping ahead.');
+        return;
+    }
+
+    if (bounded > currentWizardStep && !validateWizardStep(currentWizardStep)) {
+        showToast('error', 'Validation Failed', 'Please complete required fields in the current step first.');
+        return;
+    }
+
+    currentWizardStep = bounded;
+    applyWizardStep(currentWizardStep);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const prevBtn = document.getElementById('wizardPrevBtn');
+    const nextBtn = document.getElementById('wizardNextBtn');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => goToWizardStep(currentWizardStep - 1));
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => goToWizardStep(currentWizardStep + 1));
+    }
+
+    const stepOne = document.getElementById('step-1');
+    if (stepOne) {
+        stepOne.classList.add('step-clickable');
+        stepOne.setAttribute('role', 'button');
+        stepOne.setAttribute('tabindex', '0');
+        stepOne.addEventListener('click', () => goBack());
+        stepOne.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                goBack();
+            }
+        });
+    }
+
+    [2, 3, 4].forEach((step) => {
+        const stepEl = document.getElementById(`step-${step}`);
+        if (!stepEl) return;
+        stepEl.classList.add('step-clickable');
+        stepEl.setAttribute('role', 'button');
+        stepEl.setAttribute('tabindex', '0');
+        stepEl.addEventListener('click', () => goToWizardStep(step));
+        stepEl.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                goToWizardStep(step);
+            }
+        });
+    });
+
+    applyWizardStep(currentWizardStep);
+});
+
 function proceedToReview() {
+    const proceedBtn = document.getElementById('proceedBtn');
+    if (proceedBtn?.disabled) return;
+
     syncComposedAddressFields();
 
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
         return;
     }
+
+    setButtonBusy(proceedBtn, true, 'Preparing...');
     
     // Collect form data
     const formData = {};
@@ -1290,7 +1694,11 @@ function submitForm() {
 }
 
 function saveDraft() {
+    const saveDraftBtn = document.getElementById('saveDraftBtn');
+    if (saveDraftBtn?.disabled) return;
+
     syncComposedAddressFields();
+    setButtonBusy(saveDraftBtn, true, 'Saving...');
 
     // Collect form data
     const formData = new FormData();
@@ -1329,10 +1737,16 @@ function saveDraft() {
     .catch(error => {
         showToast('error', 'Error', 'An error occurred. Please try again.');
         console.error('Error:', error);
+    })
+    .finally(() => {
+        setButtonBusy(saveDraftBtn, false);
     });
 }
 
 async function clearForm() {
+    const clearBtn = document.getElementById('clearBtn');
+    setButtonBusy(clearBtn, true, 'Clearing...');
+
     document.getElementById('kycForm').querySelectorAll('input, select').forEach(el => {
         if (el.readOnly) return;
         el.value = '';
@@ -1354,6 +1768,7 @@ async function clearForm() {
     sessionStorage.removeItem('kycUploadedFiles');
     document.getElementById('fileList').innerHTML = '';
     showToast('info', 'Form Cleared', 'All fields have been reset.');
+    setButtonBusy(clearBtn, false);
 }
 
 function goBack() {
@@ -1445,23 +1860,28 @@ function renderStoredUploads() {
 
 async function uploadTempFiles(files) {
     if (!files || !files.length) return;
-    const fd = new FormData();
-    fd.append('action', 'upload_temp');
-    files.forEach(file => fd.append('documents[]', file, file.name));
+    zone.classList.add('is-uploading');
+    try {
+        const fd = new FormData();
+        fd.append('action', 'upload_temp');
+        files.forEach(file => fd.append('documents[]', file, file.name));
 
-    const resp = await fetch('../handlers/upload.php', { method: 'POST', body: fd });
-    const data = await resp.json();
-    if (!data || !data.success) {
-        throw new Error(data?.message || 'Upload failed');
+        const resp = await fetch('../handlers/upload.php', { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (!data || !data.success) {
+            throw new Error(data?.message || 'Upload failed');
+        }
+
+        const stored = getStoredUploads();
+        const newlySaved = Array.isArray(data.files) ? data.files : [];
+        newlySaved.forEach(f => stored.push(f));
+        setStoredUploads(stored);
+        renderStoredUploads();
+
+        showToast('success', 'Files Uploaded', `${newlySaved.length} file(s) uploaded.`);
+    } finally {
+        zone.classList.remove('is-uploading');
     }
-
-    const stored = getStoredUploads();
-    const newlySaved = Array.isArray(data.files) ? data.files : [];
-    newlySaved.forEach(f => stored.push(f));
-    setStoredUploads(stored);
-    renderStoredUploads();
-
-    showToast('success', 'Files Uploaded', `${newlySaved.length} file(s) uploaded.`);
 }
 
 input.addEventListener('change', async () => {
@@ -1489,6 +1909,7 @@ zone.addEventListener('drop', async e => {
 
 // Render any existing temp uploads (e.g., returning from review)
 document.addEventListener('DOMContentLoaded', renderStoredUploads);
+document.addEventListener('DOMContentLoaded', revealFlowCards);
 
 // ── Auto-gen Client Number ─────────────────────────────────
 document.getElementById('refCode').addEventListener('input', function() {

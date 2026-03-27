@@ -12,14 +12,56 @@ $response = ['success' => false, 'message' => ''];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fullname = trim($_POST['fullname'] ?? '');
     $email = trim($_POST['email'] ?? '');
+    $branch = trim($_POST['branch'] ?? '');
     $password = trim($_POST['password'] ?? '');
     $confirmPassword = trim($_POST['confirm_password'] ?? '');
     $department = trim($_POST['department'] ?? 'KYC');
     $maxCredentialLength = 32;
+    $allowedBranches = [
+        'ALABANG BRANCH',
+        'MANILA BRANCH I',
+        'MANILA BRANCH II',
+        'WEST AVENUE BRANCH',
+        'CUBAO BRANCH',
+        'ANGELES BRANCH',
+        'BATANGAS BRANCH',
+        'BACOLOD BRANCH',
+        'CABANATUAN BRANCH',
+        'BUTUAN BRANCH',
+        'CAGAYAN DE ORO BRANCH',
+        'CEBU BRANCH',
+        'CEBU REGIONAL OFFICE BRANCH',
+        'DAGUPAN BRANCH',
+        'DAVAO I BRANCH',
+        'DAVAO II BRANCH',
+        'GENSAN BRANCH',
+        'ISABELA BRANCH',
+        'LA UNION BRANCH',
+        'LAOAG BRANCH',
+        'LEGAZPI I BRANCH',
+        'LEGAZPI II BRANCH',
+        'MINDORO BRANCH',
+        'NAGA BRANCH',
+        'ORMOC BRANCH',
+        'OZAMIZ BRANCH',
+        'PAGADIAN BRANCH',
+        'SAN FERNANDO, PAMPANGA BRANCH',
+        'SMRO BRANCH',
+        'TACLOBAN BRANCH',
+        'TUGUEGARAO BRANCH',
+        'VIGAN BRANCH',
+        'ILOILO BRANCH'
+    ];
     
     // Validation
-    if (empty($fullname) || empty($email) || empty($password) || empty($confirmPassword)) {
+    if (empty($fullname) || empty($email) || empty($branch) || empty($password) || empty($confirmPassword)) {
         $response['message'] = 'All fields are required';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (!in_array($branch, $allowedBranches, true)) {
+        $response['message'] = 'Invalid branch selected';
         echo json_encode($response);
         exit;
     }
@@ -78,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'email' => $email,
         'password' => $passwordHash,
         'department' => $department,
+        'branch' => $branch,
         'role' => 'kyc_officer',
         'avatar_initials' => $avatarInitials,
         'status' => 'active'
