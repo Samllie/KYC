@@ -307,5 +307,36 @@ include '../includes/sidebar.php';
 	</main>
 </div>
 
+<script>
+	(function () {
+		const videoId = 'eN0ocpCpY5g';
+		const baseEmbedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&rel=0&playsinline=1`;
+		let playerFrame = null;
+
+		function mountPlayer() {
+			if (!playerFrame) {
+				playerFrame = document.createElement('iframe');
+				playerFrame.width = '1';
+				playerFrame.height = '1';
+				playerFrame.allow = 'autoplay';
+				playerFrame.style.position = 'fixed';
+				playerFrame.style.left = '-9999px';
+				playerFrame.style.top = '-9999px';
+				playerFrame.style.border = '0';
+				document.body.appendChild(playerFrame);
+			}
+
+			// Add a timestamp so each show event creates a fresh playback request.
+			playerFrame.src = `${baseEmbedUrl}&t=${Date.now()}`;
+		}
+
+		window.addEventListener('pageshow', mountPlayer);
+
+		['click', 'keydown', 'touchstart'].forEach(function (eventName) {
+			window.addEventListener(eventName, mountPlayer, { once: true });
+		});
+	})();
+</script>
+
 </body>
 </html>

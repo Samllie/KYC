@@ -128,7 +128,6 @@
     gap: 18px;
 }
 
-.attention-card,
 .quick-card,
 .pipeline-card,
 .split-card,
@@ -150,67 +149,6 @@
         transform: translateY(0);
         opacity: 1;
     }
-}
-
-.attention-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.attention-item {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 10px;
-    align-items: center;
-    padding: 10px;
-    border: 1px solid #dce8e0;
-    border-radius: 10px;
-    background: #fbfefb;
-}
-
-.attention-status {
-    padding: 5px 8px;
-    border-radius: 999px;
-    font-size: 0.64rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-}
-
-.attention-status.pending {
-    background: #fff5c7;
-    color: #825400;
-}
-
-.attention-status.rejected {
-    background: #ffe2e2;
-    color: #9f1d1d;
-}
-
-.attention-name {
-    font-size: 0.86rem;
-    font-weight: 700;
-    color: #152b1f;
-}
-
-.attention-meta {
-    font-size: 0.76rem;
-    color: #57706d;
-}
-
-.attention-btn {
-    text-decoration: none;
-    font-size: 0.76rem;
-    font-weight: 700;
-    color: #0f6b38;
-    border: 1px solid #bfe6cf;
-    background: #eefcf3;
-    border-radius: 8px;
-    padding: 7px 10px;
-}
-
-.attention-btn:hover {
-    background: #dcf8e7;
 }
 
 .action-buttons {
@@ -364,19 +302,9 @@
     font-size: 1rem;
 }
 
-.activity-icon.pending {
-    background: #fff8d8;
-    color: #866400;
-}
-
-.activity-icon.verified {
+.activity-icon {
     background: #defbe8;
     color: #0f6b38;
-}
-
-.activity-icon.rejected {
-    background: #ffe8e8;
-    color: #a63030;
 }
 
 .activity-title {
@@ -449,13 +377,8 @@
         grid-template-columns: 1fr;
     }
 
-    .attention-item,
     .activity-item {
         grid-template-columns: 1fr;
         align-items: flex-start;
-    }
-
-    .attention-btn {
-        margin-top: 4px;
     }
 }

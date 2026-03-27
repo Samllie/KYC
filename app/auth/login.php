@@ -34,7 +34,7 @@ $isRememberChecked = $rememberedEmail !== '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sterling insurance Company Incorporated</title>
+    <title>Sterling insurance Company, Inc.</title>
     <link rel='icon' type='image/png' href='../../css/images/SterlingLogo.png'>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,7 +55,7 @@ $isRememberChecked = $rememberedEmail !== '';
         
         <!-- Left Side - Branding -->
         <div class="auth-brand">
-            <h1>Sterling Insurance Company Incorporated</h1>
+            <h1>Sterling Insurance Company, Inc.</h1>
             <div class="brand-description">
                 <p>Ensuring Integrity, Security, and Compliance in Every Client Engagement.</p>
             </div>
@@ -141,7 +141,7 @@ $isRememberChecked = $rememberedEmail !== '';
 
                 <!-- Footer -->
                 <div class="auth-footer">
-                    <p>&copy; 2026 Sterling Insurance Company. All rights reserved.</p>
+                    <p>&copy; 2026 Sterling Insurance Company, Inc. All rights reserved.</p>
                 </div>
             </div>
         </div>

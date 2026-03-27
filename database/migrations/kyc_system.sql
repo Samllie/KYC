@@ -225,6 +225,7 @@ CREATE TABLE `users` (
   `email` varchar(120) NOT NULL,
   `password` varchar(255) NOT NULL,
   `department` varchar(50) NOT NULL,
+  `branch` varchar(80) NOT NULL DEFAULT 'ALABANG BRANCH',
   `role` varchar(30) DEFAULT 'kyc_officer',
   `avatar_initials` varchar(5) DEFAULT NULL,
   `status` enum('active','inactive','suspended') DEFAULT 'active',

@@ -8,7 +8,7 @@ The KYC System uses a comprehensive MySQL database with 8 tables:
 
 #### 1. **users** - System Users & KYC Officers
 - Stores user accounts for login/registration
-- Fields: user_id, full_name, email, password (hashed), department, role, status
+- Fields: user_id, full_name, email, password (hashed), department, branch, role, status
 - Total Sample Records: 6 users
 
 #### 2. **clients** - Client Master Data

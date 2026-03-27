@@ -5,9 +5,7 @@ requireLogin();
 
 $stats = fetchOne("SELECT
     COUNT(*) AS total_clients,
-    SUM(verification_status = 'pending') AS pending_kyc,
-    SUM(verification_status = 'verified') AS verified_count,
-    SUM(verification_status = 'rejected') AS rejected_count
+    SUM(verification_status = 'verified') AS verified_count
 FROM clients") ?? [];
 
 $verifiedTodayRow = fetchOne("SELECT COUNT(*) AS verified_today FROM clients WHERE verification_status = 'verified' AND DATE(verification_date) = CURDATE()") ?? [];
@@ -16,30 +14,13 @@ $newThisWeekRow = fetchOne("SELECT COUNT(*) AS new_this_week FROM clients WHERE 
 $kycFunnel = fetchOne("SELECT
     SUM(status = 'draft') AS draft_count,
     SUM(status = 'submitted') AS submitted_count,
-    SUM(status = 'in_progress') AS in_progress_count,
-    SUM(status = 'approved') AS approved_count,
-    SUM(status = 'rejected') AS rejected_count
+    SUM(status = 'in_progress') AS in_progress_count
 FROM kyc_verifications") ?? [];
 
 $clientTypeSplit = fetchOne("SELECT
     SUM(client_type = 'individual') AS individual_count,
     SUM(client_type = 'corporate') AS corporate_count
 FROM clients") ?? [];
-
-$attentionItems = fetchAll("SELECT
-    c.client_id,
-    c.reference_code,
-    c.client_type,
-    c.verification_status,
-    COALESCE(NULLIF(c.client_name, ''), TRIM(CONCAT(c.first_name, ' ', c.last_name))) AS display_name,
-    TIMESTAMPDIFF(DAY, COALESCE(c.submitted_at, c.created_at), NOW()) AS age_days
-FROM clients c
-WHERE c.verification_status IN ('pending', 'rejected')
-ORDER BY
-    (c.verification_status = 'rejected') DESC,
-    age_days DESC,
-    c.created_at DESC
-LIMIT 5");
 
 $recentActivity = fetchAll("SELECT
     c.client_id,
@@ -55,9 +36,7 @@ ORDER BY COALESCE(c.submitted_at, c.created_at) DESC
 LIMIT 6");
 
 $totalClients = intval($stats['total_clients'] ?? 0);
-$pendingKyc = intval($stats['pending_kyc'] ?? 0);
 $verifiedCount = intval($stats['verified_count'] ?? 0);
-$rejectedCount = intval($stats['rejected_count'] ?? 0);
 $verifiedToday = intval($verifiedTodayRow['verified_today'] ?? 0);
 $newThisWeek = intval($newThisWeekRow['new_this_week'] ?? 0);
 
@@ -70,12 +49,7 @@ $corporatePct = 100 - $individualPct;
 $funnelDraft = intval($kycFunnel['draft_count'] ?? 0);
 $funnelSubmitted = intval($kycFunnel['submitted_count'] ?? 0);
 $funnelInProgress = intval($kycFunnel['in_progress_count'] ?? 0);
-$funnelApproved = intval($kycFunnel['approved_count'] ?? 0);
-$funnelRejected = intval($kycFunnel['rejected_count'] ?? 0);
-$funnelTotal = max(1, $funnelDraft + $funnelSubmitted + $funnelInProgress + $funnelApproved + $funnelRejected);
-
-$reviewTarget = max(10, $pendingKyc + 3);
-$reviewProgress = min(100, intval(round(($verifiedToday / max(1, $reviewTarget)) * 100)));
+$funnelTotal = max(1, $funnelDraft + $funnelSubmitted + $funnelInProgress);
 
 function e($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -155,7 +129,7 @@ include '../includes/sidebar.php';
             <div class="welcome-text">
                 <div class="day-label"><?php echo e(date('l, F j')); ?></div>
                 <h2>KYC operations center</h2>
-                <p><?php echo e($pendingKyc); ?> file<?php echo $pendingKyc === 1 ? '' : 's'; ?> need review attention today.</p>
+                <p><?php echo e($newThisWeek); ?> new client<?php echo $newThisWeek === 1 ? '' : 's'; ?> added in the last 7 days.</p>
             </div>
 
             <div class="add client hero-action">
@@ -179,59 +153,31 @@ include '../includes/sidebar.php';
             </div>
             <div class="stat-card">
                 <div class="stat-info">
-                    <div class="stat-value"><?php echo e(number_format($pendingKyc)); ?></div>
-                    <div class="stat-label">Pending KYC</div>
-                    <div class="stat-change down"><i class="bi bi-hourglass-split"></i> Needs immediate review</div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($verifiedCount)); ?></div>
-                    <div class="stat-label">Verified</div>
-                    <div class="stat-change up"><i class="bi bi-check2-circle"></i> <?php echo e($verifiedToday); ?> approved today</div>
+                    <div class="stat-label">Verified Clients</div>
+                    <div class="stat-change up"><i class="bi bi-check2-circle"></i> <?php echo e($verifiedToday); ?> verified today</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-patch-check-fill"></i></div>
             </div>
             <div class="stat-card">
                 <div class="stat-info">
-                    <div class="stat-value"><?php echo e(number_format($rejectedCount)); ?></div>
-                    <div class="stat-label">Rejected</div>
-                    <div class="stat-change down"><i class="bi bi-exclamation-circle"></i> Follow-up required</div>
+                    <div class="stat-value"><?php echo e(number_format($individualCount)); ?></div>
+                    <div class="stat-label">Individual Clients</div>
+                    <div class="stat-change up"><i class="bi bi-person"></i> <?php echo e($individualPct); ?>% of total clients</div>
                 </div>
-                <div class="stat-icon"><i class="bi bi-x-circle-fill"></i></div>
+                <div class="stat-icon"><i class="bi bi-person-fill"></i></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <div class="stat-value"><?php echo e(number_format($corporateCount)); ?></div>
+                    <div class="stat-label">Corporate Clients</div>
+                    <div class="stat-change up"><i class="bi bi-building"></i> <?php echo e($corporatePct); ?>% of total clients</div>
+                </div>
+                <div class="stat-icon"><i class="bi bi-building-fill"></i></div>
             </div>
         </div>
 
         <section class="dashboard-grid">
-            <div class="card attention-card">
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">Needs Attention</h3>
-                        <div class="card-subtitle">Oldest pending and rejected files</div>
-                    </div>
-                    <a href="clients.php" class="link">Open queue</a>
-                </div>
-                <div class="card-body">
-                    <div class="attention-list">
-                        <?php if (empty($attentionItems)): ?>
-                            <div class="empty-state">No urgent items right now.</div>
-                        <?php else: ?>
-                            <?php foreach ($attentionItems as $item): ?>
-                                <div class="attention-item">
-                                    <div class="attention-status <?php echo e($item['verification_status']); ?>"><?php echo e(strtoupper($item['verification_status'])); ?></div>
-                                    <div class="attention-info">
-                                        <div class="attention-name"><?php echo e($item['display_name'] ?: 'Unnamed Client'); ?></div>
-                                        <div class="attention-meta"><?php echo e($item['reference_code']); ?> · <?php echo e(ucfirst($item['client_type'])); ?> · <?php echo e(max(0, intval($item['age_days']))); ?> day(s)</div>
-                                    </div>
-                                    <a href="clients.php" class="attention-btn">Review</a>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-
             <div class="card quick-card">
                 <div class="card-header">
                     <div>
@@ -244,7 +190,7 @@ include '../includes/sidebar.php';
                         <a class="action-btn" href="kyc-individual.php"><i class="bi bi-person-plus"></i><span>New Individual</span></a>
                         <a class="action-btn" href="kyc-corporate.php"><i class="bi bi-building-add"></i><span>New Corporate</span></a>
                         <a class="action-btn" href="kyc-verification.php"><i class="bi bi-file-earmark-check"></i><span>Continue Draft</span></a>
-                        <a class="action-btn" href="clients.php"><i class="bi bi-inboxes"></i><span>Review Queue</span></a>
+                        <a class="action-btn" href="clients.php"><i class="bi bi-inboxes"></i><span>View Clients</span></a>
                     </div>
                 </div>
             </div>
@@ -253,7 +199,7 @@ include '../includes/sidebar.php';
                 <div class="card-header">
                     <div>
                         <h3 class="card-title">KYC Pipeline</h3>
-                        <div class="card-subtitle">Current flow across all statuses</div>
+                        <div class="card-subtitle">Current flow across active statuses</div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -269,14 +215,6 @@ include '../includes/sidebar.php';
                         <div class="pipeline-item">
                             <div class="pipeline-head"><span>In Progress</span><strong><?php echo e($funnelInProgress); ?></strong></div>
                             <div class="pipeline-track"><span style="width: <?php echo e(round(($funnelInProgress / $funnelTotal) * 100)); ?>%;"></span></div>
-                        </div>
-                        <div class="pipeline-item">
-                            <div class="pipeline-head"><span>Approved</span><strong><?php echo e($funnelApproved); ?></strong></div>
-                            <div class="pipeline-track"><span style="width: <?php echo e(round(($funnelApproved / $funnelTotal) * 100)); ?>%;"></span></div>
-                        </div>
-                        <div class="pipeline-item rejected">
-                            <div class="pipeline-head"><span>Rejected</span><strong><?php echo e($funnelRejected); ?></strong></div>
-                            <div class="pipeline-track"><span style="width: <?php echo e(round(($funnelRejected / $funnelTotal) * 100)); ?>%;"></span></div>
                         </div>
                     </div>
                 </div>
@@ -319,12 +257,12 @@ include '../includes/sidebar.php';
                     <?php else: ?>
                         <?php foreach ($recentActivity as $row): ?>
                             <div class="activity-item">
-                                <div class="activity-icon <?php echo e($row['verification_status']); ?>">
+                                <div class="activity-icon">
                                     <i class="bi bi-clipboard2-check"></i>
                                 </div>
                                 <div class="activity-info">
                                     <div class="activity-title"><?php echo e($row['display_name'] ?: 'Unnamed Client'); ?> (<?php echo e($row['reference_code']); ?>)</div>
-                                    <div class="activity-desc"><?php echo e(ucfirst($row['verification_status'])); ?> · <?php echo e(ucfirst($row['client_type'])); ?> · Submitted by <?php echo e($row['submitted_by_name']); ?></div>
+                                    <div class="activity-desc"><?php echo e(ucfirst($row['client_type'])); ?> client record · Submitted by <?php echo e($row['submitted_by_name']); ?></div>
                                 </div>
                                 <div class="activity-time"><?php echo e(relativeTime($row['action_time'])); ?></div>
                             </div>

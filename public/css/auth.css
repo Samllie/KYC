@@ -207,7 +207,7 @@ body {
 
 .auth-container.register-layout .auth-form {
     border-radius: 18px;
-    padding: 28px;
+    padding: 24px;
     max-width: 100%;
 }
 
@@ -224,7 +224,25 @@ body {
 }
 
 .auth-container.register-layout .form-group {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+}
+
+.register-form-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 10px 12px;
+}
+
+.register-form-grid .register-col-6 {
+    grid-column: span 6;
+}
+
+.register-form-grid .register-col-12 {
+    grid-column: 1 / -1;
+}
+
+.register-form-grid .btn {
+    margin-top: 4px;
 }
 
 .auth-container.register-layout .form-divider {
@@ -310,7 +328,8 @@ body {
     display: none;
 }
 
-.form-control.is-invalid ~ .form-error {
+.form-control.is-invalid ~ .form-error,
+.form-select.is-invalid ~ .form-error {
     display: block;
 }
 
@@ -333,12 +352,14 @@ body {
     box-shadow: 0 0 0 3px rgba(21, 115, 69, 0.13);
 }
 
-.form-control.is-invalid {
+.form-control.is-invalid,
+.form-select.is-invalid {
     border-color: var(--danger);
     background: #FFF8F8;
 }
 
-.form-control.is-valid {
+.form-control.is-valid,
+.form-select.is-valid {
     border-color: var(--green-400);
 }
 
@@ -740,6 +761,16 @@ body {
 
     .auth-container.register-layout .auth-form {
         padding: 28px;
+    }
+
+    .register-form-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .register-form-grid .register-col-6,
+    .register-form-grid .register-col-12 {
+        grid-column: 1;
     }
 
     .form-header h2 {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sterling insurance Company Incorporated</title>
+    <title>Sterling insurance Company, Inc.</title>
     <link rel='icon' type='image/png' href='../../css/images/SterlingLogo.png'>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,7 +24,7 @@
         
         <!-- Left Side - Branding -->
         <div class="auth-brand">
-            <h1>Sterling Insurance Company Incorporated</h1>
+            <h1>Sterling Insurance Company, Inc.</h1>
             <div class="brand-description">
                 <p>Ensuring Integrity, Security, and Compliance in Every Client Engagement.</p>
             </div>
@@ -38,9 +38,9 @@
                     <p>Fill in the details below to create your account.</p>
                 </div>
 
-                <form id="registerForm" method="POST">
+                <form id="registerForm" class="register-form-grid" method="POST">
                     <!-- Full Name Field -->
-                    <div class="form-group">
+                    <div class="form-group register-col-6">
                         <label for="fullname" class="form-label">
                             Full Name <span class="req">*</span>
                         </label>
@@ -59,7 +59,7 @@
                     </div>
 
                     <!-- Email Field -->
-                    <div class="form-group">
+                    <div class="form-group register-col-6">
                         <label for="email" class="form-label">
                             Email Address <span class="req">*</span>
                         </label>
@@ -77,8 +77,54 @@
                         <div class="form-error"></div>
                     </div>
 
+                    <!-- Branch Field -->
+                    <div class="form-group register-col-12">
+                        <label for="branch" class="form-label">
+                            Branch <span class="req">*</span>
+                        </label>
+                        <div class="select-wrap">
+                            <select id="branch" name="branch" class="form-select" required>
+                                <option value="" selected disabled>Select branch</option>
+                                <option value="ALABANG BRANCH">ALABANG BRANCH</option>
+                                <option value="MANILA BRANCH I">MANILA BRANCH I</option>
+                                <option value="MANILA BRANCH II">MANILA BRANCH II</option>
+                                <option value="WEST AVENUE BRANCH">WEST AVENUE BRANCH</option>
+                                <option value="CUBAO BRANCH">CUBAO BRANCH</option>
+                                <option value="ANGELES BRANCH">ANGELES BRANCH</option>
+                                <option value="BATANGAS BRANCH">BATANGAS BRANCH</option>
+                                <option value="BACOLOD BRANCH">BACOLOD BRANCH</option>
+                                <option value="CABANATUAN BRANCH">CABANATUAN BRANCH</option>
+                                <option value="BUTUAN BRANCH">BUTUAN BRANCH</option>
+                                <option value="CAGAYAN DE ORO BRANCH">CAGAYAN DE ORO BRANCH</option>
+                                <option value="CEBU BRANCH">CEBU BRANCH</option>
+                                <option value="CEBU REGIONAL OFFICE BRANCH">CEBU REGIONAL OFFICE BRANCH</option>
+                                <option value="DAGUPAN BRANCH">DAGUPAN BRANCH</option>
+                                <option value="DAVAO I BRANCH">DAVAO I BRANCH</option>
+                                <option value="DAVAO II BRANCH">DAVAO II BRANCH</option>
+                                <option value="GENSAN BRANCH">GENSAN BRANCH</option>
+                                <option value="ISABELA BRANCH">ISABELA BRANCH</option>
+                                <option value="LA UNION BRANCH">LA UNION BRANCH</option>
+                                <option value="LAOAG BRANCH">LAOAG BRANCH</option>
+                                <option value="LEGAZPI I BRANCH">LEGAZPI I BRANCH</option>
+                                <option value="LEGAZPI II BRANCH">LEGAZPI II BRANCH</option>
+                                <option value="MINDORO BRANCH">MINDORO BRANCH</option>
+                                <option value="NAGA BRANCH">NAGA BRANCH</option>
+                                <option value="ORMOC BRANCH">ORMOC BRANCH</option>
+                                <option value="OZAMIZ BRANCH">OZAMIZ BRANCH</option>
+                                <option value="PAGADIAN BRANCH">PAGADIAN BRANCH</option>
+                                <option value="SAN FERNANDO, PAMPANGA BRANCH">SAN FERNANDO, PAMPANGA BRANCH</option>
+                                <option value="SMRO BRANCH">SMRO BRANCH</option>
+                                <option value="TACLOBAN BRANCH">TACLOBAN BRANCH</option>
+                                <option value="TUGUEGARAO BRANCH">TUGUEGARAO BRANCH</option>
+                                <option value="VIGAN BRANCH">VIGAN BRANCH</option>
+                                <option value="ILOILO BRANCH">ILOILO BRANCH</option>
+                            </select>
+                        </div>
+                        <div class="form-error"></div>
+                    </div>
+
                     <!-- Password Field -->
-                    <div class="form-group">
+                    <div class="form-group register-col-6">
                         <label for="password" class="form-label">
                             Password <span class="req">*</span>
                         </label>
@@ -101,7 +147,7 @@
                     </div>
 
                     <!-- Confirm Password Field -->
-                    <div class="form-group">
+                    <div class="form-group register-col-6">
                         <label for="confirm_password" class="form-label">
                             Confirm Password <span class="req">*</span>
                         </label>
@@ -124,7 +170,7 @@
                     </div>
 
                     <!-- Register Button -->
-                    <button type="submit" class="btn btn-primary btn-block">
+                    <button type="submit" class="btn btn-primary btn-block register-col-12">
                         <i class="bi bi-person-plus"></i> Create Account
                     </button>
                 </form>
@@ -141,7 +187,7 @@
 
                 <!-- Footer -->
                 <div class="auth-footer">
-                    <p>&copy; 2026 Sterling Insurance Company. All rights reserved.</p>
+                    <p>&copy; 2026 Sterling Insurance Company, Inc. All rights reserved.</p>
                 </div>
             </div>
         </div>
@@ -183,9 +229,45 @@ function removeToast(el) {
 const form = document.getElementById('registerForm');
 const fullnameInput = document.getElementById('fullname');
 const emailInput = document.getElementById('email');
+const branchInput = document.getElementById('branch');
 const passwordInput = document.getElementById('password');
 const confirmPasswordInput = document.getElementById('confirm_password');
 const MAX_CREDENTIAL_LENGTH = 32;
+const VALID_BRANCHES = [
+    'ALABANG BRANCH',
+    'MANILA BRANCH I',
+    'MANILA BRANCH II',
+    'WEST AVENUE BRANCH',
+    'CUBAO BRANCH',
+    'ANGELES BRANCH',
+    'BATANGAS BRANCH',
+    'BACOLOD BRANCH',
+    'CABANATUAN BRANCH',
+    'BUTUAN BRANCH',
+    'CAGAYAN DE ORO BRANCH',
+    'CEBU BRANCH',
+    'CEBU REGIONAL OFFICE BRANCH',
+    'DAGUPAN BRANCH',
+    'DAVAO I BRANCH',
+    'DAVAO II BRANCH',
+    'GENSAN BRANCH',
+    'ISABELA BRANCH',
+    'LA UNION BRANCH',
+    'LAOAG BRANCH',
+    'LEGAZPI I BRANCH',
+    'LEGAZPI II BRANCH',
+    'MINDORO BRANCH',
+    'NAGA BRANCH',
+    'ORMOC BRANCH',
+    'OZAMIZ BRANCH',
+    'PAGADIAN BRANCH',
+    'SAN FERNANDO, PAMPANGA BRANCH',
+    'SMRO BRANCH',
+    'TACLOBAN BRANCH',
+    'TUGUEGARAO BRANCH',
+    'VIGAN BRANCH',
+    'ILOILO BRANCH'
+];
 
 // ── Password Visibility Toggle ─────────────────────────────
 document.querySelectorAll('.password-toggle').forEach(toggleBtn => {
@@ -216,6 +298,8 @@ function validateField(field) {
         isValid = value.length >= 3 && value.length <= MAX_CREDENTIAL_LENGTH;
     } else if (field.id === 'email') {
         isValid = value.length <= MAX_CREDENTIAL_LENGTH && validateEmail(value);
+    } else if (field.id === 'branch') {
+        isValid = VALID_BRANCHES.includes(value);
     } else if (field.id === 'password') {
         isValid = value.length >= 8 && value.length <= MAX_CREDENTIAL_LENGTH;
     } else if (field.id === 'confirm_password') {
@@ -229,6 +313,7 @@ function validateField(field) {
 
 fullnameInput.addEventListener('blur', () => validateField(fullnameInput));
 emailInput.addEventListener('blur', () => validateField(emailInput));
+branchInput.addEventListener('blur', () => validateField(branchInput));
 passwordInput.addEventListener('blur', () => validateField(passwordInput));
 confirmPasswordInput.addEventListener('blur', () => validateField(confirmPasswordInput));
 
@@ -238,6 +323,10 @@ fullnameInput.addEventListener('input', () => {
 
 emailInput.addEventListener('input', () => {
     if (emailInput.classList.contains('is-invalid')) validateField(emailInput);
+});
+
+branchInput.addEventListener('change', () => {
+    if (branchInput.classList.contains('is-invalid')) validateField(branchInput);
 });
 
 passwordInput.addEventListener('input', () => {
@@ -255,9 +344,11 @@ form.addEventListener('submit', function(e) {
     const fullnameValue = fullnameInput.value.trim();
     const fullnameValid = fullnameValue.length >= 3 && fullnameValue.length <= MAX_CREDENTIAL_LENGTH;
     const emailValue = emailInput.value.trim();
+    const branchValue = branchInput.value.trim();
     const passwordValue = passwordInput.value;
     const confirmPasswordValue = confirmPasswordInput.value;
     const emailValid = emailValue.length <= MAX_CREDENTIAL_LENGTH && validateEmail(emailValue);
+    const branchValid = VALID_BRANCHES.includes(branchValue);
     const passwordValid = passwordValue.length >= 8 && passwordValue.length <= MAX_CREDENTIAL_LENGTH;
     const confirmPasswordValid = confirmPasswordValue === passwordValue && confirmPasswordValue.length >= 8 && confirmPasswordValue.length <= MAX_CREDENTIAL_LENGTH;
 
@@ -265,12 +356,14 @@ form.addEventListener('submit', function(e) {
     fullnameInput.classList.toggle('is-valid', fullnameValid);
     emailInput.classList.toggle('is-invalid', !emailValid);
     emailInput.classList.toggle('is-valid', emailValid);
+    branchInput.classList.toggle('is-invalid', !branchValid);
+    branchInput.classList.toggle('is-valid', branchValid);
     passwordInput.classList.toggle('is-invalid', !passwordValid);
     passwordInput.classList.toggle('is-valid', passwordValid);
     confirmPasswordInput.classList.toggle('is-invalid', !confirmPasswordValid);
     confirmPasswordInput.classList.toggle('is-valid', confirmPasswordValid);
 
-    if (!fullnameValid || !emailValid || !passwordValid || !confirmPasswordValid) {
+    if (!fullnameValid || !emailValid || !branchValid || !passwordValid || !confirmPasswordValid) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields correctly.');
         return;
     }
