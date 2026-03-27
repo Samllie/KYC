@@ -202,6 +202,39 @@ requireLogin();
             border-color: #9ecfb3;
         }
 
+        .id-ocr-zone {
+            border: 1px dashed #b8d5c6;
+            border-radius: 12px;
+            background: #f8fcfa;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .id-ocr-meta {
+            color: var(--gray-500);
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+
+        .id-ocr-status {
+            margin-top: 10px;
+            font-size: 0.84rem;
+            color: #285943;
+            min-height: 20px;
+        }
+
+        .id-ocr-status.error {
+            color: #9b1c1c;
+        }
+
+        .id-ocr-status.info {
+            color: #1f4b99;
+        }
+
         .flow-actions .btn:active,
         .drafts-toggle-btn:active,
         .back-to-type-btn:active {
@@ -554,6 +587,49 @@ include '../includes/sidebar.php';
                     Change Type
                 </a>
                 <input type="hidden" name="clientType" value="individual">
+            </div>
+
+            <!-- ID OCR Upload Card -->
+            <div class="card" data-wizard-step="2">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-card-image"></i> ID Attachment (Auto-Fill)</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3" style="margin-bottom: 10px;">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="idOcrDocType" class="form-label">ID Type <span class="req">*</span></label>
+                                <div class="select-wrap">
+                                    <select id="idOcrDocType" class="form-select" required>
+                                        <option value="">Select ID type...</option>
+                                        <option value="philsys">PhilSys National ID</option>
+                                        <option value="passport">Passport</option>
+                                        <option value="drivers_license">Driver's License</option>
+                                        <option value="umid">UMID</option>
+                                        <option value="prc">PRC ID</option>
+                                        <option value="postal">Postal ID</option>
+                                        <option value="voters">Voter's ID</option>
+                                        <option value="sss">SSS ID</option>
+                                        <option value="gsis">GSIS ID</option>
+                                        <option value="other">Other Government ID</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="id-ocr-zone">
+                        <div>
+                            <div style="font-weight:600;color:#183026;">Upload one valid ID</div>
+                            <div class="id-ocr-meta">JPG, PNG, PDF (Max 5MB). OCR will auto-fill name and birthdate.</div>
+                        </div>
+                        <button type="button" id="idOcrUploadBtn" class="btn btn-outline">
+                            <i class="bi bi-upload"></i> Upload ID
+                        </button>
+                    </div>
+                    <input type="file" id="idOcrInput" accept=".jpg,.jpeg,.png,.pdf" style="display:none;">
+                    <div id="idOcrFileMeta" class="id-ocr-meta"></div>
+                    <div id="idOcrStatus" class="id-ocr-status"></div>
+                </div>
             </div>
 
             <!-- Reference Card -->
@@ -2027,6 +2103,11 @@ function goBack() {
 const zone   = document.getElementById('uploadZone');
 const input  = document.getElementById('fileInput');
 const list   = document.getElementById('fileList');
+const idOcrInput = document.getElementById('idOcrInput');
+const idOcrUploadBtn = document.getElementById('idOcrUploadBtn');
+const idOcrStatus = document.getElementById('idOcrStatus');
+const idOcrFileMeta = document.getElementById('idOcrFileMeta');
+const idOcrDocType = document.getElementById('idOcrDocType');
 
 const UPLOAD_STORAGE_KEY = 'kycUploadedFiles';
 
@@ -2107,7 +2188,7 @@ function renderStoredUploads() {
 }
 
 async function uploadTempFiles(files) {
-    if (!files || !files.length) return;
+    if (!files || !files.length) return [];
     zone.classList.add('is-uploading');
     try {
         const fd = new FormData();
@@ -2127,9 +2208,130 @@ async function uploadTempFiles(files) {
         renderStoredUploads();
 
         showToast('success', 'Files Uploaded', `${newlySaved.length} file(s) uploaded.`);
+        return newlySaved;
     } finally {
         zone.classList.remove('is-uploading');
     }
+}
+
+function setIdOcrStatus(message, tone = 'info') {
+    if (!idOcrStatus) return;
+    idOcrStatus.classList.remove('error', 'info');
+    if (tone === 'error' || tone === 'info') {
+        idOcrStatus.classList.add(tone);
+    }
+    idOcrStatus.textContent = message || '';
+}
+
+function normalizeBirthdateValue(rawDate) {
+    if (!rawDate) return '';
+    const trimmed = String(rawDate).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+    const parsed = new Date(trimmed);
+    if (Number.isNaN(parsed.getTime())) return '';
+
+    const yyyy = parsed.getFullYear();
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const dd = String(parsed.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function applyOcrAutofill(extracted) {
+    if (!extracted || typeof extracted !== 'object') return 0;
+    let applied = 0;
+
+    const map = [
+        ['lastName', extracted.last_name],
+        ['firstName', extracted.first_name],
+        ['middleName', extracted.middle_name],
+        ['birthdate', normalizeBirthdateValue(extracted.birthdate)]
+    ];
+
+    map.forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (!el || !value) return;
+        if ((el.value || '').trim() !== '') return;
+        el.value = String(value).trim();
+        el.dispatchEvent(new Event('input'));
+        el.dispatchEvent(new Event('change'));
+        applied += 1;
+    });
+
+    return applied;
+}
+
+async function runIdOcrFromTempUpload(fileMeta, idType) {
+    if (!fileMeta?.temp_path) {
+        throw new Error('Unable to run OCR: missing temporary upload path.');
+    }
+
+    setIdOcrStatus('Reading ID and extracting fields...', 'info');
+
+    const fd = new FormData();
+    fd.append('action', 'extract_fields');
+    fd.append('temp_path', fileMeta.temp_path);
+    if (idType) fd.append('id_type', idType);
+
+    const resp = await fetch('../handlers/id_ocr.php', {
+        method: 'POST',
+        body: fd,
+        credentials: 'include'
+    });
+
+    const data = await resp.json();
+    if (!data || !data.success) {
+        throw new Error(data?.message || 'OCR extraction failed.');
+    }
+
+    const appliedCount = applyOcrAutofill(data.fields || {});
+    if (appliedCount > 0) {
+        setIdOcrStatus(`OCR complete. Auto-filled ${appliedCount} field(s).`, 'info');
+        showToast('success', 'OCR Complete', `Auto-filled ${appliedCount} field(s) from ID.`);
+    } else {
+        setIdOcrStatus('OCR complete, but no empty target fields matched extracted values.', 'info');
+        showToast('info', 'OCR Complete', 'No empty target fields were auto-filled.');
+    }
+}
+
+async function handleIdOcrSelection(file) {
+    if (!file) return;
+
+    const selectedIdType = (idOcrDocType?.value || '').trim();
+    if (!selectedIdType) {
+        throw new Error('Please select an ID type before uploading.');
+    }
+
+    if (idOcrFileMeta) {
+        const selectedLabel = idOcrDocType?.options?.[idOcrDocType.selectedIndex]?.text || selectedIdType;
+        idOcrFileMeta.textContent = `ID Type: ${selectedLabel} | Selected file: ${file.name} (${formatSize(file.size || 0)})`;
+    }
+
+    setIdOcrStatus('Uploading ID...', 'info');
+    const uploaded = await uploadTempFiles([file]);
+    if (!uploaded.length) {
+        throw new Error('ID upload did not return a file reference.');
+    }
+
+    await runIdOcrFromTempUpload(uploaded[0], selectedIdType);
+}
+
+if (idOcrUploadBtn && idOcrInput) {
+    idOcrUploadBtn.addEventListener('click', () => idOcrInput.click());
+
+    idOcrInput.addEventListener('change', async () => {
+        const file = (idOcrInput.files && idOcrInput.files[0]) ? idOcrInput.files[0] : null;
+        idOcrInput.value = '';
+        if (!file) return;
+
+        try {
+            await handleIdOcrSelection(file);
+        } catch (err) {
+            const message = err?.message || 'Unable to process ID OCR right now.';
+            setIdOcrStatus(message, 'error');
+            showToast('error', 'ID OCR Failed', message);
+        }
+    });
 }
 
 input.addEventListener('change', async () => {
