@@ -40,6 +40,7 @@ if ($tempPathRaw === '') {
 $idTypeRaw = strtolower(trim((string)($_POST['id_type'] ?? '')));
 $allowedIdTypes = ['philsys', 'passport', 'drivers_license', 'umid', 'prc', 'postal', 'voters', 'sss', 'gsis', 'other'];
 $idType = in_array($idTypeRaw, $allowedIdTypes, true) ? $idTypeRaw : 'other';
+$debugEnabled = (trim((string)getenv('KYC_OCR_DEBUG')) === '1') || (trim((string)($_POST['debug'] ?? '')) === '1');
 
 $userId = intval($_SESSION['user_id']);
 $uploadsRoot = kyc_get_uploads_root();
@@ -118,35 +119,87 @@ if ($ext === 'pdf') {
 
 $ocrLang = trim((string)getenv('KYC_OCR_LANG'));
 if ($ocrLang === '') {
-	$ocrLang = 'eng';
+	$ocrLang = ($idType === 'philsys') ? 'eng+fil' : 'eng';
 }
 
-$cmd = escapeshellarg($tesseractCmd)
-	. ' ' . escapeshellarg($ocrInputPath)
-	. ' stdout --psm 6 -l ' . escapeshellarg($ocrLang)
-	. ' 2>&1';
+function id_ocr_run_tesseract($tesseractCmd, $inputPath, $lang, $psm) {
+	$cmd = escapeshellarg($tesseractCmd)
+		. ' ' . escapeshellarg($inputPath)
+		. ' stdout --oem 1 --psm ' . intval($psm)
+		. ' -l ' . escapeshellarg($lang)
+		. ' 2>&1';
 
-$ocrOutput = [];
-$ocrExit = 1;
-@exec($cmd, $ocrOutput, $ocrExit);
-$ocrText = trim(implode("\n", is_array($ocrOutput) ? $ocrOutput : []));
+	$out = [];
+	$exit = 1;
+	@exec($cmd, $out, $exit);
 
-if ($ocrExit !== 0) {
-	$snippet = trim(substr($ocrText, 0, 220));
-	$msg = 'Tesseract OCR command failed.';
-	if ($snippet !== '') {
-		$msg .= ' ' . $snippet;
+	return [
+		'exit' => $exit,
+		'text' => trim(implode("\n", is_array($out) ? $out : [])),
+		'lang' => $lang,
+		'psm' => intval($psm),
+	];
+}
+
+function id_ocr_compact_preview_lines($text, $maxLines = 15) {
+	$lines = id_ocr_text_lines($text);
+	if (empty($lines)) return [];
+	$trimmed = array_slice($lines, 0, max(1, intval($maxLines)));
+	return array_values(array_map(function ($line) {
+		return mb_substr((string)$line, 0, 140);
+	}, $trimmed));
+}
+
+function id_ocr_debug_payload($idType, $ocrLang, $ocrText, $attemptErrors, $fields = []) {
+	return [
+		'id_type' => $idType,
+		'ocr_lang' => $ocrLang,
+		'ocr_preview_lines' => id_ocr_compact_preview_lines($ocrText, 18),
+		'attempt_errors' => array_values($attemptErrors),
+		'matched_fields' => $fields,
+	];
+}
+
+$ocrTexts = [];
+$attemptErrors = [];
+
+$langsToTry = [$ocrLang];
+if ($ocrLang !== 'eng') {
+	$langsToTry[] = 'eng';
+}
+
+foreach (array_unique($langsToTry) as $lang) {
+	foreach ([6, 11] as $psm) {
+		$result = id_ocr_run_tesseract($tesseractCmd, $ocrInputPath, $lang, $psm);
+		if ($result['exit'] === 0 && $result['text'] !== '') {
+			$ocrTexts[] = $result['text'];
+		} else {
+			$attemptErrors[] = "lang={$result['lang']} psm={$result['psm']}: " . substr($result['text'], 0, 140);
+		}
 	}
-	id_ocr_response(false, $msg);
 }
 
+$ocrText = trim(implode("\n", array_unique($ocrTexts)));
 if ($ocrText === '') {
-	id_ocr_response(false, 'No OCR text extracted. The image may be unreadable or too low quality.');
+	$detail = '';
+	if (!empty($attemptErrors)) {
+		$detail = ' Attempts: ' . implode(' | ', $attemptErrors);
+	}
+	$extra = [];
+	if ($debugEnabled) {
+		$extra['debug'] = id_ocr_debug_payload($idType, $ocrLang, '', $attemptErrors, []);
+	}
+	id_ocr_response(false, 'No OCR text extracted. The image may be unreadable or language data may be missing.' . $detail, $extra);
 }
 
 function id_ocr_normalize_date($value) {
 	$value = trim((string)$value);
 	if ($value === '') return null;
+
+	// Support compact numeric date like YYYYMMDD.
+	if (preg_match('/^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$/', $value, $m)) {
+		return $m[1] . substr($value, 2, 2) . '-' . $m[2] . '-' . $m[3];
+	}
 
 	$ts = strtotime($value);
 	if ($ts === false) return null;
@@ -169,6 +222,37 @@ function id_ocr_match_line_value($text, $patterns) {
 	return '';
 }
 
+function id_ocr_contains_label_word($value) {
+	$upper = strtoupper((string)$value);
+	return preg_match('/(SURNAME|LAST\s*NAME|GIVEN\s*NAME|FIRST\s*NAME|MIDDLE\s*NAME|DATE\s*OF\s*BIRTH|BIRTH\s*DATE|DOB|APELYIDO|PANGALAN|GITNANG|KAPANGANAKAN|SEX|NATIONALITY|ADDRESS|REPUBLIC|PILIPINAS|PHILIPPINES|NATIONAL)/', $upper) === 1;
+}
+
+function id_ocr_clean_name_candidate($value) {
+	$value = strtoupper(trim((string)$value));
+	$value = preg_replace('/\s+/', ' ', $value);
+
+	// Remove trailing fragments that start with another label.
+	$value = preg_replace('/\b(?:SURNAME|LAST\s*NAME|GIVEN\s*NAME(?:S)?|FIRST\s*NAME|MIDDLE\s*NAME|MI|DATE\s*OF\s*BIRTH|BIRTH\s*DATE|DOB|APELYIDO|PANGALAN|GITNANG\s*PANGALAN|KAPANGANAKAN|SEX|NATIONALITY|ADDRESS)\b.*$/', '', $value);
+	$value = trim((string)$value, " \t\n\r\0\x0B:;,.|/-");
+	$value = preg_replace('/[^A-Z\s\-\'\.]/', '', (string)$value);
+	$value = preg_replace('/\s+/', ' ', (string)$value);
+	return trim((string)$value);
+}
+
+function id_ocr_is_plausible_name($value, $minChars = 2, $maxChars = 40) {
+	$value = trim((string)$value);
+	if ($value === '') return false;
+	if (strlen($value) < $minChars || strlen($value) > $maxChars) return false;
+	if (preg_match('/\d/', $value)) return false;
+	if (id_ocr_contains_label_word($value)) return false;
+	if (!preg_match('/^[A-Z\s\-\'\.]+$/', $value)) return false;
+
+	$lettersOnly = preg_replace('/[^A-Z]/', '', $value);
+	if (strlen((string)$lettersOnly) < $minChars) return false;
+
+	return true;
+}
+
 function id_ocr_text_lines($text) {
 	$raw = preg_split('/\R+/', strtoupper((string)$text));
 	if (!is_array($raw)) return [];
@@ -186,8 +270,37 @@ function id_ocr_text_lines($text) {
 
 function id_ocr_label_normalize($line) {
 	$line = strtoupper((string)$line);
+	$line = strtr($line, [
+		'0' => 'O',
+		'1' => 'I',
+		'3' => 'E',
+		'4' => 'A',
+		'5' => 'S',
+		'6' => 'G',
+		'7' => 'T',
+		'8' => 'B',
+	]);
 	$line = preg_replace('/[^A-Z]/', '', $line);
 	return (string)$line;
+}
+
+function id_ocr_label_has_token($lineNorm, $token) {
+	if ($lineNorm === '' || $token === '') return false;
+	if (strpos($lineNorm, $token) !== false) return true;
+
+	$window = strlen($token);
+	$len = strlen($lineNorm);
+	if ($len < 3 || $window < 3) return false;
+
+	for ($i = 0; $i <= max(0, $len - $window); $i++) {
+		$chunk = substr($lineNorm, $i, $window);
+		if ($chunk === false || $chunk === '') continue;
+		if (levenshtein($chunk, $token) <= 1) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 function id_ocr_looks_like_label_line($line) {
@@ -207,7 +320,7 @@ function id_ocr_extract_by_labels($lines, $labelTokens) {
 
 		$matched = false;
 		foreach ($labelTokens as $token) {
-			if ($token !== '' && strpos($lineNorm, $token) !== false) {
+			if ($token !== '' && id_ocr_label_has_token($lineNorm, $token)) {
 				$matched = true;
 				break;
 			}
@@ -215,23 +328,23 @@ function id_ocr_extract_by_labels($lines, $labelTokens) {
 		if (!$matched) continue;
 
 		if (preg_match('/[:\-]\s*(.+)$/', $line, $m)) {
-			$value = trim((string)$m[1]);
-			if ($value !== '' && !id_ocr_looks_like_label_line($value)) {
+			$value = id_ocr_clean_name_candidate((string)$m[1]);
+			if ($value !== '' && !id_ocr_looks_like_label_line($value) && !id_ocr_contains_label_word($value)) {
 				return $value;
 			}
 		}
 
 		if (preg_match('/\b(?:SURNAME|LAST\s*NAME|GIVEN\s*NAME(?:S)?|FIRST\s*NAME|MIDDLE\s*NAME|MI|APELYIDO|PANGALAN|KAPANGANAKAN|DOB|DATE\s*OF\s*BIRTH|BIRTH\s*DATE)\b\s*(.+)$/', $line, $m)) {
-			$value = trim((string)$m[1]);
-			$value = ltrim($value, ': -');
-			if ($value !== '' && !id_ocr_looks_like_label_line($value)) {
+			$value = id_ocr_clean_name_candidate((string)$m[1]);
+			if ($value !== '' && !id_ocr_looks_like_label_line($value) && !id_ocr_contains_label_word($value)) {
 				return $value;
 			}
 		}
 
 		$next = isset($lines[$i + 1]) ? trim((string)$lines[$i + 1]) : '';
-		if ($next !== '' && !id_ocr_looks_like_label_line($next)) {
-			return $next;
+		$nextClean = id_ocr_clean_name_candidate($next);
+		if ($nextClean !== '' && !id_ocr_looks_like_label_line($nextClean) && !id_ocr_contains_label_word($nextClean)) {
+			return $nextClean;
 		}
 	}
 
@@ -244,6 +357,11 @@ function id_ocr_extract_birthdate_fallback($text) {
 	$patterns = [
 		'/\b((?:19|20)\d{2}[\/\-](?:0?[1-9]|1[0-2])[\/\-](?:0?[1-9]|[12][0-9]|3[01]))\b/',
 		'/\b((?:0?[1-9]|1[0-2])[\/\-](?:0?[1-9]|[12][0-9]|3[01])[\/\-](?:19|20)\d{2})\b/',
+		'/\b((?:0?[1-9]|[12][0-9]|3[01])[.](?:0?[1-9]|1[0-2])[.](?:19|20)\d{2})\b/',
+		'/\b((?:19|20)\d{2}[.](?:0?[1-9]|1[0-2])[.](?:0?[1-9]|[12][0-9]|3[01]))\b/',
+		'/\b((?:19|20)\d{2}\s(?:0?[1-9]|1[0-2])\s(?:0?[1-9]|[12][0-9]|3[01]))\b/',
+		'/\b((?:0?[1-9]|1[0-2])\s(?:0?[1-9]|[12][0-9]|3[01])\s(?:19|20)\d{2})\b/',
+		'/\b((?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12][0-9]|3[01]))\b/',
 		'/\b((?:0?[1-9]|[12][0-9]|3[01])\s+' . $monthPattern . '\s+(?:19|20)\d{2})\b/',
 		'/\b(' . $monthPattern . '\s+(?:0?[1-9]|[12][0-9]|3[01]),?\s+(?:19|20)\d{2})\b/',
 	];
@@ -279,6 +397,77 @@ function id_ocr_extract_birthdate_fallback($text) {
 	}
 
 	return $picked;
+}
+
+function id_ocr_is_name_candidate_line($line) {
+	$line = trim((string)$line);
+	if ($line === '') return false;
+	if (strlen($line) < 4 || strlen($line) > 80) return false;
+
+	$upper = strtoupper($line);
+	if (preg_match('/\d/', $upper)) return false;
+	if (preg_match('/(REPUBLIC|PILIPINAS|NATIONAL|IDENTIFICATION|CARD|SEX|ADDRESS|BIRTH|DATE|ISSUE|EXPIRY|SIGNATURE)/', $upper)) return false;
+    if (!preg_match('/^[A-Z\s\-\'\.]+$/', $upper)) return false;
+
+	$words = preg_split('/\s+/', $upper);
+	$goodWords = 0;
+	foreach ($words as $w) {
+		if (strlen($w) >= 2) $goodWords++;
+	}
+
+	return $goodWords >= 2;
+}
+
+function id_ocr_extract_name_fallback($lines) {
+	if (!is_array($lines) || empty($lines)) return [null, null, null];
+
+	$candidates = [];
+	foreach ($lines as $line) {
+		if (id_ocr_is_name_candidate_line($line)) {
+			$candidates[] = trim((string)$line);
+		}
+	}
+
+	$candidates = array_values(array_unique($candidates));
+	if (empty($candidates)) return [null, null, null];
+
+	$best = $candidates[0];
+
+	// Prefer lines with comma format: LAST, FIRST MIDDLE
+	foreach ($candidates as $line) {
+		if (strpos($line, ',') !== false) {
+			$best = $line;
+			break;
+		}
+	}
+
+	if (strpos($best, ',') !== false) {
+		$partsByComma = array_map('trim', explode(',', $best, 2));
+		$last = id_ocr_clean_name_candidate($partsByComma[0] ?? '');
+		$right = id_ocr_clean_name_candidate($partsByComma[1] ?? '');
+		if (id_ocr_is_plausible_name($last, 2, 45) && $right !== '') {
+			$rightParts = preg_split('/\s+/', $right);
+			if (is_array($rightParts) && count($rightParts) >= 1) {
+				$first = array_shift($rightParts);
+				$middle = count($rightParts) ? implode(' ', $rightParts) : null;
+				if (id_ocr_is_plausible_name($first, 2, 35)) {
+					if ($middle !== null && !id_ocr_is_plausible_name($middle, 1, 35)) {
+						$middle = null;
+					}
+					return [$first, $last, $middle];
+				}
+			}
+		}
+	}
+
+	$parts = preg_split('/\s+/', $best);
+	if (!is_array($parts) || count($parts) < 2) return [null, null, null];
+
+	$last = array_pop($parts);
+	$first = array_shift($parts);
+	$middle = count($parts) ? implode(' ', $parts) : null;
+
+	return [$first, $last, $middle];
 }
 
 function id_ocr_build_pattern_set($idType) {
@@ -397,12 +586,33 @@ function id_ocr_extract_fields($text, $idType = 'other') {
 		}
 	}
 
+	if ($lastNameRaw === '' && $firstNameRaw === '') {
+		[$fallbackFirst, $fallbackLast, $fallbackMiddle] = id_ocr_extract_name_fallback($lines);
+		if ($fallbackFirst !== null && $fallbackLast !== null) {
+			$firstNameRaw = $fallbackFirst;
+			$lastNameRaw = $fallbackLast;
+			if ($middleNameRaw === '' && $fallbackMiddle !== null) {
+				$middleNameRaw = $fallbackMiddle;
+			}
+		}
+	}
+
 	$fields = [
-		'last_name' => id_ocr_clean_name($lastNameRaw),
-		'first_name' => id_ocr_clean_name($firstNameRaw),
-		'middle_name' => id_ocr_clean_name($middleNameRaw),
+		'last_name' => id_ocr_clean_name(id_ocr_clean_name_candidate($lastNameRaw)),
+		'first_name' => id_ocr_clean_name(id_ocr_clean_name_candidate($firstNameRaw)),
+		'middle_name' => id_ocr_clean_name(id_ocr_clean_name_candidate($middleNameRaw)),
 		'birthdate' => id_ocr_normalize_date($birthdateRaw),
 	];
+
+	if (!empty($fields['last_name']) && !id_ocr_is_plausible_name($fields['last_name'], 2, 45)) {
+		unset($fields['last_name']);
+	}
+	if (!empty($fields['first_name']) && !id_ocr_is_plausible_name($fields['first_name'], 2, 45)) {
+		unset($fields['first_name']);
+	}
+	if (!empty($fields['middle_name']) && !id_ocr_is_plausible_name($fields['middle_name'], 1, 45)) {
+		unset($fields['middle_name']);
+	}
 
 	if (empty($fields['birthdate'])) {
 		$fallbackDate = id_ocr_extract_birthdate_fallback($text);
@@ -423,11 +633,15 @@ function id_ocr_extract_fields($text, $idType = 'other') {
 $fields = id_ocr_extract_fields($ocrText, $idType);
 
 if (empty($fields)) {
-	id_ocr_response(false, 'OCR completed, but no matching fields were detected.');
+	$extra = [];
+	if ($debugEnabled) {
+		$extra['debug'] = id_ocr_debug_payload($idType, $ocrLang, $ocrText, $attemptErrors, []);
+	}
+	id_ocr_response(false, 'OCR completed, but no matching fields were detected.', $extra);
 }
 
-id_ocr_response(true, 'OCR extraction successful', [
+id_ocr_response(true, 'OCR extraction successful', array_merge([
 	'id_type' => $idType,
 	'fields' => $fields,
-]);
+], $debugEnabled ? ['debug' => id_ocr_debug_payload($idType, $ocrLang, $ocrText, $attemptErrors, $fields)] : []));
 

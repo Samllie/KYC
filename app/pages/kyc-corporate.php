@@ -2081,6 +2081,7 @@ async function runIdOcrFromTempUpload(fileMeta, idType) {
     fd.append('action', 'extract_fields');
     fd.append('temp_path', fileMeta.temp_path);
     if (idType) fd.append('id_type', idType);
+    fd.append('debug', '1');
 
     const resp = await fetch('../handlers/id_ocr.php', {
         method: 'POST',
@@ -2090,7 +2091,9 @@ async function runIdOcrFromTempUpload(fileMeta, idType) {
 
     const data = await resp.json();
     if (!data || !data.success) {
-        throw new Error(data?.message || 'OCR extraction failed.');
+        const debugLines = Array.isArray(data?.debug?.ocr_preview_lines) ? data.debug.ocr_preview_lines.slice(0, 6) : [];
+        const debugSummary = debugLines.length ? ` OCR preview: ${debugLines.join(' | ')}` : '';
+        throw new Error((data?.message || 'OCR extraction failed.') + debugSummary);
     }
 
     const appliedCount = applyCorporateOcrAutofill(data.fields || {});
