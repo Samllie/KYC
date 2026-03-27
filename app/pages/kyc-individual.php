@@ -215,9 +215,265 @@ requireLogin();
         .steps-bar .step.step-clickable .step-num {
             cursor: pointer;
         }
+
+        .client-type-inline {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .client-type-inline-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .client-type-inline-label {
+            font-size: 0.73rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--gray-500);
+        }
+
+        /* Compact density mode for KYC form layout */
+        body.kyc-compact .topbar {
+            height: 56px;
+            padding: 0 22px;
+        }
+
+        body.kyc-compact .topbar-left h1 {
+            font-size: 0.95rem;
+        }
+
+        body.kyc-compact .breadcrumb-trail {
+            font-size: 0.64rem;
+        }
+
+        body.kyc-compact .content {
+            padding: 18px 22px;
+        }
+
+        body.kyc-compact .steps-bar {
+         
+            margin-bottom: 14px;
+            border-radius: 12px;
+        }
+
+        body.kyc-compact .steps-bar.sticky {
+            top: 56px;
+        }
+
+        body.kyc-compact .step {
+            gap: 8px;
+        }
+
+        body.kyc-compact .step-num {
+            width: 28px;
+            height: 28px;
+            font-size: 0.72rem;
+        }
+
+        body.kyc-compact .step-info span:first-child {
+            font-size: 0.62rem;
+        }
+
+        body.kyc-compact .step-info strong {
+            font-size: 0.72rem;
+        }
+
+        body.kyc-compact #kycForm {
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        body.kyc-compact .client-type-inline {
+            margin-bottom: 2px;
+        }
+
+        body.kyc-compact .client-type-inline-label {
+            font-size: 0.66rem;
+        }
+
+        body.kyc-compact .client-type-display {
+            min-height: 34px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+        }
+
+        body.kyc-compact .client-type-display i {
+            font-size: 0.8rem;
+        }
+
+        body.kyc-compact #kycForm .row.g-3 {
+            --bs-gutter-x: 0.8rem;
+            --bs-gutter-y: 0.6rem;
+        }
+
+        body.kyc-compact .card {
+            margin-bottom: 12px;
+            border-radius: 12px;
+        }
+
+        body.kyc-compact .card-header {
+            padding: 14px 18px 0;
+        }
+
+        body.kyc-compact .card-title {
+            font-size: 0.86rem;
+        }
+
+        body.kyc-compact .card-subtitle {
+            font-size: 0.7rem;
+        }
+
+        body.kyc-compact .card-body {
+         
+        }
+
+        body.kyc-compact .card-footer {
+            padding: 12px 18px;
+        }
+
+        body.kyc-compact .section-divider {
+            margin: 14px 0 10px;
+        }
+
+        body.kyc-compact .form-group {
+            margin-bottom: 12px;
+        }
+
+        body.kyc-compact .form-label {
+            margin-bottom: 4px;
+            font-size: 0.71rem;
+        }
+
+        body.kyc-compact input.form-control,
+        body.kyc-compact select.form-select {
+            height: 36px;
+            padding: 0 10px;
+            font-size: 0.8rem;
+        }
+
+        body.kyc-compact textarea.form-control {
+            min-height: 74px;
+            padding: 8px 10px;
+            font-size: 0.8rem;
+            line-height: 1.35;
+        }
+
+        body.kyc-compact .input-icon-wrap .form-control {
+            padding-left: 34px;
+        }
+
+        body.kyc-compact .input-icon-wrap i {
+            left: 11px;
+            font-size: 0.82rem;
+        }
+
+        body.kyc-compact .form-hint,
+        body.kyc-compact .form-error {
+            font-size: 0.66rem;
+            margin-top: 3px;
+        }
+
+        body.kyc-compact .btn {
+            height: 36px;
+            padding: 0 14px;
+            font-size: 0.78rem;
+        }
+
+        body.kyc-compact .back-to-type-btn {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+        }
+
+        body.kyc-compact .drafts-toggle-btn {
+            width: 34px;
+            height: 34px;
+        }
+
+        body.kyc-compact #draftsCard {
+            width: 360px;
+            top: 68px;
+            border-radius: 12px;
+        }
+
+        body.kyc-compact #draftsCard .card-header {
+            padding: 10px 12px;
+        }
+
+        body.kyc-compact #draftsCard .card-body {
+            padding: 10px 12px 12px;
+            max-height: calc(76vh - 54px);
+        }
+
+        body.kyc-compact #draftSelect {
+            height: 36px;
+            font-size: 0.8rem;
+        }
+
+        body.kyc-compact #loadDraftBtn {
+            min-width: 104px;
+            height: 32px;
+            padding: 0 10px;
+            font-size: 0.72rem;
+        }
+
+        @media (max-width: 900px) {
+            .client-type-inline {
+                align-items: flex-start;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .client-type-inline-left {
+                flex: 1 1 100%;
+            }
+
+            body.kyc-compact .topbar {
+                height: auto;
+                min-height: 52px;
+                padding: 8px 12px;
+            }
+
+            body.kyc-compact .content {
+                padding: 14px;
+            }
+
+            body.kyc-compact .steps-bar {
+                padding: 10px 12px;
+                margin-bottom: 10px;
+            }
+
+            body.kyc-compact .steps-bar.sticky {
+                top: 52px;
+            }
+
+            body.kyc-compact .card-header {
+                padding: 10px 12px 0;
+            }
+
+            body.kyc-compact .card-body,
+            body.kyc-compact .card-footer {
+                padding: 10px 12px;
+            }
+
+            body.kyc-compact #draftsCard {
+                width: calc(100vw - 20px);
+                right: 10px;
+                top: 62px;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="kyc-compact">
 
 <?php
 $activePage = 'kyc-verification';
@@ -284,28 +540,20 @@ include '../includes/sidebar.php';
         <!-- Form Start -->
         <form id="kycForm" novalidate>
 
-            <!-- Client Type Card -->
-            <div class="card card-span-2" data-wizard-step="2">
-                <div class="card-header">
-                    <div class="card-title"><i class="bi bi-list"></i> Client Type</div>
-                    <a href="kyc-verification.php" class="back-to-type-btn">
-                        <i class="bi bi-arrow-left"></i>
-                        Change Type
-                    </a>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <div class="client-type-display individual">
-                                    <i class="bi bi-person-fill"></i>
-                                    <span>Individual Client</span>
-                                </div>
-                                <input type="hidden" name="clientType" value="individual">
-                            </div>
-                        </div>
+            <!-- Client Type Display -->
+            <div class="client-type-inline" data-wizard-step="2">
+                <div class="client-type-inline-left">
+                    <span class="client-type-inline-label">Client Type</span>
+                    <div class="client-type-display individual">
+                        <i class="bi bi-person-fill"></i>
+                        <span>Individual Client</span>
                     </div>
                 </div>
+                <a href="kyc-verification.php" class="back-to-type-btn">
+                    <i class="bi bi-arrow-left"></i>
+                    Change Type
+                </a>
+                <input type="hidden" name="clientType" value="individual">
             </div>
 
             <!-- Reference Card -->
@@ -1917,22 +2165,22 @@ document.getElementById('refCode').addEventListener('input', function() {
     document.getElementById('clientNumber').value = cn;
 });
 
-// ── Sticky Progress Bar on Scroll ────────────────────────────
+// ── Collapse Steps to Tiny Progress on Scroll ───────────────
 const stepsBar = document.querySelector('.steps-bar');
 const mainContent = document.querySelector('.main');
 
 window.addEventListener('scroll', function() {
     if (!stepsBar) return;
-    
+
     const scrollPosition = mainContent?.getBoundingClientRect().top || 0;
-    
-    // If main content top is above viewport, make progress bar sticky
+
     if (scrollPosition < 0) {
         stepsBar.classList.add('sticky');
     } else {
         stepsBar.classList.remove('sticky');
     }
 });
+
 </script>
 
 </body>

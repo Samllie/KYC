@@ -658,7 +658,7 @@ body.sidebar-collapsed .sidebar-footer {
     background: rgba(255, 255, 255, 0.84);
     border: 1px solid #d5e3da;
     border-radius: var(--radius-lg);
-    padding: 20px 28px;
+    padding: 15px 28px;
     margin-bottom: 24px;
     box-shadow: 0 6px 20px rgba(27, 61, 45, 0.08);
     transition: all 0.3s ease;
