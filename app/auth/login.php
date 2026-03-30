@@ -64,13 +64,13 @@ $isRememberChecked = $rememberedEmail !== '';
         <!-- Right Side - Login Form -->
         <div class="auth-form-container">
             <div class="auth-form">
-                <div class="form-header">
+                <div class="form-header login-form-header">
                     <h2>Welcome</h2>
                     <p>Sign in to your account</p>
                 </div>
 
                 <?php if ($isSwitchMode): ?>
-                    <div class="status-message status-info" style="display:block; margin-bottom: 14px;">
+                    <div class="status-message status-info" style="margin-bottom: 14px;">
                         <i class="bi bi-arrow-left-right"></i>
                         Switch account mode: sign in to continue.
                     </div>

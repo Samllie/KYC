@@ -105,9 +105,149 @@ requireLogin();
         .type-card:hover .type-card-btn {
             background: #0f5a35;
         }
+
+        body.kyc-compact .topbar {
+            height: 56px;
+            padding: 0 22px;
+        }
+
+        body.kyc-compact .topbar-left h1 {
+            font-size: 0.95rem;
+        }
+
+        body.kyc-compact .breadcrumb-trail {
+            font-size: 0.64rem;
+        }
+
+        body.kyc-compact .content {
+            padding: 18px 22px;
+        }
+
+        body.kyc-compact .steps-bar {
+         
+            margin-bottom: 14px;
+            border-radius: 12px;
+        }
+
+        body.kyc-compact .steps-bar.sticky {
+            top: 56px;
+        }
+
+        body.kyc-compact .step {
+            gap: 8px;
+        }
+
+        body.kyc-compact .step-num {
+            width: 28px;
+            height: 28px;
+            font-size: 0.72rem;
+        }
+
+        body.kyc-compact .step-info span:first-child {
+            font-size: 0.62rem;
+        }
+
+        body.kyc-compact .step-info strong {
+            font-size: 0.72rem;
+        }
+
+        body.kyc-compact .card {
+            margin-bottom: 12px;
+            border-radius: 12px;
+        }
+
+        body.kyc-compact .card-header {
+            padding: 14px 18px 0;
+        }
+
+        body.kyc-compact .card-title {
+            font-size: 0.86rem;
+        }
+
+        body.kyc-compact .card-subtitle {
+            font-size: 0.7rem;
+        }
+
+        body.kyc-compact .card-body {
+         
+        }
+
+        body.kyc-compact .type-selector {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin: 14px 0 2px;
+        }
+
+        body.kyc-compact .type-card {
+            border-radius: 12px;
+            padding: 20px 18px;
+            box-shadow: 0 6px 20px rgba(20, 58, 41, 0.1);
+        }
+
+        body.kyc-compact .type-card-icon {
+            font-size: 2.3rem;
+            margin-bottom: 10px;
+        }
+
+        body.kyc-compact .type-card-title {
+            font-size: 1.06rem;
+            margin-bottom: 8px;
+        }
+
+        body.kyc-compact .type-card-desc {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        body.kyc-compact .type-card-btn {
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 900px) {
+            body.kyc-compact .topbar {
+                height: auto;
+                min-height: 52px;
+                padding: 8px 12px;
+            }
+
+            body.kyc-compact .content {
+                padding: 14px;
+            }
+
+            body.kyc-compact .steps-bar {
+                padding: 10px 12px;
+                margin-bottom: 10px;
+            }
+
+            body.kyc-compact .steps-bar.sticky {
+                top: 52px;
+            }
+
+            body.kyc-compact .card-header {
+                padding: 10px 12px 0;
+            }
+
+            body.kyc-compact .card-body {
+                padding: 10px 12px;
+            }
+
+            body.kyc-compact .type-selector {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin-top: 10px;
+            }
+
+            body.kyc-compact .type-card {
+                padding: 16px 14px;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="kyc-compact">
 
 <?php
 $activePage = 'kyc-verification';
@@ -209,6 +349,24 @@ include '../includes/sidebar.php';
 
     </main>
 </div>
-    
+
+<script>
+// ── Collapse Steps to Tiny Progress on Scroll ───────────────
+const stepsBar = document.querySelector('.steps-bar');
+const mainContent = document.querySelector('.main');
+
+window.addEventListener('scroll', function() {
+    if (!stepsBar) return;
+
+    const scrollPosition = mainContent?.getBoundingClientRect().top || 0;
+
+    if (scrollPosition < 0) {
+        stepsBar.classList.add('sticky');
+    } else {
+        stepsBar.classList.remove('sticky');
+    }
+});
+</script>
+
 </body>
 </html>
