@@ -50,12 +50,21 @@ requireLogin();
             transform: translateX(-3px);
         }
 
+        body {
+            --draft-btn-size: 46px;
+            --draft-btn-bottom: 18px;
+            --draft-panel-gap: 8px;
+        }
+
+        body.kyc-compact {
+            --draft-btn-size: 42px;
+        }
+
         /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
-            top: auto;
-            bottom: 72px;
-            right: 18px;
+            top: 0;
+            left: 0;
             width: 360px;
             max-width: calc(100vw - 28px);
             max-height: 48vh;
@@ -166,8 +175,8 @@ requireLogin();
         }
 
         .drafts-toggle-btn {
-            width: 46px;
-            height: 46px;
+            width: var(--draft-btn-size);
+            height: var(--draft-btn-size);
             border-radius: 10px;
             border: 1px solid #d2e0d8;
             background: rgba(255,255,255,0.85);
@@ -175,12 +184,13 @@ requireLogin();
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            position: fixed;
-            right: 18px;
-            bottom: 18px;
-            z-index: 9998;
-            box-shadow: 0 12px 26px rgba(17, 24, 39, 0.16);
             transition: all 0.2s ease;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            align-self: center;
         }
         .drafts-toggle-btn:hover {
             background: #eef8f2;
@@ -503,14 +513,14 @@ requireLogin();
         }
 
         body.kyc-compact .drafts-toggle-btn {
-            width: 42px;
-            height: 42px;
+            width: var(--draft-btn-size);
+            height: var(--draft-btn-size);
         }
 
         body.kyc-compact #draftsCard {
             width: 336px;
-            top: auto;
-            bottom: 64px;
+            top: 74px;
+            bottom: calc(var(--draft-btn-bottom) + var(--draft-btn-size) + var(--draft-panel-gap));
             border-radius: 12px;
         }
 
@@ -536,6 +546,25 @@ requireLogin();
         }
 
         @media (max-width: 900px) {
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.28);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s ease;
+                z-index: 9997;
+            }
+
+            body.drafts-popup-open::before {
+                opacity: 1;
+            }
+
+            body {
+                --draft-btn-bottom: 12px;
+            }
+
             .client-type-inline {
                 align-items: flex-start;
                 flex-wrap: wrap;
@@ -593,17 +622,28 @@ requireLogin();
                 justify-content: center;
             }
 
+            #draftsCard,
             body.kyc-compact #draftsCard {
-                width: calc(100vw - 20px);
-                right: 10px;
-                top: auto;
-                bottom: 62px;
+                width: min(360px, calc(100vw - 20px));
+                max-height: min(50dvh, 360px);
             }
 
-            .drafts-toggle-btn,
-            body.kyc-compact .drafts-toggle-btn {
-                right: 10px;
-                bottom: 12px;
+            body.kyc-compact #draftsCard .card-body {
+                max-height: calc(min(50dvh, 360px) - 48px);
+            }
+
+        }
+
+        @media (max-width: 640px) {
+            #draftsCard,
+            body.kyc-compact #draftsCard {
+                width: min(330px, calc(100vw - 23px));
+                max-height: min(48dvh, 330px);
+            }
+
+            #draftsCard .card-body,
+            body.kyc-compact #draftsCard .card-body {
+                max-height: calc(min(48dvh, 330px) - 48px);
             }
         }
 
@@ -3015,12 +3055,48 @@ function toggleDraftsPanel() {
     if (!panel) return;
     const willOpen = !panel.classList.contains('open');
     panel.classList.toggle('open', willOpen);
+    document.body.classList.toggle('drafts-popup-open', willOpen);
     if (toggleBtn) {
         toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
     }
     if (willOpen && typeof refreshDrafts === 'function') {
+        requestAnimationFrame(positionDraftsPanel);
         refreshDrafts();
     }
+}
+
+function positionDraftsPanel() {
+    const panel = document.getElementById('draftsCard');
+    const toggleBtn = document.querySelector('.drafts-toggle-btn');
+    if (!panel || !toggleBtn || !panel.classList.contains('open')) {
+        return;
+    }
+
+    const gap = 10;
+    const pad = 8;
+
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    panel.style.left = '-9999px';
+    panel.style.top = '-9999px';
+
+    const buttonRect = toggleBtn.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+
+    let left = buttonRect.right - panelRect.width;
+    let top = buttonRect.bottom + gap;
+
+    const maxLeft = window.innerWidth - panelRect.width - pad;
+    if (left > maxLeft) left = Math.max(pad, maxLeft);
+    if (left < pad) left = pad;
+
+    if (top + panelRect.height > window.innerHeight - pad) {
+        top = buttonRect.top - panelRect.height - gap;
+    }
+    if (top < pad) top = pad;
+
+    panel.style.left = `${Math.round(left)}px`;
+    panel.style.top = `${Math.round(top)}px`;
 }
 
 function closeDraftsPanel() {
@@ -3028,6 +3104,7 @@ function closeDraftsPanel() {
     const toggleBtn = document.querySelector('.drafts-toggle-btn');
     if (!panel) return;
     panel.classList.remove('open');
+    document.body.classList.remove('drafts-popup-open');
     if (toggleBtn) {
         toggleBtn.setAttribute('aria-expanded', 'false');
     }
@@ -3050,6 +3127,9 @@ document.addEventListener('keydown', function (event) {
         closeDraftsPanel();
     }
 });
+
+window.addEventListener('resize', positionDraftsPanel);
+window.addEventListener('scroll', positionDraftsPanel, true);
 
 const WIZARD_MIN_STEP = 2;
 const WIZARD_MAX_STEP = 4;
