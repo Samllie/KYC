@@ -19,7 +19,7 @@ requireLogin();
     <link rel="stylesheet" href="../../public/css/global.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body>
+<body class="clients-page">
 
 <?php
 $activePage = 'clients';
@@ -54,12 +54,6 @@ include '../includes/sidebar.php';
                     <input type="text" id="searchInput" placeholder="Search clients..." class="search-input">
                 </div>
                 <div class="filter-group">
-                    <select id="filterStatus" class="filter-select">
-                        <option value="">All Status</option>
-                        <option value="verified">Verified</option>
-                        <option value="pending">Pending</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
                     <select id="filterType" class="filter-select">
                         <option value="">All Types</option>
                         <option value="individual">Individual</option>
@@ -104,7 +98,7 @@ include '../includes/sidebar.php';
             <!-- Pagination -->
             <div class="table-footer">
                 <div class="pagination-info">
-                    Showing <span class="info-start">1</span> to <span class="info-end">6</span> of <span class="info-total">0</span> clients
+                    Showing <span class="info-start">1</span> to <span class="info-end">7</span> of <span class="info-total">0</span> clients
                 </div>
                 <div class="pagination" id="paginationContainer">
                     <!-- Pagination buttons will be generated dynamically -->
@@ -223,17 +217,6 @@ include '../includes/sidebar.php';
                     </div>
                 </div>
 
-                <!-- Row 7: Status -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Verification Status</label>
-                        <select id="editVerificationStatus" class="form-select" disabled>
-                            <option value="verified">Verified</option>
-                            <option value="pending">Pending</option>
-                            <option value="rejected">Rejected</option>
-                        </select>
-                    </div>
-                </div>
             </form>
         </div>
         <div class="modal-footer">
@@ -243,26 +226,141 @@ include '../includes/sidebar.php';
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════ MODAL: View Client -->
+<div id="viewModal" class="modal">
+    <div class="modal-content view-modal-content" style="max-width: 900px; max-height: 92vh; display: flex; flex-direction: column;">
+        <div class="modal-header">
+            <h2>Client Preview</h2>
+            <button class="modal-close" title="Close" onclick="document.getElementById('viewModal').style.display='none'"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="viewForm">
+                <input type="hidden" id="viewClientId">
+
+                <!-- Row 1: Reference & Number -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Ref Code</label>
+                        <input type="text" id="viewRefCode" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Client Number</label>
+                        <input type="text" id="viewClientNumber" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <!-- Row 2: Type -->
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label class="form-label">Client Type</label>
+                        <select id="viewClientType" class="form-select" disabled>
+                            <option value="individual">Individual</option>
+                            <option value="corporate">Corporate</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 3: Name -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" id="viewFirstName" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Middle Name</label>
+                        <input type="text" id="viewMiddleName" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" id="viewLastName" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <!-- Row 4: Personal Details -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Birthdate</label>
+                        <input type="date" id="viewBirthdate" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Gender</label>
+                        <select id="viewGender" class="form-select" disabled>
+                            <option value="">Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Prefer not to say</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Civil Status</label>
+                        <select id="viewCivilStatus" class="form-select" disabled>
+                            <option>Single</option>
+                            <option>Married</option>
+                            <option>Widowed</option>
+                            <option>Separated</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 5: Additional Details -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Occupation</label>
+                        <input type="text" id="viewOccupation" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nationality</label>
+                        <input type="text" id="viewNationality" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">TIN / Tax ID</label>
+                        <input type="text" id="viewTin" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <!-- Row 6: Contact Information -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="viewEmail" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mobile Number</label>
+                        <input type="tel" id="viewMobile" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telephone</label>
+                        <input type="tel" id="viewTelephone" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <!-- Row 7: Address -->
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label class="form-label">Present Address</label>
+                        <input type="text" id="viewAddress" class="form-control" readonly>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="document.getElementById('viewModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════ MODAL: Export Preview -->
 <div id="exportPreviewModal" class="modal">
-    <div class="modal-content" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="modal-content export-preview-modal-content" style="max-width: 1440px; max-height: 92vh; display: flex; flex-direction: column;">
         <div class="modal-header">
             <h2>Export Clients Report</h2>
-            <button class="modal-close" title="Close" onclick="document.getElementById('exportPreviewModal').style.display='none'"><i class="bi bi-x"></i></button>
+            <button class="modal-close export-modal-close" title="Close" onclick="document.getElementById('exportPreviewModal').style.display='none'"><i class="bi bi-x"></i></button>
         </div>
         <div class="modal-body" style="flex: 1; overflow-y: auto;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px;">
-                <label for="exportScope" style="font-weight: 600; color: #374151;">Export Scope</label>
-                <select id="exportScope" class="filter-select" style="min-width: 250px;">
-                    <option value="selected">Selected Clients (Checked)</option>
-                    <option value="filtered" selected>Filtered Clients</option>
-                    <option value="all">All Clients (Unfiltered)</option>
-                </select>
-            </div>
-            <div id="previewContent" style="background: white; padding: 20px; border-radius: 8px;"></div>
+            <div id="previewContent" class="export-preview-content"></div>
         </div>
         <div class="modal-footer" style="justify-content: space-between;">
-            <button class="btn-cancel" onclick="document.getElementById('exportPreviewModal').style.display='none'">
+            <button class="btn-cancel export-modal-close" onclick="document.getElementById('exportPreviewModal').style.display='none'">
                 <i class="bi bi-x-circle"></i> Close
             </button>
             <div style="display: flex; gap: 8px;">
@@ -283,7 +381,7 @@ include '../includes/sidebar.php';
 <script>
     // Pagination state
     let currentPage = 1;
-    let pageSize = 6;
+    let pageSize = 7;
     let totalPages = 1;
     let totalClients = 0;
     let currentEditingClientId = null;
@@ -316,7 +414,6 @@ include '../includes/sidebar.php';
     function getActiveFilters() {
         return {
             search: document.getElementById('searchInput').value.trim(),
-            status: document.getElementById('filterStatus').value,
             type: document.getElementById('filterType').value
         };
     }
@@ -329,7 +426,6 @@ include '../includes/sidebar.php';
             page: page,
             pageSize: pageSize,
             search: filters.search,
-            status: filters.status,
             type: filters.type
         });
 
@@ -365,7 +461,7 @@ include '../includes/sidebar.php';
                     currentPageClients = [];
                     console.log('No clients found or fetch failed');
                     document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">No clients found</td></tr>';
-                    updatePaginationInfo({ page: 1, total: 0, pageSize: 6, totalPages: 0 });
+                    updatePaginationInfo({ page: 1, total: 0, pageSize: pageSize, totalPages: 0 });
                     generatePaginationButtons({ page: 1, totalPages: 0 });
                 }
             })
@@ -402,7 +498,6 @@ include '../includes/sidebar.php';
             row.classList.add('row-enter');
             row.dataset.clientId = client.client_id;
             row.dataset.clientType = client.client_type || '';
-            row.dataset.status = client.verification_status || '';
             row.style.animationDelay = `${Math.min(tbody.children.length * 35, 220)}ms`;
             row.innerHTML = `
                 <td class="col-checkbox"><input type="checkbox" class="row-select" data-client-id="${client.client_id}"></td>
@@ -593,11 +688,55 @@ include '../includes/sidebar.php';
 
     // Modal functionality
     const editModal = document.getElementById('editModal');
+    const viewModal = document.getElementById('viewModal');
     const cancelBtn = document.getElementById('cancelBtn');
 
     // View Client Function
     function viewClient(data) {
-        alert('Client Details:\n\nRef Code: ' + data.refCode + '\nName: ' + data.displayName + '\nOwner: ' + data.ownerName + '\nType: ' + data.type + '\nEmail: ' + data.email + '\nContact: ' + data.contact);
+        if (!data || !data.clientId) {
+            createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
+            return;
+        }
+
+        fetch(`../handlers/client.php?action=get_client&client_id=${encodeURIComponent(data.clientId)}`, {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (!result.success || !result.data) {
+                createToast('error', 'Error', result.message || 'Failed to load client details.', 'toastContainer');
+                return;
+            }
+
+            const client = result.data;
+            const fallbackName = (client.client_name || '').trim();
+
+            document.getElementById('viewClientId').value = client.client_id || '';
+            document.getElementById('viewRefCode').value = client.reference_code || '';
+            document.getElementById('viewClientNumber').value = client.client_number || '';
+            document.getElementById('viewClientType').value = client.client_type || 'individual';
+            document.getElementById('viewVerificationStatus').value = client.verification_status || 'pending';
+            document.getElementById('viewFirstName').value = client.first_name || fallbackName;
+            document.getElementById('viewMiddleName').value = client.middle_name || '';
+            document.getElementById('viewLastName').value = client.last_name || '';
+            document.getElementById('viewBirthdate').value = client.date_of_birth || '';
+            document.getElementById('viewGender').value = (client.gender || '').toLowerCase();
+            document.getElementById('viewCivilStatus').value = client.civil_status || 'Single';
+            document.getElementById('viewOccupation').value = client.occupation || '';
+            document.getElementById('viewNationality').value = client.nationality || '';
+            document.getElementById('viewTin').value = client.tin_number || '';
+            document.getElementById('viewEmail').value = client.email || '';
+            document.getElementById('viewMobile').value = client.mobile_phone || client.office_phone || '';
+            document.getElementById('viewTelephone').value = client.landline_phone || client.office_phone || '';
+            document.getElementById('viewAddress').value = client.full_address || client.home_address || client.business_address || '';
+
+            viewModal.style.display = 'block';
+        })
+        .catch(error => {
+            createToast('error', 'Error', 'Failed to load client details.', 'toastContainer');
+            console.error('Error loading client details:', error);
+        });
     }
 
     // Edit Client Function
@@ -639,7 +778,6 @@ include '../includes/sidebar.php';
             document.getElementById('editMobile').value = client.mobile_phone || client.office_phone || '';
             document.getElementById('editTelephone').value = client.landline_phone || client.office_phone || '';
             document.getElementById('editAddress').value = client.full_address || client.home_address || client.business_address || '';
-            document.getElementById('editVerificationStatus').value = client.verification_status || 'pending';
 
             editModal.style.display = 'block';
         })
@@ -790,6 +928,9 @@ include '../includes/sidebar.php';
         if (event.target === editModal) {
             editModal.style.display = 'none';
         }
+        if (event.target === viewModal) {
+            viewModal.style.display = 'none';
+        }
     });
 
     // Select All functionality
@@ -813,7 +954,6 @@ include '../includes/sidebar.php';
         }, 300);
     });
 
-    document.getElementById('filterStatus').addEventListener('change', applyServerFilters);
     document.getElementById('filterType').addEventListener('change', applyServerFilters);
 
     // Export Clients functionality
@@ -828,9 +968,6 @@ include '../includes/sidebar.php';
 
         if (filters.search) {
             parts.push(`Search: ${filters.search}`);
-        }
-        if (filters.status) {
-            parts.push(`Status: ${filters.status.charAt(0).toUpperCase() + filters.status.slice(1)}`);
         }
         if (filters.type) {
             parts.push(`Type: ${filters.type.charAt(0).toUpperCase() + filters.type.slice(1)}`);
@@ -868,7 +1005,7 @@ include '../includes/sidebar.php';
             .filter(Boolean);
     }
 
-    async function getServerExportData(useFilters = true) {
+    async function getServerExportData() {
         const filters = getActiveFilters();
         const query = new URLSearchParams({
             page: '1',
@@ -876,11 +1013,8 @@ include '../includes/sidebar.php';
             exportAll: '1'
         });
 
-        if (useFilters) {
-            query.set('search', filters.search);
-            query.set('status', filters.status);
-            query.set('type', filters.type);
-        }
+        query.set('search', filters.search);
+        query.set('type', filters.type);
 
         const response = await fetch(`../handlers/get_clients.php?${query.toString()}`, {
             method: 'GET',
@@ -895,44 +1029,18 @@ include '../includes/sidebar.php';
         return (payload.data || []).map(mapClientToExportRow);
     }
 
-    function getDefaultExportScope() {
-        return selectedClientIds.size > 0 ? 'selected' : 'filtered';
-    }
-
-    async function resolveExportPayload(scope) {
+    async function resolveExportPayload() {
         const selectedRows = getSelectedExportData();
 
-        if (scope === 'selected') {
-            if (selectedRows.length > 0) {
-                return {
-                    data: selectedRows,
-                    scope: 'selected',
-                    label: 'Selected clients only (checked rows)'
-                };
-            }
-
-            const filteredRows = await getServerExportData(true);
-            const scopeSelect = document.getElementById('exportScope');
-            if (scopeSelect) scopeSelect.value = 'filtered';
-
-            createToast('info', 'No Selection', 'No checked clients found. Export switched to filtered clients.', 'toastContainer');
+        if (selectedRows.length > 0) {
             return {
-                data: filteredRows,
-                scope: 'filtered',
-                label: `Filtered clients (${getFilterSummaryText()})`
+                data: selectedRows,
+                scope: 'selected',
+                label: 'Selected clients only (checked rows)'
             };
         }
 
-        if (scope === 'all') {
-            const allRows = await getServerExportData(false);
-            return {
-                data: allRows,
-                scope: 'all',
-                label: 'All clients (unfiltered)'
-            };
-        }
-
-        const filteredRows = await getServerExportData(true);
+        const filteredRows = await getServerExportData();
         return {
             data: filteredRows,
             scope: 'filtered',
@@ -940,9 +1048,9 @@ include '../includes/sidebar.php';
         };
     }
 
-    async function renderExportPreview(scope) {
+    async function renderExportPreview() {
         const previewContent = document.getElementById('previewContent');
-        const resolved = await resolveExportPayload(scope);
+        const resolved = await resolveExportPayload();
         const data = resolved.data;
 
         if (data.length === 0) {
@@ -953,33 +1061,35 @@ include '../includes/sidebar.php';
         }
 
         // Build HTML preview table
-        let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
-        html += `<caption style="caption-side: top; text-align: left; margin-bottom: 8px; font-size: 0.85rem; color: #4b5563;"><strong>Scope:</strong> ${resolved.label}</caption>`;
-        html += '<thead><tr style="background: #f3f4f6; border: 1px solid #d1d5db;">';
+        let html = '<div class="export-preview-shell">';
+        html += `<div class="export-preview-summary"><strong>Scope:</strong> ${resolved.label}</div>`;
+        html += '<table class="export-preview-table">';
+        html += '<thead><tr>';
 
         exportHeaders.forEach(header => {
-            html += `<th style="padding: 10px; text-align: left; border: 1px solid #d1d5db; font-weight: 600;">${header}</th>`;
+            html += `<th>${header}</th>`;
         });
         html += '</tr></thead><tbody>';
         
         data.forEach((row, index) => {
-            html += `<tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'}; border: 1px solid #d1d5db;">`;
-            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.refCode}</td>`;
-            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.displayName}</td>`;
-            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.ownerName}</td>`;
-            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.type}</td>`;
-            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.contact}</td>`;
-            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.email}</td>`;
-            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.clientNumber}</td>`;
-            html += `<td style="padding: 10px; border: 1px solid #d1d5db;">${row.submittedBy}</td>`;
+            html += `<tr class="${index % 2 === 0 ? 'is-even' : 'is-odd'}">`;
+            html += `<td>${row.refCode}</td>`;
+            html += `<td>${row.displayName}</td>`;
+            html += `<td>${row.ownerName}</td>`;
+            html += `<td>${row.type}</td>`;
+            html += `<td>${row.contact}</td>`;
+            html += `<td>${row.email}</td>`;
+            html += `<td>${row.clientNumber}</td>`;
+            html += `<td>${row.submittedBy}</td>`;
             html += '</tr>';
         });
         
         html += '</tbody></table>';
-        html += `<div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #d1d5db; font-size: 0.85rem; color: #6b7280;">`;
+        html += `<div class="export-preview-footer">`;
         html += `<p><strong>Total Records:</strong> ${data.length}</p>`;
         html += `<p><strong>Scope:</strong> ${resolved.label}</p>`;
         html += `<p><strong>Export Date:</strong> ${new Date().toLocaleString()}</p>`;
+        html += `</div>`;
         html += `</div>`;
 
         exportData = data;
@@ -990,21 +1100,11 @@ include '../includes/sidebar.php';
     async function showExportPreview() {
         const modal = document.getElementById('exportPreviewModal');
         const exportBtn = document.querySelector('.btn-export');
-        const scopeSelect = document.getElementById('exportScope');
 
         setButtonBusy(exportBtn, true, 'Preparing...');
 
-        const scope = scopeSelect ? scopeSelect.value || getDefaultExportScope() : getDefaultExportScope();
-        if (scopeSelect && !scopeSelect.value) {
-            scopeSelect.value = scope;
-        }
-
-        if (scopeSelect && scopeSelect.value === 'selected' && selectedClientIds.size === 0) {
-            scopeSelect.value = getDefaultExportScope();
-        }
-
         try {
-            await renderExportPreview(scopeSelect ? scopeSelect.value : scope);
+            await renderExportPreview();
             modal.style.display = 'block';
         } catch (error) {
             createToast('error', 'Error', error.message || 'Failed to prepare export.', 'toastContainer');
@@ -1110,13 +1210,6 @@ include '../includes/sidebar.php';
         }, 250);
     }
 
-    document.getElementById('exportScope').addEventListener('change', async function() {
-        try {
-            await renderExportPreview(this.value || getDefaultExportScope());
-        } catch (error) {
-            createToast('error', 'Error', error.message || 'Failed to refresh export preview.', 'toastContainer');
-        }
-    });
 </script>
 
 </body>

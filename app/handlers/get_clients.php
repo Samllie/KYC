@@ -34,7 +34,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Get pagination parameters
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-$pageSize = isset($_GET['pageSize']) ? intval($_GET['pageSize']) : 6;
+$pageSize = isset($_GET['pageSize']) ? intval($_GET['pageSize']) : 7;
 $page = max(1, $page);  // Ensure page is at least 1
 $pageSize = max(1, $pageSize);
 $exportAll = isset($_GET['exportAll']) && $_GET['exportAll'] === '1';
