@@ -150,32 +150,103 @@ $reviewUrl = 'kyc-corporate-review.php?type=' . urlencode($selectedClientType);
         }
 
         #kycForm {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-            margin-bottom: 16px;
-            align-items: stretch;
+            --masonry-gap: 14px;
+            position: relative;
+            width: min(1120px, 100%);
+            margin: 0 auto 16px;
+            min-height: 0;
+        }
+
+        #kycForm > #draftsCard {
+            display: none;
+        }
+
+        #kycForm > #draftsCard.open {
+            display: block;
+        }
+
+        #kycForm > .card,
+        .client-type-inline {
+            display: block;
+            margin: 0;
         }
 
         #kycForm > .card {
-            margin-bottom: 0;
-            height: 100%;
             display: flex;
             flex-direction: column;
+            align-self: stretch;
+            position: relative;
+            border: 1px solid #cfded4;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 252, 250, 0.92) 100%);
+            box-shadow: 0 10px 24px rgba(18, 52, 38, 0.08);
         }
 
-        #kycForm > .card .card-body,
+        #kycForm > .card .card-body {
+            flex: 0 0 auto;
+        }
+
         #kycForm > .card .card-footer {
-            flex: 1;
+            flex: 0 0 auto;
         }
 
         #kycForm > .card.card-span-2 {
-            grid-column: 1 / -1;
+            width: 100%;
+        }
+
+        #kycForm > .card:not(#draftsCard)::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #1e8a5c 0%, #2ea371 100%);
+        }
+
+        #kycForm > .card[data-wizard-step="3"]:not(#draftsCard)::before {
+            background: linear-gradient(180deg, #2f7fd6 0%, #4b95e6 100%);
+        }
+
+        #kycForm > .card .card-header {
+            padding: 18px 22px 0;
+        }
+
+        #kycForm > .card .card-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 0.94rem;
+            letter-spacing: 0.01em;
+        }
+
+        #kycForm > .card .card-title i {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #e8f4ee;
+            color: #16633f;
+            font-size: 0.86rem;
+        }
+
+        #kycForm > .card[data-wizard-step="3"] .card-title i {
+            background: #e8f0fb;
+            color: #1f5ea9;
+        }
+
+        #kycForm > .card .card-body {
+            padding: 18px 22px 20px;
+        }
+
+        #kycForm > .card .card-footer {
+            padding: 14px 22px;
         }
 
         @media (max-width: 1100px) {
             #kycForm {
-                grid-template-columns: 1fr;
+                --masonry-gap: 12px;
             }
         }
 
@@ -344,12 +415,12 @@ $reviewUrl = 'kyc-corporate-review.php?type=' . urlencode($selectedClientType);
         }
 
         .client-type-inline {
-            grid-column: 1 / -1;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 10px;
-            margin-bottom: 4px;
+            margin-bottom: 0;
         }
 
         .client-type-inline-left {
@@ -414,12 +485,22 @@ $reviewUrl = 'kyc-corporate-review.php?type=' . urlencode($selectedClientType);
         }
 
         body.kyc-compact #kycForm {
-            gap: 12px;
+            --masonry-gap: 10px;
             margin-bottom: 12px;
         }
 
+        body.kyc-compact #kycForm > .card .card-header {
+            padding: 12px 16px 0;
+        }
+
+        body.kyc-compact #kycForm > .card .card-body,
+        body.kyc-compact #kycForm > .card .card-footer {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
         body.kyc-compact .client-type-inline {
-            margin-bottom: 2px;
+            margin-bottom: 0;
         }
 
         body.kyc-compact .client-type-inline-label {
@@ -753,14 +834,14 @@ include '../includes/sidebar.php';
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="refCode" class="form-label">Reference Code <span style="font-size:0.85rem;color:#999;">(Optional)</span></label>
                                 <input type="text" id="refCode" name="refCode" class="form-control" placeholder="Leave blank to auto-generate">
                                 <small class="text-muted">Leave empty for automatic generation</small>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="clientNumber" class="form-label">Client Number</label>
                                 <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="Auto-generated" readonly>
@@ -1000,7 +1081,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Government ID Verification Card -->
-            <div class="card card-span-2" data-wizard-step="3">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-person-vcard"></i> Government ID Verification</div>
                 </div>
@@ -2931,6 +3012,99 @@ document.addEventListener('keydown', function (event) {
 window.addEventListener('resize', positionDraftsPanel);
 window.addEventListener('scroll', positionDraftsPanel, true);
 
+let kycMasonryRaf = 0;
+let kycMasonryObserver = null;
+
+function getKycMasonryItems(form) {
+    return Array.from(form.children).filter((el) => {
+        if (el.id === 'draftsCard') return false;
+        if (el.classList.contains('wizard-hidden')) return false;
+        return el.classList.contains('card') || el.classList.contains('client-type-inline');
+    });
+}
+
+function layoutKycMasonry() {
+    const form = document.getElementById('kycForm');
+    if (!form) return;
+
+    const items = getKycMasonryItems(form);
+    if (!items.length) {
+        form.style.minHeight = '0px';
+        return;
+    }
+
+    const columns = window.matchMedia('(max-width: 1100px)').matches ? 1 : 2;
+    const gap = parseFloat(getComputedStyle(form).getPropertyValue('--masonry-gap')) || 14;
+    const formWidth = form.clientWidth;
+    const columnWidth = columns > 1 ? (formWidth - gap) / columns : formWidth;
+    let heights = new Array(columns).fill(0);
+
+    items.forEach((item) => {
+        const isSpanAll = columns === 1 || item.classList.contains('client-type-inline') || item.classList.contains('card-span-2');
+
+        item.style.position = 'absolute';
+        item.style.maxWidth = 'none';
+
+        if (isSpanAll) {
+            const top = Math.max(...heights);
+            item.style.left = '0px';
+            item.style.top = `${Math.round(top)}px`;
+            item.style.width = `${Math.round(formWidth)}px`;
+
+            const nextTop = top + item.offsetHeight + gap;
+            heights = heights.map(() => nextTop);
+            return;
+        }
+
+        let targetColumn = 0;
+        for (let i = 1; i < heights.length; i += 1) {
+            if (heights[i] < heights[targetColumn]) {
+                targetColumn = i;
+            }
+        }
+
+        const top = heights[targetColumn];
+        const left = targetColumn * (columnWidth + gap);
+
+        item.style.left = `${Math.round(left)}px`;
+        item.style.top = `${Math.round(top)}px`;
+        item.style.width = `${Math.round(columnWidth)}px`;
+
+        heights[targetColumn] = top + item.offsetHeight + gap;
+    });
+
+    const contentHeight = Math.max(...heights) - gap;
+    form.style.minHeight = `${Math.max(0, Math.round(contentHeight))}px`;
+}
+
+function scheduleKycMasonryLayout() {
+    if (kycMasonryRaf) return;
+    kycMasonryRaf = requestAnimationFrame(() => {
+        kycMasonryRaf = 0;
+        layoutKycMasonry();
+    });
+}
+
+function initKycMasonryObserver() {
+    const form = document.getElementById('kycForm');
+    if (!form || typeof ResizeObserver === 'undefined') return;
+
+    if (kycMasonryObserver) {
+        kycMasonryObserver.disconnect();
+    }
+
+    kycMasonryObserver = new ResizeObserver(() => {
+        scheduleKycMasonryLayout();
+    });
+
+    getKycMasonryItems(form).forEach((item) => {
+        kycMasonryObserver.observe(item);
+    });
+}
+
+window.addEventListener('resize', scheduleKycMasonryLayout);
+window.addEventListener('load', scheduleKycMasonryLayout);
+
 const WIZARD_MIN_STEP = 2;
 const WIZARD_MAX_STEP = 4;
 let currentWizardStep = WIZARD_MIN_STEP;
@@ -3011,6 +3185,7 @@ function applyWizardStep(step) {
     if (proceedBtn) proceedBtn.style.display = step === WIZARD_MAX_STEP ? '' : 'none';
 
     updateWizardProgress(step);
+    scheduleKycMasonryLayout();
 }
 
 function goToWizardStep(step) {
@@ -3072,6 +3247,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     applyWizardStep(currentWizardStep);
+    initKycMasonryObserver();
+    scheduleKycMasonryLayout();
 });
 
 function proceedToReview() {
