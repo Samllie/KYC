@@ -3,6 +3,9 @@
 venv/
 env/
 
+# Local environment secrets
+.env
+
 # Project-specific OCR service environment
 python-ocr/.venv/
 

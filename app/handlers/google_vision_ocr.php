@@ -12,10 +12,20 @@ function gv_response($success, $message = '', $extra = []) {
 }
 
 function gv_get_api_key() {
+    $dotenvValue = '';
+    $dotenvPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . '.env';
+    if (is_readable($dotenvPath)) {
+        $parsed = @parse_ini_file($dotenvPath, false, INI_SCANNER_RAW);
+        if (is_array($parsed) && isset($parsed['GOOGLE_VISION_API_KEY'])) {
+            $dotenvValue = trim((string)$parsed['GOOGLE_VISION_API_KEY']);
+        }
+    }
+
     $candidates = [
         getenv('GOOGLE_VISION_API_KEY') ?: '',
         $_ENV['GOOGLE_VISION_API_KEY'] ?? '',
         $_SERVER['GOOGLE_VISION_API_KEY'] ?? '',
+        $dotenvValue,
         defined('GOOGLE_VISION_API_KEY') ? GOOGLE_VISION_API_KEY : '',
     ];
 
