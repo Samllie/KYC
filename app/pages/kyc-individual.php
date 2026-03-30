@@ -1620,51 +1620,130 @@ function inferGovernmentIdNumber(text, idType) {
     };
 
     if (type.includes('philsys')) {
-        const philsysPattern = /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/i;
-        const philsysLabel = /\b(philsys\s*(card\s*)?number|philsys\s*no\.?|pcn|psn|national\s*id\s*no\.?)\b/i;
-
-        for (let index = 0; index < lines.length; index += 1) {
-            if (!philsysLabel.test(lines[index])) continue;
-
-            for (let offset = 0; offset <= 6; offset += 1) {
-                let target = lines[index + offset] || '';
-                if (!target) continue;
-                if (offset === 0) {
-                    target = target.replace(philsysLabel, ' ');
-                }
-
-                const match = target.match(philsysPattern);
-                if (match?.[0]) {
-                    return normalizePhilsysNumber(match[0]);
-                }
+        // PhilSys number is commonly printed above the face area; prioritize top lines.
+        const philsysTopPattern = /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/i;
+        for (const line of lines.slice(0, 8)) {
+            const match = String(line || '').match(philsysTopPattern);
+            if (match?.[0]) {
+                return normalizePhilsysNumber(match[0]);
             }
         }
     }
 
-    if (type.includes('driver')) {
-        const driverPatterns = [
-            /\b[A-Z]\d{2}-\d{2}-\d{6}\b/i,
-            /\b[A-Z]{1,3}-?\d{2,3}-?\d{4,7}\b/i
-        ];
-
+    const findNearLabel = (labelRegex, patterns, normalizer = (value) => value) => {
         for (let index = 0; index < lines.length; index += 1) {
-            if (!/\blicense\s*no\.?\b/i.test(lines[index])) continue;
+            if (!labelRegex.test(lines[index])) continue;
 
             for (let offset = 0; offset <= 6; offset += 1) {
                 let target = lines[index + offset] || '';
                 if (!target) continue;
                 if (offset === 0) {
-                    target = target.replace(/\blicense\s*no\.?\b/i, ' ');
+                    target = target.replace(labelRegex, ' ');
                 }
 
-                for (const pattern of driverPatterns) {
+                for (const pattern of patterns) {
                     const match = target.match(pattern);
                     if (match?.[0]) {
-                        return match[0].trim();
+                        return normalizer(match[0].trim());
                     }
                 }
             }
         }
+
+        return '';
+    };
+
+    const rules = [
+        {
+            when: type.includes('passport'),
+            label: /\bpassport\s*no\.?\b/i,
+            patterns: [/\b[A-Z0-9]{8,10}\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('driver'),
+            label: /\blicense\s*no\.?\b/i,
+            patterns: [/\b[A-Z]\d{2}-\d{2}-\d{6}\b/i, /\b[A-Z]{1,3}-?\d{2,3}-?\d{4,7}\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('umid'),
+            label: /\b(crn|common\s*reference\s*number|umid\s*(no\.?|number)|id\s*no\.?)\b/i,
+            patterns: [/\b\d{4}-?\d{7}-?\d\b/i, /\b\d{12}\b/i, /\b\d{4}-?\d{4}-?\d{4}-?\d{4}\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('philsys'),
+            label: /\b(philsys\s*(card\s*)?number|philsys\s*no\.?|pcn|psn|national\s*id\s*no\.?)\b/i,
+            patterns: [/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/i],
+            normalize: normalizePhilsysNumber
+        },
+        {
+            when: type.includes('postal'),
+            label: /\bpostal\s*id\s*(no\.?|number)\b/i,
+            patterns: [/\b[A-Z]{1,3}-?\d{6,12}\b/i, /\b\d{4}-?\d{4}-?\d{4}\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('sss'),
+            label: /\bsss\s*(no\.?|number)\b/i,
+            patterns: [/\b\d{2}-?\d{7}-?\d\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('gsis'),
+            label: /\b(gsis\s*(no\.?|number)|bp\s*number)\b/i,
+            patterns: [/\b\d{2}-?\d{7}-?\d\b/i, /\b\d{11,12}\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('prc'),
+            label: /\b(prc\s*(no\.?|number)|registration\s*no\.?)\b/i,
+            patterns: [/\b\d{7}\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('tin'),
+            label: /\b(tin\s*(no\.?|number)?|tax\s*identification\s*number)\b/i,
+            patterns: [/\b\d{3}-?\d{3}-?\d{3}(?:-?\d{3})?\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('philhealth'),
+            label: /\b(philhealth\s*(no\.?|number)|pin)\b/i,
+            patterns: [/\b\d{2}-?\d{9}-?\d\b/i, /\b\d{12}\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('pagibig'),
+            label: /\b(pag-?ibig\s*(mid|no\.?|number)|mid\s*no\.?)\b/i,
+            patterns: [/\b\d{4}-?\d{4}-?\d{4}\b/i, /\b\d{12}\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('voter'),
+            label: /\b(voter\'?s?\s*(id|no\.?|number)|vin)\b/i,
+            patterns: [/\b[A-Z0-9]{8,20}\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('senior'),
+            label: /\b(osca\s*(id\s*)?(no\.?|number)|senior\s*citizen\s*id\s*(no\.?|number)|id\s*no\.?)\b/i,
+            patterns: [/\b[A-Z]{1,4}-?\d{4,14}\b/i, /\b\d{6,16}\b/i],
+            normalize: (value) => value
+        },
+        {
+            when: type.includes('ofw'),
+            label: /\b(ofw\s*(id\s*)?(no\.?|number)|owwa\s*(no\.?|number)|id\s*no\.?)\b/i,
+            patterns: [/\b[A-Z]{1,4}-?\d{4,14}\b/i, /\b\d{6,16}\b/i],
+            normalize: (value) => value
+        }
+    ];
+
+    for (const rule of rules) {
+        if (!rule.when) continue;
+        const found = findNearLabel(rule.label, rule.patterns, rule.normalize);
+        if (found) return found;
     }
 
     if (type.includes('passport')) {
@@ -1776,18 +1855,25 @@ function extractGovernmentIdProfile(text, idType) {
         .trim();
     const lines = normalized.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     const lower = normalized.toLowerCase();
-    const addressStopPattern = /\b(id|number|sex|gender|nationality|birth|date|name|signature|issue|valid)\b/i;
+    const type = String(idType || '').toLowerCase();
+    const addressStopPattern = /\b(id|number|sex|gender|nationality|birth|date|name|signature|issue|valid|mga\s*pangalan|gitnang|apelyido|pcn|psn)\b/i;
 
     function collectAddressFromIndex(startIndex) {
         const collected = [];
-        for (let index = startIndex; index < lines.length && collected.length < 3; index += 1) {
+        const maxLines = type.includes('philsys') ? 4 : 3;
+        for (let index = startIndex; index < lines.length && collected.length < maxLines; index += 1) {
             const line = lines[index].trim();
             if (!line) continue;
             if (addressStopPattern.test(line) && collected.length > 0) break;
-            if (collected.length > 0 && /\b(id|number|sex|gender|nationality|birth|date|name)\b/i.test(line)) break;
+            if (collected.length > 0 && /\b(id|number|sex|gender|nationality|birth|date|name|mga\s*pangalan|gitnang|apelyido|pcn|psn)\b/i.test(line)) break;
             collected.push(line);
         }
-        return collected.join(', ').replace(/^.*?(address|residence|home address|present address|permanent address)\s*[:\-]?\s*/i, '').trim();
+        return collected
+            .join(', ')
+            .replace(/^[\/\s,.-]*(address|residence|home address|present address|permanent address|tirahan)\s*[:\-,]?\s*/i, '')
+            .replace(/\s+,/g, ',')
+            .replace(/,{2,}/g, ',')
+            .trim();
     }
 
     const profile = {
@@ -1799,66 +1885,202 @@ function extractGovernmentIdProfile(text, idType) {
         address: ''
     };
 
-    const type = String(idType || '').toLowerCase();
-    if (type.includes('driver') || type.includes('philsys')) {
-        const sexIndex = lines.findIndex(line => /\bsex\b/i.test(line));
-        if (sexIndex !== -1) {
-            for (let offset = 0; offset <= 6; offset += 1) {
-                let target = lines[sexIndex + offset] || '';
-                if (!target) continue;
-                if (offset === 0) {
-                    target = target.replace(/\bsex(?:\s+at\s+birth)?\b/i, ' ');
-                }
+    const hasLnFnMnLayout = lines.some(line => /\blast\s*name\b/i.test(line) && /\bfirst\s*name\b/i.test(line) && /\bmiddle\s*name\b/i.test(line));
+    const shouldFormatLnFnMn = type.includes('philhealth') || hasLnFnMnLayout;
+    const normalizeNameValue = (value) => String(value || '')
+        .replace(/[^A-Za-z\s,.-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/\s+,/g, ',')
+        .replace(/,{2,}/g, ',')
+        .replace(/\.{2,}/g, '.')
+        .trim()
+        .replace(/^[,\.\s-]+|[,\.\s-]+$/g, '');
 
-                const upper = target.toUpperCase().trim();
-                if (/\bFEMALE\b/.test(upper) || /^F$/.test(upper)) {
-                    profile.gender = 'female';
-                    break;
-                }
-                if (/\bMALE\b/.test(upper) || /^M$/.test(upper)) {
-                    profile.gender = 'male';
-                    break;
-                }
+    const isTemplateNameValue = (value) => {
+        const cleaned = normalizeNameValue(value).toLowerCase();
+        if (!cleaned) return true;
+
+        if (/\b(first\s*name|middle\s*name|last\s*name|given\s*name|family\s*name|surname|mga\s*pangalan|gitnang\s*pangalan|gitnang|apelyido)\b/i.test(cleaned)) {
+            return true;
+        }
+
+        const tokenHits = cleaned.match(/\b(first|middle|last|given|family|surname|name|pangalan|gitnang|apelyido)\b/g) || [];
+        if (tokenHits.length >= 3) {
+            return true;
+        }
+
+        if (tokenHits.length >= 2 && !cleaned.includes(',') && cleaned.split(/\s+/).filter(Boolean).length <= 6) {
+            return true;
+        }
+
+        return false;
+    };
+
+    const isNameNoiseValue = (value) => {
+        if (isTemplateNameValue(value)) {
+            return true;
+        }
+
+        if (/\b(republic|department|transportation|land transportation office|driver'?s?\s*license|national id|philsys|philhealth|philippine\s*identification\s*card|identification\s*card|pambansang|health\s*insurance\s*corporation|insurance\s*corporation|signature|assistant secretary|agency code|expiration|blood type|eyes color|conditions|dl codes)\b/i.test(value)) {
+            return true;
+        }
+
+        if (/\b(id|number|birth|date|sex|gender|address|nationality|issue|valid|license\s*no|dob|height|weight|mga\s*pangalan|gitnang|apelyido)\b/i.test(value)) {
+            return true;
+        }
+
+        return false;
+    };
+
+    const sanitizeNameCandidate = (value, minWords = 2) => {
+        const cleaned = normalizeNameValue(value);
+        if (!cleaned) return '';
+        if ((cleaned.match(/,/g) || []).length >= 2) return '';
+        if (/\b(prk|purok|sitio|brgy|barangay|blk|block|lot|phase|subd|subdivision|village|street|st\.?|road|rd\.?|avenue|ave\.?|city|municipality|province|region|district|zone)\b/i.test(cleaned)) return '';
+        if (/\d/.test(cleaned)) return '';
+        if (isNameNoiseValue(cleaned)) return '';
+
+        const words = cleaned.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+        if (words.length < minWords) return '';
+        return cleaned;
+    };
+
+    const formatLnFnMnName = (value) => {
+        const cleaned = normalizeNameValue(value);
+        if (!cleaned || /\d/.test(cleaned)) return '';
+
+        const commaParts = cleaned
+            .split(',')
+            .map(part => normalizeNameValue(part))
+            .filter(Boolean);
+
+        if (commaParts.length >= 3) {
+            const [ln, fn, ...mnParts] = commaParts;
+            const mn = mnParts.join(' ').trim();
+            return `${ln}, ${[fn, mn].filter(Boolean).join(' ')}`.replace(/\s+/g, ' ').trim();
+        }
+
+        if (commaParts.length === 2) {
+            const ln = commaParts[0];
+            const rhsWords = commaParts[1].split(/\s+/).filter(Boolean);
+            if (rhsWords.length >= 2) {
+                const fn = rhsWords.shift();
+                const mn = rhsWords.join(' ');
+                return `${ln}, ${[fn, mn].filter(Boolean).join(' ')}`.replace(/\s+/g, ' ').trim();
+            }
+
+            return `${ln}, ${commaParts[1]}`.replace(/\s+/g, ' ').trim();
+        }
+
+        const words = cleaned.split(/\s+/).filter(Boolean);
+        if (words.length >= 3) {
+            const mn = words.pop();
+            const fn = words.pop();
+            const ln = words.join(' ');
+            if (ln && fn) {
+                return `${ln}, ${[fn, mn].filter(Boolean).join(' ')}`.replace(/\s+/g, ' ').trim();
+            }
+        }
+
+        return cleaned;
+    };
+
+    const pickNameAfterLabel = (labelRegex) => {
+        const idx = lines.findIndex(line => labelRegex.test(line));
+        if (idx === -1) return '';
+
+        for (let offset = 0; offset <= 3; offset += 1) {
+            let target = lines[idx + offset] || '';
+            if (!target) continue;
+            if (offset === 0) {
+                target = target.replace(labelRegex, ' ').replace(/[:\-]+/g, ' ');
+            }
+
+            const candidate = sanitizeNameCandidate(target, 2);
+            if (candidate) {
+                return candidate;
+            }
+        }
+
+        return '';
+    };
+
+    const pickNameFromCombinedColumns = () => {
+        if (!hasLnFnMnLayout) return '';
+
+        const idx = lines.findIndex(line => /\blast\s*name\b/i.test(line) && /\bfirst\s*name\b/i.test(line) && /\bmiddle\s*name\b/i.test(line));
+        if (idx === -1) return '';
+
+        for (let offset = 1; offset <= 3; offset += 1) {
+            const candidate = sanitizeNameCandidate(lines[idx + offset] || '', 3);
+            if (!candidate) continue;
+
+            const formatted = formatLnFnMnName(candidate);
+            if (formatted) {
+                return formatted;
+            }
+        }
+
+        return '';
+    };
+
+    const surname = pickNameAfterLabel(/\b(surname|last\s*name|family\s*name|apelyido)\b/i);
+    const given = pickNameAfterLabel(/\b(given\s*names?|first\s*name|mga\s*pangalan)\b/i);
+    const middle = pickNameAfterLabel(/\b(middle\s*name|gitnang\s*pangalan|gitnang)\b/i);
+    const dedupedParts = [];
+
+    [surname, given, middle].forEach((part) => {
+        if (!part) return;
+        if (dedupedParts.some(existing => existing.toLowerCase() === part.toLowerCase())) {
+            return;
+        }
+        dedupedParts.push(part);
+    });
+
+    if (!profile.fullName && dedupedParts.length > 0) {
+        if (surname && given && surname.toLowerCase() !== given.toLowerCase()) {
+            let full = `${surname}, ${given}`;
+            if (middle && middle.toLowerCase() !== surname.toLowerCase() && middle.toLowerCase() !== given.toLowerCase()) {
+                full = `${full} ${middle}`;
+            }
+            profile.fullName = full.replace(/\s+/g, ' ').trim();
+        } else if (dedupedParts.length >= 2) {
+            profile.fullName = dedupedParts.join(' ');
+        } else {
+            profile.fullName = dedupedParts[0];
+        }
+    }
+
+    if (!profile.fullName && shouldFormatLnFnMn) {
+        const combinedLayoutName = pickNameFromCombinedColumns();
+        if (combinedLayoutName) {
+            profile.fullName = combinedLayoutName;
+        }
+    }
+
+    const sexIndex = lines.findIndex(line => /\b(sex(?:\s+at\s+birth)?|gender)\b/i.test(line));
+    if (sexIndex !== -1) {
+        for (let offset = 0; offset <= 6; offset += 1) {
+            let target = lines[sexIndex + offset] || '';
+            if (!target) continue;
+            if (offset === 0) {
+                target = target.replace(/\b(sex(?:\s+at\s+birth)?|gender)\b/i, ' ');
+            }
+
+            const upper = target.toUpperCase().trim();
+            if (/\bFEMALE\b/.test(upper) || /^F$/.test(upper)) {
+                profile.gender = 'female';
+                break;
+            }
+            if (/\bMALE\b/.test(upper) || /^M$/.test(upper)) {
+                profile.gender = 'male';
+                break;
             }
         }
     }
 
-    if (type.includes('philsys')) {
-        const pickAfterLabel = (labelRegex) => {
-            const idx = lines.findIndex(line => labelRegex.test(line));
-            if (idx === -1) return '';
-
-            for (let offset = 0; offset <= 2; offset += 1) {
-                let target = lines[idx + offset] || '';
-                if (!target) continue;
-                if (offset === 0) {
-                    target = target.replace(labelRegex, ' ').replace(/[:\-]+/g, ' ');
-                }
-
-                const cleaned = target.replace(/[^A-Za-z\s,.-]/g, ' ').replace(/\s+/g, ' ').trim();
-                if (cleaned && !/\d/.test(cleaned)) {
-                    return cleaned;
-                }
-            }
-
-            return '';
-        };
-
-        const surname = pickAfterLabel(/\b(surname|last\s*name)\b/i);
-        const given = pickAfterLabel(/\b(given\s*name|first\s*name)\b/i);
-        const middle = pickAfterLabel(/\b(middle\s*name)\b/i);
-
-        if (!profile.fullName && (surname || given)) {
-            profile.fullName = [
-                surname ? `${surname},` : '',
-                given,
-                middle
-            ].filter(Boolean).join(' ').replace(/\s+,/g, ',').replace(/\s+/g, ' ').trim();
-        }
-
-        if (!profile.nationality) {
-            profile.nationality = 'Philippine';
-        }
+    if (type.includes('philsys') && !profile.nationality) {
+        profile.nationality = 'Philippine';
     }
 
     if (!profile.gender) {
@@ -1870,29 +2092,105 @@ function extractGovernmentIdProfile(text, idType) {
         profile.nationality = 'Philippine';
     }
 
-    const dobMatch = normalized.match(/\b(\d{4}[-\/]\d{2}[-\/]\d{2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\b/);
-    if (dobMatch) {
-        profile.birthdate = normalizeOcrDate(dobMatch[1]);
-    }
+    const datePattern = /\b(\d{4}[-\/]\d{2}[-\/]\d{2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\b/;
+    const dobLabelIndex = lines.findIndex(line => /\b(date\s*of\s*birth|birth\s*date|birth|dob|petsa\s*ng\s*kapanganakan)\b/i.test(line));
+    if (dobLabelIndex !== -1) {
+        const startOffset = type.includes('philsys') ? -2 : 0;
+        const endOffset = type.includes('philsys') ? 2 : 1;
+        for (let offset = startOffset; offset <= endOffset; offset += 1) {
+            const target = lines[dobLabelIndex + offset] || '';
+            const match = String(target).match(datePattern);
+            if (!match?.[1]) continue;
 
-    const addressDirect = normalized.match(/(?:address|residence|home address|present address|permanent address)\s*[:\-]\s*([A-Za-z0-9 ,.'\/#-]{8,})/i);
-    if (addressDirect && addressDirect[1]) {
-        profile.address = addressDirect[1].trim();
-    } else {
-        const addressIndex = lines.findIndex(line => /\b(address|residence|home address|present address|permanent address)\b/i.test(line));
-        if (addressIndex !== -1) {
-            profile.address = collectAddressFromIndex(addressIndex);
+            const normalizedDob = normalizeOcrDate(match[1]);
+            if (normalizedDob) {
+                profile.birthdate = normalizedDob;
+                break;
+            }
         }
     }
 
-    const keywordLines = lines.filter(line => /\b(name|surname|given|first|middle|last)\b/i.test(line));
-    const nextLine = keywordLines.length > 0 ? lines[lines.indexOf(keywordLines[0]) + 1] : '';
-    const directName = normalized.match(/(?:name|surname|given name|first name|middle name|last name)\s*[:\-]\s*([A-Za-z ,.'-]{4,})/i);
+    if (!profile.birthdate) {
+        const dobMatch = normalized.match(datePattern);
+        if (dobMatch) {
+            profile.birthdate = normalizeOcrDate(dobMatch[1]);
+        }
+    }
 
-    if (directName && directName[1]) {
-        profile.fullName = directName[1].trim();
-    } else if (nextLine && !/\b(id|number|sex|gender|nationality|birth|date)\b/i.test(nextLine)) {
-        profile.fullName = nextLine.trim();
+    const addressDirect = normalized.match(/(?:address|residence|home address|present address|permanent address|tirahan)\s*[:\-]\s*([A-Za-z0-9 ,.'\/#-]{8,})/i);
+    if (addressDirect && addressDirect[1]) {
+        profile.address = addressDirect[1]
+            .replace(/^[\/\s,.-]*(address|tirahan)\s*[:\-,]?\s*/i, '')
+            .replace(/\s+,/g, ',')
+            .replace(/,{2,}/g, ',')
+            .trim();
+    } else {
+        const addressIndex = lines.findIndex(line => /\b(address|residence|home address|present address|permanent address|tirahan)\b/i.test(line));
+        if (addressIndex !== -1) {
+            profile.address = collectAddressFromIndex(addressIndex);
+        } else if (type.includes('philsys')) {
+            const fallbackAddressParts = [];
+            for (const line of lines) {
+                if (addressStopPattern.test(line)) continue;
+                if (!/\b(blk|block|lot|phase|subd|subdivision|purok|sitio|brgy|barangay|street|st\.?|road|rd\.?|avenue|ave\.?|city|municipality|province|region)\b/i.test(line)) continue;
+                fallbackAddressParts.push(line.trim());
+                if (fallbackAddressParts.length >= 3) break;
+            }
+
+            if (fallbackAddressParts.length > 0) {
+                profile.address = fallbackAddressParts
+                    .join(', ')
+                    .replace(/^[\/\s,.-]*(address|tirahan)\s*[:\-,]?\s*/i, '')
+                    .replace(/\s+,/g, ',')
+                    .replace(/,{2,}/g, ',')
+                    .trim();
+            }
+        }
+    }
+
+    if (!profile.fullName) {
+        const directName = normalized.match(/(?:name|surname|given\s*name|first\s*name|middle\s*name|last\s*name|mga\s*pangalan|gitnang\s*pangalan|apelyido)\s*[:\-]\s*([A-Za-z ,.'-]{4,})/i);
+        if (directName && directName[1]) {
+            const candidate = sanitizeNameCandidate(directName[1], 2);
+            if (candidate) {
+                profile.fullName = candidate;
+            }
+        }
+    }
+
+    if (!profile.fullName && type.includes('philsys')) {
+        return profile;
+    }
+
+    if (!profile.fullName) {
+        const keywordIndex = lines.findIndex(line => /\b(name|surname|given|first|middle|last)\b/i.test(line));
+        if (keywordIndex !== -1) {
+            for (let offset = 1; offset <= 3; offset += 1) {
+                const candidate = sanitizeNameCandidate(lines[keywordIndex + offset] || '', 2);
+                if (candidate) {
+                    profile.fullName = candidate;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!profile.fullName) {
+        for (const line of lines) {
+            const candidate = sanitizeNameCandidate(line, 3);
+            if (!candidate) continue;
+            if (candidate.includes(',') || candidate.split(/\s+/).length >= 3) {
+                profile.fullName = candidate;
+                break;
+            }
+        }
+    }
+
+    if (profile.fullName && shouldFormatLnFnMn) {
+        const formatted = formatLnFnMnName(profile.fullName);
+        if (formatted) {
+            profile.fullName = formatted;
+        }
     }
 
     return profile;
@@ -2362,6 +2660,25 @@ async function runGovernmentIdOcr(file) {
     const currentType = document.getElementById('governmentIdType')?.value || '';
     setGovernmentIdOcrStatus('Scanning...');
 
+    const isAddressLikeName = (value) => {
+        const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+        if (!cleaned) return true;
+        if ((cleaned.match(/,/g) || []).length >= 2) return true;
+        return /\b(prk|purok|sitio|brgy|barangay|blk|block|lot|phase|subd|subdivision|village|street|st\.?|road|rd\.?|avenue|ave\.?|city|municipality|province|region|district|zone)\b/i.test(cleaned);
+    };
+
+    const isHeaderLikeName = (value) => {
+        const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+        if (!cleaned) return true;
+        return /\b(philippine\s*identification\s*card|identification\s*card|national\s*id|philsys)\b/i.test(cleaned);
+    };
+
+    const cleanAddressValue = (value) => String(value || '')
+        .replace(/^[\/\s,.-]*(address|tirahan)\s*[:\-,]?\s*/i, '')
+        .replace(/\s+,/g, ',')
+        .replace(/,{2,}/g, ',')
+        .trim();
+
     try {
         const variants = [
             { label: 'balanced', blob: await preprocessGovernmentIdImage(file, 'balanced') },
@@ -2384,14 +2701,20 @@ async function runGovernmentIdOcr(file) {
                 const extractedText = result?.text || '';
                 const parsedProfile = result?.parsed || {};
                 const extractedProfile = extractGovernmentIdProfile(extractedText, currentType);
+                const parsedFullName = String(parsedProfile.fullName || '').replace(/\s+/g, ' ').trim();
+                const extractedFullName = String(extractedProfile.fullName || '').replace(/\s+/g, ' ').trim();
+                const resolvedFullName = (!isAddressLikeName(parsedFullName) && !isHeaderLikeName(parsedFullName))
+                    ? parsedFullName
+                    : ((!isAddressLikeName(extractedFullName) && !isHeaderLikeName(extractedFullName)) ? extractedFullName : '');
+                const resolvedAddress = cleanAddressValue(parsedProfile.address || extractedProfile.address || '');
                 const profile = {
                     ...extractedProfile,
                     idNumber: parsedProfile.idNumber || extractedProfile.idNumber || '',
-                    fullName: parsedProfile.fullName || extractedProfile.fullName || '',
+                    fullName: resolvedFullName,
                     birthdate: parsedProfile.birthdate || extractedProfile.birthdate || '',
                     gender: parsedProfile.gender || extractedProfile.gender || '',
                     nationality: parsedProfile.nationality || extractedProfile.nationality || '',
-                    address: parsedProfile.address || extractedProfile.address || ''
+                    address: resolvedAddress
                 };
 
                 setGovernmentIdOcrStatus('Processing...');
