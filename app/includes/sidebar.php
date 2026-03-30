@@ -31,13 +31,6 @@ $menuItems = [
         'page' => 'kyc-verification',
         'badge' => null
     ],
-    [
-        'label' => 'Policy Issuance',
-        'icon' => 'bi-file-earmark-text',
-        'href' => 'policy.php',
-        'page' => 'policy',
-        'badge' => null
-    ]
 ];
 
 // Default active page if not set

@@ -97,7 +97,7 @@ function relativeTime(?string $dateTime): string {
     <link rel="stylesheet" href="../../public/css/dashboard.css">
     <link rel="stylesheet" href="../../public/css/global.css">
 </head>
-<body>
+<body class="kyc-compact">
 
 <?php
 $activePage = 'dashboard';
