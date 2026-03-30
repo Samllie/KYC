@@ -11,7 +11,6 @@ requireLogin();
     <link rel='icon' type='image/png' href='../css/images/SterlingLogo.png'>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="../../public/css/index.css">
     <link rel="stylesheet" href="../../public/css/global.css">
     <style>
@@ -889,9 +888,18 @@ include '../includes/sidebar.php';
                                 </div>
                                 <input type="file" id="governmentIdInput" accept=".jpg,.jpeg,.png" style="display:none;">
                                 <div class="id-upload-hint">OCR will scan the uploaded image and try to fill the ID number automatically.</div>
+                                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                                    <button type="button" id="scanIdBtn" class="btn btn-sm btn-primary" onclick="scanCurrentGovernmentId()">
+                                        <i class="bi bi-search"></i> Scan ID
+                                    </button>
+                                    <button type="button" id="ocrHealthCheckBtn" class="btn btn-sm btn-outline-secondary" onclick="checkPaddleOcrHealth()">
+                                        <i class="bi bi-shield-check"></i> Check OCR Service
+                                    </button>
+                                </div>
                                 <div class="file-list" id="governmentIdFileList" style="margin-top:12px;"></div>
                                 <div class="id-ocr-status" id="governmentIdOcrStatus">No ID photo uploaded yet.</div>
                                 <div class="id-ocr-summary" id="governmentIdOcrSummary">OCR summary will appear here after scanning.</div>
+                                <div class="id-ocr-summary" id="governmentIdOcrDebug" style="margin-top:8px; background:#f7faf8; border-color:#dce8e1; color:#2b4036;">Raw OCR debug output will appear here.</div>
                             </div>
                         </div>
                     </div>
@@ -1596,6 +1604,7 @@ async function clearDraftStateOnRefresh() {
     sessionStorage.removeItem('kycGovernmentIdFiles');
     sessionStorage.removeItem('kycGovernmentIdOcrData');
     sessionStorage.removeItem('kycGovernmentIdOcrMeta');
+    sessionStorage.removeItem('kycGovernmentIdOcrRaw');
 
     await Promise.all([
         ...((regularUploads || []).map(upload => deleteTempUpload(upload?.temp_path))),
@@ -1701,63 +1710,12 @@ function setStoredGovernmentIdUploads(files) {
 }
 
 let governmentIdOcrProfile = {};
-let governmentIdOcrWorkerPromise = null;
 let governmentIdOcrScanMeta = {};
-
-function getGovernmentIdOcrWorker() {
-    if (governmentIdOcrWorkerPromise) {
-        return governmentIdOcrWorkerPromise;
-    }
-
-    if (!window.Tesseract || typeof Tesseract.createWorker !== 'function') {
-        return Promise.resolve(null);
-    }
-
-    governmentIdOcrWorkerPromise = (async () => {
-        const worker = await Tesseract.createWorker('eng', 1, {
-            logger: updateGovernmentIdStatusFromProgress,
-            gzip: true,
-            cacheMethod: 'write'
-        });
-
-        if (worker?.setParameters) {
-            await worker.setParameters({
-                preserve_interword_spaces: '1',
-                user_defined_dpi: '300',
-                textord_heavy_nr: '1',
-                tessedit_do_invert: '1'
-            });
-        }
-
-        return worker;
-    })().catch(error => {
-        console.error('Unable to initialize OCR worker', error);
-        governmentIdOcrWorkerPromise = null;
-        return null;
-    });
-
-    return governmentIdOcrWorkerPromise;
-}
+let governmentIdRawOutput = { lines: [], confidences: [] };
 
 function scoreGovernmentIdProfile(profile, confidence = 0) {
     const fields = [profile?.idNumber, profile?.fullName, profile?.birthdate, profile?.gender, profile?.nationality, profile?.address].filter(Boolean).length;
     return (fields * 1000) + Math.max(0, Number(confidence) || 0);
-}
-
-function getGovernmentIdPsmCandidates() {
-    return [
-        Tesseract.PSM?.SINGLE_BLOCK ?? 6,
-        Tesseract.PSM?.SPARSE_TEXT ?? 11,
-        Tesseract.PSM?.AUTO ?? 3
-    ];
-}
-
-function buildGovernmentIdRecognizeOptions(psm) {
-    return {
-        tessedit_pageseg_mode: psm,
-        preserve_interword_spaces: '1',
-        user_defined_dpi: '300'
-    };
 }
 
 function normalizeOcrDate(value) {
@@ -2041,6 +1999,47 @@ function setGovernmentIdOcrScanMeta(meta) {
     renderGovernmentIdOcrSummary();
 }
 
+function setGovernmentIdRawOutput(lines = [], confidences = []) {
+    const normalizedLines = Array.isArray(lines)
+        ? lines.map(line => String(line || '').trim()).filter(Boolean)
+        : [];
+    const normalizedConfidences = Array.isArray(confidences)
+        ? confidences.map(value => Number(value) || 0)
+        : [];
+
+    governmentIdRawOutput = {
+        lines: normalizedLines,
+        confidences: normalizedConfidences,
+    };
+
+    sessionStorage.setItem('kycGovernmentIdOcrRaw', JSON.stringify(governmentIdRawOutput));
+    renderGovernmentIdRawOutput();
+}
+
+function renderGovernmentIdRawOutput() {
+    const debugEl = document.getElementById('governmentIdOcrDebug');
+    if (!debugEl) return;
+
+    const payload = governmentIdRawOutput || JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrRaw') || '{}');
+    const lines = Array.isArray(payload?.lines) ? payload.lines : [];
+    const confidences = Array.isArray(payload?.confidences) ? payload.confidences : [];
+
+    if (!lines.length) {
+        debugEl.innerHTML = 'Raw OCR debug output will appear here.';
+        return;
+    }
+
+    const rows = lines.map((line, index) => {
+        const confidence = Number(confidences[index]);
+        const confidenceText = Number.isFinite(confidence) && confidence > 0
+            ? `${Math.round(confidence * 100)}%`
+            : 'n/a';
+        return `<div style="display:flex; gap:10px; margin-bottom:4px;"><span style="min-width:56px; color:var(--gray-500);">#${index + 1}</span><span style="flex:1; word-break:break-word;">${escapeHtml(line)}</span><span style="color:var(--gray-500);">${escapeHtml(confidenceText)}</span></div>`;
+    }).join('');
+
+    debugEl.innerHTML = `<strong>OCR Debug (raw lines)</strong><div style="margin-top:6px; font-size:0.8rem;">${rows}</div>`;
+}
+
 function applyGovernmentIdProfile(profile) {
     const touchedFields = [];
     const setIfEmpty = (id, value) => {
@@ -2140,6 +2139,7 @@ function renderGovernmentIdOcrSummary() {
     }
 
     if (scanMeta.variant) metaParts.push(`Variant: ${escapeHtml(scanMeta.variant)}`);
+    if (scanMeta.engine) metaParts.push(`Engine: ${escapeHtml(scanMeta.engine)}`);
     if (scanMeta.psm !== undefined && scanMeta.psm !== null && scanMeta.psm !== '') metaParts.push(`PSM: ${escapeHtml(String(scanMeta.psm))}`);
     if (scanMeta.confidence !== undefined && scanMeta.confidence !== null && scanMeta.confidence !== '') metaParts.push(`Confidence: ${escapeHtml(String(Math.round(scanMeta.confidence)))}%`);
 
@@ -2207,13 +2207,6 @@ async function preprocessGovernmentIdImage(file, mode = 'balanced') {
     return new Promise(resolve => canvas.toBlob(blob => resolve(blob || file), 'image/png', 1));
 }
 
-function updateGovernmentIdStatusFromProgress(message) {
-    if (message.status && typeof message.progress === 'number') {
-        const pct = Math.round(message.progress * 100);
-        setGovernmentIdOcrStatus(`Scanning ID photo... ${pct}%`);
-    }
-}
-
 function renderGovernmentIdUploads() {
     const list = document.getElementById('governmentIdFileList');
     if (!list) return;
@@ -2222,7 +2215,7 @@ function renderGovernmentIdUploads() {
     list.innerHTML = '';
 
     if (!stored.length) {
-        list.innerHTML = '<div style="color: var(--gray-500); font-size: .85rem;">No ID photo uploaded.</div>';
+        list.innerHTML = '<div style="color: var(--gray-500); font-size: .85rem;">No ID uploaded yet.</div>';
         return;
     }
 
@@ -2232,9 +2225,12 @@ function renderGovernmentIdUploads() {
         item.dataset.idx = String(index);
 
         const name = file.original_name || file.file_name || 'ID photo';
-        const openUrl = file.file_path ? `../../${file.file_path}` : '';
+        const openUrl = buildGovernmentIdOpenUrl(file);
+        const previewImage = openUrl
+            ? `<img src="${openUrl}" alt="ID Preview" style="width:64px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #d5e3db;">`
+            : '<i class="bi bi-file-earmark-image"></i>';
         item.innerHTML = `
-            <i class="bi bi-file-earmark-image"></i>
+            ${previewImage}
             <span>${escapeHtml(name)}</span>
             ${openUrl ? `<a href="${openUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" style="padding:4px 10px; margin-left:auto;">Open</a>` : ''}
             <i class="bi bi-trash file-remove" title="Remove"></i>
@@ -2250,21 +2246,35 @@ function renderGovernmentIdUploads() {
                 await deleteTempUpload(removed.temp_path);
             }
             setGovernmentIdOcrStatus('No ID photo uploaded yet.');
+            setGovernmentIdRawOutput([], []);
         });
 
         list.appendChild(item);
     });
 }
 
+function buildGovernmentIdOpenUrl(file) {
+    const rawPath = String(file?.file_path || file?.temp_path || '').trim();
+    if (!rawPath) return '';
+
+    const normalized = rawPath
+        .replace(/^\.{1,2}[\\/]+/, '')
+        .replace(/^[\\/]+/, '')
+        .replace(/\\/g, '/');
+
+    if (!normalized) return '';
+    return normalized.startsWith('uploads/') ? `../../${normalized}` : `../../uploads/${normalized}`;
+}
+
 async function runGovernmentIdOcr(file) {
-    if (!file || !window.Tesseract) {
-        setGovernmentIdOcrStatus('OCR is unavailable in this browser. You can enter the ID number manually.', true);
+    if (!file) {
+        setGovernmentIdOcrStatus('No ID photo selected for OCR.', true);
         renderGovernmentIdOcrSummary();
         return '';
     }
 
     const currentType = document.getElementById('governmentIdType')?.value || '';
-    setGovernmentIdOcrStatus('Preparing ID image for scanning...');
+    setGovernmentIdOcrStatus('Scanning...');
 
     try {
         const variants = [
@@ -2272,28 +2282,34 @@ async function runGovernmentIdOcr(file) {
             { label: 'high-contrast', blob: await preprocessGovernmentIdImage(file, 'highContrast') }
         ];
 
-        const worker = await getGovernmentIdOcrWorker();
-        const psmCandidates = getGovernmentIdPsmCandidates();
         let bestProfile = { idNumber: '' };
         let bestText = '';
         let bestConfidence = -1;
         let bestVariantLabel = '';
-        let bestPsm = '';
+        let bestLines = [];
+        let bestLineConfidences = [];
+        let lastScanError = '';
 
         for (const variant of variants) {
-            for (const psm of psmCandidates) {
-                setGovernmentIdOcrStatus(`Scanning ID photo (${variant.label}, psm ${psm})...`);
+            setGovernmentIdOcrStatus(`Scanning... (${variant.label})`);
 
-                let result;
-                if (worker?.recognize) {
-                    result = await worker.recognize(variant.blob, buildGovernmentIdRecognizeOptions(psm));
-                } else {
-                    result = await Tesseract.recognize(variant.blob, 'eng', buildGovernmentIdRecognizeOptions(psm));
-                }
+            try {
+                const result = await scanGovernmentIdWithPaddleOcr(variant.blob, currentType, file.name || 'government-id.png');
+                const extractedText = result?.text || '';
+                const parsedProfile = result?.parsed || {};
+                const extractedProfile = extractGovernmentIdProfile(extractedText, currentType);
+                const profile = {
+                    ...extractedProfile,
+                    idNumber: parsedProfile.idNumber || extractedProfile.idNumber || '',
+                    fullName: parsedProfile.fullName || extractedProfile.fullName || '',
+                    birthdate: parsedProfile.birthdate || extractedProfile.birthdate || '',
+                    gender: parsedProfile.gender || extractedProfile.gender || '',
+                    nationality: parsedProfile.nationality || extractedProfile.nationality || '',
+                    address: parsedProfile.address || extractedProfile.address || ''
+                };
 
-                const extractedText = result?.data?.text || '';
-                const profile = extractGovernmentIdProfile(extractedText, currentType);
-                const confidence = Number(result?.data?.confidence) || 0;
+                setGovernmentIdOcrStatus('Processing...');
+                const confidence = Number(result?.confidence) || 0;
                 const score = scoreGovernmentIdProfile(profile, confidence);
 
                 if (score > scoreGovernmentIdProfile(bestProfile, bestConfidence)) {
@@ -2301,17 +2317,15 @@ async function runGovernmentIdOcr(file) {
                     bestText = extractedText;
                     bestConfidence = confidence;
                     bestVariantLabel = variant.label;
-                    bestPsm = psm;
+                    bestLines = Array.isArray(result?.textLines) ? result.textLines : [];
+                    bestLineConfidences = Array.isArray(result?.confidenceItems) ? result.confidenceItems : [];
                 }
 
                 if (profile.idNumber && (profile.fullName || profile.birthdate || profile.gender || profile.nationality)) {
-                    bestProfile = profile;
-                    bestText = extractedText;
-                    bestConfidence = confidence;
-                    bestVariantLabel = variant.label;
-                    bestPsm = psm;
                     break;
                 }
+            } catch (scanError) {
+                lastScanError = scanError?.message || 'PaddleOCR scan failed';
             }
 
             if (bestProfile.idNumber && (bestProfile.fullName || bestProfile.birthdate || bestProfile.gender || bestProfile.nationality)) {
@@ -2319,11 +2333,16 @@ async function runGovernmentIdOcr(file) {
             }
         }
 
+        if (!bestText && lastScanError) {
+            throw new Error(lastScanError);
+        }
+
         setGovernmentIdOcrScanMeta({
             variant: bestVariantLabel,
-            psm: bestPsm,
+            engine: 'PaddleOCR',
             confidence: bestConfidence >= 0 ? bestConfidence : ''
         });
+        setGovernmentIdRawOutput(bestLines, bestLineConfidences);
         setGovernmentIdOcrProfile(bestProfile);
         applyGovernmentIdProfile(bestProfile);
 
@@ -2331,8 +2350,8 @@ async function runGovernmentIdOcr(file) {
             const extractedFields = [bestProfile.fullName, bestProfile.birthdate, bestProfile.gender, bestProfile.nationality].filter(Boolean).length;
             setGovernmentIdOcrStatus(
                 extractedFields > 0
-                    ? `OCR found an ID number and supporting details: ${bestProfile.idNumber}${bestConfidence >= 0 ? ` (confidence ${Math.round(bestConfidence)}%)` : ''}`
-                    : `OCR found an ID number: ${bestProfile.idNumber}`
+                    ? `OCR completed. ID number and details found: ${bestProfile.idNumber}${bestConfidence >= 0 ? ` (confidence ${Math.round(bestConfidence)}%)` : ''}`
+                    : `OCR completed. ID number found: ${bestProfile.idNumber}`
             );
             showToast('success', 'ID Scanned', 'ID number was extracted from the uploaded photo.');
             return bestProfile.idNumber;
@@ -2343,16 +2362,112 @@ async function runGovernmentIdOcr(file) {
             return '';
         }
 
-        setGovernmentIdOcrStatus('OCR could not read the ID photo. Please enter the ID number manually.', true);
+        setGovernmentIdOcrStatus('Unable to scan ID. Please try again or enter manually.', true);
         return '';
     } catch (error) {
         console.error('OCR error:', error);
         setGovernmentIdOcrScanMeta({});
+        setGovernmentIdRawOutput([], []);
         clearGovernmentIdFieldHighlights();
         setGovernmentIdOcrProfile({});
-        setGovernmentIdOcrStatus('OCR could not read the ID photo. Please enter the ID number manually.', true);
+        setGovernmentIdOcrStatus('Unable to scan ID. Please try again or enter manually.', true);
         return '';
     }
+}
+
+async function scanGovernmentIdWithPaddleOcr(fileBlob, idType, sourceName = 'government-id.png') {
+    const extension = (sourceName.split('.').pop() || 'png').toLowerCase();
+    const safeExt = ['jpg', 'jpeg', 'png'].includes(extension) ? extension : 'png';
+    const fileName = `government-id.${safeExt}`;
+
+    const fd = new FormData();
+    fd.append('action', 'scan_id');
+    fd.append('idType', idType || '');
+    fd.append('id_image', fileBlob, fileName);
+
+    const response = await fetch('../handlers/paddle_ocr.php', {
+        method: 'POST',
+        credentials: 'include',
+        body: fd
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data?.success) {
+        throw new Error(data?.message || 'PaddleOCR request failed');
+    }
+
+    return {
+        text: data.text || '',
+        confidence: Number(data.confidence) || 0,
+        parsed: data.parsed || {},
+        textLines: Array.isArray(data.textLines) ? data.textLines : [],
+        confidenceItems: Array.isArray(data.confidenceItems) ? data.confidenceItems : []
+    };
+}
+
+async function checkPaddleOcrHealth() {
+    const button = document.getElementById('ocrHealthCheckBtn');
+    setButtonBusy(button, true, 'Testing...');
+    setGovernmentIdOcrStatus('Checking OCR service...');
+
+    try {
+        const fd = new FormData();
+        fd.append('action', 'health_check');
+
+        const response = await fetch('../handlers/paddle_ocr.php', {
+            method: 'POST',
+            credentials: 'include',
+            body: fd
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data?.success) {
+            throw new Error(data?.message || 'OCR health check failed');
+        }
+
+        setGovernmentIdOcrStatus('OCR service is ready. You can scan an ID now.');
+        showToast('success', 'OCR Ready', 'PaddleOCR service is configured and reachable.');
+    } catch (error) {
+        setGovernmentIdOcrStatus(error?.message || 'OCR health check failed.', true);
+        showToast('error', 'OCR Check Failed', error?.message || 'Please check Python OCR service.');
+    } finally {
+        setButtonBusy(button, false);
+    }
+}
+
+async function scanCurrentGovernmentId() {
+    if (!currentGovernmentIdFile) {
+        setGovernmentIdOcrStatus('No ID photo selected for OCR.', true);
+        showToast('error', 'No ID Photo', 'Please upload an ID photo first.');
+        return;
+    }
+
+    await runGovernmentIdOcr(currentGovernmentIdFile);
+}
+
+function sanitizeGovernmentIdFiles(fileList) {
+    const files = Array.from(fileList || []).slice(0, 1);
+    if (!files.length) {
+        return [];
+    }
+
+    const file = files[0];
+    const allowedTypes = ['image/jpeg', 'image/png'];
+    const maxBytes = 5 * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+        showToast('error', 'Invalid File', 'Only JPG or PNG files are allowed.');
+        setGovernmentIdOcrStatus('Please upload a JPG or PNG ID photo.', true);
+        return [];
+    }
+
+    if (Number(file.size || 0) > maxBytes) {
+        showToast('error', 'File Too Large', 'ID photo must be 5MB or below.');
+        setGovernmentIdOcrStatus('ID photo must be 5MB or below.', true);
+        return [];
+    }
+
+    return [file];
 }
 
 async function uploadGovernmentIdTempFile(files) {
@@ -2396,7 +2511,7 @@ const governmentIdTypeSelect = document.getElementById('governmentIdType');
 
 if (governmentIdInput) {
     governmentIdInput.addEventListener('change', async () => {
-        const files = Array.from(governmentIdInput.files || []);
+        const files = sanitizeGovernmentIdFiles(governmentIdInput.files || []);
         governmentIdInput.value = '';
         if (!files.length) return;
         try {
@@ -2410,15 +2525,29 @@ if (governmentIdInput) {
 }
 
 if (governmentIdZone) {
-    governmentIdZone.addEventListener('dragover', event => {
+    governmentIdZone.addEventListener('dragenter', event => {
         event.preventDefault();
+        event.stopPropagation();
         governmentIdZone.classList.add('dragover');
     });
-    governmentIdZone.addEventListener('dragleave', () => governmentIdZone.classList.remove('dragover'));
+    governmentIdZone.addEventListener('dragover', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = 'copy';
+        }
+        governmentIdZone.classList.add('dragover');
+    });
+    governmentIdZone.addEventListener('dragleave', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        governmentIdZone.classList.remove('dragover');
+    });
     governmentIdZone.addEventListener('drop', async event => {
         event.preventDefault();
+        event.stopPropagation();
         governmentIdZone.classList.remove('dragover');
-        const files = Array.from(event.dataTransfer?.files || []);
+        const files = sanitizeGovernmentIdFiles(event.dataTransfer?.files || []);
         if (!files.length) return;
         try {
             await uploadGovernmentIdTempFile(files);
@@ -2442,8 +2571,11 @@ if (governmentIdTypeSelect) {
 document.addEventListener('DOMContentLoaded', renderGovernmentIdUploads);
 document.addEventListener('DOMContentLoaded', () => {
     const savedProfile = JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}');
+    const savedRaw = JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrRaw') || '{}');
     governmentIdOcrProfile = savedProfile || {};
+    governmentIdRawOutput = savedRaw || { lines: [], confidences: [] };
     renderGovernmentIdOcrSummary();
+    renderGovernmentIdRawOutput();
 });
 
 // ── Drafts UI (resume/load) ─────────────────────────────────────────────
@@ -3084,8 +3216,10 @@ async function clearForm() {
     await Promise.all((idUploads || []).map(u => deleteTempUpload(u?.temp_path)));
     sessionStorage.removeItem('kycGovernmentIdFiles');
     sessionStorage.removeItem('kycGovernmentIdOcrData');
+    sessionStorage.removeItem('kycGovernmentIdOcrRaw');
     currentGovernmentIdFile = null;
     governmentIdOcrProfile = {};
+    governmentIdRawOutput = { lines: [], confidences: [] };
     document.getElementById('fileList').innerHTML = '';
     renderGovernmentIdUploads();
     renderGovernmentIdOcrSummary();
