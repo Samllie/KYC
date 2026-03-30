@@ -53,11 +53,12 @@ requireLogin();
         /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
-            top: 82px;
+            top: auto;
+            bottom: 72px;
             right: 18px;
-            width: 420px;
+            width: 360px;
             max-width: calc(100vw - 28px);
-            max-height: 76vh;
+            max-height: 48vh;
             overflow: hidden;
             z-index: 9999;
             display: block;
@@ -80,29 +81,29 @@ requireLogin();
         }
 
         #draftsCard .card-header {
-            padding: 14px 16px;
+            padding: 10px 12px;
             border-bottom: 1px solid #e7ebf0;
             background: #f9fafb;
         }
 
         #draftsCard .card-title {
-            font-size: .9rem;
+            font-size: .82rem;
             color: #1f2937;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         #draftsCard .card-body {
-            padding: 14px 16px 18px;
+            padding: 10px 12px 12px;
             overflow: auto;
-            max-height: calc(76vh - 62px);
+            max-height: calc(48vh - 48px);
         }
 
         .drafts-fields {
             display: grid;
             grid-template-columns: 1fr;
-            row-gap: 10px;
+            row-gap: 8px;
         }
 
         .drafts-action-row {
@@ -112,22 +113,22 @@ requireLogin();
         }
 
         #loadDraftBtn {
-            min-width: 120px;
-            height: 34px;
-            padding: 0 12px;
-            font-size: .78rem;
+            min-width: 104px;
+            height: 30px;
+            padding: 0 10px;
+            font-size: .72rem;
             border-radius: 9px;
         }
 
         #draftInfo,
         #draftDocsWrapper,
         #draftDocsContainer {
-            font-size: .82rem;
+            font-size: .76rem;
         }
 
         #draftSelect {
-            height: 40px;
-            font-size: .84rem;
+            height: 34px;
+            font-size: .78rem;
         }
 
         #kycForm {
@@ -165,8 +166,8 @@ requireLogin();
         }
 
         .drafts-toggle-btn {
-            width: 38px;
-            height: 38px;
+            width: 46px;
+            height: 46px;
             border-radius: 10px;
             border: 1px solid #d2e0d8;
             background: rgba(255,255,255,0.85);
@@ -174,6 +175,11 @@ requireLogin();
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 9998;
+            box-shadow: 0 12px 26px rgba(17, 24, 39, 0.16);
             transition: all 0.2s ease;
         }
         .drafts-toggle-btn:hover {
@@ -287,6 +293,27 @@ requireLogin();
         .drafts-toggle-btn:active,
         .back-to-type-btn:active {
             transform: translateY(1px) scale(0.98);
+        }
+
+        .flow-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .flow-note {
+            font-size: .75rem;
+            color: var(--gray-500);
+            flex: 1 1 240px;
+        }
+
+        .flow-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .steps-bar .step.step-clickable {
@@ -476,13 +503,14 @@ requireLogin();
         }
 
         body.kyc-compact .drafts-toggle-btn {
-            width: 34px;
-            height: 34px;
+            width: 42px;
+            height: 42px;
         }
 
         body.kyc-compact #draftsCard {
-            width: 360px;
-            top: 68px;
+            width: 336px;
+            top: auto;
+            bottom: 64px;
             border-radius: 12px;
         }
 
@@ -492,7 +520,7 @@ requireLogin();
 
         body.kyc-compact #draftsCard .card-body {
             padding: 10px 12px 12px;
-            max-height: calc(76vh - 54px);
+            max-height: calc(44vh - 48px);
         }
 
         body.kyc-compact #draftSelect {
@@ -546,10 +574,42 @@ requireLogin();
                 padding: 10px 12px;
             }
 
+            .flow-footer {
+                align-items: stretch;
+            }
+
+            .flow-note {
+                flex: 1 1 100%;
+            }
+
+            .flow-actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .flow-actions .btn {
+                flex: 1 1 calc(50% - 8px);
+                min-width: 0;
+                justify-content: center;
+            }
+
             body.kyc-compact #draftsCard {
                 width: calc(100vw - 20px);
                 right: 10px;
-                top: 62px;
+                top: auto;
+                bottom: 62px;
+            }
+
+            .drafts-toggle-btn,
+            body.kyc-compact .drafts-toggle-btn {
+                right: 10px;
+                bottom: 12px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .flow-actions .btn {
+                flex: 1 1 100%;
             }
         }
     </style>
@@ -677,16 +737,16 @@ include '../includes/sidebar.php';
                                 <option value="">Loading...</option>
                             </select>
                         </div>
-                        <div class="drafts-action-row">
-                            <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
-                                <i class="bi bi-box-arrow-in-right"></i> Load Draft
-                            </button>
-                        </div>
                     </div>
                     <div id="draftInfo" style="margin-top:10px; color: var(--gray-500); font-size: .85rem;"></div>
                     <div id="draftDocsWrapper" style="margin-top:14px;">
                         <div style="color: var(--gray-500); font-size:.85rem;">Attachments saved to the selected draft:</div>
                         <div id="draftDocsContainer" style="margin-top:8px;"></div>
+                    </div>
+                    <div class="drafts-action-row">
+                        <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
+                            <i class="bi bi-box-arrow-in-right"></i> Load Draft
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1082,12 +1142,12 @@ include '../includes/sidebar.php';
 
         <!-- Action Buttons Card -->
         <div class="card">
-            <div class="card-footer">
-                <div style="font-size:.75rem;color:var(--gray-500);">
+            <div class="card-footer flow-footer">
+                <div class="flow-note">
                     <i class="bi bi-info-circle" style="margin-right:4px;"></i>
                     All fields marked <span style="color:var(--danger);font-weight:700;">*</span> are required.
                 </div>
-                <div class="flow-actions" style="display:flex;gap:10px;">
+                <div class="flow-actions">
                     <button type="button" id="backBtn" class="btn btn-outline" onclick="goBack()">
                         <i class="bi bi-arrow-left"></i> Back to Type Selection
                     </button>

@@ -50,7 +50,7 @@ CREATE TABLE `clients` (
   `client_id` int(11) NOT NULL,
   `reference_code` varchar(50) NOT NULL,
   `client_number` varchar(30) DEFAULT NULL,
-  `client_type` enum('individual','corporate') NOT NULL,
+  `client_type` enum('individual','corporate','obligee') NOT NULL,
   `client_name` varchar(200) DEFAULT NULL,
   `first_name` varchar(50) NOT NULL,
   `middle_name` varchar(50) DEFAULT NULL,

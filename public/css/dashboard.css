@@ -472,6 +472,30 @@ body.kyc-compact .activity-card {
         grid-template-columns: 1fr;
         align-items: flex-start;
     }
+
+    .welcome-text h2 {
+        font-size: 1.28rem;
+    }
+
+    .hero-action {
+        width: 100%;
+    }
+
+    .hero-action .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 520px) {
+    .pipeline-head {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .split-legend {
+        font-size: 0.74rem;
+    }
 }
 
 @media (max-width: 900px) {

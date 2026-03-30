@@ -95,6 +95,12 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     </div>
 </aside>
 
+<button type="button" id="mobileSidebarToggle" class="mobile-sidebar-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">
+    <i class="bi bi-list"></i>
+</button>
+
+<div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
 <div id="logoutConfirmModal" class="logout-modal" aria-hidden="true">
     <div class="logout-modal-card" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle">
         <div class="logout-modal-header">
@@ -112,6 +118,9 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 <script>
 (function () {
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const sidebarNavLinks = document.querySelectorAll('.sidebar .nav-item');
     const COLLAPSE_KEY = 'kyc.sidebar.collapsed';
     const isMobile = function () {
         return window.matchMedia('(max-width: 768px)').matches;
@@ -158,6 +167,36 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
         applyCollapsedState(readCollapsedState());
     }
 
+    function syncMobileToggleState(isOpen) {
+        if (!mobileSidebarToggle) {
+            return;
+        }
+
+        mobileSidebarToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        mobileSidebarToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+        mobileSidebarToggle.title = isOpen ? 'Close menu' : 'Open menu';
+
+        const icon = mobileSidebarToggle.querySelector('i');
+        if (icon) {
+            icon.className = isOpen ? 'bi bi-x-lg' : 'bi bi-list';
+        }
+    }
+
+    function closeMobileSidebar() {
+        document.body.classList.remove('sidebar-mobile-open');
+        syncMobileToggleState(false);
+    }
+
+    function toggleMobileSidebar() {
+        if (!isMobile()) {
+            return;
+        }
+
+        const willOpen = !document.body.classList.contains('sidebar-mobile-open');
+        document.body.classList.toggle('sidebar-mobile-open', willOpen);
+        syncMobileToggleState(willOpen);
+    }
+
     if (sidebarToggleBtn) {
         sidebarToggleBtn.addEventListener('click', function () {
             const willCollapse = !document.body.classList.contains('sidebar-collapsed');
@@ -166,11 +205,33 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
         });
     }
 
+    if (mobileSidebarToggle) {
+        mobileSidebarToggle.addEventListener('click', toggleMobileSidebar);
+    }
+
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+    }
+
+    sidebarNavLinks.forEach(function (link) {
+        link.addEventListener('click', closeMobileSidebar);
+    });
+
     window.addEventListener('resize', function () {
         applyCollapsedState(readCollapsedState());
+        if (!isMobile()) {
+            closeMobileSidebar();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeMobileSidebar();
+        }
     });
 
     initSidebarState();
+    syncMobileToggleState(false);
 
     const menuBtn = document.getElementById('userMenuBtn');
     const dropdown = document.getElementById('userMenuDropdown');

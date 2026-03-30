@@ -359,3 +359,9 @@
     border-color: #bbf7d0;
 }
 
+.client-type-display.obligee {
+    background: linear-gradient(135deg, #f8ede2 0%, #ffffff 100%);
+    color: #7c4a21;
+    border-color: #e7c7a8;
+}
+

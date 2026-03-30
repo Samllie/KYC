@@ -1,6 +1,15 @@
 <?php
 require_once '../config/session.php';
 requireLogin();
+
+$typeFromQuery = strtolower(trim($_GET['type'] ?? 'corporate'));
+$selectedClientType = $typeFromQuery === 'obligee' ? 'obligee' : 'corporate';
+$isObligee = $selectedClientType === 'obligee';
+
+$clientTypeLabel = $isObligee ? 'Obligee Client' : 'Corporate Client';
+$newClientLabel = $isObligee ? 'New Obligee Client' : 'New Corporate Client';
+$clientTypeIcon = $isObligee ? 'bi-shield-check' : 'bi-building';
+$reviewUrl = 'kyc-corporate-review.php?type=' . urlencode($selectedClientType);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -53,11 +62,11 @@ requireLogin();
         /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
-            top: 82px;
+            top: 74px;
             right: 18px;
-            width: 420px;
+            width: 360px;
             max-width: calc(100vw - 28px);
-            max-height: 76vh;
+            max-height: 60vh;
             overflow: hidden;
             z-index: 9999;
             display: block;
@@ -80,29 +89,29 @@ requireLogin();
         }
 
         #draftsCard .card-header {
-            padding: 14px 16px;
+            padding: 10px 12px;
             border-bottom: 1px solid #e7ebf0;
             background: #f9fafb;
         }
 
         #draftsCard .card-title {
-            font-size: .9rem;
+            font-size: .82rem;
             color: #1f2937;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         #draftsCard .card-body {
-            padding: 14px 16px 18px;
+            padding: 10px 12px 12px;
             overflow: auto;
-            max-height: calc(76vh - 62px);
+            max-height: calc(60vh - 48px);
         }
 
         .drafts-fields {
             display: grid;
             grid-template-columns: 1fr;
-            row-gap: 10px;
+            row-gap: 8px;
         }
 
         .drafts-action-row {
@@ -112,22 +121,22 @@ requireLogin();
         }
 
         #loadDraftBtn {
-            min-width: 120px;
-            height: 34px;
-            padding: 0 12px;
-            font-size: .78rem;
+            min-width: 104px;
+            height: 30px;
+            padding: 0 10px;
+            font-size: .72rem;
             border-radius: 9px;
         }
 
         #draftInfo,
         #draftDocsWrapper,
         #draftDocsContainer {
-            font-size: .82rem;
+            font-size: .76rem;
         }
 
         #draftSelect {
-            height: 40px;
-            font-size: .84rem;
+            height: 34px;
+            font-size: .78rem;
         }
 
         #kycForm {
@@ -287,6 +296,27 @@ requireLogin();
         .drafts-toggle-btn:active,
         .back-to-type-btn:active {
             transform: translateY(1px) scale(0.98);
+        }
+
+        .flow-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .flow-note {
+            font-size: .75rem;
+            color: var(--gray-500);
+            flex: 1 1 240px;
+        }
+
+        .flow-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .steps-bar .step.step-clickable {
@@ -481,7 +511,7 @@ requireLogin();
         }
 
         body.kyc-compact #draftsCard {
-            width: 360px;
+            width: 336px;
             top: 68px;
             border-radius: 12px;
         }
@@ -492,7 +522,7 @@ requireLogin();
 
         body.kyc-compact #draftsCard .card-body {
             padding: 10px 12px 12px;
-            max-height: calc(76vh - 54px);
+            max-height: calc(56vh - 48px);
         }
 
         body.kyc-compact #draftSelect {
@@ -546,10 +576,35 @@ requireLogin();
                 padding: 10px 12px;
             }
 
+            .flow-footer {
+                align-items: stretch;
+            }
+
+            .flow-note {
+                flex: 1 1 100%;
+            }
+
+            .flow-actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .flow-actions .btn {
+                flex: 1 1 calc(50% - 8px);
+                min-width: 0;
+                justify-content: center;
+            }
+
             body.kyc-compact #draftsCard {
                 width: calc(100vw - 20px);
                 right: 10px;
                 top: 62px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .flow-actions .btn {
+                flex: 1 1 100%;
             }
         }
     </style>
@@ -567,10 +622,10 @@ include '../includes/sidebar.php';
     <!-- Topbar -->
     <header class="topbar">
         <div class="topbar-left">
-            <h1>KYC Verification — Corporate Client</h1>
+            <h1>KYC Verification — <?php echo htmlspecialchars($clientTypeLabel); ?></h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
-                Dashboard &rsaquo; Clients &rsaquo; <span>New Corporate Client</span>
+                Dashboard &rsaquo; Clients &rsaquo; <span><?php echo htmlspecialchars($newClientLabel); ?></span>
             </div>
         </div>
         <div class="topbar-right">
@@ -625,16 +680,16 @@ include '../includes/sidebar.php';
             <div class="client-type-inline" data-wizard-step="2">
                 <div class="client-type-inline-left">
                     <span class="client-type-inline-label">Client Type</span>
-                    <div class="client-type-display corporate">
-                        <i class="bi bi-building"></i>
-                        <span>Corporate Client</span>
+                    <div class="client-type-display <?php echo htmlspecialchars($selectedClientType); ?>">
+                        <i class="bi <?php echo htmlspecialchars($clientTypeIcon); ?>"></i>
+                        <span><?php echo htmlspecialchars($clientTypeLabel); ?></span>
                     </div>
                 </div>
                 <a href="kyc-verification.php" class="back-to-type-btn">
                     <i class="bi bi-arrow-left"></i>
                     Change Type
                 </a>
-                <input type="hidden" name="clientType" value="corporate">
+                <input type="hidden" name="clientType" value="<?php echo htmlspecialchars($selectedClientType); ?>">
             </div>
 
             <!-- Reference Card -->
@@ -677,16 +732,16 @@ include '../includes/sidebar.php';
                                 <option value="">Loading...</option>
                             </select>
                         </div>
-                        <div class="drafts-action-row">
-                            <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
-                                <i class="bi bi-box-arrow-in-right"></i> Load Draft
-                            </button>
-                        </div>
                     </div>
                     <div id="draftInfo" style="margin-top:10px; color: var(--gray-500); font-size: .85rem;"></div>
                     <div id="draftDocsWrapper" style="margin-top:14px;">
                         <div style="color: var(--gray-500); font-size:.85rem;">Attachments saved to the selected draft:</div>
                         <div id="draftDocsContainer" style="margin-top:8px;"></div>
+                    </div>
+                    <div class="drafts-action-row">
+                        <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
+                            <i class="bi bi-box-arrow-in-right"></i> Load Draft
+                        </button>
                     </div>
                 </div>
             </div>
@@ -979,12 +1034,12 @@ include '../includes/sidebar.php';
 
         <!-- Action Buttons Card -->
         <div class="card">
-            <div class="card-footer">
-                <div style="font-size:.75rem;color:var(--gray-500);">
+            <div class="card-footer flow-footer">
+                <div class="flow-note">
                     <i class="bi bi-info-circle" style="margin-right:4px;"></i>
                     All fields marked <span style="color:var(--danger);font-weight:700;">*</span> are required.
                 </div>
-                <div class="flow-actions" style="display:flex;gap:10px;">
+                <div class="flow-actions">
                     <button type="button" id="backBtn" class="btn btn-outline" onclick="goBack()">
                         <i class="bi bi-arrow-left"></i> Back to Type Selection
                     </button>
@@ -1015,6 +1070,9 @@ include '../includes/sidebar.php';
 
 <!-- ═══════════════════════════════════════════════ SCRIPTS -->
 <script>
+const currentClientType = <?php echo json_encode($selectedClientType); ?>;
+const currentReviewUrl = <?php echo json_encode($reviewUrl); ?>;
+
 // ── Toast ──────────────────────────────────────────────────
 function showToast(type, title, msg) {
     const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', info: 'bi-info-circle-fill' };
@@ -2697,7 +2755,7 @@ async function refreshDrafts() {
     if (draftInfoEl) draftInfoEl.textContent = '';
 
     try {
-        const resp = await fetch(`../handlers/kyc.php?action=get_drafts&draftType=corporate`, {
+        const resp = await fetch(`../handlers/kyc.php?action=get_drafts&draftType=${encodeURIComponent(currentClientType)}`, {
             method: 'GET',
             credentials: 'include'
         });
@@ -2961,7 +3019,7 @@ function proceedToReview() {
     sessionStorage.setItem('kycGovernmentIdFiles', JSON.stringify(getStoredGovernmentIdUploads()));
     
     // Navigate to review page
-    window.location.href = 'kyc-corporate-review.php';
+    window.location.href = currentReviewUrl;
 }
 
 function submitForm() {
