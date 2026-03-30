@@ -1598,13 +1598,74 @@ function inferGovernmentIdNumber(text, idType) {
         .trim();
 
     const compactText = cleanedText.replace(/\s+/g, ' ');
+    const lines = cleanedText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     const type = String(idType || '').toLowerCase();
     const candidates = new Set();
+    const blocked = new Set([
+        'license', 'number', 'id', 'no', 'date', 'agency', 'code',
+        'republic', 'department', 'transportation', 'office'
+    ]);
 
     const pushMatches = (regex) => {
         const matches = compactText.match(regex) || [];
         matches.forEach(match => candidates.add(match.trim()));
     };
+
+    const normalizePhilsysNumber = (value) => {
+        const digits = String(value || '').replace(/\D/g, '');
+        if (digits.length === 16) {
+            return digits.replace(/(\d{4})(?=\d)/g, '$1-').replace(/-$/, '');
+        }
+        return String(value || '').replace(/\s+/g, '').trim();
+    };
+
+    if (type.includes('philsys')) {
+        const philsysPattern = /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/i;
+        const philsysLabel = /\b(philsys\s*(card\s*)?number|philsys\s*no\.?|pcn|psn|national\s*id\s*no\.?)\b/i;
+
+        for (let index = 0; index < lines.length; index += 1) {
+            if (!philsysLabel.test(lines[index])) continue;
+
+            for (let offset = 0; offset <= 6; offset += 1) {
+                let target = lines[index + offset] || '';
+                if (!target) continue;
+                if (offset === 0) {
+                    target = target.replace(philsysLabel, ' ');
+                }
+
+                const match = target.match(philsysPattern);
+                if (match?.[0]) {
+                    return normalizePhilsysNumber(match[0]);
+                }
+            }
+        }
+    }
+
+    if (type.includes('driver')) {
+        const driverPatterns = [
+            /\b[A-Z]\d{2}-\d{2}-\d{6}\b/i,
+            /\b[A-Z]{1,3}-?\d{2,3}-?\d{4,7}\b/i
+        ];
+
+        for (let index = 0; index < lines.length; index += 1) {
+            if (!/\blicense\s*no\.?\b/i.test(lines[index])) continue;
+
+            for (let offset = 0; offset <= 6; offset += 1) {
+                let target = lines[index + offset] || '';
+                if (!target) continue;
+                if (offset === 0) {
+                    target = target.replace(/\blicense\s*no\.?\b/i, ' ');
+                }
+
+                for (const pattern of driverPatterns) {
+                    const match = target.match(pattern);
+                    if (match?.[0]) {
+                        return match[0].trim();
+                    }
+                }
+            }
+        }
+    }
 
     if (type.includes('passport')) {
         pushMatches(/\b[A-Z0-9]{8,10}\b/gi);
@@ -1630,7 +1691,7 @@ function inferGovernmentIdNumber(text, idType) {
         pushMatches(/\b[A-Z0-9]{6,24}\b/gi);
     }
 
-    compactText.split(/\r?\n/).forEach(line => {
+    lines.forEach(line => {
         const lowered = line.toLowerCase();
         if (lowered.includes('id') || lowered.includes('no') || lowered.includes('number')) {
             (line.match(/\b[A-Z0-9][A-Z0-9\-\/]{4,}\b/gi) || []).forEach(match => candidates.add(match.trim()));
@@ -1639,7 +1700,11 @@ function inferGovernmentIdNumber(text, idType) {
 
     const sorted = Array.from(candidates)
         .map(candidate => candidate.replace(/\s+/g, '').trim())
-        .filter(Boolean)
+        .filter(candidate => {
+            if (!candidate) return false;
+            if (blocked.has(candidate.toLowerCase())) return false;
+            return /\d/.test(candidate) || /[-/]/.test(candidate);
+        })
         .sort((a, b) => b.length - a.length);
 
     return sorted[0] || '';
@@ -1734,8 +1799,72 @@ function extractGovernmentIdProfile(text, idType) {
         address: ''
     };
 
-    const genderMatch = lower.match(/\b(male|female)\b/);
-    if (genderMatch) profile.gender = genderMatch[1];
+    const type = String(idType || '').toLowerCase();
+    if (type.includes('driver') || type.includes('philsys')) {
+        const sexIndex = lines.findIndex(line => /\bsex\b/i.test(line));
+        if (sexIndex !== -1) {
+            for (let offset = 0; offset <= 6; offset += 1) {
+                let target = lines[sexIndex + offset] || '';
+                if (!target) continue;
+                if (offset === 0) {
+                    target = target.replace(/\bsex(?:\s+at\s+birth)?\b/i, ' ');
+                }
+
+                const upper = target.toUpperCase().trim();
+                if (/\bFEMALE\b/.test(upper) || /^F$/.test(upper)) {
+                    profile.gender = 'female';
+                    break;
+                }
+                if (/\bMALE\b/.test(upper) || /^M$/.test(upper)) {
+                    profile.gender = 'male';
+                    break;
+                }
+            }
+        }
+    }
+
+    if (type.includes('philsys')) {
+        const pickAfterLabel = (labelRegex) => {
+            const idx = lines.findIndex(line => labelRegex.test(line));
+            if (idx === -1) return '';
+
+            for (let offset = 0; offset <= 2; offset += 1) {
+                let target = lines[idx + offset] || '';
+                if (!target) continue;
+                if (offset === 0) {
+                    target = target.replace(labelRegex, ' ').replace(/[:\-]+/g, ' ');
+                }
+
+                const cleaned = target.replace(/[^A-Za-z\s,.-]/g, ' ').replace(/\s+/g, ' ').trim();
+                if (cleaned && !/\d/.test(cleaned)) {
+                    return cleaned;
+                }
+            }
+
+            return '';
+        };
+
+        const surname = pickAfterLabel(/\b(surname|last\s*name)\b/i);
+        const given = pickAfterLabel(/\b(given\s*name|first\s*name)\b/i);
+        const middle = pickAfterLabel(/\b(middle\s*name)\b/i);
+
+        if (!profile.fullName && (surname || given)) {
+            profile.fullName = [
+                surname ? `${surname},` : '',
+                given,
+                middle
+            ].filter(Boolean).join(' ').replace(/\s+,/g, ',').replace(/\s+/g, ' ').trim();
+        }
+
+        if (!profile.nationality) {
+            profile.nationality = 'Philippine';
+        }
+    }
+
+    if (!profile.gender) {
+        const genderMatch = lower.match(/\b(male|female)\b/);
+        if (genderMatch) profile.gender = genderMatch[1];
+    }
 
     if (/\b(filipino|philippine|philippines)\b/i.test(normalized)) {
         profile.nationality = 'Philippine';
@@ -2327,7 +2456,9 @@ async function runGovernmentIdOcr(file) {
         setGovernmentIdRawOutput([], []);
         clearGovernmentIdFieldHighlights();
         setGovernmentIdOcrProfile({});
-        setGovernmentIdOcrStatus('Unable to scan ID. Please try again or enter manually.', true);
+        const message = error?.message || 'Unable to scan ID. Please try again or enter manually.';
+        setGovernmentIdOcrStatus(message, true);
+        showToast('error', 'OCR Scan Failed', message);
         return '';
     }
 }
@@ -2348,7 +2479,14 @@ async function scanGovernmentIdWithPaddleOcr(fileBlob, idType, sourceName = 'gov
         body: fd
     });
 
-    const data = await response.json();
+    const raw = await response.text();
+    let data = null;
+    try {
+        data = raw ? JSON.parse(raw) : null;
+    } catch (parseError) {
+        throw new Error(`OCR handler returned invalid JSON (HTTP ${response.status}).`);
+    }
+
     if (!response.ok || !data?.success) {
         throw new Error(data?.message || 'PaddleOCR request failed');
     }
@@ -3247,6 +3385,7 @@ function buildUploadOpenUrl(file) {
 }
 
 function renderStoredUploads() {
+    if (!list) return;
     const stored = getStoredUploads();
     list.innerHTML = '';
 
@@ -3269,7 +3408,7 @@ function renderStoredUploads() {
             <i class="bi bi-trash file-remove" title="Remove"></i>
         `;
 
-                const openUrl = buildUploadOpenUrl(file);
+        item.querySelector('.file-remove')?.addEventListener('click', async () => {
             const current = getStoredUploads();
             const removed = current.splice(idx, 1)[0];
             setStoredUploads(current);
@@ -3286,6 +3425,7 @@ function renderStoredUploads() {
 
 async function uploadTempFiles(files) {
     if (!files || !files.length) return;
+    if (!zone) return;
     zone.classList.add('is-uploading');
     try {
         const fd = new FormData();
@@ -3310,28 +3450,46 @@ async function uploadTempFiles(files) {
     }
 }
 
-input.addEventListener('change', async () => {
-    const files = Array.from(input.files || []);
-    input.value = '';
-    try {
-        await uploadTempFiles(files);
-    } catch (e) {
-        showToast('error', 'Upload Failed', e?.message || 'Please try again.');
-    }
-});
+if (input) {
+    input.addEventListener('change', async () => {
+        const files = Array.from(input.files || []);
+        input.value = '';
+        try {
+            await uploadTempFiles(files);
+        } catch (e) {
+            showToast('error', 'Upload Failed', e?.message || 'Please try again.');
+        }
+    });
+}
 
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-zone.addEventListener('drop', async e => {
-    e.preventDefault();
-    zone.classList.remove('dragover');
-    const files = Array.from(e.dataTransfer?.files || []);
-    try {
-        await uploadTempFiles(files);
-    } catch (err) {
-        showToast('error', 'Upload Failed', err?.message || 'Please try again.');
-    }
-});
+if (zone) {
+    zone.addEventListener('dragenter', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.add('dragover');
+    });
+    zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.add('dragover');
+    });
+    zone.addEventListener('dragleave', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.remove('dragover');
+    });
+    zone.addEventListener('drop', async e => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.remove('dragover');
+        const files = Array.from(e.dataTransfer?.files || []);
+        try {
+            await uploadTempFiles(files);
+        } catch (err) {
+            showToast('error', 'Upload Failed', err?.message || 'Please try again.');
+        }
+    });
+}
 
 // Render any existing temp uploads (e.g., returning from review)
 document.addEventListener('DOMContentLoaded', renderStoredUploads);

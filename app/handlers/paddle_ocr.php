@@ -1,4 +1,29 @@
 <?php
+ini_set('display_errors', '0');
+ini_set('html_errors', '0');
+
+register_shutdown_function(static function () {
+    $error = error_get_last();
+    if (!$error) {
+        return;
+    }
+
+    $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
+    if (!in_array((int)$error['type'], $fatalTypes, true)) {
+        return;
+    }
+
+    if (!headers_sent()) {
+        header('Content-Type: application/json');
+        http_response_code(500);
+    }
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'OCR handler fatal error: ' . (string)($error['message'] ?? 'Unknown error'),
+    ]);
+});
+
 header('Content-Type: application/json');
 require_once '../config/db.php';
 session_start();
@@ -10,6 +35,14 @@ function po_response($success, $message = '', $extra = []) {
     ], $extra));
     exit;
 }
+
+set_error_handler(static function ($severity, $message) {
+    if (!(error_reporting() & $severity)) {
+        return false;
+    }
+
+    po_response(false, 'OCR handler error: ' . (string)$message);
+});
 
 function po_get_ocr_url() {
     $value = trim((string)(getenv('PYTHON_OCR_URL') ?: ''));
@@ -64,56 +97,271 @@ function po_normalize_date($value) {
 }
 
 function po_pick_id_number($lines, $idType) {
-    $joined = strtoupper(implode("\n", $lines));
     $type = strtolower((string)$idType);
-    $patterns = [];
+    $cleanLines = array_values(array_filter(array_map(static function ($line) {
+        return trim((string)$line);
+    }, (array)$lines), static function ($line) {
+        return $line !== '';
+    }));
 
+    $labelPattern = '/\b(license\s*no\.?|id\s*no\.?|id\s*number|passport\s*no\.?|sss\s*no\.?|tin\s*no\.?|prc\s*no\.?|gsis\s*no\.?|philhealth\s*no\.?|pag-?ibig\s*(mid|no\.?)?|voter\'?s?\s*(id|no\.?)?)\b/i';
+    $blacklistPattern = '/^(license|number|no|id|agency|code|expiration|date|signature|sex|gender|address)$/i';
+    $candidatePattern = '/\b[A-Z0-9][A-Z0-9\-\/]{5,24}\b/i';
+
+    $typePatterns = [];
     if (str_contains($type, 'passport')) {
-        $patterns[] = '/\b[A-Z0-9]{8,10}\b/';
+        $typePatterns[] = '/\b[A-Z0-9]{8,10}\b/i';
     } elseif (str_contains($type, 'driver')) {
-        $patterns[] = '/\b[A-Z]{1,3}-?\d{2,3}-?\d{4,7}\b/';
+        $typePatterns[] = '/\b[A-Z]\d{2}-\d{2}-\d{6}\b/i';
+        $typePatterns[] = '/\b[A-Z]{1,3}-?\d{2,3}-?\d{4,7}\b/i';
     } elseif (str_contains($type, 'umid') || str_contains($type, 'philsys')) {
-        $patterns[] = '/\b\d{4}-?\d{4}-?\d{4}-?\d{4}\b/';
+        $typePatterns[] = '/\b\d{4}-?\d{4}-?\d{4}-?\d{4}\b/';
     } elseif (str_contains($type, 'sss') || str_contains($type, 'gsis')) {
-        $patterns[] = '/\b\d{2}-?\d{7}-?\d\b/';
+        $typePatterns[] = '/\b\d{2}-?\d{7}-?\d\b/';
     } elseif (str_contains($type, 'prc')) {
-        $patterns[] = '/\b\d{7}\b/';
+        $typePatterns[] = '/\b\d{7}\b/';
     } elseif (str_contains($type, 'tin')) {
-        $patterns[] = '/\b\d{3}-?\d{3}-?\d{3}(?:-?\d{3})?\b/';
-    } else {
-        $patterns[] = '/\b[A-Z0-9][A-Z0-9\-\/]{5,24}\b/';
+        $typePatterns[] = '/\b\d{3}-?\d{3}-?\d{3}(?:-?\d{3})?\b/';
+    } elseif (str_contains($type, 'philhealth')) {
+        $typePatterns[] = '/\b\d{2}-?\d{9}-?\d\b/';
+    } elseif (str_contains($type, 'pagibig')) {
+        $typePatterns[] = '/\b\d{4}-?\d{4}-?\d{4}\b/';
+    } elseif (str_contains($type, 'postal')) {
+        $typePatterns[] = '/\b[A-Z]{1,3}-?\d{6,12}\b/i';
+        $typePatterns[] = '/\b\d{4}-?\d{4}-?\d{4}\b/';
+    } elseif (str_contains($type, 'voter')) {
+        $typePatterns[] = '/\b[A-Z0-9]{8,20}\b/i';
+    } elseif (str_contains($type, 'senior') || str_contains($type, 'ofw')) {
+        $typePatterns[] = '/\b[A-Z]{1,4}-?\d{4,14}\b/i';
+        $typePatterns[] = '/\b\d{6,16}\b/';
     }
+    $typePatterns[] = $candidatePattern;
 
-    foreach ($patterns as $pattern) {
-        if (preg_match($pattern, $joined, $match)) {
-            return trim($match[0]);
+    $normalizePhilsysNumber = static function ($value) {
+        $digits = preg_replace('/\D+/', '', (string)$value);
+        if (strlen($digits) === 16) {
+            return substr($digits, 0, 4) . '-' . substr($digits, 4, 4) . '-' . substr($digits, 8, 4) . '-' . substr($digits, 12, 4);
+        }
+        return trim((string)$value);
+    };
+
+    if (str_contains($type, 'philsys')) {
+        $philsysPattern = '/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/';
+        $philsysLabel = '/\b(philsys\s*(card\s*)?number|philsys\s*no\.?|pcn|psn|national\s*id\s*no\.?)\b/i';
+
+        foreach ($cleanLines as $index => $line) {
+            if (!preg_match($philsysLabel, $line)) {
+                continue;
+            }
+
+            for ($offset = 0; $offset <= 6; $offset++) {
+                $targetLine = (string)($cleanLines[$index + $offset] ?? '');
+                if ($targetLine === '') {
+                    continue;
+                }
+
+                if ($offset === 0) {
+                    $targetLine = preg_replace($philsysLabel, ' ', $targetLine);
+                }
+
+                if (preg_match($philsysPattern, $targetLine, $match)) {
+                    return $normalizePhilsysNumber($match[0]);
+                }
+            }
         }
     }
 
-    foreach ($lines as $line) {
-        if (preg_match('/\b(id|number|no\.?|licen[cs]e|passport)\b/i', $line)) {
-            if (preg_match('/\b[A-Z0-9][A-Z0-9\-\/]{5,24}\b/i', $line, $match)) {
-                return trim($match[0]);
+    if (str_contains($type, 'driver')) {
+        $driverPatterns = [
+            '/\b[A-Z]\d{2}-\d{2}-\d{6}\b/i',
+            '/\b[A-Z]{1,3}-?\d{2,3}-?\d{4,7}\b/i',
+        ];
+
+        foreach ($cleanLines as $index => $line) {
+            if (!preg_match('/\blicense\s*no\.?\b/i', $line)) {
+                continue;
             }
+
+            for ($offset = 0; $offset <= 6; $offset++) {
+                $targetLine = $cleanLines[$index + $offset] ?? '';
+                if ($targetLine === '') {
+                    continue;
+                }
+
+                if ($offset === 0) {
+                    $targetLine = preg_replace('/\blicense\s*no\.?\b/i', ' ', $targetLine);
+                }
+
+                foreach ($driverPatterns as $pattern) {
+                    if (preg_match($pattern, $targetLine, $match)) {
+                        $value = trim((string)($match[0] ?? ''));
+                        if ($value !== '' && !preg_match($blacklistPattern, $value)) {
+                            return $value;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    $extractCandidate = static function ($line) use ($typePatterns, $blacklistPattern, $type, $normalizePhilsysNumber) {
+        $line = trim((string)$line);
+        if ($line === '') return '';
+
+        foreach ($typePatterns as $pattern) {
+            if (preg_match($pattern, $line, $match)) {
+                $value = trim((string)$match[0]);
+                if ($value !== '' && !preg_match($blacklistPattern, $value)) {
+                    if (str_contains($type, 'philsys')) {
+                        return $normalizePhilsysNumber($value);
+                    }
+                    return $value;
+                }
+            }
+        }
+
+        return '';
+    };
+
+    foreach ($cleanLines as $index => $line) {
+        if (!preg_match($labelPattern, $line)) {
+            continue;
+        }
+
+        $sameLine = preg_replace($labelPattern, ' ', $line);
+        $candidate = $extractCandidate($sameLine);
+        if ($candidate !== '') {
+            return $candidate;
+        }
+
+        for ($offset = 1; $offset <= 2; $offset++) {
+            $nextIndex = $index + $offset;
+            if (!isset($cleanLines[$nextIndex])) {
+                break;
+            }
+
+            $candidate = $extractCandidate($cleanLines[$nextIndex]);
+            if ($candidate !== '') {
+                return $candidate;
+            }
+        }
+    }
+
+    foreach ($cleanLines as $line) {
+        $candidate = $extractCandidate($line);
+        if ($candidate !== '') {
+            return $candidate;
         }
     }
 
     return '';
 }
 
-function po_pick_name($lines) {
-    foreach ($lines as $line) {
-        $normalized = trim((string)$line);
-        if ($normalized === '') continue;
-        if (preg_match('/\b(id|number|birth|date|sex|gender|address|nationality|signature|issue|valid)\b/i', $normalized)) continue;
-        if (preg_match('/\d/', $normalized)) continue;
+function po_pick_name($lines, $idType = '') {
+    $type = strtolower((string)$idType);
+    $cleanLines = array_values(array_filter(array_map(static function ($line) {
+        return trim((string)$line);
+    }, (array)$lines), static function ($line) {
+        return $line !== '';
+    }));
 
-        $lettersOnly = preg_replace('/[^A-Za-z\s,.-]/', '', $normalized);
-        $lettersOnly = preg_replace('/\s+/', ' ', $lettersOnly);
-        $lettersOnly = trim($lettersOnly);
+    $isNoiseLine = static function ($line) {
+        if (preg_match('/\b(republic|department|transportation|land transportation office|driver\'s?\s*license|national id|philsys|pambansang|signature|assistant secretary|agency code|expiration|blood type|eyes color|conditions|dl codes)\b/i', $line)) {
+            return true;
+        }
+        if (preg_match('/\b(id|number|birth|date|sex|gender|address|nationality|issue|valid|license no)\b/i', $line)) {
+            return true;
+        }
+        return false;
+    };
 
-        if (strlen($lettersOnly) >= 5) {
-            return $lettersOnly;
+    $normalizeName = static function ($value) {
+        $value = preg_replace('/[^A-Za-z\s,.-]/', ' ', (string)$value);
+        $value = preg_replace('/\s+/', ' ', (string)$value);
+        return trim((string)$value, " ,.-");
+    };
+
+    $extractAfterLabel = static function ($source, $labelPattern) use ($normalizeName, $isNoiseLine) {
+        foreach ($source as $index => $line) {
+            if (!preg_match($labelPattern, $line)) {
+                continue;
+            }
+
+            $sameLine = preg_replace($labelPattern, ' ', (string)$line);
+            $sameLine = preg_replace('/[:\-]+/', ' ', (string)$sameLine);
+            $candidate = $normalizeName($sameLine);
+            if ($candidate !== '' && !$isNoiseLine($candidate) && !preg_match('/\d/', $candidate)) {
+                return $candidate;
+            }
+
+            for ($offset = 1; $offset <= 2; $offset++) {
+                $nextLine = (string)($source[$index + $offset] ?? '');
+                if ($nextLine === '') {
+                    continue;
+                }
+                $candidate = $normalizeName($nextLine);
+                if ($candidate !== '' && !$isNoiseLine($candidate) && !preg_match('/\d/', $candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return '';
+    };
+
+    if (str_contains($type, 'philsys')) {
+        $surname = $extractAfterLabel($cleanLines, '/\b(surname|last\s*name)\b/i');
+        $given = $extractAfterLabel($cleanLines, '/\b(given\s*name|first\s*name)\b/i');
+        $middle = $extractAfterLabel($cleanLines, '/\b(middle\s*name)\b/i');
+
+        if ($surname !== '' || $given !== '') {
+            $full = '';
+            if ($surname !== '') {
+                $full = $surname;
+            }
+            if ($given !== '') {
+                $full = $full !== '' ? ($full . ', ' . $given) : $given;
+            }
+            if ($middle !== '') {
+                $full = trim($full . ' ' . $middle);
+            }
+
+            if ($full !== '') {
+                return preg_replace('/\s+/', ' ', $full);
+            }
+        }
+    }
+
+    foreach ($cleanLines as $index => $line) {
+        if (preg_match('/\b(last\s*name|first\s*name|middle\s*name|name)\b/i', $line)) {
+            if (preg_match('/\bname\b\s*[:\-]\s*([A-Za-z][A-Za-z\s,.-]{4,})/i', $line, $match)) {
+                $candidate = $normalizeName($match[1]);
+                if ($candidate !== '' && !$isNoiseLine($candidate)) {
+                    return $candidate;
+                }
+            }
+
+            for ($offset = 1; $offset <= 2; $offset++) {
+                $nextIndex = $index + $offset;
+                if (!isset($cleanLines[$nextIndex])) break;
+                $candidate = $normalizeName($cleanLines[$nextIndex]);
+                if ($candidate === '' || $isNoiseLine($candidate) || preg_match('/\d/', $candidate)) {
+                    continue;
+                }
+                if (str_word_count(str_replace(',', ' ', $candidate)) >= 2) {
+                    return $candidate;
+                }
+            }
+        }
+    }
+
+    foreach ($cleanLines as $line) {
+        $candidate = $normalizeName($line);
+        if ($candidate === '' || $isNoiseLine($candidate) || preg_match('/\d/', $candidate)) {
+            continue;
+        }
+        if (str_contains($candidate, ',') || str_word_count(str_replace(',', ' ', $candidate)) >= 3) {
+            return $candidate;
         }
     }
 
@@ -121,22 +369,154 @@ function po_pick_name($lines) {
 }
 
 function po_pick_birthdate($lines) {
-    foreach ($lines as $line) {
-        if (preg_match('/\b(\d{4}[-\/]\d{2}[-\/]\d{2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\b/', $line, $match)) {
+    $cleanLines = array_values(array_filter(array_map(static function ($line) {
+        return trim((string)$line);
+    }, (array)$lines), static function ($line) {
+        return $line !== '';
+    }));
+
+    $datePattern = '/\b(\d{4}[-\/]\d{2}[-\/]\d{2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\b/';
+
+    foreach ($cleanLines as $index => $line) {
+        if (!preg_match('/\b(date\s*of\s*birth|birth\s*date|birth|dob)\b/i', $line)) {
+            continue;
+        }
+
+        if (preg_match($datePattern, $line, $match)) {
+            $normalized = po_normalize_date($match[1]);
+            if ($normalized !== '') return $normalized;
+        }
+
+        $next = $cleanLines[$index + 1] ?? '';
+        if ($next !== '' && preg_match($datePattern, $next, $match)) {
+            $normalized = po_normalize_date($match[1]);
+            if ($normalized !== '') return $normalized;
+        }
+    }
+
+    $fallback = [];
+    foreach ($cleanLines as $line) {
+        if (preg_match($datePattern, $line, $match)) {
             $normalized = po_normalize_date($match[1]);
             if ($normalized !== '') {
-                return $normalized;
+                $ts = strtotime($normalized);
+                if ($ts !== false) {
+                    $fallback[] = ['value' => $normalized, 'time' => $ts];
+                }
             }
         }
+    }
+
+    if (!$fallback) return '';
+
+    usort($fallback, static function ($a, $b) {
+        return $a['time'] <=> $b['time'];
+    });
+
+    $now = time();
+    foreach ($fallback as $item) {
+        $years = (int)floor(($now - $item['time']) / (365.25 * 86400));
+        if ($years >= 10 && $years <= 120) {
+            return $item['value'];
+        }
+    }
+
+    return $fallback[0]['value'] ?? '';
+}
+
+function po_pick_gender($lines, $idType = '') {
+    $type = strtolower((string)$idType);
+    $cleanLines = array_values(array_filter(array_map(static function ($line) {
+        return trim((string)$line);
+    }, (array)$lines), static function ($line) {
+        return $line !== '';
+    }));
+
+    if (str_contains($type, 'driver') || str_contains($type, 'philsys')) {
+        foreach ($cleanLines as $index => $line) {
+            if (!preg_match('/\bsex(?:\s+at\s+birth)?\b/i', $line)) {
+                continue;
+            }
+
+            for ($offset = 0; $offset <= 6; $offset++) {
+                $targetLine = strtoupper((string)($cleanLines[$index + $offset] ?? ''));
+                if ($targetLine === '') {
+                    continue;
+                }
+
+                if ($offset === 0) {
+                    $targetLine = preg_replace('/\bSEX(?:\s+AT\s+BIRTH)?\b/i', ' ', $targetLine);
+                }
+
+                if (preg_match('/\bFEMALE\b/', $targetLine) || preg_match('/^\s*F\s*$/', $targetLine)) return 'female';
+                if (preg_match('/\bMALE\b/', $targetLine) || preg_match('/^\s*M\s*$/', $targetLine)) return 'male';
+            }
+        }
+    }
+
+    $joined = strtolower(implode("\n", $lines));
+    if (preg_match('/\bfemale\b/', $joined)) return 'female';
+    if (preg_match('/\bmale\b/', $joined)) return 'male';
+
+    foreach ($cleanLines as $index => $line) {
+        if (!preg_match('/\b(sex|gender)\b/i', (string)$line)) {
+            continue;
+        }
+
+        $same = strtoupper((string)$line);
+        if (preg_match('/\bF\b/', $same)) return 'female';
+        if (preg_match('/\bM\b/', $same)) return 'male';
+
+        $next = isset($lines[$index + 1]) ? strtoupper((string)$lines[$index + 1]) : '';
+        if (preg_match('/\bF\b/', $next)) return 'female';
+        if (preg_match('/\bM\b/', $next)) return 'male';
     }
 
     return '';
 }
 
-function po_pick_gender($lines) {
-    $joined = strtolower(implode("\n", $lines));
-    if (preg_match('/\bmale\b/', $joined)) return 'male';
-    if (preg_match('/\bfemale\b/', $joined)) return 'female';
+function po_pick_nationality($lines) {
+    $joined = strtolower(implode("\n", (array)$lines));
+    if (preg_match('/\b(filipino|philippine|philippines)\b/', $joined)) return 'Philippine';
+    if (preg_match('/\bphl\b/', $joined)) return 'Philippine';
+    return '';
+}
+
+function po_pick_address($lines) {
+    $cleanLines = array_values(array_filter(array_map(static function ($line) {
+        return trim((string)$line);
+    }, (array)$lines), static function ($line) {
+        return $line !== '';
+    }));
+
+    $stopPattern = '/\b(license\s*no\.?|id\s*no\.?|id\s*number|expiration|agency\s*code|signature|blood\s*type|eyes\s*color|dl\s*codes|conditions|date\s*of\s*birth)\b/i';
+
+    foreach ($cleanLines as $index => $line) {
+        if (!preg_match('/\b(address|residence|home\s*address|present\s*address|permanent\s*address)\b/i', $line)) {
+            continue;
+        }
+
+        $value = preg_replace('/^.*?(address|residence|home\s*address|present\s*address|permanent\s*address)\s*[:\-]?\s*/i', '', $line);
+        $parts = [];
+        if (trim((string)$value) !== '') {
+            $parts[] = trim((string)$value, " ,");
+        }
+
+        for ($offset = 1; $offset <= 3; $offset++) {
+            $nextIndex = $index + $offset;
+            if (!isset($cleanLines[$nextIndex])) break;
+            $nextLine = trim((string)$cleanLines[$nextIndex]);
+            if ($nextLine === '') continue;
+            if (preg_match($stopPattern, $nextLine)) break;
+            $parts[] = trim($nextLine, " ,");
+        }
+
+        $address = trim(implode(', ', array_filter($parts)), " ,");
+        if ($address !== '') {
+            return $address;
+        }
+    }
+
     return '';
 }
 
@@ -286,11 +666,11 @@ if (count($confidenceItems) > 0) {
 
 $parsed = [
     'idNumber' => po_pick_id_number($textLines, $idType),
-    'fullName' => po_pick_name($textLines),
+    'fullName' => po_pick_name($textLines, $idType),
     'birthdate' => po_pick_birthdate($textLines),
-    'gender' => po_pick_gender($textLines),
-    'nationality' => '',
-    'address' => '',
+    'gender' => po_pick_gender($textLines, $idType),
+    'nationality' => po_pick_nationality($textLines),
+    'address' => po_pick_address($textLines),
 ];
 
 po_response(true, 'OCR completed', [

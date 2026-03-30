@@ -1,3 +1,9 @@
+import os
+
+# Prevent Paddle CPU OneDNN fused-conv crashes seen in this environment.
+os.environ.setdefault("FLAGS_use_mkldnn", "0")
+os.environ.setdefault("ONEDNN_VERBOSE", "0")
+
 from flask import Flask, request, jsonify
 import numpy as np
 import cv2
@@ -28,7 +34,14 @@ def preprocess_image(file_bytes: bytes) -> np.ndarray:
 
 
 def run_paddle_ocr(processed: np.ndarray):
-    result = ocr_engine.ocr(processed, cls=True)
+    result = None
+    try:
+        result = ocr_engine.ocr(processed, cls=True)
+    except Exception:
+        # Fallback: skip detection and run recognition on the full image.
+        # This avoids some CPU OneDNN/fused-conv crashes in specific builds.
+        result = ocr_engine.ocr(processed, det=False, rec=True, cls=False)
+
     texts = []
     confidences = []
 
