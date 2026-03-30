@@ -79,7 +79,7 @@ include '../includes/sidebar.php';
                         <tr>
                             <th class="col-checkbox"><input type="checkbox" id="selectAll"></th>
                             <th class="col-ref">Ref Code</th>
-                            <th class="col-name">Business / Client Name</th>
+                            <th class="col-name">Business/Client Name</th>
                             <th class="col-owner">Company Owner</th>
                             <th class="col-type">Type</th>
                             <th class="col-contact">Contact</th>
@@ -115,7 +115,7 @@ include '../includes/sidebar.php';
     <div class="modal-content">
         <div class="modal-header">
             <h2>Edit Client Information</h2>
-            <button class="modal-close" title="Close"><i class="bi bi-x"></i></button>
+            <button id="editModalCloseBtn" type="button" class="modal-close" title="Close"><i class="bi bi-x"></i></button>
         </div>
         <div class="modal-body">
             <form id="editForm">
@@ -690,6 +690,7 @@ include '../includes/sidebar.php';
     const editModal = document.getElementById('editModal');
     const viewModal = document.getElementById('viewModal');
     const cancelBtn = document.getElementById('cancelBtn');
+    const editModalCloseBtn = document.getElementById('editModalCloseBtn');
 
     // View Client Function
     function viewClient(data) {
@@ -716,7 +717,10 @@ include '../includes/sidebar.php';
             document.getElementById('viewRefCode').value = client.reference_code || '';
             document.getElementById('viewClientNumber').value = client.client_number || '';
             document.getElementById('viewClientType').value = client.client_type || 'individual';
-            document.getElementById('viewVerificationStatus').value = client.verification_status || 'pending';
+            const viewVerificationStatusEl = document.getElementById('viewVerificationStatus');
+            if (viewVerificationStatusEl) {
+                viewVerificationStatusEl.value = client.verification_status || 'pending';
+            }
             document.getElementById('viewFirstName').value = client.first_name || fallbackName;
             document.getElementById('viewMiddleName').value = client.middle_name || '';
             document.getElementById('viewLastName').value = client.last_name || '';
@@ -918,9 +922,17 @@ include '../includes/sidebar.php';
         setTimeout(() => el.remove(), 250);
     }
 
-    cancelBtn.addEventListener('click', function() {
-        editModal.style.display = 'none';
-    });
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            editModal.style.display = 'none';
+        });
+    }
+
+    if (editModalCloseBtn) {
+        editModalCloseBtn.addEventListener('click', function() {
+            editModal.style.display = 'none';
+        });
+    }
 
     document.getElementById('saveBtn').addEventListener('click', saveClientChanges);
 

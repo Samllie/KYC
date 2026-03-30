@@ -2881,6 +2881,19 @@ async function deleteTempUpload(tempPath) {
     }
 }
 
+function buildUploadOpenUrl(file) {
+    const rawPath = String(file?.file_path || file?.temp_path || '').trim();
+    if (!rawPath) return '';
+
+    const normalized = rawPath
+        .replace(/^\.{1,2}[\\/]+/, '')
+        .replace(/^[\\/]+/, '')
+        .replace(/\\/g, '/');
+
+    if (!normalized) return '';
+    return normalized.startsWith('uploads/') ? `../../${normalized}` : `../../uploads/${normalized}`;
+}
+
 function renderStoredUploads() {
     const stored = getStoredUploads();
     list.innerHTML = '';
@@ -2892,7 +2905,7 @@ function renderStoredUploads() {
 
         const name = f.original_name || f.file_name || 'file';
         const size = Number(f.file_size || 0);
-        const openUrl = f.file_path ? `../../${f.file_path}` : '';
+        const openUrl = buildUploadOpenUrl(f);
         const openBtnHtml = openUrl
             ? `<a href="${openUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" style="padding:4px 10px; margin-left:auto;">Open</a>`
             : '';
@@ -2904,7 +2917,7 @@ function renderStoredUploads() {
             <i class="bi bi-trash file-remove" title="Remove"></i>
         `;
 
-        item.querySelector('.file-remove')?.addEventListener('click', async () => {
+                const openUrl = buildUploadOpenUrl(file);
             const current = getStoredUploads();
             const removed = current.splice(idx, 1)[0];
             setStoredUploads(current);
