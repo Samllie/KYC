@@ -238,7 +238,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $userProvidedRefCode = trim($_POST['refCode'] ?? '');
     $clientType = trim($_POST['clientType'] ?? '');
 
-    $isCorporate = ($clientType === 'corporate');
+    $isCorporate = in_array($clientType, ['corporate', 'obligee'], true);
 
     // Keep kyc_verifications values in a unified shape so get_kyc/load draft works for both client types.
     $formData = [
@@ -284,7 +284,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($isCorporate) {
         $clientUpdateData = [
-            'client_type' => 'corporate',
+            'client_type' => $formData['client_type'],
             'company_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
             'business_type' => trim($_POST['businessType'] ?? '') ?: null,
             'client_since' => trim($_POST['corporateClientSince'] ?? '') ?: null,

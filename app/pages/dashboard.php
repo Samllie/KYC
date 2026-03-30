@@ -19,7 +19,7 @@ FROM kyc_verifications") ?? [];
 
 $clientTypeSplit = fetchOne("SELECT
     SUM(client_type = 'individual') AS individual_count,
-    SUM(client_type = 'corporate') AS corporate_count
+    SUM(client_type IN ('corporate', 'obligee')) AS corporate_count
 FROM clients") ?? [];
 
 $recentActivity = fetchAll("SELECT
@@ -170,7 +170,7 @@ include '../includes/sidebar.php';
             <div class="stat-card">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($corporateCount)); ?></div>
-                    <div class="stat-label">Corporate Clients</div>
+                    <div class="stat-label">Corporate / Obligee</div>
                     <div class="stat-change up"><i class="bi bi-building"></i> <?php echo e($corporatePct); ?>% of total clients</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-building-fill"></i></div>
@@ -189,6 +189,7 @@ include '../includes/sidebar.php';
                     <div class="action-buttons">
                         <a class="action-btn" href="kyc-individual.php"><i class="bi bi-person-plus"></i><span>New Individual</span></a>
                         <a class="action-btn" href="kyc-corporate.php"><i class="bi bi-building-add"></i><span>New Corporate</span></a>
+                        <a class="action-btn" href="kyc-corporate.php?clientType=obligee"><i class="bi bi-shield-check"></i><span>New Obligee</span></a>
                         <a class="action-btn" href="kyc-verification.php"><i class="bi bi-file-earmark-check"></i><span>Continue Draft</span></a>
                         <a class="action-btn" href="clients.php"><i class="bi bi-inboxes"></i><span>View Clients</span></a>
                     </div>
@@ -224,7 +225,7 @@ include '../includes/sidebar.php';
                 <div class="card-header">
                     <div>
                         <h3 class="card-title">Client Mix</h3>
-                        <div class="card-subtitle">Individual vs corporate split</div>
+                        <div class="card-subtitle">Individual vs corporate/obligee split</div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -235,7 +236,7 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="split-legend">
                             <div><i class="bi bi-circle-fill"></i> Individual: <?php echo e($individualCount); ?> (<?php echo e($individualPct); ?>%)</div>
-                            <div><i class="bi bi-circle-fill"></i> Corporate: <?php echo e($corporateCount); ?> (<?php echo e($corporatePct); ?>%)</div>
+                            <div><i class="bi bi-circle-fill"></i> Corporate/Obligee: <?php echo e($corporateCount); ?> (<?php echo e($corporatePct); ?>%)</div>
                         </div>
                     </div>
                 </div>

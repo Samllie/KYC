@@ -1,6 +1,15 @@
 <?php
 require_once '../config/session.php';
 requireLogin();
+
+$allowedClientTypes = ['corporate', 'obligee'];
+$selectedClientType = strtolower(trim($_GET['clientType'] ?? 'corporate'));
+if (!in_array($selectedClientType, $allowedClientTypes, true)) {
+    $selectedClientType = 'corporate';
+}
+
+$selectedClientTypeLabel = $selectedClientType === 'obligee' ? 'Obligee' : 'Corporate';
+$selectedClientHeading = $selectedClientTypeLabel . ' Client';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -101,7 +110,7 @@ include '../includes/sidebar.php';
     <!-- Topbar -->
     <header class="topbar">
         <div class="topbar-left">
-            <h1>KYC Verification — Corporate Client Review</h1>
+            <h1>KYC Verification — <?php echo htmlspecialchars($selectedClientHeading, ENT_QUOTES, 'UTF-8'); ?> Review</h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
                 Dashboard &rsaquo; Clients &rsaquo; <span>Review Information</span>
@@ -208,6 +217,8 @@ function removeToast(el) {
 // ── Display Review Information ─────────────────────────
 function displayReview() {
     const formData = JSON.parse(sessionStorage.getItem('kycFormData') || '{}');
+    const selectedClientType = (formData.clientType || '<?php echo htmlspecialchars($selectedClientType, ENT_QUOTES, 'UTF-8'); ?>').toLowerCase();
+    const selectedClientLabel = selectedClientType === 'obligee' ? 'Obligee' : 'Corporate';
     
     if (Object.keys(formData).length === 0) {
         document.getElementById('reviewBody').innerHTML = '<div class="review-empty">No data found. Please fill the form first.</div>';
@@ -218,7 +229,7 @@ function displayReview() {
         {
             title: 'Client Type',
             fields: [
-                { label: 'Client Type', key: 'clientType', format: 'corporate' }
+                { label: 'Client Type', key: 'clientType', value: `${selectedClientLabel} Client` }
             ]
         },
         {
@@ -277,7 +288,7 @@ function displayReview() {
         `;
         
         section.fields.forEach(field => {
-            const value = formData[field.key] || '';
+            const value = field.value || formData[field.key] || '';
             if (value) {
                 html += `
                     <div>
@@ -295,7 +306,9 @@ function displayReview() {
 }
 
 function goBackToEdit() {
-    window.location.href = 'kyc-corporate.php';
+    const formData = JSON.parse(sessionStorage.getItem('kycFormData') || '{}');
+    const selectedClientType = formData.clientType || '<?php echo htmlspecialchars($selectedClientType, ENT_QUOTES, 'UTF-8'); ?>';
+    window.location.href = `kyc-corporate.php?clientType=${encodeURIComponent(selectedClientType)}`;
 }
 
 function submitForm() {

@@ -1,6 +1,15 @@
 <?php
 require_once '../config/session.php';
 requireLogin();
+
+$allowedClientTypes = ['corporate', 'obligee'];
+$selectedClientType = strtolower(trim($_GET['clientType'] ?? 'corporate'));
+if (!in_array($selectedClientType, $allowedClientTypes, true)) {
+    $selectedClientType = 'corporate';
+}
+
+$selectedClientTypeLabel = $selectedClientType === 'obligee' ? 'Obligee' : 'Corporate';
+$selectedClientHeading = $selectedClientTypeLabel . ' Client';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -519,10 +528,10 @@ include '../includes/sidebar.php';
     <!-- Topbar -->
     <header class="topbar">
         <div class="topbar-left">
-            <h1>KYC Verification — Corporate Client</h1>
+            <h1>KYC Verification — <?php echo htmlspecialchars($selectedClientHeading, ENT_QUOTES, 'UTF-8'); ?></h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
-                Dashboard &rsaquo; Clients &rsaquo; <span>New Corporate Client</span>
+                Dashboard &rsaquo; Clients &rsaquo; <span>New <?php echo htmlspecialchars($selectedClientHeading, ENT_QUOTES, 'UTF-8'); ?></span>
             </div>
         </div>
         <div class="topbar-right">
@@ -579,14 +588,14 @@ include '../includes/sidebar.php';
                     <span class="client-type-inline-label">Client Type</span>
                     <div class="client-type-display corporate">
                         <i class="bi bi-building"></i>
-                        <span>Corporate Client</span>
+                        <span><?php echo htmlspecialchars($selectedClientHeading, ENT_QUOTES, 'UTF-8'); ?></span>
                     </div>
                 </div>
                 <a href="kyc-verification.php" class="back-to-type-btn">
                     <i class="bi bi-arrow-left"></i>
                     Change Type
                 </a>
-                <input type="hidden" name="clientType" value="corporate">
+                <input type="hidden" name="clientType" value="<?php echo htmlspecialchars($selectedClientType, ENT_QUOTES, 'UTF-8'); ?>">
             </div>
 
             <!-- ID OCR Upload Card -->
@@ -1520,6 +1529,8 @@ async function refreshDrafts() {
 
     if (!draftSelect) return;
 
+    const selectedClientType = document.querySelector('input[name="clientType"]')?.value || 'corporate';
+
     setButtonBusy(refreshDraftBtn, true, 'Refreshing...');
 
     draftSelect.innerHTML = `<option value="">Loading...</option>`;
@@ -1529,7 +1540,8 @@ async function refreshDrafts() {
     if (draftInfoEl) draftInfoEl.textContent = '';
 
     try {
-        const resp = await fetch(`../handlers/kyc.php?action=get_drafts&draftType=corporate`, {
+        const draftType = encodeURIComponent(selectedClientType);
+        const resp = await fetch(`../handlers/kyc.php?action=get_drafts&draftType=${draftType}`, {
             method: 'GET',
             credentials: 'include'
         });
@@ -1788,7 +1800,8 @@ function proceedToReview() {
     sessionStorage.setItem('corporateAddressData', JSON.stringify(addressData));
     
     // Navigate to review page
-    window.location.href = 'kyc-corporate-review.php';
+    const selectedClientType = document.querySelector('input[name="clientType"]')?.value || 'corporate';
+    window.location.href = `kyc-corporate-review.php?clientType=${encodeURIComponent(selectedClientType)}`;
 }
 
 function submitForm() {

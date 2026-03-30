@@ -64,6 +64,7 @@ include '../includes/sidebar.php';
                         <option value="">All Types</option>
                         <option value="individual">Individual</option>
                         <option value="corporate">Corporate</option>
+                        <option value="obligee">Obligee</option>
                     </select>
                 </div>
             </div>
@@ -137,6 +138,7 @@ include '../includes/sidebar.php';
                         <select id="editClientType" class="form-select">
                             <option value="individual">Individual</option>
                             <option value="corporate">Corporate</option>
+                            <option value="obligee">Obligee</option>
                         </select>
                     </div>
                 </div>
@@ -386,15 +388,16 @@ include '../includes/sidebar.php';
         tbody.innerHTML = '';
 
         clients.forEach(client => {
+            const isCorporateLike = client.client_type === 'corporate' || client.client_type === 'obligee';
             const typeClass = client.client_type === 'individual' ? 'individual' : 'corporate';
             const typeText = client.client_type.charAt(0).toUpperCase() + client.client_type.slice(1);
             const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
-            const ownerName = client.client_type === 'corporate'
+            const ownerName = isCorporateLike
                 ? (client.contact_person || 'N/A')
                 : 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
             const clientNumber = client.client_number || 'N/A';
-            const contactNumber = client.client_type === 'corporate'
+            const contactNumber = isCorporateLike
                 ? (client.office_phone || 'N/A')
                 : (client.mobile_phone || 'N/A');
 
@@ -841,11 +844,12 @@ include '../includes/sidebar.php';
 
     function mapClientToExportRow(client) {
         const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
-        const ownerName = client.client_type === 'corporate'
+        const isCorporateLike = client.client_type === 'corporate' || client.client_type === 'obligee';
+        const ownerName = isCorporateLike
             ? (client.contact_person || 'N/A')
             : 'N/A';
         const typeText = (client.client_type || '').charAt(0).toUpperCase() + (client.client_type || '').slice(1);
-        const contactNumber = client.client_type === 'corporate'
+        const contactNumber = isCorporateLike
             ? (client.office_phone || 'N/A')
             : (client.mobile_phone || 'N/A');
 
