@@ -214,6 +214,15 @@ function removeToast(el) {
     setTimeout(() => el.remove(), 250);
 }
 
+function escapeHtml(value) {
+    return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
 // ── Display Review Information ─────────────────────────
 function displayReview() {
     const formData = JSON.parse(sessionStorage.getItem('kycFormData') || '{}');
@@ -276,8 +285,18 @@ function displayReview() {
                 { label: 'Gender', key: 'corporateGender' },
                 { label: 'Client Classification', key: 'clientClassification' }
             ]
+        },
+        {
+            title: 'Government ID',
+            fields: [
+                { label: 'Government ID Type', key: 'idType' },
+                { label: 'ID Number', key: 'idNumber' }
+            ]
         }
     ];
+
+    const governmentIdUploads = JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]');
+    const governmentIdProfile = JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}');
     
     let html = '';
     sections.forEach((section, idx) => {
@@ -301,6 +320,40 @@ function displayReview() {
         
         html += '</div></section>';
     });
+
+    if (governmentIdUploads.length) {
+        const uploadedNames = governmentIdUploads.map(file => escapeHtml(file.original_name || file.file_name || 'ID photo')).join(', ');
+        html += `
+            <section class="review-section" style="animation-delay:${Math.min(sections.length * 70, 350)}ms;">
+                <div class="review-title">Government ID Upload</div>
+                <div class="review-grid">
+                    <div>
+                        <div class="review-label">Uploaded File</div>
+                        <div class="review-value">${uploadedNames}</div>
+                    </div>
+                </div>
+            </section>
+        `;
+    }
+
+    const profileParts = [];
+    if (governmentIdProfile.fullName) profileParts.push(`<div><strong>Name:</strong> ${escapeHtml(governmentIdProfile.fullName)}</div>`);
+    if (governmentIdProfile.idNumber) profileParts.push(`<div><strong>ID Number:</strong> ${escapeHtml(governmentIdProfile.idNumber)}</div>`);
+    if (governmentIdProfile.birthdate) profileParts.push(`<div><strong>Birthdate:</strong> ${escapeHtml(governmentIdProfile.birthdate)}</div>`);
+    if (governmentIdProfile.gender) profileParts.push(`<div><strong>Gender:</strong> ${escapeHtml(governmentIdProfile.gender)}</div>`);
+    if (governmentIdProfile.nationality) profileParts.push(`<div><strong>Nationality:</strong> ${escapeHtml(governmentIdProfile.nationality)}</div>`);
+    if (governmentIdProfile.address) profileParts.push(`<div><strong>Address:</strong> ${escapeHtml(governmentIdProfile.address)}</div>`);
+
+    if (profileParts.length) {
+        html += `
+            <section class="review-section" style="animation-delay:${Math.min((sections.length + 1) * 70, 420)}ms;">
+                <div class="review-title">OCR Extracted Profile</div>
+                <div class="review-grid">
+                    ${profileParts.join('')}
+                </div>
+            </section>
+        `;
+    }
     
     document.getElementById('reviewBody').innerHTML = html;
 }
@@ -330,6 +383,8 @@ function submitForm() {
     const formDataObj = new FormData();
     formDataObj.append('action', 'add_client');
     formDataObj.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
+    formDataObj.append('uploadedIdFiles', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]')));
+    formDataObj.append('governmentIdOcrData', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}')));
     
     Object.keys(formData).forEach(key => {
         formDataObj.append(key, formData[key]);
@@ -347,6 +402,8 @@ function submitForm() {
             // Clear sessionStorage
             sessionStorage.removeItem('kycFormData');
             sessionStorage.removeItem('kycUploadedFiles');
+            sessionStorage.removeItem('kycGovernmentIdFiles');
+            sessionStorage.removeItem('kycGovernmentIdOcrData');
             
             setTimeout(() => {
                 window.location.href = 'dashboard.php';

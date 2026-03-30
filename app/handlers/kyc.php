@@ -127,6 +127,8 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'client_type' => $formData['client_type'],
             'company_name' => $formData['corporate_client_name'],
             'business_type' => $formData['business_type'],
+            'id_type' => trim($_POST['idType'] ?? ''),
+            'id_number' => trim($_POST['idNumber'] ?? ''),
             'business_address' => $formData['corporate_business_address'],
             'office_phone' => $formData['corporate_phone'],
             'email' => $formData['corporate_email'],
@@ -224,6 +226,40 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
+    $uploadedIdFilesRaw = $_POST['uploadedIdFiles'] ?? '[]';
+    $uploadedIdFiles = [];
+    if (is_string($uploadedIdFilesRaw) && $uploadedIdFilesRaw !== '') {
+        $decoded = json_decode($uploadedIdFilesRaw, true);
+        if (is_array($decoded)) $uploadedIdFiles = $decoded;
+    }
+
+    if (!empty($uploadedIdFiles) && $clientId && $kycId) {
+        $finalize = kyc_finalize_temp_uploads($_SESSION['user_id'], $uploadedIdFiles, $clientId, $kycId);
+        if (($finalize['success'] ?? false) && !empty($finalize['files'])) {
+            foreach ($finalize['files'] as $doc) {
+                $filePath = $doc['file_path'] ?? null;
+                if ($filePath) {
+                    $already = fetchOne(
+                        "SELECT document_id FROM documents WHERE kyc_id = ? AND file_path = ? LIMIT 1",
+                        [$kycId, $filePath]
+                    );
+                    if ($already) continue;
+                }
+                insert('documents', [
+                    'kyc_id' => $kycId,
+                    'client_id' => $clientId,
+                    'file_name' => $doc['file_name'] ?? '',
+                    'file_type' => $doc['file_type'] ?? null,
+                    'file_size' => $doc['file_size'] ?? null,
+                    'file_path' => $doc['file_path'] ?? null,
+                    'document_type' => 'government_id',
+                    'uploaded_by' => $_SESSION['user_id'],
+                    'status' => 'pending'
+                ]);
+            }
+        }
+    }
     
     $response['success'] = true;
     $response['message'] = 'KYC verification submitted successfully';
@@ -251,8 +287,8 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'birthdate' => $isCorporate ? null : trim($_POST['birthdate'] ?? ''),
         'gender' => trim($_POST['gender'] ?? $_POST['corporateGender'] ?? ''),
         'nationality' => $isCorporate ? '' : trim($_POST['nationality'] ?? ''),
-        'id_type' => $isCorporate ? '' : trim($_POST['idType'] ?? ''),
-        'id_number' => $isCorporate ? '' : trim($_POST['idNumber'] ?? ''),
+        'id_type' => trim($_POST['idType'] ?? ''),
+        'id_number' => trim($_POST['idNumber'] ?? ''),
         'occupation' => $isCorporate
             ? trim($_POST['corporateContactPerson'] ?? '')
             : trim($_POST['occupation'] ?? ''),
@@ -287,6 +323,8 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'client_type' => $formData['client_type'],
             'company_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
             'business_type' => trim($_POST['businessType'] ?? '') ?: null,
+            'id_type' => trim($_POST['idType'] ?? '') ?: null,
+            'id_number' => trim($_POST['idNumber'] ?? '') ?: null,
             'client_since' => trim($_POST['corporateClientSince'] ?? '') ?: null,
             'tin_number' => trim($_POST['tinNumber'] ?? '') ?: null,
             'ap_sl_code' => trim($_POST['corporateApSlCode'] ?? '') ?: null,
@@ -413,6 +451,40 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
+    $uploadedIdFilesRaw = $_POST['uploadedIdFiles'] ?? '[]';
+    $uploadedIdFiles = [];
+    if (is_string($uploadedIdFilesRaw) && $uploadedIdFilesRaw !== '') {
+        $decoded = json_decode($uploadedIdFilesRaw, true);
+        if (is_array($decoded)) $uploadedIdFiles = $decoded;
+    }
+
+    if (!empty($uploadedIdFiles) && $clientId && $kycId) {
+        $finalize = kyc_finalize_temp_uploads($_SESSION['user_id'], $uploadedIdFiles, $clientId, $kycId);
+        if (($finalize['success'] ?? false) && !empty($finalize['files'])) {
+            foreach ($finalize['files'] as $doc) {
+                $filePath = $doc['file_path'] ?? null;
+                if ($filePath) {
+                    $already = fetchOne(
+                        "SELECT document_id FROM documents WHERE kyc_id = ? AND file_path = ? LIMIT 1",
+                        [$kycId, $filePath]
+                    );
+                    if ($already) continue;
+                }
+                insert('documents', [
+                    'kyc_id' => $kycId,
+                    'client_id' => $clientId,
+                    'file_name' => $doc['file_name'] ?? '',
+                    'file_type' => $doc['file_type'] ?? null,
+                    'file_size' => $doc['file_size'] ?? null,
+                    'file_path' => $doc['file_path'] ?? null,
+                    'document_type' => 'government_id',
+                    'uploaded_by' => $_SESSION['user_id'],
+                    'status' => 'pending'
+                ]);
+            }
+        }
+    }
     
     $response['success'] = true;
     $response['message'] = 'Draft saved successfully';
@@ -477,6 +549,7 @@ else if ($action === 'get_draft_documents' && $_SERVER['REQUEST_METHOD'] === 'GE
             d.file_type,
             d.file_size,
             d.file_path,
+            d.document_type,
             d.uploaded_at,
             d.status
         FROM documents d

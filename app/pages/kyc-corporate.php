@@ -20,6 +20,7 @@ $selectedClientHeading = $selectedClientTypeLabel . ' Client';
     <link rel='icon' type='image/png' href='../css/images/SterlingLogo.png'>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="../../public/css/index.css">
     <link rel="stylesheet" href="../../public/css/global.css">
     <style>
@@ -211,37 +212,85 @@ $selectedClientHeading = $selectedClientTypeLabel . ' Client';
             border-color: #9ecfb3;
         }
 
-        .id-ocr-zone {
-            border: 1px dashed #b8d5c6;
-            border-radius: 12px;
-            background: #f8fcfa;
-            padding: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
+        .upload-zone.is-invalid {
+            border-color: var(--danger);
+            background: rgba(220, 53, 69, 0.05);
         }
 
-        .id-ocr-meta {
-            color: var(--gray-500);
-            font-size: 0.85rem;
+        .id-upload-hint {
             margin-top: 8px;
+            color: var(--gray-500);
+            font-size: 0.8rem;
         }
 
         .id-ocr-status {
             margin-top: 10px;
-            font-size: 0.84rem;
-            color: #285943;
-            min-height: 20px;
+            font-size: 0.82rem;
+            color: var(--gray-500);
+            line-height: 1.5;
         }
 
-        .id-ocr-status.error {
-            color: #9b1c1c;
+        .id-ocr-summary {
+            margin-top: 10px;
+            padding: 12px 14px;
+            border: 1px solid #d9eadf;
+            border-radius: 12px;
+            background: #f8fcf9;
+            color: #264337;
+            font-size: 0.82rem;
+            line-height: 1.55;
         }
 
-        .id-ocr-status.info {
-            color: #1f4b99;
+        .id-ocr-summary strong {
+            color: #173625;
+        }
+
+        .ocr-quality-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+
+        .ocr-quality-badge.is-high {
+            background: #def7e5;
+            border-color: #9ad7b0;
+            color: #0f5f36;
+        }
+
+        .ocr-quality-badge.is-good {
+            background: #e3f0ff;
+            border-color: #a9c9f2;
+            color: #1f5ea9;
+        }
+
+        .ocr-quality-badge.is-fair {
+            background: #fff4d9;
+            border-color: #f0d48f;
+            color: #8c5b00;
+        }
+
+        .ocr-quality-badge.is-low {
+            background: #fde8e8;
+            border-color: #f2b4b4;
+            color: #9d1f1f;
+        }
+
+        .ocr-field-highlight {
+            border-color: #f0d48f !important;
+            background: #fff9e8 !important;
+            box-shadow: 0 0 0 3px rgba(240, 212, 143, 0.22);
+        }
+
+        .id-ocr-status strong {
+            color: #1f3d2e;
         }
 
         .flow-actions .btn:active,
@@ -894,6 +943,66 @@ include '../includes/sidebar.php';
                 </div>
             </div>
 
+            <!-- Government ID Verification Card -->
+            <div class="card card-span-2" data-wizard-step="3">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-person-vcard"></i> Government ID Verification</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label for="governmentIdType" class="form-label">Government ID Type <span class="req">*</span></label>
+                                <div class="select-wrap">
+                                    <select id="governmentIdType" name="idType" class="form-select" required>
+                                        <option value="">Select government ID...</option>
+                                        <option value="philippine_passport">Philippine Passport</option>
+                                        <option value="drivers_license">Driver's License</option>
+                                        <option value="umid">UMID</option>
+                                        <option value="philsys_national_id">PhilSys National ID</option>
+                                        <option value="postal_id">Postal ID</option>
+                                        <option value="sss_id">SSS ID</option>
+                                        <option value="gsis_id">GSIS ID</option>
+                                        <option value="prc_id">PRC ID</option>
+                                        <option value="tin_id">TIN ID</option>
+                                        <option value="philhealth_id">PhilHealth ID</option>
+                                        <option value="pagibig_id">Pag-IBIG ID</option>
+                                        <option value="voters_id">Voter's ID</option>
+                                        <option value="senior_citizen_id">Senior Citizen ID</option>
+                                        <option value="ofw_id">OFW ID</option>
+                                        <option value="barangay_id">Barangay ID</option>
+                                        <option value="acr_id">Alien Certificate of Registration</option>
+                                    </select>
+                                </div>
+                                <div class="form-error">Government ID type is required</div>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="form-group">
+                                <label for="idNumber" class="form-label">ID Number <span class="req">*</span></label>
+                                <input type="text" id="idNumber" name="idNumber" class="form-control" placeholder="Auto-filled by OCR or enter manually" required>
+                                <div class="form-error">ID number is required</div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label">ID Photo Upload <span class="req">*</span></label>
+                                <div class="upload-zone" id="governmentIdUploadZone" onclick="document.getElementById('governmentIdInput').click()">
+                                    <i class="bi bi-camera upload-icon"></i>
+                                    <p><strong>Click to upload</strong> or drag and drop the ID photo</p>
+                                    <small>JPG, PNG (Max 5MB)</small>
+                                </div>
+                                <input type="file" id="governmentIdInput" accept=".jpg,.jpeg,.png" style="display:none;">
+                                <div class="id-upload-hint">OCR will scan the uploaded image and try to fill the ID number automatically.</div>
+                                <div class="file-list" id="governmentIdFileList" style="margin-top:12px;"></div>
+                                <div class="id-ocr-status" id="governmentIdOcrStatus">No ID photo uploaded yet.</div>
+                                <div class="id-ocr-summary" id="governmentIdOcrSummary">OCR summary will appear here after scanning.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Documents Card -->
             <div class="card card-span-2" data-wizard-step="3">
                 <div class="card-header">
@@ -1033,7 +1142,7 @@ function validateRadioGroup(name) {
 }
 
 function validateAllRequired() {
-    const requiredFields = ['corporateClientName', 'region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateBusinessBarangay', 'corporateStreet', 'corporatePhone', 'corporateContactPerson', 'corporateEmail'];
+    const requiredFields = ['corporateClientName', 'region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateBusinessBarangay', 'corporateStreet', 'corporatePhone', 'corporateContactPerson', 'corporateEmail', 'governmentIdType', 'idNumber'];
     let allValid = true;
     let failedFields = [];
     
@@ -1052,6 +1161,7 @@ function validateAllRequired() {
     if (!validateRadioGroup('businessType')) allValid = false;
     // Validate clientClassification radio
     if (!validateRadioGroup('clientClassification')) allValid = false;
+    if (!validateGovernmentIdSection()) allValid = false;
     
     if (!allValid && failedFields.length > 0) {
         console.log('Failed fields:', failedFields);
@@ -1335,7 +1445,825 @@ function restoreFormData() {
 initCorporateAddressSelectors();
 
 // Restore form data on page load
+const KYC_NAVIGATION_TYPE = (performance.getEntriesByType('navigation')[0]?.type) || (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'navigate');
+
+async function clearDraftStateOnRefresh() {
+    const regularUploads = getStoredUploads();
+    const governmentIdUploads = getStoredGovernmentIdUploads();
+
+    sessionStorage.removeItem('kycFormData');
+    sessionStorage.removeItem('corporateAddressData');
+    sessionStorage.removeItem('kycUploadedFiles');
+    sessionStorage.removeItem('kycGovernmentIdFiles');
+    sessionStorage.removeItem('kycGovernmentIdOcrData');
+    sessionStorage.removeItem('kycGovernmentIdOcrMeta');
+
+    await Promise.all([
+        ...((regularUploads || []).map(upload => deleteTempUpload(upload?.temp_path))),
+        ...((governmentIdUploads || []).map(upload => deleteTempUpload(upload?.temp_path)))
+    ]);
+}
+
+if (KYC_NAVIGATION_TYPE === 'reload') {
+    void clearDraftStateOnRefresh();
+}
+
 document.addEventListener('DOMContentLoaded', restoreFormData);
+
+function validateGovernmentIdSection() {
+    const typeOk = validateField('governmentIdType');
+    const numberOk = validateField('idNumber');
+    const uploadsOk = getStoredGovernmentIdUploads().length > 0;
+    const zone = document.getElementById('governmentIdUploadZone');
+    const status = document.getElementById('governmentIdOcrStatus');
+
+    if (zone) zone.classList.toggle('is-invalid', !uploadsOk);
+    if (status && !uploadsOk) {
+        status.textContent = 'Government ID photo is required.';
+    }
+
+    return typeOk && numberOk && uploadsOk;
+}
+
+function inferGovernmentIdNumber(text, idType) {
+    const cleanedText = String(text || '')
+        .replace(/\|/g, 'I')
+        .replace(/[_]+/g, ' ')
+        .replace(/[ \t]+/g, ' ')
+        .trim();
+
+    const compactText = cleanedText.replace(/\s+/g, ' ');
+    const type = String(idType || '').toLowerCase();
+    const candidates = new Set();
+
+    const pushMatches = (regex) => {
+        const matches = compactText.match(regex) || [];
+        matches.forEach(match => candidates.add(match.trim()));
+    };
+
+    if (type.includes('passport')) {
+        pushMatches(/\b[A-Z0-9]{8,10}\b/gi);
+    } else if (type.includes('driver')) {
+        pushMatches(/\b[A-Z]{1,3}-?\d{2,3}-?\d{4,7}\b/gi);
+    } else if (type.includes('umid') || type.includes('philsys')) {
+        pushMatches(/\b\d{4}-?\d{4}-?\d{4}-?\d{4}\b/g);
+    } else if (type.includes('sss')) {
+        pushMatches(/\b\d{2}-?\d{7}-?\d\b/g);
+    } else if (type.includes('gsis')) {
+        pushMatches(/\b\d{2}-?\d{7}-?\d\b/g);
+    } else if (type.includes('prc')) {
+        pushMatches(/\b\d{7}\b/g);
+    } else if (type.includes('tin')) {
+        pushMatches(/\b\d{3}-?\d{3}-?\d{3}(?:-?\d{3})?\b/g);
+    } else if (type.includes('philhealth')) {
+        pushMatches(/\b\d{2}-?\d{9}-?\d\b/g);
+    } else if (type.includes('pagibig')) {
+        pushMatches(/\b\d{4}-?\d{4}-?\d{4}\b/g);
+    } else if (type.includes('voter')) {
+        pushMatches(/\b[A-Z0-9]{8,20}\b/gi);
+    } else {
+        pushMatches(/\b[A-Z0-9]{6,24}\b/gi);
+    }
+
+    compactText.split(/\r?\n/).forEach(line => {
+        const lowered = line.toLowerCase();
+        if (lowered.includes('id') || lowered.includes('no') || lowered.includes('number')) {
+            (line.match(/\b[A-Z0-9][A-Z0-9\-\/]{4,}\b/gi) || []).forEach(match => candidates.add(match.trim()));
+        }
+    });
+
+    const sorted = Array.from(candidates)
+        .map(candidate => candidate.replace(/\s+/g, '').trim())
+        .filter(Boolean)
+        .sort((a, b) => b.length - a.length);
+
+    return sorted[0] || '';
+}
+
+function setGovernmentIdOcrStatus(message, isError = false) {
+    const status = document.getElementById('governmentIdOcrStatus');
+    if (!status) return;
+    status.textContent = message;
+    status.style.color = isError ? 'var(--danger)' : 'var(--gray-500)';
+}
+
+function getStoredGovernmentIdUploads() {
+    try {
+        const raw = sessionStorage.getItem('kycGovernmentIdFiles');
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function setStoredGovernmentIdUploads(files) {
+    sessionStorage.setItem('kycGovernmentIdFiles', JSON.stringify(files || []));
+}
+
+let governmentIdOcrProfile = {};
+let governmentIdOcrWorkerPromise = null;
+let governmentIdOcrScanMeta = {};
+
+function getGovernmentIdOcrWorker() {
+    if (governmentIdOcrWorkerPromise) {
+        return governmentIdOcrWorkerPromise;
+    }
+
+    if (!window.Tesseract || typeof Tesseract.createWorker !== 'function') {
+        return Promise.resolve(null);
+    }
+
+    governmentIdOcrWorkerPromise = (async () => {
+        const worker = await Tesseract.createWorker('eng', 1, {
+            logger: updateGovernmentIdStatusFromProgress,
+            gzip: true,
+            cacheMethod: 'write'
+        });
+
+        if (worker?.setParameters) {
+            await worker.setParameters({
+                preserve_interword_spaces: '1',
+                user_defined_dpi: '300',
+                textord_heavy_nr: '1',
+                tessedit_do_invert: '1'
+            });
+        }
+
+        return worker;
+    })().catch(error => {
+        console.error('Unable to initialize OCR worker', error);
+        governmentIdOcrWorkerPromise = null;
+        return null;
+    });
+
+    return governmentIdOcrWorkerPromise;
+}
+
+function scoreGovernmentIdProfile(profile, confidence = 0) {
+    const fields = [profile?.idNumber, profile?.fullName, profile?.birthdate, profile?.gender, profile?.nationality, profile?.address].filter(Boolean).length;
+    return (fields * 1000) + Math.max(0, Number(confidence) || 0);
+}
+
+function getGovernmentIdPsmCandidates() {
+    return [
+        Tesseract.PSM?.SINGLE_BLOCK ?? 6,
+        Tesseract.PSM?.SPARSE_TEXT ?? 11,
+        Tesseract.PSM?.AUTO ?? 3
+    ];
+}
+
+function buildGovernmentIdRecognizeOptions(psm) {
+    return {
+        tessedit_pageseg_mode: psm,
+        preserve_interword_spaces: '1',
+        user_defined_dpi: '300'
+    };
+}
+
+function normalizeOcrDate(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+
+    const isoMatch = raw.match(/\b(\d{4})[-\/](\d{2})[-\/](\d{2})\b/);
+    if (isoMatch) {
+        return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+    }
+
+    const parts = raw.match(/\b(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\b/);
+    if (!parts) return '';
+
+    let first = Number(parts[1]);
+    let second = Number(parts[2]);
+    const year = parts[3];
+
+    let month = first;
+    let day = second;
+    if (first > 12 && second <= 12) {
+        day = first;
+        month = second;
+    }
+
+    const monthText = String(month).padStart(2, '0');
+    const dayText = String(day).padStart(2, '0');
+    return `${year}-${monthText}-${dayText}`;
+}
+
+function extractGovernmentIdProfile(text, idType) {
+    const normalized = String(text || '')
+        .replace(/\|/g, 'I')
+        .replace(/[_]+/g, ' ')
+        .replace(/[ \t]+/g, ' ')
+        .trim();
+    const lines = normalized.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const lower = normalized.toLowerCase();
+    const addressStopPattern = /\b(id|number|sex|gender|nationality|birth|date|name|signature|issue|valid)\b/i;
+
+    function collectAddressFromIndex(startIndex) {
+        const collected = [];
+        for (let index = startIndex; index < lines.length && collected.length < 3; index += 1) {
+            const line = lines[index].trim();
+            if (!line) continue;
+            if (addressStopPattern.test(line) && collected.length > 0) break;
+            if (collected.length > 0 && /\b(id|number|sex|gender|nationality|birth|date|name)\b/i.test(line)) break;
+            collected.push(line);
+        }
+        return collected.join(', ').replace(/^.*?(address|residence|home address|present address|permanent address)\s*[:\-]?\s*/i, '').trim();
+    }
+
+    const profile = {
+        idNumber: inferGovernmentIdNumber(normalized, idType),
+        fullName: '',
+        birthdate: '',
+        gender: '',
+        nationality: '',
+        address: ''
+    };
+
+    const genderMatch = lower.match(/\b(male|female)\b/);
+    if (genderMatch) profile.gender = genderMatch[1];
+
+    if (/\b(filipino|philippine|philippines)\b/i.test(normalized)) {
+        profile.nationality = 'Philippine';
+    }
+
+    const dobMatch = normalized.match(/\b(\d{4}[-\/]\d{2}[-\/]\d{2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{4})\b/);
+    if (dobMatch) {
+        profile.birthdate = normalizeOcrDate(dobMatch[1]);
+    }
+
+    const addressDirect = normalized.match(/(?:address|residence|home address|present address|permanent address)\s*[:\-]\s*([A-Za-z0-9 ,.'\/#-]{8,})/i);
+    if (addressDirect && addressDirect[1]) {
+        profile.address = addressDirect[1].trim();
+    } else {
+        const addressIndex = lines.findIndex(line => /\b(address|residence|home address|present address|permanent address)\b/i.test(line));
+        if (addressIndex !== -1) {
+            profile.address = collectAddressFromIndex(addressIndex);
+        }
+    }
+
+    const keywordLines = lines.filter(line => /\b(name|surname|given|first|middle|last)\b/i.test(line));
+    const nextLine = keywordLines.length > 0 ? lines[lines.indexOf(keywordLines[0]) + 1] : '';
+    const directName = normalized.match(/(?:name|surname|given name|first name|middle name|last name)\s*[:\-]\s*([A-Za-z ,.'-]{4,})/i);
+
+    if (directName && directName[1]) {
+        profile.fullName = directName[1].trim();
+    } else if (nextLine && !/\b(id|number|sex|gender|nationality|birth|date)\b/i.test(nextLine)) {
+        profile.fullName = nextLine.trim();
+    }
+
+    return profile;
+}
+
+function parseGovernmentIdAddress(addressText) {
+    const normalized = String(addressText || '')
+        .replace(/\r/g, '\n')
+        .replace(/[•·]/g, ' ')
+        .replace(/\b(?:address|residence|business address|present address|office address)\s*[:\-]\s*/ig, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+
+    const emptyParts = { street: '', barangay: '', city: '', province: '', region: '' };
+    if (!normalized) {
+        return emptyParts;
+    }
+
+    const lines = normalized
+        .split(/\n+/)
+        .map(line => line.trim())
+        .filter(Boolean);
+
+    const removePostalCode = value => String(value || '').replace(/\b\d{4}\b/g, '').replace(/\s{2,}/g, ' ').trim();
+    const cleanValue = value => removePostalCode(String(value || '').replace(/^[\s,;:\-]+|[\s,;:\-]+$/g, '').trim());
+    const labeledValue = (line, labels) => {
+        for (const label of labels) {
+            const match = line.match(new RegExp(`\\b${label}\\b\\s*[:\\-]?\\s*(.+)$`, 'i'));
+            if (match && match[1]) {
+                return cleanValue(match[1]);
+            }
+        }
+        return '';
+    };
+    const stripLabels = line => cleanValue(line.replace(/\b(?:region|province|prov\.?|city|municipality|mun\.?|town|barangay|brgy\.?|street|st\.?|address|residence|office|unit|building|block|lot|floor|house|no\.?|#)\b[:\-]?/ig, ' ').replace(/\s{2,}/g, ' '));
+    const looksLikeRegion = value => /\b(region|ncr|car|mimaropa|calabarzon|soccsksargen|bangsamoro|barmm)\b/i.test(value);
+    const looksLikeCity = value => /\b(city|municipality|mun\.?|town)\b/i.test(value);
+    const looksLikeBarangay = value => /\b(barangay|brgy\.?|bgy\.?)\b/i.test(value);
+
+    let region = '';
+    let province = '';
+    let city = '';
+    let barangay = '';
+    const streetParts = [];
+    const unlabeledParts = [];
+
+    for (const line of lines) {
+        const regionValue = labeledValue(line, ['region', 'rgn']);
+        const provinceValue = labeledValue(line, ['province', 'prov']);
+        const cityValue = labeledValue(line, ['city', 'municipality', 'municipal', 'mun', 'town']);
+        const barangayValue = labeledValue(line, ['barangay', 'brgy', 'bgy']);
+        const streetValue = labeledValue(line, ['street', 'st', 'address', 'residence', 'office', 'house', 'unit', 'building', 'lot', 'block', 'floor']);
+
+        if (regionValue && !region) {
+            region = regionValue;
+            continue;
+        }
+
+        if (provinceValue && !province) {
+            province = provinceValue;
+            continue;
+        }
+
+        if (cityValue && !city) {
+            city = cityValue;
+            continue;
+        }
+
+        if (barangayValue && !barangay) {
+            barangay = barangayValue;
+            continue;
+        }
+
+        if (streetValue) {
+            streetParts.push(streetValue);
+            continue;
+        }
+
+        const strippedLine = stripLabels(line);
+        if (!strippedLine) {
+            continue;
+        }
+
+        if (!region && looksLikeRegion(strippedLine)) {
+            region = strippedLine;
+            continue;
+        }
+
+        if (!barangay && looksLikeBarangay(strippedLine)) {
+            barangay = strippedLine;
+            continue;
+        }
+
+        if (!city && looksLikeCity(strippedLine)) {
+            city = strippedLine;
+            continue;
+        }
+
+        unlabeledParts.push(strippedLine);
+    }
+
+    if (!region && unlabeledParts.length >= 1) {
+        const regionGuess = unlabeledParts[unlabeledParts.length - 1];
+        if (looksLikeRegion(regionGuess) || unlabeledParts.length >= 4) {
+            region = regionGuess;
+            unlabeledParts.pop();
+        }
+    }
+
+    if (!province && unlabeledParts.length >= 1) {
+        province = unlabeledParts[unlabeledParts.length - 1];
+        unlabeledParts.pop();
+    }
+
+    if (!city && unlabeledParts.length >= 1) {
+        city = unlabeledParts[unlabeledParts.length - 1];
+        unlabeledParts.pop();
+    }
+
+    if (!barangay && unlabeledParts.length >= 1) {
+        barangay = unlabeledParts[unlabeledParts.length - 1];
+        unlabeledParts.pop();
+    }
+
+    const street = [...streetParts, ...unlabeledParts].filter(Boolean).join(', ').trim();
+
+    return {
+        street,
+        barangay,
+        city,
+        province,
+        region
+    };
+}
+
+function applyParsedAddressToFieldSet(prefix, addressText, touchedFields = []) {
+    const parts = parseGovernmentIdAddress(addressText);
+    const setIfEmpty = (id, value) => {
+        const el = document.getElementById(id);
+        if (!el || !value || el.value.trim()) return;
+        el.value = value;
+        el.dispatchEvent(new Event('input'));
+        el.dispatchEvent(new Event('change'));
+        touchedFields.push(id);
+    };
+
+    if (prefix === 'business') {
+        setIfEmpty('corporateStreet', parts.street || addressText);
+        setIfEmpty('corporateBusinessBarangay', parts.barangay);
+        setIfEmpty('corporateBusinessCtm', parts.city);
+        setIfEmpty('corporateBusinessProvince', parts.province);
+        setIfEmpty('region', parts.region);
+        setIfEmpty('corporateBusinessAddress', addressText);
+    }
+}
+
+function setGovernmentIdFieldHighlight(id, enabled) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('ocr-field-highlight', Boolean(enabled));
+}
+
+function clearGovernmentIdFieldHighlights() {
+    [
+        'idNumber', 'gender', 'corporateGender', 'corporateContactPerson',
+        'corporateStreet', 'corporateBusinessBarangay', 'corporateBusinessCtm', 'corporateBusinessProvince', 'region', 'corporateBusinessAddress'
+    ].forEach(id => setGovernmentIdFieldHighlight(id, false));
+}
+
+function setGovernmentIdOcrProfile(profile) {
+    governmentIdOcrProfile = profile || {};
+    sessionStorage.setItem('kycGovernmentIdOcrData', JSON.stringify(governmentIdOcrProfile));
+    renderGovernmentIdOcrSummary();
+}
+
+function setGovernmentIdOcrScanMeta(meta) {
+    governmentIdOcrScanMeta = meta || {};
+    sessionStorage.setItem('kycGovernmentIdOcrMeta', JSON.stringify(governmentIdOcrScanMeta));
+    renderGovernmentIdOcrSummary();
+}
+
+function applyGovernmentIdProfile(profile) {
+    const touchedFields = [];
+    const setIfEmpty = (id, value) => {
+        const el = document.getElementById(id);
+        if (!el || !value || el.value.trim()) return;
+        el.value = value;
+        el.dispatchEvent(new Event('input'));
+        el.dispatchEvent(new Event('change'));
+        touchedFields.push(id);
+    };
+
+    setIfEmpty('idNumber', profile.idNumber);
+    setIfEmpty('gender', profile.gender);
+    setIfEmpty('corporateGender', profile.gender);
+    applyParsedAddressToFieldSet('business', profile.address, touchedFields);
+
+    if (profile.fullName) {
+        const contactPersonEl = document.getElementById('corporateContactPerson');
+        if (contactPersonEl && !contactPersonEl.value.trim()) {
+            contactPersonEl.value = profile.fullName;
+            contactPersonEl.dispatchEvent(new Event('input'));
+            contactPersonEl.dispatchEvent(new Event('change'));
+            touchedFields.push('corporateContactPerson');
+        }
+    }
+
+    clearGovernmentIdFieldHighlights();
+    const confidence = Number(governmentIdOcrScanMeta?.confidence);
+    if (!Number.isNaN(confidence) && confidence < 65) {
+        touchedFields.forEach(id => setGovernmentIdFieldHighlight(id, true));
+    }
+}
+
+function renderGovernmentIdOcrSummary() {
+    const summaryEl = document.getElementById('governmentIdOcrSummary');
+    if (!summaryEl) return;
+
+    const profile = governmentIdOcrProfile || JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}');
+    const scanMeta = governmentIdOcrScanMeta || JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrMeta') || '{}');
+    const parts = [];
+    const metaParts = [];
+    const confidence = Number(scanMeta.confidence);
+    let confidenceBadge = '';
+    let warningText = '';
+
+    if (!Number.isNaN(confidence) && confidence >= 0) {
+        let qualityClass = 'is-low';
+        let qualityLabel = 'Low';
+
+        if (confidence >= 85) {
+            qualityClass = 'is-high';
+            qualityLabel = 'High';
+        } else if (confidence >= 65) {
+            qualityClass = 'is-good';
+            qualityLabel = 'Good';
+        } else if (confidence >= 40) {
+            qualityClass = 'is-fair';
+            qualityLabel = 'Fair';
+        }
+
+        confidenceBadge = `<span class="ocr-quality-badge ${qualityClass}">Quality: ${qualityLabel}</span>`;
+
+        if (confidence < 65) {
+            warningText = '<div style="margin-bottom:8px; color:#9d1f1f; font-weight:600;">Low-confidence scan. Please verify the extracted details before continuing.</div>';
+        }
+    }
+
+    if (scanMeta.variant) metaParts.push(`Variant: ${escapeHtml(scanMeta.variant)}`);
+    if (scanMeta.psm !== undefined && scanMeta.psm !== null && scanMeta.psm !== '') metaParts.push(`PSM: ${escapeHtml(String(scanMeta.psm))}`);
+    if (scanMeta.confidence !== undefined && scanMeta.confidence !== null && scanMeta.confidence !== '') metaParts.push(`Confidence: ${escapeHtml(String(Math.round(scanMeta.confidence)))}%`);
+
+    if (profile.fullName) parts.push(`<div><strong>Name:</strong> ${escapeHtml(profile.fullName)}</div>`);
+    if (profile.idNumber) parts.push(`<div><strong>ID Number:</strong> ${escapeHtml(profile.idNumber)}</div>`);
+    if (profile.birthdate) parts.push(`<div><strong>Birthdate:</strong> ${escapeHtml(profile.birthdate)}</div>`);
+    if (profile.gender) parts.push(`<div><strong>Gender:</strong> ${escapeHtml(profile.gender)}</div>`);
+    if (profile.nationality) parts.push(`<div><strong>Nationality:</strong> ${escapeHtml(profile.nationality)}</div>`);
+    if (profile.address) parts.push(`<div><strong>Address:</strong> ${escapeHtml(profile.address)}</div>`);
+
+    summaryEl.innerHTML = parts.length
+        ? `<strong>OCR Summary</strong><div style="margin-top:6px;">${warningText}${metaParts.length ? `<div style="font-size:0.78rem; color:var(--gray-500); margin-bottom:8px; line-height:1.5; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">${confidenceBadge}${metaParts.map(item => `<span>${escapeHtml(item)}</span>`).join('<span style="opacity:.45;">•</span>')}</div>` : ''}${parts.join('')}</div>`
+        : 'OCR summary will appear here after scanning.';
+}
+
+function loadImageFromFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject(new Error('Unable to load image'));
+            image.src = reader.result;
+        };
+        reader.onerror = () => reject(new Error('Unable to read file'));
+        reader.readAsDataURL(file);
+    });
+}
+
+async function preprocessGovernmentIdImage(file, mode = 'balanced') {
+    const image = await loadImageFromFile(file);
+    const maxWidth = mode === 'highContrast' ? 2200 : 1800;
+    const scale = Math.min(1, maxWidth / image.width);
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) throw new Error('Canvas not available');
+
+    context.drawImage(image, 0, 0, width, height);
+    const imageData = context.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    for (let index = 0; index < data.length; index += 4) {
+        const red = data[index];
+        const green = data[index + 1];
+        const blue = data[index + 2];
+        let value = (red * 0.299) + (green * 0.587) + (blue * 0.114);
+
+        if (mode === 'highContrast') {
+            value = value > 160 ? 255 : 0;
+        } else {
+            value = Math.min(255, Math.max(0, (value - 18) * 1.15));
+        }
+
+        data[index] = value;
+        data[index + 1] = value;
+        data[index + 2] = value;
+    }
+
+    context.putImageData(imageData, 0, 0);
+    return new Promise(resolve => canvas.toBlob(blob => resolve(blob || file), 'image/png', 1));
+}
+
+function updateGovernmentIdStatusFromProgress(message) {
+    if (message.status && typeof message.progress === 'number') {
+        const pct = Math.round(message.progress * 100);
+        setGovernmentIdOcrStatus(`Scanning ID photo... ${pct}%`);
+    }
+}
+
+function renderGovernmentIdUploads() {
+    const list = document.getElementById('governmentIdFileList');
+    if (!list) return;
+
+    const stored = getStoredGovernmentIdUploads();
+    list.innerHTML = '';
+
+    if (!stored.length) {
+        list.innerHTML = '<div style="color: var(--gray-500); font-size: .85rem;">No ID photo uploaded.</div>';
+        return;
+    }
+
+    stored.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.dataset.idx = String(index);
+
+        const name = file.original_name || file.file_name || 'ID photo';
+        const openUrl = file.file_path ? `../../${file.file_path}` : '';
+        item.innerHTML = `
+            <i class="bi bi-file-earmark-image"></i>
+            <span>${escapeHtml(name)}</span>
+            ${openUrl ? `<a href="${openUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" style="padding:4px 10px; margin-left:auto;">Open</a>` : ''}
+            <i class="bi bi-trash file-remove" title="Remove"></i>
+        `;
+
+        item.querySelector('.file-remove')?.addEventListener('click', async () => {
+            const current = getStoredGovernmentIdUploads();
+            const removed = current.splice(index, 1)[0];
+            setStoredGovernmentIdUploads(current);
+            currentGovernmentIdFile = null;
+            renderGovernmentIdUploads();
+            if (removed?.temp_path) {
+                await deleteTempUpload(removed.temp_path);
+            }
+            setGovernmentIdOcrStatus('No ID photo uploaded yet.');
+        });
+
+        list.appendChild(item);
+    });
+}
+
+async function runGovernmentIdOcr(file) {
+    if (!file || !window.Tesseract) {
+        setGovernmentIdOcrStatus('OCR is unavailable in this browser. You can enter the ID number manually.', true);
+        renderGovernmentIdOcrSummary();
+        return '';
+    }
+
+    const currentType = document.getElementById('governmentIdType')?.value || '';
+    setGovernmentIdOcrStatus('Preparing ID image for scanning...');
+
+    try {
+        const variants = [
+            { label: 'balanced', blob: await preprocessGovernmentIdImage(file, 'balanced') },
+            { label: 'high-contrast', blob: await preprocessGovernmentIdImage(file, 'highContrast') }
+        ];
+
+        const worker = await getGovernmentIdOcrWorker();
+        const psmCandidates = getGovernmentIdPsmCandidates();
+        let bestProfile = { idNumber: '' };
+        let bestText = '';
+        let bestConfidence = -1;
+        let bestVariantLabel = '';
+        let bestPsm = '';
+
+        for (const variant of variants) {
+            for (const psm of psmCandidates) {
+                setGovernmentIdOcrStatus(`Scanning ID photo (${variant.label}, psm ${psm})...`);
+
+                let result;
+                if (worker?.recognize) {
+                    result = await worker.recognize(variant.blob, buildGovernmentIdRecognizeOptions(psm));
+                } else {
+                    result = await Tesseract.recognize(variant.blob, 'eng', buildGovernmentIdRecognizeOptions(psm));
+                }
+
+                const extractedText = result?.data?.text || '';
+                const profile = extractGovernmentIdProfile(extractedText, currentType);
+                const confidence = Number(result?.data?.confidence) || 0;
+                const score = scoreGovernmentIdProfile(profile, confidence);
+
+                if (score > scoreGovernmentIdProfile(bestProfile, bestConfidence)) {
+                    bestProfile = profile;
+                    bestText = extractedText;
+                    bestConfidence = confidence;
+                    bestVariantLabel = variant.label;
+                    bestPsm = psm;
+                }
+
+                if (profile.idNumber && (profile.fullName || profile.birthdate || profile.gender || profile.nationality)) {
+                    bestProfile = profile;
+                    bestText = extractedText;
+                    bestConfidence = confidence;
+                    bestVariantLabel = variant.label;
+                    bestPsm = psm;
+                    break;
+                }
+            }
+
+            if (bestProfile.idNumber && (bestProfile.fullName || bestProfile.birthdate || bestProfile.gender || bestProfile.nationality)) {
+                break;
+            }
+        }
+
+        setGovernmentIdOcrScanMeta({
+            variant: bestVariantLabel,
+            psm: bestPsm,
+            confidence: bestConfidence >= 0 ? bestConfidence : ''
+        });
+        setGovernmentIdOcrProfile(bestProfile);
+        applyGovernmentIdProfile(bestProfile);
+
+        if (bestProfile.idNumber) {
+            const extractedFields = [bestProfile.fullName, bestProfile.birthdate, bestProfile.gender, bestProfile.nationality].filter(Boolean).length;
+            setGovernmentIdOcrStatus(
+                extractedFields > 0
+                    ? `OCR found an ID number and supporting details: ${bestProfile.idNumber}${bestConfidence >= 0 ? ` (confidence ${Math.round(bestConfidence)}%)` : ''}`
+                    : `OCR found an ID number: ${bestProfile.idNumber}`
+            );
+            showToast('success', 'ID Scanned', 'ID number was extracted from the uploaded photo.');
+            return bestProfile.idNumber;
+        }
+
+        if (bestText) {
+            setGovernmentIdOcrStatus('OCR completed, but no confident ID number was found. Please enter it manually.', true);
+            return '';
+        }
+
+        setGovernmentIdOcrStatus('OCR could not read the ID photo. Please enter the ID number manually.', true);
+        return '';
+    } catch (error) {
+        console.error('OCR error:', error);
+        setGovernmentIdOcrScanMeta({});
+        clearGovernmentIdFieldHighlights();
+        setGovernmentIdOcrProfile({});
+        setGovernmentIdOcrStatus('OCR could not read the ID photo. Please enter the ID number manually.', true);
+        return '';
+    }
+}
+
+async function uploadGovernmentIdTempFile(files) {
+    const selectedFiles = Array.from(files || []).slice(0, 1);
+    if (!selectedFiles.length) return;
+
+    const zone = document.getElementById('governmentIdUploadZone');
+    if (zone) zone.classList.add('is-uploading');
+
+    try {
+        const previous = getStoredGovernmentIdUploads();
+        await Promise.all((previous || []).map(item => deleteTempUpload(item?.temp_path)));
+
+        const fd = new FormData();
+        fd.append('action', 'upload_temp');
+        selectedFiles.forEach(file => fd.append('documents[]', file, file.name));
+
+        const resp = await fetch('../handlers/upload.php', { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (!data || !data.success) {
+            throw new Error(data?.message || 'Upload failed');
+        }
+
+        const saved = Array.isArray(data.files) ? data.files : [];
+        setStoredGovernmentIdUploads(saved);
+        renderGovernmentIdUploads();
+
+        const file = selectedFiles[0];
+        currentGovernmentIdFile = file;
+        await runGovernmentIdOcr(file);
+    } finally {
+        if (zone) zone.classList.remove('is-uploading');
+    }
+}
+
+let currentGovernmentIdFile = null;
+
+const governmentIdInput = document.getElementById('governmentIdInput');
+const governmentIdZone = document.getElementById('governmentIdUploadZone');
+const governmentIdTypeSelect = document.getElementById('governmentIdType');
+
+if (governmentIdInput) {
+    governmentIdInput.addEventListener('change', async () => {
+        const files = Array.from(governmentIdInput.files || []);
+        governmentIdInput.value = '';
+        if (!files.length) return;
+        try {
+            await uploadGovernmentIdTempFile(files);
+        } catch (error) {
+            console.error(error);
+            showToast('error', 'ID Upload Failed', error?.message || 'Please try again.');
+            setGovernmentIdOcrStatus('Unable to upload the ID photo. Please try again.', true);
+        }
+    });
+}
+
+if (governmentIdZone) {
+    governmentIdZone.addEventListener('dragover', event => {
+        event.preventDefault();
+        governmentIdZone.classList.add('dragover');
+    });
+    governmentIdZone.addEventListener('dragleave', () => governmentIdZone.classList.remove('dragover'));
+    governmentIdZone.addEventListener('drop', async event => {
+        event.preventDefault();
+        governmentIdZone.classList.remove('dragover');
+        const files = Array.from(event.dataTransfer?.files || []);
+        if (!files.length) return;
+        try {
+            await uploadGovernmentIdTempFile(files);
+        } catch (error) {
+            console.error(error);
+            showToast('error', 'ID Upload Failed', error?.message || 'Please try again.');
+            setGovernmentIdOcrStatus('Unable to upload the ID photo. Please try again.', true);
+        }
+    });
+}
+
+if (governmentIdTypeSelect) {
+    governmentIdTypeSelect.addEventListener('change', async () => {
+        validateGovernmentIdSection();
+        if (currentGovernmentIdFile) {
+            await runGovernmentIdOcr(currentGovernmentIdFile);
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', renderGovernmentIdUploads);
+document.addEventListener('DOMContentLoaded', () => {
+    const savedProfile = JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}');
+    governmentIdOcrProfile = savedProfile || {};
+    renderGovernmentIdOcrSummary();
+});
 
 // ── Drafts UI (resume/load) ─────────────────────────────────────────────
 function escapeHtml(str) {
@@ -1474,6 +2402,10 @@ async function loadSelectedDraft() {
         });
         const docsData = await docsResp.json();
         const docs = (docsData && docsData.success) ? (docsData.data || []) : [];
+        const governmentIdDocs = docs.filter(doc => {
+            const docType = String(doc.document_type || '').toLowerCase();
+            return docType === 'government_id' || docType === 'id' || docType === 'id_photo';
+        });
 
         if (!draftDocsContainer) return;
         if (!docs.length) {
@@ -1498,6 +2430,15 @@ async function loadSelectedDraft() {
                 `;
             }).join('');
         }
+
+        setStoredGovernmentIdUploads(governmentIdDocs.map(doc => ({
+            original_name: doc.file_name || '',
+            file_name: doc.file_name || '',
+            file_type: doc.file_type || null,
+            file_size: doc.file_size || null,
+            file_path: doc.file_path || null
+        })));
+        renderGovernmentIdUploads();
 
         // Also load attachments into the form's attachment holder.
         const draftSessionUploads = docs.map(doc => ({
@@ -1655,6 +2596,10 @@ function validateWizardStep(step) {
                 }
             }
         });
+
+        if (card.querySelector('#governmentIdUploadZone') && !validateGovernmentIdSection()) {
+            allValid = false;
+        }
     });
 
     requiredRadioNames.forEach((name) => {
@@ -1798,6 +2743,7 @@ function proceedToReview() {
         composed: document.getElementById('corporateBusinessAddress').value
     };
     sessionStorage.setItem('corporateAddressData', JSON.stringify(addressData));
+    sessionStorage.setItem('kycGovernmentIdFiles', JSON.stringify(getStoredGovernmentIdUploads()));
     
     // Navigate to review page
     const selectedClientType = document.querySelector('input[name="clientType"]')?.value || 'corporate';
@@ -1878,6 +2824,7 @@ function saveDraft() {
     // Persist attachments into `documents` for this draft.
     const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
     formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
+    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
     
     // Submit to handler
     fetch('../handlers/kyc.php', {
@@ -1928,7 +2875,15 @@ async function clearForm() {
     const uploads = (typeof getStoredUploads === 'function') ? getStoredUploads() : [];
     await Promise.all((uploads || []).map(u => deleteTempUpload(u?.temp_path)));
     sessionStorage.removeItem('kycUploadedFiles');
+    const idUploads = getStoredGovernmentIdUploads();
+    await Promise.all((idUploads || []).map(u => deleteTempUpload(u?.temp_path)));
+    sessionStorage.removeItem('kycGovernmentIdFiles');
+    sessionStorage.removeItem('kycGovernmentIdOcrData');
+    currentGovernmentIdFile = null;
+    governmentIdOcrProfile = {};
     document.getElementById('fileList').innerHTML = '';
+    renderGovernmentIdUploads();
+    renderGovernmentIdOcrSummary();
     showToast('info', 'Form Cleared', 'All fields have been reset.');
     setButtonBusy(clearBtn, false);
 }
@@ -1987,6 +2942,19 @@ async function deleteTempUpload(tempPath) {
     }
 }
 
+function buildUploadOpenUrl(file) {
+    const rawPath = String(file?.file_path || file?.temp_path || '').trim();
+    if (!rawPath) return '';
+
+    const normalized = rawPath
+        .replace(/^\.{1,2}[\\/]+/, '')
+        .replace(/^[\\/]+/, '')
+        .replace(/\\/g, '/');
+
+    if (!normalized) return '';
+    return normalized.startsWith('uploads/') ? `../../${normalized}` : `../../uploads/${normalized}`;
+}
+
 function renderStoredUploads() {
     const stored = getStoredUploads();
     list.innerHTML = '';
@@ -1998,7 +2966,7 @@ function renderStoredUploads() {
 
         const name = f.original_name || f.file_name || 'file';
         const size = Number(f.file_size || 0);
-        const openUrl = f.file_path ? `../../${f.file_path}` : '';
+        const openUrl = buildUploadOpenUrl(f);
         const openBtnHtml = openUrl
             ? `<a href="${openUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" style="padding:4px 10px; margin-left:auto;">Open</a>`
             : '';
@@ -2010,7 +2978,7 @@ function renderStoredUploads() {
             <i class="bi bi-trash file-remove" title="Remove"></i>
         `;
 
-        item.querySelector('.file-remove')?.addEventListener('click', async () => {
+                const openUrl = buildUploadOpenUrl(file);
             const current = getStoredUploads();
             const removed = current.splice(idx, 1)[0];
             setStoredUploads(current);
