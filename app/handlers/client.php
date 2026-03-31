@@ -24,11 +24,12 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 // ADD NEW CLIENT
 // ============================================
 if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $clientType = trim($_POST['clientType'] ?? '');
+    $clientType = strtolower(trim($_POST['clientType'] ?? ''));
+    $allowedClientTypes = ['individual', 'corporate', 'obligee'];
     
     // Validation
-    if (empty($clientType)) {
-        $response['message'] = 'Client type is required';
+    if (empty($clientType) || !in_array($clientType, $allowedClientTypes, true)) {
+        $response['message'] = 'Invalid client type';
         echo json_encode($response);
         exit;
     }
@@ -115,6 +116,14 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insertData[$dbColumn] = $value;
                 }
             }
+        }
+    }
+
+    if (in_array($clientType, ['corporate', 'obligee'], true)) {
+        $corporateLikeName = trim($_POST['corporateClientName'] ?? '');
+        if ($corporateLikeName !== '') {
+            $insertData['client_name'] = $corporateLikeName;
+            $insertData['company_name'] = $corporateLikeName;
         }
     }
     

@@ -2,14 +2,11 @@
 require_once '../config/session.php';
 requireLogin();
 
-$typeFromQuery = strtolower(trim($_GET['type'] ?? 'corporate'));
-$selectedClientType = $typeFromQuery === 'obligee' ? 'obligee' : 'corporate';
-$isObligee = $selectedClientType === 'obligee';
-
-$clientTypeLabel = $isObligee ? 'Obligee Client' : 'Corporate Client';
-$newClientLabel = $isObligee ? 'New Obligee Client' : 'New Corporate Client';
-$clientTypeIcon = $isObligee ? 'bi-shield-check' : 'bi-building';
-$reviewUrl = 'kyc-corporate-review.php?type=' . urlencode($selectedClientType);
+$selectedClientType = 'obligee';
+$clientTypeLabel = 'Obligee Client';
+$newClientLabel = 'New Obligee Client';
+$clientTypeIcon = 'bi-shield-check';
+$reviewUrl = 'kyc-obligee-review.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -1146,8 +1143,8 @@ include '../includes/sidebar.php';
                                     <button type="button" id="scanIdBtn" class="btn btn-sm btn-primary" onclick="scanCurrentGovernmentId()">
                                         <i class="bi bi-search"></i> Scan ID
                                     </button>
-                                    <button type="button" id="ocrHealthCheckBtn" class="btn btn-sm btn-outline-secondary" onclick="checkGoogleVisionHealth()">
-                                        <i class="bi bi-shield-check"></i> Check Google Vision
+                                    <button type="button" id="ocrHealthCheckBtn" class="btn btn-sm btn-outline-secondary" onclick="checkPaddleOcrHealth()">
+                                        <i class="bi bi-shield-check"></i> Check OCR Service
                                     </button>
                                 </div>
                                 <div class="file-list" id="governmentIdFileList" style="margin-top:12px;"></div>
@@ -2399,7 +2396,7 @@ async function runGovernmentIdOcr(file) {
             setGovernmentIdOcrStatus(`Scanning... (${variant.label})`);
 
             try {
-                const result = await scanGovernmentIdWithGoogleVision(variant.blob, currentType, file.name || 'government-id.png');
+                const result = await scanGovernmentIdWithPaddleOcr(variant.blob, currentType, file.name || 'government-id.png');
                 const extractedText = result?.text || '';
                 const parsedProfile = result?.parsed || {};
                 const extractedProfile = extractGovernmentIdProfile(extractedText, currentType);
@@ -2430,7 +2427,7 @@ async function runGovernmentIdOcr(file) {
                     break;
                 }
             } catch (scanError) {
-                lastScanError = scanError?.message || 'Google Vision scan failed';
+                lastScanError = scanError?.message || 'PaddleOCR scan failed';
             }
 
             if (bestProfile.idNumber && (bestProfile.fullName || bestProfile.birthdate || bestProfile.gender || bestProfile.nationality)) {
@@ -2444,7 +2441,7 @@ async function runGovernmentIdOcr(file) {
 
         setGovernmentIdOcrScanMeta({
             variant: bestVariantLabel,
-            engine: 'Google Vision',
+            engine: 'PaddleOCR',
             confidence: bestConfidence >= 0 ? bestConfidence : ''
         });
         setGovernmentIdRawOutput(bestLines, bestLineConfidences);
@@ -2482,7 +2479,7 @@ async function runGovernmentIdOcr(file) {
     }
 }
 
-async function scanGovernmentIdWithGoogleVision(fileBlob, idType, sourceName = 'government-id.png') {
+async function scanGovernmentIdWithPaddleOcr(fileBlob, idType, sourceName = 'government-id.png') {
     const extension = (sourceName.split('.').pop() || 'png').toLowerCase();
     const safeExt = ['jpg', 'jpeg', 'png'].includes(extension) ? extension : 'png';
     const fileName = `government-id.${safeExt}`;
@@ -2492,7 +2489,7 @@ async function scanGovernmentIdWithGoogleVision(fileBlob, idType, sourceName = '
     fd.append('idType', idType || '');
     fd.append('id_image', fileBlob, fileName);
 
-    const response = await fetch('../handlers/google_vision_ocr.php', {
+    const response = await fetch('../handlers/paddle_ocr.php', {
         method: 'POST',
         credentials: 'include',
         body: fd
@@ -2507,36 +2504,28 @@ async function scanGovernmentIdWithGoogleVision(fileBlob, idType, sourceName = '
     }
 
     if (!response.ok || !data?.success) {
-        throw new Error(data?.message || 'Google Vision request failed');
+        throw new Error(data?.message || 'PaddleOCR request failed');
     }
 
-    const text = String(data.text || '');
-    const textLines = text
-        .split(/\r?\n/)
-        .map(line => String(line || '').trim())
-        .filter(Boolean);
-
     return {
-        text,
+        text: data.text || '',
         confidence: Number(data.confidence) || 0,
         parsed: data.parsed || {},
-        textLines: Array.isArray(data.textLines) ? data.textLines : textLines,
-        confidenceItems: Array.isArray(data.confidenceItems)
-            ? data.confidenceItems
-            : textLines.map(() => Number(data.confidence) || 0)
+        textLines: Array.isArray(data.textLines) ? data.textLines : [],
+        confidenceItems: Array.isArray(data.confidenceItems) ? data.confidenceItems : []
     };
 }
 
-async function checkGoogleVisionHealth() {
+async function checkPaddleOcrHealth() {
     const button = document.getElementById('ocrHealthCheckBtn');
     setButtonBusy(button, true, 'Testing...');
-    setGovernmentIdOcrStatus('Checking Google Vision service...');
+    setGovernmentIdOcrStatus('Checking OCR service...');
 
     try {
         const fd = new FormData();
         fd.append('action', 'health_check');
 
-        const response = await fetch('../handlers/google_vision_ocr.php', {
+        const response = await fetch('../handlers/paddle_ocr.php', {
             method: 'POST',
             credentials: 'include',
             body: fd
@@ -2547,11 +2536,11 @@ async function checkGoogleVisionHealth() {
             throw new Error(data?.message || 'OCR health check failed');
         }
 
-        setGovernmentIdOcrStatus('Google Vision is ready. You can scan an ID now.');
-        showToast('success', 'OCR Ready', 'Google Vision API is configured and reachable.');
+        setGovernmentIdOcrStatus('OCR service is ready. You can scan an ID now.');
+        showToast('success', 'OCR Ready', 'PaddleOCR service is configured and reachable.');
     } catch (error) {
         setGovernmentIdOcrStatus(error?.message || 'OCR health check failed.', true);
-        showToast('error', 'OCR Check Failed', error?.message || 'Please check Google Vision API configuration.');
+        showToast('error', 'OCR Check Failed', error?.message || 'Please check Python OCR service.');
     } finally {
         setButtonBusy(button, false);
     }
