@@ -22,7 +22,7 @@ $menuItems = [
         'icon' => 'bi-people',
         'href' => 'clients.php',
         'page' => 'clients',
-        'badge' => '24'
+        'badge' => null
     ],
     [
         'label' => 'KYC Verification',

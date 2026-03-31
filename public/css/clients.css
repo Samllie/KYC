@@ -135,7 +135,7 @@
 /* Table Wrapper */
 .table-wrapper {
     position: relative;
-    overflow-x: hidden;
+    overflow-x: auto;
     overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     height: auto;
@@ -196,8 +196,8 @@ body.clients-page .content {
 
 /* Clients Table */
 .clients-table {
-    width: 100%;
-    min-width: 0;
+    width: max(100%, 1240px);
+    min-width: 1240px;
     border-collapse: collapse;
     font-size: 0.8rem;
     table-layout: fixed;
@@ -210,7 +210,7 @@ body.clients-page .content {
 }
 
 .clients-table th {
-    padding: 6px 8px;
+    padding: 5px 8px;
     text-align: left;
     font-weight: 600;
     color: #f2fff3;
@@ -222,7 +222,7 @@ body.clients-page .content {
 .clients-table th.col-status,
 .clients-table th.col-verified,
 .clients-table th.col-actions {
-    white-space: normal;
+    white-space: nowrap;
     line-height: 1.2;
     font-size: 0.74rem;
 }
@@ -252,7 +252,7 @@ body.clients-page .content {
 }
 
 .clients-table td {
-    padding: 8px;
+    padding: 7px 8px;
     color: var(--gray-700);
     white-space: nowrap;
     overflow: hidden;
@@ -394,6 +394,7 @@ body.clients-page .content {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-shrink: 0;
     padding: 16px;
     border-top: 1px solid #dce9e1;
     background: #f4fbf6;
@@ -913,6 +914,7 @@ body.clients-page .content {
     }
 
     .clients-table {
+        width: 100%;
         min-width: 0;
     }
 
