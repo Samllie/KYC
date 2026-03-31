@@ -136,8 +136,7 @@
 .table-wrapper {
     position: relative;
     overflow-x: hidden;
-    overflow-y: hidden;
-    width: 100%;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     height: auto;
     min-height: 0;
@@ -200,22 +199,32 @@ body.clients-page .content {
     width: 100%;
     min-width: 0;
     border-collapse: collapse;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     table-layout: fixed;
 }
 
 .clients-table thead {
-    background: #f4fbf6;
-    border-top: 1px solid #d8e6de;
-    border-bottom: 2px solid #d8e6de;
+    background: #3f9350;
+    border-top: 1px solid #368146;
+    border-bottom: none;
 }
 
 .clients-table th {
-    padding: 12px;
+    padding: 6px 8px;
     text-align: left;
     font-weight: 600;
-    color: var(--gray-700);
+    color: #f2fff3;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.clients-table th.col-status,
+.clients-table th.col-verified,
+.clients-table th.col-actions {
+    white-space: normal;
+    line-height: 1.2;
+    font-size: 0.74rem;
 }
 
 .clients-table tbody tr {
@@ -243,7 +252,7 @@ body.clients-page .content {
 }
 
 .clients-table td {
-    padding: 12px;
+    padding: 8px;
     color: var(--gray-700);
     white-space: nowrap;
     overflow: hidden;
@@ -252,15 +261,22 @@ body.clients-page .content {
 
 /* Column Widths */
 .col-checkbox { width: 4%; }
-.col-ref { width: 10%; }
+.col-ref { width: 9%; }
 .col-name { width: 15%; }
-.col-owner { width: 12%; }
-.col-type { width: 8%; }
+.col-owner { width: 14%; }
+.col-type { width: 9%; }
 .col-contact { width: 10%; }
-.col-email { width: 14%; }
-.col-status { width: 9%; }
-.col-verified { width: 10%; }
+.col-email { width: 15%; }
+.col-status { width: 8%; }
+.col-verified { width: 8%; }
 .col-actions { width: 8%; text-align: center; }
+
+.clients-table th.col-actions,
+.clients-table td.col-actions {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+}
 
 .clients-table td.col-type {
     overflow: visible;
@@ -348,10 +364,10 @@ body.clients-page .content {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 6px;
+    padding: 4px;
     border-radius: 4px;
     color: var(--gray-500);
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     transition: all var(--transition);
     display: inline-flex;
     align-items: center;
@@ -898,7 +914,6 @@ body.clients-page .content {
 
     .clients-table {
         min-width: 0;
-        width: 100%;
     }
 
     .btn-export,

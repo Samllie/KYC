@@ -63,8 +63,10 @@ requireLogin();
         /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
-            top: 0;
-            left: 0;
+            top: 50%;
+            left: 50%;
+            right: auto;
+            bottom: auto;
             width: 360px;
             max-width: calc(100vw - 28px);
             max-height: 48vh;
@@ -74,8 +76,8 @@ requireLogin();
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            transform: translateY(-8px) scale(0.985);
-            transform-origin: top right;
+            transform: translate(-50%, calc(-50% - 8px)) scale(0.985);
+            transform-origin: center;
             border: 1px solid #d8dee6;
             border-radius: 16px;
             background: #ffffff;
@@ -86,7 +88,7 @@ requireLogin();
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
-            transform: translateY(0) scale(1);
+            transform: translate(-50%, -50%) scale(1);
         }
 
         #draftsCard .card-header {
@@ -270,6 +272,11 @@ requireLogin();
 
         .card.flow-reveal {
             animation: flowCardIn 0.28s ease both;
+        }
+
+        #draftsCard.flow-reveal,
+        #draftsCard.open.flow-reveal {
+            animation: none !important;
         }
 
         @keyframes flowCardIn {
@@ -600,8 +607,10 @@ requireLogin();
 
         body.kyc-compact #draftsCard {
             width: 336px;
-            top: 74px;
-            bottom: calc(var(--draft-btn-bottom) + var(--draft-btn-size) + var(--draft-panel-gap));
+            top: 50%;
+            left: 50%;
+            right: auto;
+            bottom: auto;
             border-radius: 12px;
         }
 
@@ -626,22 +635,24 @@ requireLogin();
             font-size: 0.72rem;
         }
 
+        /* Modal backdrop for drafts popup (all breakpoints) */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.28);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 9997;
+        }
+
+        body.drafts-popup-open::before {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         @media (max-width: 900px) {
-            body::before {
-                content: '';
-                position: fixed;
-                inset: 0;
-                background: rgba(15, 23, 42, 0.28);
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.2s ease;
-                z-index: 9997;
-            }
-
-            body.drafts-popup-open::before {
-                opacity: 1;
-            }
-
             body {
                 --draft-btn-bottom: 12px;
             }
@@ -1338,6 +1349,11 @@ function setButtonBusy(button, isBusy, label = 'Working...') {
 function revealFlowCards() {
     const cards = document.querySelectorAll('main.content .card');
     cards.forEach((card, idx) => {
+        if (card.id === 'draftsCard') {
+            card.classList.remove('flow-reveal');
+            card.style.animationDelay = '';
+            return;
+        }
         card.classList.add('flow-reveal');
         card.style.animationDelay = `${Math.min(idx * 45, 280)}ms`;
     });
@@ -3149,43 +3165,62 @@ function toggleDraftsPanel() {
         toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
     }
     if (willOpen && typeof refreshDrafts === 'function') {
-        requestAnimationFrame(positionDraftsPanel);
+        queueDraftsPanelPosition();
+        startDraftsPanelFollow();
         refreshDrafts();
+    } else {
+        stopDraftsPanelFollow();
+    }
+}
+
+let draftsPanelPositionRaf = 0;
+let draftsPanelFollowRaf = 0;
+
+function queueDraftsPanelPosition() {
+    if (draftsPanelPositionRaf) return;
+    draftsPanelPositionRaf = requestAnimationFrame(() => {
+        draftsPanelPositionRaf = 0;
+        positionDraftsPanel();
+    });
+}
+
+function startDraftsPanelFollow() {
+    if (draftsPanelFollowRaf) return;
+    const tick = () => {
+        const panel = document.getElementById('draftsCard');
+        if (!panel || !panel.classList.contains('open')) {
+            draftsPanelFollowRaf = 0;
+            return;
+        }
+        positionDraftsPanel();
+        draftsPanelFollowRaf = requestAnimationFrame(tick);
+    };
+    draftsPanelFollowRaf = requestAnimationFrame(tick);
+}
+
+function stopDraftsPanelFollow() {
+    if (draftsPanelFollowRaf) {
+        cancelAnimationFrame(draftsPanelFollowRaf);
+        draftsPanelFollowRaf = 0;
+    }
+    if (draftsPanelPositionRaf) {
+        cancelAnimationFrame(draftsPanelPositionRaf);
+        draftsPanelPositionRaf = 0;
     }
 }
 
 function positionDraftsPanel() {
     const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel || !toggleBtn || !panel.classList.contains('open')) {
+    if (!panel || !panel.classList.contains('open')) {
         return;
     }
 
-    const gap = 10;
-    const pad = 8;
-
+    panel.style.top = '50%';
+    panel.style.left = '50%';
     panel.style.right = 'auto';
     panel.style.bottom = 'auto';
-    panel.style.left = '-9999px';
-    panel.style.top = '-9999px';
-
-    const buttonRect = toggleBtn.getBoundingClientRect();
-    const panelRect = panel.getBoundingClientRect();
-
-    let left = buttonRect.right - panelRect.width;
-    let top = buttonRect.bottom + gap;
-
-    const maxLeft = window.innerWidth - panelRect.width - pad;
-    if (left > maxLeft) left = Math.max(pad, maxLeft);
-    if (left < pad) left = pad;
-
-    if (top + panelRect.height > window.innerHeight - pad) {
-        top = buttonRect.top - panelRect.height - gap;
-    }
-    if (top < pad) top = pad;
-
-    panel.style.left = `${Math.round(left)}px`;
-    panel.style.top = `${Math.round(top)}px`;
+    panel.style.width = '';
+    panel.style.maxWidth = '';
 }
 
 function closeDraftsPanel() {
@@ -3194,6 +3229,7 @@ function closeDraftsPanel() {
     if (!panel) return;
     panel.classList.remove('open');
     document.body.classList.remove('drafts-popup-open');
+    stopDraftsPanelFollow();
     if (toggleBtn) {
         toggleBtn.setAttribute('aria-expanded', 'false');
     }
@@ -3217,8 +3253,8 @@ document.addEventListener('keydown', function (event) {
     }
 });
 
-window.addEventListener('resize', positionDraftsPanel);
-window.addEventListener('scroll', positionDraftsPanel, true);
+window.addEventListener('resize', queueDraftsPanelPosition);
+window.addEventListener('scroll', queueDraftsPanelPosition, true);
 
 let kycMasonryRaf = 0;
 let kycMasonryObserver = null;

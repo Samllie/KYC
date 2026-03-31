@@ -99,7 +99,7 @@ include '../includes/sidebar.php';
             <!-- Pagination -->
             <div class="table-footer">
                 <div class="pagination-info">
-                    Showing <span class="info-start">1</span> to <span class="info-end">7</span> of <span class="info-total">0</span> clients
+                    Showing <span class="info-start">1</span> to <span class="info-end">8</span> of <span class="info-total">0</span> clients
                 </div>
                 <div class="pagination" id="paginationContainer">
                     <!-- Pagination buttons will be generated dynamically -->
@@ -413,7 +413,7 @@ include '../includes/sidebar.php';
 <script>
     // Pagination state
     let currentPage = 1;
-    let pageSize = 7;
+    let pageSize = 8;
     let totalPages = 1;
     let totalClients = 0;
     let currentEditingClientId = null;
