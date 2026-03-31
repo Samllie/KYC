@@ -1,6 +1,13 @@
 <?php
 require_once '../config/session.php';
 requireLogin();
+
+$typeFromQuery = strtolower(trim($_GET['type'] ?? 'corporate'));
+$selectedClientType = $typeFromQuery === 'obligee' ? 'obligee' : 'corporate';
+$isObligee = $selectedClientType === 'obligee';
+
+$clientTypeLabel = $isObligee ? 'Obligee Client' : 'Corporate Client';
+$backToEditUrl = 'kyc-corporate.php?type=' . urlencode($selectedClientType);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -101,7 +108,7 @@ include '../includes/sidebar.php';
     <!-- Topbar -->
     <header class="topbar">
         <div class="topbar-left">
-            <h1>KYC Verification — Corporate Client Review</h1>
+            <h1>KYC Verification — <?php echo htmlspecialchars($clientTypeLabel); ?> Review</h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
                 Dashboard &rsaquo; Clients &rsaquo; <span>Review Information</span>
@@ -184,6 +191,9 @@ include '../includes/sidebar.php';
 
 <!-- ═══════════════════════════════════════════════ SCRIPTS -->
 <script>
+const currentClientType = <?php echo json_encode($selectedClientType); ?>;
+const backToEditUrl = <?php echo json_encode($backToEditUrl); ?>;
+
 // ── Toast ──────────────────────────────────────────────────
 function showToast(type, title, msg) {
     const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', info: 'bi-info-circle-fill' };
@@ -227,7 +237,7 @@ function displayReview() {
         {
             title: 'Client Type',
             fields: [
-                { label: 'Client Type', key: 'clientType', format: 'corporate' }
+                { label: 'Client Type', key: 'clientType' }
             ]
         },
         {
@@ -348,7 +358,7 @@ function displayReview() {
 }
 
 function goBackToEdit() {
-    window.location.href = 'kyc-corporate.php';
+    window.location.href = backToEditUrl;
 }
 
 function submitForm() {

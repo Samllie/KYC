@@ -44,6 +44,10 @@ requireLogin();
         .type-card:nth-child(2) {
             border-color: #bbe6c9;
         }
+
+        .type-card:nth-child(3) {
+            border-color: #f3c792;
+        }
         
         .type-card:hover {
             box-shadow: 0 16px 34px rgba(20, 58, 41, 0.17);
@@ -57,6 +61,10 @@ requireLogin();
         .type-card:nth-child(2):hover {
             background: #f1fdf4;
         }
+
+        .type-card:nth-child(3):hover {
+            background: #fff7ed;
+        }
         
         .type-card:nth-child(1) .type-card-btn {
             background: #2c75cc;
@@ -65,6 +73,10 @@ requireLogin();
         .type-card:nth-child(2) .type-card-btn {
             background: #157345;
         }
+
+        .type-card:nth-child(3) .type-card-btn {
+            background: #c06a12;
+        }
         
         .type-card:nth-child(1):hover .type-card-btn {
             background: #1f5ea9;
@@ -72,6 +84,14 @@ requireLogin();
         
         .type-card:nth-child(2):hover .type-card-btn {
             background: #0f5a35;
+        }
+
+        .type-card:nth-child(3):hover .type-card-btn {
+            background: #9b550d;
+        }
+
+        .type-card:nth-child(3) .type-card-icon {
+            color: #b55e09;
         }
         
         .type-card-icon {
@@ -342,6 +362,18 @@ include '../includes/sidebar.php';
                             Register a company or organization as a client. Provide corporate information and business verification.
                         </div>
                         <div class="type-card-btn">Select Corporate</div>
+                    </a>
+
+                    <!-- Obligee Client Card -->
+                    <a href="kyc-corporate.php?type=obligee" class="type-card">
+                        <div class="type-card-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="type-card-title">Obligee Client</div>
+                        <div class="type-card-desc">
+                            Register an obligee client using the same workflow and requirements as corporate registration.
+                        </div>
+                        <div class="type-card-btn">Select Obligee</div>
                     </a>
                 </div>
             </div>

@@ -344,6 +344,97 @@
     background: #fbfffd;
 }
 
+/* ─── Dashboard Comfort Compact ─────────────────── */
+body.kyc-compact .topbar {
+    height: 60px;
+    padding: 0 26px;
+}
+
+body.kyc-compact .topbar-left h1 {
+    font-size: 1rem;
+}
+
+body.kyc-compact .breadcrumb-trail {
+    font-size: 0.68rem;
+}
+
+body.kyc-compact .content {
+    padding: 22px 26px;
+}
+
+/* Keep the welcome section compact as requested */
+body.kyc-compact .welcome-section {
+    gap: 14px;
+    padding: 18px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+}
+
+body.kyc-compact .welcome-text .day-label {
+    font-size: 0.68rem;
+    margin-bottom: 5px;
+}
+
+body.kyc-compact .welcome-text h2 {
+    font-size: 1.12rem;
+    margin-bottom: 4px;
+}
+
+body.kyc-compact .welcome-text p {
+    font-size: 0.8rem;
+}
+
+body.kyc-compact .btn {
+    padding: 10px 15px;
+    border-radius: 9px;
+    font-size: 0.82rem;
+}
+
+body.kyc-compact .stats-row {
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+body.kyc-compact .stat-card {
+    padding: 17px 18px;
+    border-radius: 13px;
+}
+
+body.kyc-compact .stat-value {
+    font-size: 1.4rem;
+}
+
+body.kyc-compact .dashboard-grid {
+    gap: 14px;
+}
+
+body.kyc-compact .card {
+    margin-bottom: 14px;
+    border-radius: 13px;
+}
+
+body.kyc-compact .card-header {
+    padding: 16px 22px 0;
+}
+
+body.kyc-compact .card-body {
+    padding: 16px 22px 18px;
+}
+
+body.kyc-compact .action-btn {
+    min-height: 84px;
+    padding: 12px 10px;
+    font-size: 0.78rem;
+}
+
+body.kyc-compact .action-btn i {
+    font-size: 1.2rem;
+}
+
+body.kyc-compact .activity-card {
+    margin-top: 14px;
+}
+
 /* ─── Responsive Design ─────────────────────────── */
 @media (max-width: 1160px) {
     .welcome-section {
@@ -380,5 +471,58 @@
     .activity-item {
         grid-template-columns: 1fr;
         align-items: flex-start;
+    }
+
+    .welcome-text h2 {
+        font-size: 1.28rem;
+    }
+
+    .hero-action {
+        width: 100%;
+    }
+
+    .hero-action .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 520px) {
+    .pipeline-head {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .split-legend {
+        font-size: 0.74rem;
+    }
+}
+
+@media (max-width: 900px) {
+    body.kyc-compact .topbar {
+        height: auto;
+        min-height: 52px;
+        padding: 8px 12px;
+    }
+
+    body.kyc-compact .content {
+        padding: 14px;
+    }
+
+    body.kyc-compact .welcome-section {
+        padding: 14px;
+        margin-bottom: 10px;
+    }
+
+    body.kyc-compact .card-header {
+        padding: 10px 12px 0;
+    }
+
+    body.kyc-compact .card-body {
+        padding: 10px 12px 12px;
+    }
+
+    body.kyc-compact .action-btn {
+        min-height: 76px;
     }
 }

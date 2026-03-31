@@ -274,37 +274,37 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $userProvidedRefCode = trim($_POST['refCode'] ?? '');
     $clientType = trim($_POST['clientType'] ?? '');
 
-    $isCorporate = ($clientType === 'corporate');
+    $isCorporateLike = in_array($clientType, ['corporate', 'obligee'], true);
 
     // Keep kyc_verifications values in a unified shape so get_kyc/load draft works for both client types.
     $formData = [
         'ref_code' => $userProvidedRefCode,
         'client_type' => $clientType,
-        'last_name' => $isCorporate ? '' : trim($_POST['lastName'] ?? ''),
-        'first_name' => $isCorporate ? '' : trim($_POST['firstName'] ?? ''),
-        'middle_name' => $isCorporate ? '' : trim($_POST['middleName'] ?? ''),
-        'suffix' => $isCorporate ? '' : trim($_POST['suffixName'] ?? ''),
-        'birthdate' => $isCorporate ? null : trim($_POST['birthdate'] ?? ''),
+        'last_name' => $isCorporateLike ? '' : trim($_POST['lastName'] ?? ''),
+        'first_name' => $isCorporateLike ? '' : trim($_POST['firstName'] ?? ''),
+        'middle_name' => $isCorporateLike ? '' : trim($_POST['middleName'] ?? ''),
+        'suffix' => $isCorporateLike ? '' : trim($_POST['suffixName'] ?? ''),
+        'birthdate' => $isCorporateLike ? null : trim($_POST['birthdate'] ?? ''),
         'gender' => trim($_POST['gender'] ?? $_POST['corporateGender'] ?? ''),
-        'nationality' => $isCorporate ? '' : trim($_POST['nationality'] ?? ''),
+        'nationality' => $isCorporateLike ? '' : trim($_POST['nationality'] ?? ''),
         'id_type' => trim($_POST['idType'] ?? ''),
         'id_number' => trim($_POST['idNumber'] ?? ''),
-        'occupation' => $isCorporate
+        'occupation' => $isCorporateLike
             ? trim($_POST['corporateContactPerson'] ?? '')
             : trim($_POST['occupation'] ?? ''),
-        'company' => $isCorporate
+        'company' => $isCorporateLike
             ? trim($_POST['corporateClientName'] ?? '')
             : trim($_POST['employer'] ?? $_POST['company'] ?? ''),
-        'mobile' => $isCorporate
+        'mobile' => $isCorporateLike
             ? trim($_POST['corporatePhone'] ?? '')
             : trim($_POST['mobile'] ?? ''),
-        'phone' => $isCorporate
+        'phone' => $isCorporateLike
             ? trim($_POST['corporatePhone'] ?? '')
             : trim($_POST['telephone'] ?? $_POST['phone'] ?? ''),
-        'email' => $isCorporate
+        'email' => $isCorporateLike
             ? trim($_POST['corporateEmail'] ?? '')
             : trim($_POST['email'] ?? ''),
-        'address' => $isCorporate
+        'address' => $isCorporateLike
             ? trim($_POST['corporateBusinessAddress'] ?? $_POST['address'] ?? '')
             : trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
     ];
@@ -318,9 +318,9 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $formData['client_type'] = 'individual';
     }
 
-    if ($isCorporate) {
+    if ($isCorporateLike) {
         $clientUpdateData = [
-            'client_type' => 'corporate',
+            'client_type' => $clientType ?: 'corporate',
             'company_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
             'business_type' => trim($_POST['businessType'] ?? '') ?: null,
             'id_type' => trim($_POST['idType'] ?? '') ?: null,

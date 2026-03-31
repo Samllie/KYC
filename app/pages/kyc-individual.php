@@ -50,14 +50,24 @@ requireLogin();
             transform: translateX(-3px);
         }
 
+        body {
+            --draft-btn-size: 46px;
+            --draft-btn-bottom: 18px;
+            --draft-panel-gap: 8px;
+        }
+
+        body.kyc-compact {
+            --draft-btn-size: 42px;
+        }
+
         /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
-            top: 82px;
-            right: 18px;
-            width: 420px;
+            top: 0;
+            left: 0;
+            width: 360px;
             max-width: calc(100vw - 28px);
-            max-height: 76vh;
+            max-height: 48vh;
             overflow: hidden;
             z-index: 9999;
             display: block;
@@ -80,29 +90,29 @@ requireLogin();
         }
 
         #draftsCard .card-header {
-            padding: 14px 16px;
+            padding: 10px 12px;
             border-bottom: 1px solid #e7ebf0;
             background: #f9fafb;
         }
 
         #draftsCard .card-title {
-            font-size: .9rem;
+            font-size: .82rem;
             color: #1f2937;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         #draftsCard .card-body {
-            padding: 14px 16px 18px;
+            padding: 10px 12px 12px;
             overflow: auto;
-            max-height: calc(76vh - 62px);
+            max-height: calc(48vh - 48px);
         }
 
         .drafts-fields {
             display: grid;
             grid-template-columns: 1fr;
-            row-gap: 10px;
+            row-gap: 8px;
         }
 
         .drafts-action-row {
@@ -112,51 +122,122 @@ requireLogin();
         }
 
         #loadDraftBtn {
-            min-width: 120px;
-            height: 34px;
-            padding: 0 12px;
-            font-size: .78rem;
+            min-width: 104px;
+            height: 30px;
+            padding: 0 10px;
+            font-size: .72rem;
             border-radius: 9px;
         }
 
         #draftInfo,
         #draftDocsWrapper,
         #draftDocsContainer {
-            font-size: .82rem;
+            font-size: .76rem;
         }
 
         #draftSelect {
-            height: 40px;
-            font-size: .84rem;
+            height: 34px;
+            font-size: .78rem;
         }
 
         #kycForm {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-            margin-bottom: 16px;
-            align-items: stretch;
+            --masonry-gap: 14px;
+            position: relative;
+            width: min(1120px, 100%);
+            margin: 0 auto 16px;
+            min-height: 0;
+        }
+
+        #kycForm > #draftsCard {
+            display: none;
+        }
+
+        #kycForm > #draftsCard.open {
+            display: block;
+        }
+
+        #kycForm > .card,
+        .client-type-inline {
+            display: block;
+            margin: 0;
         }
 
         #kycForm > .card {
-            margin-bottom: 0;
-            height: 100%;
             display: flex;
             flex-direction: column;
+            align-self: stretch;
+            position: relative;
+            border: 1px solid #cfded4;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 252, 250, 0.92) 100%);
+            box-shadow: 0 10px 24px rgba(18, 52, 38, 0.08);
         }
 
-        #kycForm > .card .card-body,
+        #kycForm > .card .card-body {
+            flex: 0 0 auto;
+        }
+
         #kycForm > .card .card-footer {
-            flex: 1;
+            flex: 0 0 auto;
         }
 
         #kycForm > .card.card-span-2 {
-            grid-column: 1 / -1;
+            width: 100%;
+        }
+
+        #kycForm > .card:not(#draftsCard)::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #1e8a5c 0%, #2ea371 100%);
+        }
+
+        #kycForm > .card[data-wizard-step="3"]:not(#draftsCard)::before {
+            background: linear-gradient(180deg, #2f7fd6 0%, #4b95e6 100%);
+        }
+
+        #kycForm > .card .card-header {
+            padding: 18px 22px 0;
+        }
+
+        #kycForm > .card .card-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 0.94rem;
+            letter-spacing: 0.01em;
+        }
+
+        #kycForm > .card .card-title i {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #e8f4ee;
+            color: #16633f;
+            font-size: 0.86rem;
+        }
+
+        #kycForm > .card[data-wizard-step="3"] .card-title i {
+            background: #e8f0fb;
+            color: #1f5ea9;
+        }
+
+        #kycForm > .card .card-body {
+            padding: 18px 22px 20px;
+        }
+
+        #kycForm > .card .card-footer {
+            padding: 14px 22px;
         }
 
         @media (max-width: 1100px) {
             #kycForm {
-                grid-template-columns: 1fr;
+                --masonry-gap: 12px;
             }
         }
 
@@ -165,8 +246,8 @@ requireLogin();
         }
 
         .drafts-toggle-btn {
-            width: 38px;
-            height: 38px;
+            width: var(--draft-btn-size);
+            height: var(--draft-btn-size);
             border-radius: 10px;
             border: 1px solid #d2e0d8;
             background: rgba(255,255,255,0.85);
@@ -175,6 +256,12 @@ requireLogin();
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            align-self: center;
         }
         .drafts-toggle-btn:hover {
             background: #eef8f2;
@@ -289,6 +376,27 @@ requireLogin();
             transform: translateY(1px) scale(0.98);
         }
 
+        .flow-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .flow-note {
+            font-size: .75rem;
+            color: var(--gray-500);
+            flex: 1 1 240px;
+        }
+
+        .flow-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
         .steps-bar .step.step-clickable {
             cursor: pointer;
         }
@@ -298,12 +406,12 @@ requireLogin();
         }
 
         .client-type-inline {
-            grid-column: 1 / -1;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 10px;
-            margin-bottom: 4px;
+            margin-bottom: 0;
         }
 
         .client-type-inline-left {
@@ -368,12 +476,22 @@ requireLogin();
         }
 
         body.kyc-compact #kycForm {
-            gap: 12px;
+            --masonry-gap: 10px;
             margin-bottom: 12px;
         }
 
+        body.kyc-compact #kycForm > .card .card-header {
+            padding: 12px 16px 0;
+        }
+
+        body.kyc-compact #kycForm > .card .card-body,
+        body.kyc-compact #kycForm > .card .card-footer {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
         body.kyc-compact .client-type-inline {
-            margin-bottom: 2px;
+            margin-bottom: 0;
         }
 
         body.kyc-compact .client-type-inline-label {
@@ -476,13 +594,14 @@ requireLogin();
         }
 
         body.kyc-compact .drafts-toggle-btn {
-            width: 34px;
-            height: 34px;
+            width: var(--draft-btn-size);
+            height: var(--draft-btn-size);
         }
 
         body.kyc-compact #draftsCard {
-            width: 360px;
-            top: 68px;
+            width: 336px;
+            top: 74px;
+            bottom: calc(var(--draft-btn-bottom) + var(--draft-btn-size) + var(--draft-panel-gap));
             border-radius: 12px;
         }
 
@@ -492,7 +611,7 @@ requireLogin();
 
         body.kyc-compact #draftsCard .card-body {
             padding: 10px 12px 12px;
-            max-height: calc(76vh - 54px);
+            max-height: calc(44vh - 48px);
         }
 
         body.kyc-compact #draftSelect {
@@ -508,6 +627,25 @@ requireLogin();
         }
 
         @media (max-width: 900px) {
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.28);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s ease;
+                z-index: 9997;
+            }
+
+            body.drafts-popup-open::before {
+                opacity: 1;
+            }
+
+            body {
+                --draft-btn-bottom: 12px;
+            }
+
             .client-type-inline {
                 align-items: flex-start;
                 flex-wrap: wrap;
@@ -546,10 +684,53 @@ requireLogin();
                 padding: 10px 12px;
             }
 
+            .flow-footer {
+                align-items: stretch;
+            }
+
+            .flow-note {
+                flex: 1 1 100%;
+            }
+
+            .flow-actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .flow-actions .btn {
+                flex: 1 1 calc(50% - 8px);
+                min-width: 0;
+                justify-content: center;
+            }
+
+            #draftsCard,
             body.kyc-compact #draftsCard {
-                width: calc(100vw - 20px);
-                right: 10px;
-                top: 62px;
+                width: min(360px, calc(100vw - 20px));
+                max-height: min(50dvh, 360px);
+            }
+
+            body.kyc-compact #draftsCard .card-body {
+                max-height: calc(min(50dvh, 360px) - 48px);
+            }
+
+        }
+
+        @media (max-width: 640px) {
+            #draftsCard,
+            body.kyc-compact #draftsCard {
+                width: min(330px, calc(100vw - 23px));
+                max-height: min(48dvh, 330px);
+            }
+
+            #draftsCard .card-body,
+            body.kyc-compact #draftsCard .card-body {
+                max-height: calc(min(48dvh, 330px) - 48px);
+            }
+        }
+
+        @media (max-width: 560px) {
+            .flow-actions .btn {
+                flex: 1 1 100%;
             }
         }
     </style>
@@ -644,14 +825,14 @@ include '../includes/sidebar.php';
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="refCode" class="form-label">Reference Code <span style="font-size:0.85rem;color:#999;">(Optional)</span></label>
                                 <input type="text" id="refCode" name="refCode" class="form-control" placeholder="Leave blank to auto-generate">
                                 <small class="text-muted">Leave empty for automatic generation</small>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="clientNumber" class="form-label">Client Number</label>
                                 <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="Auto-generated" readonly>
@@ -677,16 +858,16 @@ include '../includes/sidebar.php';
                                 <option value="">Loading...</option>
                             </select>
                         </div>
-                        <div class="drafts-action-row">
-                            <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
-                                <i class="bi bi-box-arrow-in-right"></i> Load Draft
-                            </button>
-                        </div>
                     </div>
                     <div id="draftInfo" style="margin-top:10px; color: var(--gray-500); font-size: .85rem;"></div>
                     <div id="draftDocsWrapper" style="margin-top:14px;">
                         <div style="color: var(--gray-500); font-size:.85rem;">Attachments saved to the selected draft:</div>
                         <div id="draftDocsContainer" style="margin-top:8px;"></div>
+                    </div>
+                    <div class="drafts-action-row">
+                        <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
+                            <i class="bi bi-box-arrow-in-right"></i> Load Draft
+                        </button>
                     </div>
                 </div>
             </div>
@@ -795,7 +976,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Government ID Verification Card -->
-            <div class="card card-span-2" data-wizard-step="2">
+            <div class="card" data-wizard-step="2">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-person-vcard"></i> Government ID Verification</div>
                 </div>
@@ -1082,12 +1263,12 @@ include '../includes/sidebar.php';
 
         <!-- Action Buttons Card -->
         <div class="card">
-            <div class="card-footer">
-                <div style="font-size:.75rem;color:var(--gray-500);">
+            <div class="card-footer flow-footer">
+                <div class="flow-note">
                     <i class="bi bi-info-circle" style="margin-right:4px;"></i>
                     All fields marked <span style="color:var(--danger);font-weight:700;">*</span> are required.
                 </div>
-                <div class="flow-actions" style="display:flex;gap:10px;">
+                <div class="flow-actions">
                     <button type="button" id="backBtn" class="btn btn-outline" onclick="goBack()">
                         <i class="bi bi-arrow-left"></i> Back to Type Selection
                     </button>
@@ -2963,12 +3144,48 @@ function toggleDraftsPanel() {
     if (!panel) return;
     const willOpen = !panel.classList.contains('open');
     panel.classList.toggle('open', willOpen);
+    document.body.classList.toggle('drafts-popup-open', willOpen);
     if (toggleBtn) {
         toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
     }
     if (willOpen && typeof refreshDrafts === 'function') {
+        requestAnimationFrame(positionDraftsPanel);
         refreshDrafts();
     }
+}
+
+function positionDraftsPanel() {
+    const panel = document.getElementById('draftsCard');
+    const toggleBtn = document.querySelector('.drafts-toggle-btn');
+    if (!panel || !toggleBtn || !panel.classList.contains('open')) {
+        return;
+    }
+
+    const gap = 10;
+    const pad = 8;
+
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    panel.style.left = '-9999px';
+    panel.style.top = '-9999px';
+
+    const buttonRect = toggleBtn.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+
+    let left = buttonRect.right - panelRect.width;
+    let top = buttonRect.bottom + gap;
+
+    const maxLeft = window.innerWidth - panelRect.width - pad;
+    if (left > maxLeft) left = Math.max(pad, maxLeft);
+    if (left < pad) left = pad;
+
+    if (top + panelRect.height > window.innerHeight - pad) {
+        top = buttonRect.top - panelRect.height - gap;
+    }
+    if (top < pad) top = pad;
+
+    panel.style.left = `${Math.round(left)}px`;
+    panel.style.top = `${Math.round(top)}px`;
 }
 
 function closeDraftsPanel() {
@@ -2976,6 +3193,7 @@ function closeDraftsPanel() {
     const toggleBtn = document.querySelector('.drafts-toggle-btn');
     if (!panel) return;
     panel.classList.remove('open');
+    document.body.classList.remove('drafts-popup-open');
     if (toggleBtn) {
         toggleBtn.setAttribute('aria-expanded', 'false');
     }
@@ -2998,6 +3216,102 @@ document.addEventListener('keydown', function (event) {
         closeDraftsPanel();
     }
 });
+
+window.addEventListener('resize', positionDraftsPanel);
+window.addEventListener('scroll', positionDraftsPanel, true);
+
+let kycMasonryRaf = 0;
+let kycMasonryObserver = null;
+
+function getKycMasonryItems(form) {
+    return Array.from(form.children).filter((el) => {
+        if (el.id === 'draftsCard') return false;
+        if (el.classList.contains('wizard-hidden')) return false;
+        return el.classList.contains('card') || el.classList.contains('client-type-inline');
+    });
+}
+
+function layoutKycMasonry() {
+    const form = document.getElementById('kycForm');
+    if (!form) return;
+
+    const items = getKycMasonryItems(form);
+    if (!items.length) {
+        form.style.minHeight = '0px';
+        return;
+    }
+
+    const columns = window.matchMedia('(max-width: 1100px)').matches ? 1 : 2;
+    const gap = parseFloat(getComputedStyle(form).getPropertyValue('--masonry-gap')) || 14;
+    const formWidth = form.clientWidth;
+    const columnWidth = columns > 1 ? (formWidth - gap) / columns : formWidth;
+    let heights = new Array(columns).fill(0);
+
+    items.forEach((item) => {
+        const isSpanAll = columns === 1 || item.classList.contains('client-type-inline') || item.classList.contains('card-span-2');
+
+        item.style.position = 'absolute';
+        item.style.maxWidth = 'none';
+
+        if (isSpanAll) {
+            const top = Math.max(...heights);
+            item.style.left = '0px';
+            item.style.top = `${Math.round(top)}px`;
+            item.style.width = `${Math.round(formWidth)}px`;
+
+            const nextTop = top + item.offsetHeight + gap;
+            heights = heights.map(() => nextTop);
+            return;
+        }
+
+        let targetColumn = 0;
+        for (let i = 1; i < heights.length; i += 1) {
+            if (heights[i] < heights[targetColumn]) {
+                targetColumn = i;
+            }
+        }
+
+        const top = heights[targetColumn];
+        const left = targetColumn * (columnWidth + gap);
+
+        item.style.left = `${Math.round(left)}px`;
+        item.style.top = `${Math.round(top)}px`;
+        item.style.width = `${Math.round(columnWidth)}px`;
+
+        heights[targetColumn] = top + item.offsetHeight + gap;
+    });
+
+    const contentHeight = Math.max(...heights) - gap;
+    form.style.minHeight = `${Math.max(0, Math.round(contentHeight))}px`;
+}
+
+function scheduleKycMasonryLayout() {
+    if (kycMasonryRaf) return;
+    kycMasonryRaf = requestAnimationFrame(() => {
+        kycMasonryRaf = 0;
+        layoutKycMasonry();
+    });
+}
+
+function initKycMasonryObserver() {
+    const form = document.getElementById('kycForm');
+    if (!form || typeof ResizeObserver === 'undefined') return;
+
+    if (kycMasonryObserver) {
+        kycMasonryObserver.disconnect();
+    }
+
+    kycMasonryObserver = new ResizeObserver(() => {
+        scheduleKycMasonryLayout();
+    });
+
+    getKycMasonryItems(form).forEach((item) => {
+        kycMasonryObserver.observe(item);
+    });
+}
+
+window.addEventListener('resize', scheduleKycMasonryLayout);
+window.addEventListener('load', scheduleKycMasonryLayout);
 
 const WIZARD_MIN_STEP = 2;
 const WIZARD_MAX_STEP = 4;
@@ -3079,6 +3393,7 @@ function applyWizardStep(step) {
     if (proceedBtn) proceedBtn.style.display = step === WIZARD_MAX_STEP ? '' : 'none';
 
     updateWizardProgress(step);
+    scheduleKycMasonryLayout();
 }
 
 function goToWizardStep(step) {
@@ -3140,6 +3455,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     applyWizardStep(currentWizardStep);
+    initKycMasonryObserver();
+    scheduleKycMasonryLayout();
 });
 
 function proceedToReview() {
