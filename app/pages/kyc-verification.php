@@ -365,13 +365,13 @@ include '../includes/sidebar.php';
                     </a>
 
                     <!-- Obligee Client Card -->
-                    <a href="kyc-corporate.php?type=obligee" class="type-card">
+                    <a href="kyc-obligee.php" class="type-card">
                         <div class="type-card-icon">
                             <i class="bi bi-shield-check"></i>
                         </div>
                         <div class="type-card-title">Obligee Client</div>
                         <div class="type-card-desc">
-                            Register an obligee client using the same workflow and requirements as corporate registration.
+                            Register an obligee client using a dedicated obligee workflow.
                         </div>
                         <div class="type-card-btn">Select Obligee</div>
                     </a>

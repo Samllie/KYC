@@ -3142,7 +3142,7 @@ window.addEventListener('resize', scheduleKycMasonryLayout);
 window.addEventListener('load', scheduleKycMasonryLayout);
 
 const WIZARD_MIN_STEP = 2;
-const WIZARD_MAX_STEP = 4;
+const WIZARD_MAX_STEP = 3;
 let currentWizardStep = WIZARD_MIN_STEP;
 
 function validateWizardStep(step) {
@@ -3189,8 +3189,7 @@ function validateWizardStep(step) {
 function updateWizardProgress(step) {
     const steps = {
         2: document.getElementById('step-2'),
-        3: document.getElementById('step-3'),
-        4: document.getElementById('step-4')
+        3: document.getElementById('step-3')
     };
     const lines = document.querySelectorAll('.steps-bar .step-line');
 
@@ -3273,10 +3272,20 @@ document.addEventListener('DOMContentLoaded', () => {
         stepEl.classList.add('step-clickable');
         stepEl.setAttribute('role', 'button');
         stepEl.setAttribute('tabindex', '0');
-        stepEl.addEventListener('click', () => goToWizardStep(step));
+        stepEl.addEventListener('click', () => {
+            if (step === 4) {
+                proceedToReview();
+                return;
+            }
+            goToWizardStep(step);
+        });
         stepEl.addEventListener('keydown', (event) => {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
+                if (step === 4) {
+                    proceedToReview();
+                    return;
+                }
                 goToWizardStep(step);
             }
         });
