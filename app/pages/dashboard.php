@@ -5,10 +5,10 @@ requireLogin();
 
 $stats = fetchOne("SELECT
     COUNT(*) AS total_clients,
-    SUM(verification_status = 'verified') AS verified_count
+    SUM(client_type = 'obligee') AS obligee_count
 FROM clients") ?? [];
 
-$verifiedTodayRow = fetchOne("SELECT COUNT(*) AS verified_today FROM clients WHERE verification_status = 'verified' AND DATE(verification_date) = CURDATE()") ?? [];
+$obligeeTodayRow = fetchOne("SELECT COUNT(*) AS obligee_today FROM clients WHERE client_type = 'obligee' AND DATE(created_at) = CURDATE()") ?? [];
 $newThisWeekRow = fetchOne("SELECT COUNT(*) AS new_this_week FROM clients WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)") ?? [];
 
 $kycFunnel = fetchOne("SELECT
@@ -36,8 +36,8 @@ ORDER BY COALESCE(c.submitted_at, c.created_at) DESC
 LIMIT 6");
 
 $totalClients = intval($stats['total_clients'] ?? 0);
-$verifiedCount = intval($stats['verified_count'] ?? 0);
-$verifiedToday = intval($verifiedTodayRow['verified_today'] ?? 0);
+$obligeeCount = intval($stats['obligee_count'] ?? 0);
+$obligeeToday = intval($obligeeTodayRow['obligee_today'] ?? 0);
 $newThisWeek = intval($newThisWeekRow['new_this_week'] ?? 0);
 
 $individualCount = intval($clientTypeSplit['individual_count'] ?? 0);
@@ -153,11 +153,11 @@ include '../includes/sidebar.php';
             </div>
             <div class="stat-card">
                 <div class="stat-info">
-                    <div class="stat-value"><?php echo e(number_format($verifiedCount)); ?></div>
-                    <div class="stat-label">Verified Clients</div>
-                    <div class="stat-change up"><i class="bi bi-check2-circle"></i> <?php echo e($verifiedToday); ?> verified today</div>
+                    <div class="stat-value"><?php echo e(number_format($obligeeCount)); ?></div>
+                    <div class="stat-label">Obligee Clients</div>
+                    <div class="stat-change up"><i class="bi bi-shield-check"></i> <?php echo e($obligeeToday); ?> obligee added today</div>
                 </div>
-                <div class="stat-icon"><i class="bi bi-patch-check-fill"></i></div>
+                <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
             </div>
             <div class="stat-card">
                 <div class="stat-info">
