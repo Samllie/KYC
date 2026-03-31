@@ -13,7 +13,7 @@
 .content {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .content > .card {
@@ -135,7 +135,9 @@
 /* Table Wrapper */
 .table-wrapper {
     position: relative;
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
     height: auto;
     min-height: 0;
     max-height: none;
@@ -193,23 +195,34 @@ body.clients-page .content {
 /* Clients Table */
 .clients-table {
     width: 100%;
+    min-width: 0;
     border-collapse: collapse;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     table-layout: fixed;
 }
 
 .clients-table thead {
-    background: #f4fbf6;
-    border-top: 1px solid #d8e6de;
-    border-bottom: 2px solid #d8e6de;
+    background: #3f9350;
+    border-top: 1px solid #368146;
+    border-bottom: none;
 }
 
 .clients-table th {
-    padding: 12px;
+    padding: 6px 8px;
     text-align: left;
     font-weight: 600;
-    color: var(--gray-700);
+    color: #f2fff3;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.clients-table th.col-status,
+.clients-table th.col-verified,
+.clients-table th.col-actions {
+    white-space: normal;
+    line-height: 1.2;
+    font-size: 0.74rem;
 }
 
 .clients-table tbody tr {
@@ -237,7 +250,7 @@ body.clients-page .content {
 }
 
 .clients-table td {
-    padding: 12px;
+    padding: 8px;
     color: var(--gray-700);
     white-space: nowrap;
     overflow: hidden;
@@ -245,16 +258,23 @@ body.clients-page .content {
 }
 
 /* Column Widths */
-.col-checkbox { width: 40px; }
-.col-ref { width: 120px; }
-.col-name { width: 150px; }
-.col-owner { width: 150px; }
-.col-type { width: 130px; }
-.col-contact { width: 140px; }
-.col-email { width: 160px; }
-.col-status { width: 120px; }
-.col-verified { width: 130px; }
-.col-actions { width: 120px; text-align: center; }
+.col-checkbox { width: 4%; }
+.col-ref { width: 9%; }
+.col-name { width: 15%; }
+.col-owner { width: 14%; }
+.col-type { width: 9%; }
+.col-contact { width: 10%; }
+.col-email { width: 15%; }
+.col-status { width: 8%; }
+.col-verified { width: 8%; }
+.col-actions { width: 8%; text-align: center; }
+
+.clients-table th.col-actions,
+.clients-table td.col-actions {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+}
 
 .clients-table td.col-type {
     overflow: visible;
@@ -305,6 +325,12 @@ body.clients-page .content {
     opacity: 1;
 }
 
+.type-badge.obligee {
+    background: #e8edff;
+    color: #243e8f;
+    opacity: 1;
+}
+
 /* Status Badges */
 .status-badge {
     display: inline-flex;
@@ -336,10 +362,10 @@ body.clients-page .content {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 6px;
+    padding: 4px;
     border-radius: 4px;
     color: var(--gray-500);
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     transition: all var(--transition);
     display: inline-flex;
     align-items: center;
@@ -796,6 +822,16 @@ body.clients-page .content {
 
 /* ─── Responsive Design ─────────────────────────── */
 @media (max-width: 1024px) {
+    body.clients-page {
+        overflow: auto;
+    }
+
+    body.clients-page .main {
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+    }
+
     .table-controls {
         flex-direction: column;
         align-items: flex-start;
@@ -811,6 +847,10 @@ body.clients-page .content {
 
     .controls-right {
         width: 100%;
+    }
+
+    .clients-table {
+        min-width: 0;
     }
 
     .btn-export,
@@ -835,17 +875,110 @@ body.clients-page .content {
 
 @media (max-width: 768px) {
     .table-wrapper {
+        overflow-x: visible;
         height: auto;
         min-height: 0;
         max-height: none;
     }
 
     .clients-table {
+        min-width: 0;
+        width: 100%;
+        table-layout: auto;
+        border-collapse: separate;
+        border-spacing: 0 10px;
         font-size: 0.75rem;
     }
 
-    .col-name { width: 120px; }
-    .col-type { display: none; }
+    .clients-table thead {
+        display: none;
+    }
+
+    .clients-table tbody {
+        display: block;
+    }
+
+    .clients-table tbody tr {
+        display: block;
+        border: 1px solid #d9e8df;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 8px 18px rgba(14, 62, 35, 0.08);
+        padding: 8px;
+    }
+
+    .clients-table tbody tr:hover {
+        transform: none;
+        background: #ffffff;
+        box-shadow: 0 10px 20px rgba(14, 62, 35, 0.1);
+    }
+
+    .clients-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        width: 100%;
+        padding: 6px 8px;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        border: none;
+        font-size: 0.8rem;
+    }
+
+    .clients-table td::before {
+        content: '';
+        min-width: 112px;
+        color: #5b746c;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        line-height: 1.35;
+    }
+
+    .controls-left,
+    .filter-group,
+    .controls-right {
+        width: 100%;
+    }
+
+    .controls-right {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .clients-table td.col-checkbox,
+    .clients-table td.col-owner,
+    .clients-table td.col-contact,
+    .clients-table td.col-email,
+    .clients-table td.col-status,
+    .clients-table td.col-verified,
+    .clients-table td.col-type {
+        display: none;
+    }
+
+    .clients-table td.col-ref::before { content: 'Ref Code'; }
+    .clients-table td.col-name::before { content: 'Client Name'; }
+    .clients-table td.col-actions::before { content: 'Actions'; }
+
+    .clients-table td.col-ref {
+        display: flex;
+    }
+
+    .clients-table td.col-actions {
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .clients-table td.col-actions::before {
+        margin-right: auto;
+    }
+
+    .col-name {
+        width: auto;
+    }
 
     .table-footer {
         flex-direction: column;
@@ -855,7 +988,8 @@ body.clients-page .content {
 
     .modal-content {
         width: 95%;
-        margin: 20% auto;
+        max-height: calc(100dvh - 24px);
+        margin: 12px auto;
     }
 
     .form-row {
@@ -872,13 +1006,18 @@ body.clients-page .content {
     .col-checkbox { display: none; }
     .col-status { display: none; }
 
-    .clients-table th,
-    .clients-table td {
-        padding: 8px 4px;
+    .clients-table td::before {
+        min-width: 92px;
+        font-size: 0.68rem;
     }
 
     .search-input {
         width: 100%;
+    }
+
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     .ref-badge,

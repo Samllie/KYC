@@ -125,8 +125,8 @@
 @media (max-width: 640px) {
     .toast-container {
         max-width: calc(100vw - 32px);
-        top: auto;
-        bottom: 16px;
+        top: 12px;
+        bottom: auto;
     }
 
     .toast {
@@ -357,5 +357,11 @@
     background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
     color: #166534;
     border-color: #bbf7d0;
+}
+
+.client-type-display.obligee {
+    background: linear-gradient(135deg, #f8ede2 0%, #ffffff 100%);
+    color: #7c4a21;
+    border-color: #e7c7a8;
 }
 

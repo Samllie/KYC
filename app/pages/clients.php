@@ -58,6 +58,7 @@ include '../includes/sidebar.php';
                         <option value="">All Types</option>
                         <option value="individual">Individual</option>
                         <option value="corporate">Corporate</option>
+                        <option value="obligee">Obligee</option>
                     </select>
                 </div>
             </div>
@@ -98,7 +99,7 @@ include '../includes/sidebar.php';
             <!-- Pagination -->
             <div class="table-footer">
                 <div class="pagination-info">
-                    Showing <span class="info-start">1</span> to <span class="info-end">7</span> of <span class="info-total">0</span> clients
+                    Showing <span class="info-start">1</span> to <span class="info-end">8</span> of <span class="info-total">0</span> clients
                 </div>
                 <div class="pagination" id="paginationContainer">
                     <!-- Pagination buttons will be generated dynamically -->
@@ -131,6 +132,7 @@ include '../includes/sidebar.php';
                         <select id="editClientType" class="form-select">
                             <option value="individual">Individual</option>
                             <option value="corporate">Corporate</option>
+                            <option value="obligee">Obligee</option>
                         </select>
                     </div>
                 </div>
@@ -256,6 +258,7 @@ include '../includes/sidebar.php';
                         <select id="viewClientType" class="form-select" disabled>
                             <option value="individual">Individual</option>
                             <option value="corporate">Corporate</option>
+                            <option value="obligee">Obligee</option>
                         </select>
                     </div>
                 </div>
@@ -381,7 +384,7 @@ include '../includes/sidebar.php';
 <script>
     // Pagination state
     let currentPage = 1;
-    let pageSize = 7;
+    let pageSize = 8;
     let totalPages = 1;
     let totalClients = 0;
     let currentEditingClientId = null;
@@ -481,16 +484,30 @@ include '../includes/sidebar.php';
         const tbody = document.getElementById('clientsTableBody');
         tbody.innerHTML = '';
 
+        const formatClientType = (rawType) => {
+            const normalizedType = (rawType || '').toLowerCase();
+            if (normalizedType === 'individual') return 'Individual';
+            if (normalizedType === 'corporate') return 'Corporate';
+            if (normalizedType === 'obligee') return 'Obligee';
+            return normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : 'N/A';
+        };
+
+        const isCorporateLike = (rawType) => {
+            const normalizedType = (rawType || '').toLowerCase();
+            return normalizedType === 'corporate' || normalizedType === 'obligee';
+        };
+
         clients.forEach(client => {
-            const typeClass = client.client_type === 'individual' ? 'individual' : 'corporate';
-            const typeText = client.client_type.charAt(0).toUpperCase() + client.client_type.slice(1);
+            const normalizedType = (client.client_type || '').toLowerCase();
+            const typeClass = normalizedType || 'corporate';
+            const typeText = formatClientType(client.client_type);
             const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
-            const ownerName = client.client_type === 'corporate'
+            const ownerName = isCorporateLike(client.client_type)
                 ? (client.contact_person || 'N/A')
                 : 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
             const clientNumber = client.client_number || 'N/A';
-            const contactNumber = client.client_type === 'corporate'
+            const contactNumber = isCorporateLike(client.client_type)
                 ? (client.office_phone || 'N/A')
                 : (client.mobile_phone || 'N/A');
 
@@ -978,11 +995,19 @@ include '../includes/sidebar.php';
         const filters = getActiveFilters();
         const parts = [];
 
+        const formatClientType = (rawType) => {
+            const normalizedType = (rawType || '').toLowerCase();
+            if (normalizedType === 'individual') return 'Individual';
+            if (normalizedType === 'corporate') return 'Corporate';
+            if (normalizedType === 'obligee') return 'Obligee';
+            return normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : 'N/A';
+        };
+
         if (filters.search) {
             parts.push(`Search: ${filters.search}`);
         }
         if (filters.type) {
-            parts.push(`Type: ${filters.type.charAt(0).toUpperCase() + filters.type.slice(1)}`);
+            parts.push(`Type: ${formatClientType(filters.type)}`);
         }
 
         return parts.length > 0 ? parts.join(' | ') : 'No filters applied';
@@ -990,11 +1015,19 @@ include '../includes/sidebar.php';
 
     function mapClientToExportRow(client) {
         const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
-        const ownerName = client.client_type === 'corporate'
+        const normalizedType = (client.client_type || '').toLowerCase();
+        const isCorporateLike = normalizedType === 'corporate' || normalizedType === 'obligee';
+
+        const ownerName = isCorporateLike
             ? (client.contact_person || 'N/A')
             : 'N/A';
-        const typeText = (client.client_type || '').charAt(0).toUpperCase() + (client.client_type || '').slice(1);
-        const contactNumber = client.client_type === 'corporate'
+
+        let typeText = 'N/A';
+        if (normalizedType === 'individual') typeText = 'Individual';
+        if (normalizedType === 'corporate') typeText = 'Corporate';
+        if (normalizedType === 'obligee') typeText = 'Obligee';
+
+        const contactNumber = isCorporateLike
             ? (client.office_phone || 'N/A')
             : (client.mobile_phone || 'N/A');
 

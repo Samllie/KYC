@@ -2,12 +2,9 @@
 require_once '../config/session.php';
 requireLogin();
 
-$typeFromQuery = strtolower(trim($_GET['type'] ?? 'corporate'));
-$selectedClientType = $typeFromQuery === 'obligee' ? 'obligee' : 'corporate';
-$isObligee = $selectedClientType === 'obligee';
-
-$clientTypeLabel = $isObligee ? 'Obligee Client' : 'Corporate Client';
-$backToEditUrl = 'kyc-corporate.php?type=' . urlencode($selectedClientType);
+$selectedClientType = 'obligee';
+$clientTypeLabel = 'Obligee Client';
+$backToEditUrl = 'kyc-obligee.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
