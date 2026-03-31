@@ -44,7 +44,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 <!-- ═══════════════════════════════════════════════ SIDEBAR -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-        <a href="#" class="brand-logo">
+        <a href="dashboard.php" class="brand-logo" id="brandDashboardLink">
             <div class="brand-icon">
                 <img src="../../public/images/SterlingLogo.png" alt="Sterling Insurance" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
@@ -120,11 +120,17 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
     const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
     const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const brandLogoLink = document.getElementById('brandDashboardLink');
     const sidebarNavLinks = document.querySelectorAll('.sidebar .nav-item');
     const COLLAPSE_KEY = 'kyc.sidebar.collapsed';
     const isMobile = function () {
         return window.matchMedia('(max-width: 768px)').matches;
     };
+
+    function isDashboardPage() {
+        const normalizedPath = (window.location.pathname || '').replace(/\\/g, '/').toLowerCase();
+        return normalizedPath.endsWith('/dashboard.php');
+    }
 
     function readCollapsedState() {
         try {
@@ -211,6 +217,17 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 
     if (sidebarBackdrop) {
         sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+    }
+
+    if (brandLogoLink) {
+        brandLogoLink.addEventListener('click', function (event) {
+            closeMobileSidebar();
+
+            if (isDashboardPage()) {
+                event.preventDefault();
+                window.location.reload();
+            }
+        });
     }
 
     sidebarNavLinks.forEach(function (link) {

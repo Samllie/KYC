@@ -381,6 +381,35 @@ include '../includes/sidebar.php';
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════ MODAL: Delete Confirmation -->
+<div id="deleteConfirmModal" class="modal" aria-hidden="true">
+    <div class="modal-content delete-modal-content" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+        <div class="modal-header">
+            <h2 id="deleteConfirmTitle">Confirm Delete</h2>
+            <button id="deleteModalCloseBtn" type="button" class="modal-close" title="Close"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="modal-body delete-modal-body">
+            <p>Are you sure you want to delete this client record? This action cannot be undone.</p>
+            <div class="delete-client-meta" aria-live="polite">
+                <div>
+                    <span>Ref Code</span>
+                    <strong id="deleteConfirmRefCode">N/A</strong>
+                </div>
+                <div>
+                    <span>Client Name</span>
+                    <strong id="deleteConfirmName">N/A</strong>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" id="deleteCancelBtn" type="button">Cancel</button>
+            <button class="btn-delete-confirm" id="deleteConfirmBtn" type="button">
+                <i class="bi bi-trash"></i> Confirm Delete
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     // Pagination state
     let currentPage = 1;
@@ -390,6 +419,7 @@ include '../includes/sidebar.php';
     let currentEditingClientId = null;
     let searchDebounceTimer = null;
     let currentPageClients = [];
+    let pendingDeleteClient = null;
     const selectedClientIds = new Set();
     const selectedClientRows = new Map();
 
@@ -667,7 +697,7 @@ include '../includes/sidebar.php';
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', function() {
                     const clientId = row.dataset.clientId;
-                    deleteClient(clientId, row);
+                    openDeleteClientModal(clientId, row);
                 });
             }
 
@@ -708,6 +738,53 @@ include '../includes/sidebar.php';
     const viewModal = document.getElementById('viewModal');
     const cancelBtn = document.getElementById('cancelBtn');
     const editModalCloseBtn = document.getElementById('editModalCloseBtn');
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    const deleteConfirmRefCode = document.getElementById('deleteConfirmRefCode');
+    const deleteConfirmName = document.getElementById('deleteConfirmName');
+    const deleteCancelBtn = document.getElementById('deleteCancelBtn');
+    const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+    const deleteModalCloseBtn = document.getElementById('deleteModalCloseBtn');
+
+    function setDeleteModalOpen(isOpen) {
+        if (!deleteConfirmModal) {
+            return;
+        }
+
+        deleteConfirmModal.style.display = isOpen ? 'block' : 'none';
+        deleteConfirmModal.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    }
+
+    function closeDeleteClientModal() {
+        pendingDeleteClient = null;
+        setDeleteModalOpen(false);
+    }
+
+    function openDeleteClientModal(clientId, row) {
+        if (!clientId || !row || !deleteConfirmModal) {
+            createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
+            return;
+        }
+
+        const refCode = (row.querySelector('.col-ref span')?.textContent || '').trim() || 'N/A';
+        const clientName = (row.querySelector('.col-name')?.textContent || '').trim() || 'Client';
+
+        pendingDeleteClient = {
+            clientId,
+            row,
+            clientName,
+            refCode
+        };
+
+        if (deleteConfirmRefCode) {
+            deleteConfirmRefCode.textContent = refCode;
+        }
+
+        if (deleteConfirmName) {
+            deleteConfirmName.textContent = clientName;
+        }
+
+        setDeleteModalOpen(true);
+    }
 
     // View Client Function
     function viewClient(data) {
@@ -855,19 +932,14 @@ include '../includes/sidebar.php';
     }
 
     // Delete Client Function
-    function deleteClient(clientId, row) {
+    function deleteClient(clientId, row, clientNameOverride = '') {
         if (!clientId) {
             createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
             return;
         }
-
-        const refCode = row.querySelector('.col-ref span').textContent;
-        if (!confirm('Are you sure you want to delete this client?\n\n' + refCode)) {
-            return;
-        }
         
         // Extract client name for reference
-        const clientName = row.querySelector('.col-name').textContent;
+        const clientName = clientNameOverride || (row.querySelector('.col-name')?.textContent || 'Client').trim();
         
         const formData = new FormData();
         formData.append('action', 'delete_client');
@@ -885,19 +957,18 @@ include '../includes/sidebar.php';
             if (data.success) {
                 selectedClientIds.delete(String(clientId));
                 selectedClientRows.delete(String(clientId));
-                syncSelectAllCheckbox();
+                const remainingTotal = Math.max(0, totalClients - 1);
+                const maxPageAfterDelete = Math.max(1, Math.ceil(remainingTotal / pageSize));
+                const targetPage = Math.min(currentPage, maxPageAfterDelete);
 
-                // Show toast
-                const toast = createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
-                // Fade out and remove row
-                row.style.opacity = '0';
-                setTimeout(() => row.remove(), 300);
+                createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
+                loadClients(targetPage);
             } else {
-                const toast = createToast('error', 'Error', data.message || 'Failed to delete client.', 'toastContainer');
+                createToast('error', 'Error', data.message || 'Failed to delete client.', 'toastContainer');
             }
         })
         .catch(error => {
-            const toast = createToast('error', 'Error', 'An error occurred.', 'toastContainer');
+            createToast('error', 'Error', 'An error occurred.', 'toastContainer');
             console.error('Error:', error);
         })
         .finally(() => {
@@ -951,6 +1022,28 @@ include '../includes/sidebar.php';
         });
     }
 
+    if (deleteCancelBtn) {
+        deleteCancelBtn.addEventListener('click', closeDeleteClientModal);
+    }
+
+    if (deleteModalCloseBtn) {
+        deleteModalCloseBtn.addEventListener('click', closeDeleteClientModal);
+    }
+
+    if (deleteConfirmBtn) {
+        deleteConfirmBtn.addEventListener('click', function() {
+            if (!pendingDeleteClient) {
+                setDeleteModalOpen(false);
+                return;
+            }
+
+            const target = pendingDeleteClient;
+            setDeleteModalOpen(false);
+            pendingDeleteClient = null;
+            deleteClient(target.clientId, target.row, target.clientName);
+        });
+    }
+
     document.getElementById('saveBtn').addEventListener('click', saveClientChanges);
 
     window.addEventListener('click', function(event) {
@@ -959,6 +1052,15 @@ include '../includes/sidebar.php';
         }
         if (event.target === viewModal) {
             viewModal.style.display = 'none';
+        }
+        if (event.target === deleteConfirmModal) {
+            closeDeleteClientModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && deleteConfirmModal && deleteConfirmModal.style.display === 'block') {
+            closeDeleteClientModal();
         }
     });
 
