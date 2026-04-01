@@ -143,14 +143,14 @@ include '../includes/sidebar.php';
 
         <!-- Stats Row -->
         <div class="stats-row">
-            <div class="stat-card">
+            <a class="stat-card stat-card-link" href="clients.php" aria-label="View all clients">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($totalClients)); ?></div>
                     <div class="stat-label">Total Clients</div>
                     <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> +<?php echo e($newThisWeek); ?> this week</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-            </div>
+            </a>
             <a class="stat-card stat-card-link" href="clients.php?type=obligee" aria-label="View obligee clients">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($obligeeCount)); ?></div>
