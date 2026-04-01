@@ -22,7 +22,7 @@ $menuItems = [
         'icon' => 'bi-people',
         'href' => 'clients.php',
         'page' => 'clients',
-        'badge' => '24'
+        'badge' => null
     ],
     [
         'label' => 'KYC Verification',
@@ -39,12 +39,13 @@ $activePage = isset($activePage) ? $activePage : 'dashboard';
 $displayName = $_SESSION['full_name'] ?? 'User';
 $displayRole = $_SESSION['role'] ?? 'KYC Officer';
 $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($displayName) : 'US';
+$dashboardHref = 'dashboard.php';
 ?>
 
 <!-- ═══════════════════════════════════════════════ SIDEBAR -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-        <a href="#" class="brand-logo">
+        <a href="<?php echo htmlspecialchars($dashboardHref); ?>" class="brand-logo" title="Go to Dashboard" aria-label="Go to Dashboard">
             <div class="brand-icon">
                 <img src="../../public/images/SterlingLogo.png" alt="Sterling Insurance" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
@@ -118,6 +119,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 <script>
 (function () {
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const brandLogo = document.querySelector('.sidebar .brand-logo');
     const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
     const sidebarBackdrop = document.getElementById('sidebarBackdrop');
     const sidebarNavLinks = document.querySelectorAll('.sidebar .nav-item');
@@ -125,6 +127,10 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     const isMobile = function () {
         return window.matchMedia('(max-width: 768px)').matches;
     };
+
+    function isDashboardPage() {
+        return window.location.pathname.toLowerCase().endsWith('/dashboard.php');
+    }
 
     function readCollapsedState() {
         try {
@@ -211,6 +217,17 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 
     if (sidebarBackdrop) {
         sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+    }
+
+    if (brandLogo) {
+        brandLogo.addEventListener('click', function (event) {
+            if (!isDashboardPage()) {
+                return;
+            }
+
+            event.preventDefault();
+            window.location.reload();
+        });
     }
 
     sidebarNavLinks.forEach(function (link) {

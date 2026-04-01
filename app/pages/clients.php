@@ -99,7 +99,7 @@ include '../includes/sidebar.php';
             <!-- Pagination -->
             <div class="table-footer">
                 <div class="pagination-info">
-                    Showing <span class="info-start">1</span> to <span class="info-end">8</span> of <span class="info-total">0</span> clients
+                    Showing <span class="info-start">1</span> to <span class="info-end">10</span> of <span class="info-total">0</span> clients
                 </div>
                 <div class="pagination" id="paginationContainer">
                     <!-- Pagination buttons will be generated dynamically -->
@@ -381,15 +381,63 @@ include '../includes/sidebar.php';
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════ MODAL: Delete Confirmation -->
+<div id="deleteConfirmModal" class="modal" aria-hidden="true">
+    <div class="modal-content delete-modal-content" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+        <div class="modal-header">
+            <h2 id="deleteConfirmTitle">Confirm Delete</h2>
+            <button id="deleteModalCloseBtn" type="button" class="modal-close" title="Close"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="modal-body delete-modal-body">
+            <p>Are you sure you want to delete this client? This action cannot be undone.</p>
+            <div class="delete-client-meta" aria-live="polite">
+                <div>
+                    <span>Ref Code</span>
+                    <strong id="deleteConfirmRefCode">N/A</strong>
+                </div>
+                <div>
+                    <span>Client Name</span>
+                    <strong id="deleteConfirmName">N/A</strong>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" id="deleteCancelBtn" type="button">Cancel</button>
+            <button class="btn-delete-confirm" id="deleteConfirmBtn" type="button">
+                <i class="bi bi-trash"></i> Delete Client
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="deleteFinalModal" class="modal" aria-hidden="true">
+    <div class="modal-content delete-modal-content" role="dialog" aria-modal="true" aria-labelledby="deleteFinalTitle">
+        <div class="modal-header">
+            <h2 id="deleteFinalTitle">Final Confirmation</h2>
+            <button id="deleteFinalCloseBtn" type="button" class="modal-close" title="Close"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="modal-body delete-modal-body">
+            <p>Are you really sure you want to delete this client?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" id="deleteFinalCancelBtn" type="button">No, Keep Client</button>
+            <button class="btn-delete-confirm" id="deleteFinalConfirmBtn" type="button">
+                <i class="bi bi-trash"></i> Yes, Delete
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     // Pagination state
     let currentPage = 1;
-    let pageSize = 8;
+    let pageSize = 10;
     let totalPages = 1;
     let totalClients = 0;
     let currentEditingClientId = null;
     let searchDebounceTimer = null;
     let currentPageClients = [];
+    let pendingDeleteClient = null;
     const selectedClientIds = new Set();
     const selectedClientRows = new Map();
 
@@ -419,6 +467,23 @@ include '../includes/sidebar.php';
             search: document.getElementById('searchInput').value.trim(),
             type: document.getElementById('filterType').value
         };
+    }
+
+    function applyInitialTypeFilterFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const requestedType = (params.get('type') || '').toLowerCase().trim();
+        const allowedTypes = new Set(['individual', 'corporate', 'obligee']);
+
+        if (!allowedTypes.has(requestedType)) {
+            return;
+        }
+
+        const filterTypeSelect = document.getElementById('filterType');
+        if (!filterTypeSelect) {
+            return;
+        }
+
+        filterTypeSelect.value = requestedType;
     }
 
     // Load clients from database on page load
@@ -667,7 +732,7 @@ include '../includes/sidebar.php';
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', function() {
                     const clientId = row.dataset.clientId;
-                    deleteClient(clientId, row);
+                    openDeleteClientModal(clientId, row);
                 });
             }
 
@@ -682,7 +747,10 @@ include '../includes/sidebar.php';
     }
 
     // Load clients on page load
-    document.addEventListener('DOMContentLoaded', () => loadClients(1));
+    document.addEventListener('DOMContentLoaded', () => {
+        applyInitialTypeFilterFromQuery();
+        loadClients(1);
+    });
 
     // Get client data from row
     function getClientDataFromRow(row) {
@@ -708,6 +776,65 @@ include '../includes/sidebar.php';
     const viewModal = document.getElementById('viewModal');
     const cancelBtn = document.getElementById('cancelBtn');
     const editModalCloseBtn = document.getElementById('editModalCloseBtn');
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    const deleteConfirmRefCode = document.getElementById('deleteConfirmRefCode');
+    const deleteConfirmName = document.getElementById('deleteConfirmName');
+    const deleteCancelBtn = document.getElementById('deleteCancelBtn');
+    const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+    const deleteModalCloseBtn = document.getElementById('deleteModalCloseBtn');
+    const deleteFinalModal = document.getElementById('deleteFinalModal');
+    const deleteFinalCancelBtn = document.getElementById('deleteFinalCancelBtn');
+    const deleteFinalConfirmBtn = document.getElementById('deleteFinalConfirmBtn');
+    const deleteFinalCloseBtn = document.getElementById('deleteFinalCloseBtn');
+
+    function setDeleteModalOpen(isOpen) {
+        if (!deleteConfirmModal) {
+            return;
+        }
+
+        deleteConfirmModal.style.display = isOpen ? 'block' : 'none';
+        deleteConfirmModal.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    }
+
+    function setDeleteFinalModalOpen(isOpen) {
+        if (!deleteFinalModal) {
+            return;
+        }
+
+        deleteFinalModal.style.display = isOpen ? 'block' : 'none';
+        deleteFinalModal.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    }
+
+    function closeDeleteFinalModal() {
+        setDeleteFinalModalOpen(false);
+    }
+
+    function closeDeleteClientModal() {
+        pendingDeleteClient = null;
+        setDeleteModalOpen(false);
+        setDeleteFinalModalOpen(false);
+    }
+
+    function openDeleteClientModal(clientId, row) {
+        if (!clientId || !row) {
+            createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
+            return;
+        }
+
+        const refCodeEl = row.querySelector('.col-ref .ref-badge');
+        const nameEl = row.querySelector('.col-name');
+
+        if (deleteConfirmRefCode) {
+            deleteConfirmRefCode.textContent = refCodeEl ? refCodeEl.textContent.trim() : 'N/A';
+        }
+
+        if (deleteConfirmName) {
+            deleteConfirmName.textContent = nameEl ? nameEl.textContent.trim() : 'N/A';
+        }
+
+        pendingDeleteClient = { clientId, row };
+        setDeleteModalOpen(true);
+    }
 
     // View Client Function
     function viewClient(data) {
@@ -860,11 +987,6 @@ include '../includes/sidebar.php';
             createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
             return;
         }
-
-        const refCode = row.querySelector('.col-ref span').textContent;
-        if (!confirm('Are you sure you want to delete this client?\n\n' + refCode)) {
-            return;
-        }
         
         // Extract client name for reference
         const clientName = row.querySelector('.col-name').textContent;
@@ -888,10 +1010,11 @@ include '../includes/sidebar.php';
                 syncSelectAllCheckbox();
 
                 // Show toast
-                const toast = createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
-                // Fade out and remove row
-                row.style.opacity = '0';
-                setTimeout(() => row.remove(), 300);
+                createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
+
+                const visibleRows = document.querySelectorAll('#clientsTableBody tr').length;
+                const targetPage = (visibleRows <= 1 && currentPage > 1) ? currentPage - 1 : currentPage;
+                loadClients(targetPage);
             } else {
                 const toast = createToast('error', 'Error', data.message || 'Failed to delete client.', 'toastContainer');
             }
@@ -951,6 +1074,56 @@ include '../includes/sidebar.php';
         });
     }
 
+    if (deleteCancelBtn) {
+        deleteCancelBtn.addEventListener('click', closeDeleteClientModal);
+    }
+
+    if (deleteModalCloseBtn) {
+        deleteModalCloseBtn.addEventListener('click', closeDeleteClientModal);
+    }
+
+    if (deleteConfirmBtn) {
+        deleteConfirmBtn.addEventListener('click', function() {
+            if (!pendingDeleteClient) {
+                return;
+            }
+
+            setDeleteModalOpen(false);
+            setDeleteFinalModalOpen(true);
+        });
+    }
+
+    if (deleteFinalCancelBtn) {
+        deleteFinalCancelBtn.addEventListener('click', function() {
+            closeDeleteFinalModal();
+            if (pendingDeleteClient) {
+                setDeleteModalOpen(true);
+            }
+        });
+    }
+
+    if (deleteFinalCloseBtn) {
+        deleteFinalCloseBtn.addEventListener('click', function() {
+            closeDeleteFinalModal();
+            if (pendingDeleteClient) {
+                setDeleteModalOpen(true);
+            }
+        });
+    }
+
+    if (deleteFinalConfirmBtn) {
+        deleteFinalConfirmBtn.addEventListener('click', function() {
+            if (!pendingDeleteClient) {
+                closeDeleteFinalModal();
+                return;
+            }
+
+            const { clientId, row } = pendingDeleteClient;
+            closeDeleteClientModal();
+            deleteClient(clientId, row);
+        });
+    }
+
     document.getElementById('saveBtn').addEventListener('click', saveClientChanges);
 
     window.addEventListener('click', function(event) {
@@ -959,6 +1132,15 @@ include '../includes/sidebar.php';
         }
         if (event.target === viewModal) {
             viewModal.style.display = 'none';
+        }
+        if (event.target === deleteConfirmModal) {
+            closeDeleteClientModal();
+        }
+        if (event.target === deleteFinalModal) {
+            closeDeleteFinalModal();
+            if (pendingDeleteClient) {
+                setDeleteModalOpen(true);
+            }
         }
     });
 

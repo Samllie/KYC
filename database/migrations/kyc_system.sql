@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 24, 2026 at 03:53 AM
+-- Generation Time: Mar 31, 2026 at 03:58 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -55,7 +55,6 @@ CREATE TABLE `clients` (
   `first_name` varchar(50) NOT NULL,
   `middle_name` varchar(50) DEFAULT NULL,
   `last_name` varchar(50) NOT NULL,
-  `salutation` varchar(20) DEFAULT NULL,
   `suffix` varchar(10) DEFAULT NULL,
   `last_name_first` tinyint(1) DEFAULT 0,
   `comma_separated` tinyint(1) DEFAULT 0,
@@ -139,7 +138,10 @@ INSERT INTO `clients` (`client_id`, `reference_code`, `client_number`, `client_t
 (26, 'REF-20260317-00002', 'CN-1773730174', 'corporate', NULL, 'Ansel', 'Cadag', 'Doton', '', 0, 0, 0, '2003-12-17', 'male', 'Filipino', NULL, NULL, NULL, NULL, 'tin', '1225-545-5455', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09917745489', '', 'ansel@gmail.com', 'sta maria, Santo Tomas, Batangas', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 06:49:34', '2026-03-17 06:49:34'),
 (27, 'REF-20260323-00001', 'CN-1774225373', 'individual', NULL, 'Ezekiel', 'Robin', 'Codillo', '', 0, 0, 0, '2003-12-27', 'male', 'Filipino', NULL, NULL, NULL, NULL, '', '', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09075732796', '', 'ezekielcodillo56@gmail.com', 'Lumina', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-23 00:22:53', '2026-03-23 00:22:53'),
 (28, 'REF-20260323-00002', 'CN-1774227596', 'corporate', 'Kiel Courier Services', '', NULL, '', NULL, 0, 0, 0, NULL, 'male', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'government', 'Lumina, San vicente', 'City of Santo Tomas', 'Batangas', NULL, NULL, NULL, NULL, NULL, '09568439760', NULL, 'Ezekiel Robin Codillo', NULL, NULL, 'agent', NULL, NULL, 'ezekielcodillo56@gmail.com', NULL, 1, '2026-03-23 01:59:56', 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-23 00:59:56', '2026-03-23 00:59:56'),
-(29, 'REF-20260323-00003', 'CN-1774234364', 'individual', NULL, 'Ezekiel', 'Robin', 'Codillo', '', 0, 0, 0, '2026-03-23', 'male', 'Filipino', NULL, NULL, NULL, NULL, '', '', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09917745489', '', 'ezekielcodillo56@gmail.com', 'Sambat', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-23 02:52:44', '2026-03-23 02:52:44');
+(29, 'REF-20260323-00003', 'CN-1774234364', 'individual', NULL, 'Ezekiel', 'Robin', 'Codillo', '', 0, 0, 0, '2026-03-23', 'male', 'Filipino', NULL, NULL, NULL, NULL, '', '', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09917745489', '', 'ezekielcodillo56@gmail.com', 'Sambat', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-23 02:52:44', '2026-03-23 02:52:44'),
+(30, 'REF-20260326-00001', 'CN-1774490538', 'corporate', NULL, '', '', '', '', 0, 0, 0, NULL, '', '', NULL, NULL, NULL, NULL, '', '', NULL, '', '', NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', NULL, 1, '2026-03-26 03:02:18', 'draft', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-26 02:02:18', '2026-03-26 02:02:18'),
+(31, 'REF-20260326-00002', 'CN-1774492173', 'corporate', NULL, '', '', '', '', 0, 0, 0, NULL, '', '', NULL, NULL, NULL, NULL, '', '', NULL, '', '', NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', NULL, 1, '2026-03-26 03:29:33', 'draft', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-26 02:29:33', '2026-03-26 02:29:33'),
+(32, 'REF-20260326-00003', 'CN-1774493824', 'corporate', NULL, '', '', '', '', 0, 0, 0, NULL, '', '', NULL, NULL, NULL, NULL, '', '', NULL, '', 'waw', NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', NULL, 1, '2026-03-26 03:57:04', 'draft', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-26 02:57:04', '2026-03-26 02:57:04');
 
 -- --------------------------------------------------------
 
@@ -161,6 +163,14 @@ CREATE TABLE `documents` (
   `status` enum('verified','pending','rejected') DEFAULT 'pending',
   `verification_notes` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `documents`
+--
+
+INSERT INTO `documents` (`document_id`, `kyc_id`, `client_id`, `file_name`, `file_type`, `file_size`, `file_path`, `document_type`, `uploaded_by`, `uploaded_at`, `status`, `verification_notes`) VALUES
+(1, 11, 31, 'Paul.png', 'image/png', 416535, 'uploads/client_31_kyc_11_1774493415_4a4cc71fc30c9d5f.png', 'supporting', 1, '2026-03-26 02:50:15', 'pending', NULL),
+(2, 12, 32, '648838554_1940055316714537_8223827028323029279_n.jpg', 'image/jpeg', 518967, 'uploads/client_32_kyc_12_1774493856_1b56855ce7768c27.jpg', 'supporting', 1, '2026-03-26 02:57:36', 'pending', NULL);
 
 -- --------------------------------------------------------
 
@@ -211,7 +221,10 @@ INSERT INTO `kyc_verifications` (`kyc_id`, `client_id`, `reference_code`, `step_
 (4, 25, 'REF-20260317-00001', 4, 1, 1, 1, 1, 'REF-20260317-00001', 'individual', 'Codillo', 'Ezekiel', 'Robin', '', '2002-12-27', 'male', 'Filipino', 'license', 'D22-8236487', 'Student', 'BSU', '09075732796', '', 'ezekielcodillo56@gmail.com', 'City of Santo Tomas', 'submitted', '2026-03-17 06:23:42', '2026-03-17 06:23:42', '2026-03-17 07:23:42'),
 (5, 26, 'REF-20260317-00002', 4, 1, 1, 1, 1, 'REF-20260317-00002', 'corporate', 'Doton', 'Ansel', 'Cadag', '', '2003-12-17', 'male', 'Filipino', 'tin', '1225-545-5455', 'Student', 'BSU', '09917745489', '', 'ansel@gmail.com', 'sta maria, Santo Tomas, Batangas', 'submitted', '2026-03-17 06:49:34', '2026-03-17 06:49:34', '2026-03-17 07:49:34'),
 (7, 27, 'REF-20260323-00001', 4, 1, 1, 1, 1, 'REF-20260323-00001', 'individual', 'Codillo', 'Ezekiel', 'Robin', '', '2003-12-27', 'male', 'Filipino', '', '', 'Student', 'BSU', '09075732796', '', 'ezekielcodillo56@gmail.com', 'Lumina', 'submitted', '2026-03-23 00:22:53', '2026-03-23 00:22:53', '2026-03-23 01:22:53'),
-(9, 29, 'REF-20260323-00003', 4, 1, 1, 1, 1, 'REF-20260323-00003', 'individual', 'Codillo', 'Ezekiel', 'Robin', '', '2026-03-23', 'male', 'Filipino', '', '', 'Student', 'BSU', '09917745489', '', 'ezekielcodillo56@gmail.com', 'Sambat', 'submitted', '2026-03-23 02:52:44', '2026-03-23 02:52:44', '2026-03-23 03:52:44');
+(9, 29, 'REF-20260323-00003', 4, 1, 1, 1, 1, 'REF-20260323-00003', 'individual', 'Codillo', 'Ezekiel', 'Robin', '', '2026-03-23', 'male', 'Filipino', '', '', 'Student', 'BSU', '09917745489', '', 'ezekielcodillo56@gmail.com', 'Sambat', 'submitted', '2026-03-23 02:52:44', '2026-03-23 02:52:44', '2026-03-23 03:52:44'),
+(10, 30, 'REF-20260326-00001', 1, 0, 0, 0, 0, 'REF-20260326-00001', 'corporate', '', '', '', '', '0000-00-00', '', '', '', '', '', '', '', '', '', '', 'draft', '2026-03-26 02:02:18', '2026-03-26 02:02:18', NULL),
+(11, 31, 'REF-20260326-00002', 1, 0, 0, 0, 0, 'REF-20260326-00002', '', '', '', '', '', '0000-00-00', '', '', '', '', '', 'saadw', '', '', '', '', 'draft', '2026-03-26 02:29:33', '2026-03-26 02:55:53', NULL),
+(12, 32, 'REF-20260326-00003', 1, 0, 0, 0, 0, 'REF-20260326-00003', '', '', '', '', '', '0000-00-00', '', '', '', '', '', 'waw', '', '', '', '', 'draft', '2026-03-26 02:57:04', '2026-03-26 03:25:09', NULL);
 
 -- --------------------------------------------------------
 
@@ -225,7 +238,6 @@ CREATE TABLE `users` (
   `email` varchar(120) NOT NULL,
   `password` varchar(255) NOT NULL,
   `department` varchar(50) NOT NULL,
-  `branch` varchar(80) NOT NULL DEFAULT 'ALABANG BRANCH',
   `role` varchar(30) DEFAULT 'kyc_officer',
   `avatar_initials` varchar(5) DEFAULT NULL,
   `status` enum('active','inactive','suspended') DEFAULT 'active',
@@ -239,14 +251,14 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `department`, `role`, `avatar_initials`, `status`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, 'Juan Dela Cruz', 'juan@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'kyc_officer', 'JD', 'active', '2026-03-24 03:23:27', '2026-03-17 03:27:01', '2026-03-24 02:23:27'),
+(1, 'Juan Dela Cruz', 'juan@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'kyc_officer', 'JD', 'active', '2026-03-31 02:11:04', '2026-03-17 03:27:01', '2026-03-31 00:11:04'),
 (2, 'Maria Garcia', 'maria@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'compliance', 'kyc_officer', 'MG', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
 (3, 'Robert Santos', 'robert@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'operations', 'manager', 'RS', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
 (4, 'Angela Torres', 'angela@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'kyc_officer', 'AT', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
 (5, 'John Reyes', 'john@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'compliance', 'kyc_officer', 'JR', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
 (6, 'Luisa Cruz', 'luisa@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'kyc_officer', 'LC', 'active', '2026-03-23 07:47:42', '2026-03-17 03:27:01', '2026-03-23 06:47:42'),
 (7, 'Ezekiel Robin Codillo', 'ezekielcodillo56@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'kyc_officer', 'EC', 'active', NULL, '2026-03-23 03:36:50', '2026-03-23 03:36:50'),
-(8, 'Paulynous K. Gonzales', 'gonzalespaul528@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'kyc_officer', 'PG', 'active', '2026-03-23 09:03:50', '2026-03-23 07:37:10', '2026-03-23 08:03:50');
+(8, 'Paulynous K. Gonzales', 'gonzalespaul528@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'kyc_officer', 'PG', 'active', '2026-03-24 08:37:59', '2026-03-23 07:37:10', '2026-03-24 07:37:59');
 
 -- --------------------------------------------------------
 
@@ -358,19 +370,19 @@ ALTER TABLE `audit_logs`
 -- AUTO_INCREMENT for table `clients`
 --
 ALTER TABLE `clients`
-  MODIFY `client_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `client_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `document_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `document_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `kyc_verifications`
 --
 ALTER TABLE `kyc_verifications`
-  MODIFY `kyc_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `kyc_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `users`

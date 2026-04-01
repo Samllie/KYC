@@ -19,7 +19,7 @@
 .content > .card {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 0 0 auto;
     min-height: 0;
     margin-top: 16px;
 }
@@ -141,7 +141,7 @@
     height: auto;
     min-height: 0;
     max-height: none;
-    flex: 1;
+    flex: 0 0 auto;
 }
 
 body.clients-page {
@@ -396,7 +396,7 @@ body.clients-page .content {
     border-top: 1px solid #dce9e1;
     background: #f4fbf6;
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-    margin-top: auto;
+    margin-top: 0;
 }
 
 .pagination-info {
@@ -569,6 +569,47 @@ body.clients-page .content {
     padding: 24px;
     max-height: 60vh;
     overflow-y: auto;
+}
+
+.delete-modal-content {
+    max-width: 520px;
+}
+
+.delete-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.delete-modal-body p {
+    margin: 0;
+    color: var(--gray-700);
+    line-height: 1.45;
+}
+
+.delete-client-meta {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #f4cccc;
+    background: #fff5f5;
+}
+
+.delete-client-meta span {
+    display: block;
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #a61b1b;
+    margin-bottom: 4px;
+}
+
+.delete-client-meta strong {
+    display: block;
+    font-size: 0.93rem;
+    color: #681010;
+    word-break: break-word;
 }
 
 .view-modal-content {
@@ -818,6 +859,26 @@ body.clients-page .content {
     background: #0d562f;
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
+}
+
+.btn-delete-confirm {
+    padding: 8px 20px;
+    border: 1px solid #b91c1c;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-delete-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 20px rgba(185, 28, 28, 0.25);
 }
 
 /* ─── Responsive Design ─────────────────────────── */
