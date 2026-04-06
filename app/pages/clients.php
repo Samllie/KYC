@@ -467,9 +467,15 @@ include '../includes/sidebar.php';
             method: 'GET',
             credentials: 'include'  // Include session cookies in the request
         })
-            .then(response => {
+            .then(async response => {
                 console.log('Response received:', response.status);
-                return response.json();
+                const rawText = await response.text();
+                try {
+                    return JSON.parse(rawText);
+                } catch (parseError) {
+                    const preview = rawText.slice(0, 200).replace(/\s+/g, ' ').trim();
+                    throw new Error(`Invalid JSON response from server (HTTP ${response.status}). ${preview}`);
+                }
             })
             .then(data => {
                 console.log('Data parsed:', data);

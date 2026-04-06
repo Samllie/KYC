@@ -292,7 +292,6 @@ function displayReview() {
     ];
 
     const governmentIdUploads = JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]');
-    const governmentIdProfile = JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}');
     
     let html = '';
     sections.forEach((section, idx) => {
@@ -318,7 +317,7 @@ function displayReview() {
     });
 
     if (governmentIdUploads.length) {
-        const uploadedNames = governmentIdUploads.map(file => escapeHtml(file.original_name || file.file_name || 'ID photo')).join(', ');
+        const uploadedNames = governmentIdUploads.map(file => escapeHtml(file.original_name || file.file_name || 'ID file')).join(', ');
         html += `
             <section class="review-section" style="animation-delay:${Math.min(sections.length * 70, 350)}ms;">
                 <div class="review-title">Government ID Upload</div>
@@ -332,25 +331,7 @@ function displayReview() {
         `;
     }
 
-    const profileParts = [];
-    if (governmentIdProfile.fullName) profileParts.push(`<div><strong>Name:</strong> ${escapeHtml(governmentIdProfile.fullName)}</div>`);
-    if (governmentIdProfile.idNumber) profileParts.push(`<div><strong>ID Number:</strong> ${escapeHtml(governmentIdProfile.idNumber)}</div>`);
-    if (governmentIdProfile.birthdate) profileParts.push(`<div><strong>Birthdate:</strong> ${escapeHtml(governmentIdProfile.birthdate)}</div>`);
-    if (governmentIdProfile.gender) profileParts.push(`<div><strong>Gender:</strong> ${escapeHtml(governmentIdProfile.gender)}</div>`);
-    if (governmentIdProfile.nationality) profileParts.push(`<div><strong>Nationality:</strong> ${escapeHtml(governmentIdProfile.nationality)}</div>`);
-    if (governmentIdProfile.address) profileParts.push(`<div><strong>Address:</strong> ${escapeHtml(governmentIdProfile.address)}</div>`);
 
-    if (profileParts.length) {
-        html += `
-            <section class="review-section" style="animation-delay:${Math.min((sections.length + 1) * 70, 420)}ms;">
-                <div class="review-title">OCR Extracted Profile</div>
-                <div class="review-grid">
-                    ${profileParts.join('')}
-                </div>
-            </section>
-        `;
-    }
-    
     document.getElementById('reviewBody').innerHTML = html;
 }
 
@@ -378,7 +359,6 @@ function submitForm() {
     formDataObj.append('action', 'add_client');
     formDataObj.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
     formDataObj.append('uploadedIdFiles', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]')));
-    formDataObj.append('governmentIdOcrData', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}')));
     
     Object.keys(formData).forEach(key => {
         formDataObj.append(key, formData[key]);
@@ -397,7 +377,6 @@ function submitForm() {
             sessionStorage.removeItem('kycFormData');
             sessionStorage.removeItem('kycUploadedFiles');
             sessionStorage.removeItem('kycGovernmentIdFiles');
-            sessionStorage.removeItem('kycGovernmentIdOcrData');
             
             setTimeout(() => {
                 window.location.href = 'dashboard.php';
