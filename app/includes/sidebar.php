@@ -5,8 +5,15 @@
  * Usage:
  * <?php $activePage = 'dashboard'; include 'includes/sidebar.php'; ?>
  * 
- * Parameters: $activePage (string) - the current page (dashboard, clients, kyc-verification, policy)
+ * Parameters: $activePage (string) - the current page (dashboard, clients, agents, client-approvals, kyc-verification, policy)
  */
+
+$currentUserRole = strtolower(trim($_SESSION['role'] ?? ''));
+$currentUserDepartment = strtoupper(trim($_SESSION['department'] ?? ''));
+$currentUserBranch = strtoupper(trim($_SESSION['branch'] ?? ''));
+$isHeadOfficeUser = $currentUserRole === 'admin'
+    || $currentUserDepartment === 'HEAD OFFICE'
+    || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
 
 // Define sidebar menu items
 $menuItems = [
@@ -25,6 +32,13 @@ $menuItems = [
         'badge' => null
     ],
     [
+        'label' => 'Agents',
+        'icon' => 'bi-person-badge',
+        'href' => 'clients.php?classification=agent',
+        'page' => 'agents',
+        'badge' => null
+    ],
+    [
         'label' => 'KYC Verification',
         'icon' => 'bi-person-check',
         'href' => 'kyc-verification.php',
@@ -32,6 +46,16 @@ $menuItems = [
         'badge' => null
     ],
 ];
+
+if ($isHeadOfficeUser) {
+    $menuItems[] = [
+        'label' => 'Client Approvals',
+        'icon' => 'bi-clipboard-check',
+        'href' => 'client-approvals.php',
+        'page' => 'client-approvals',
+        'badge' => null
+    ];
+}
 
 // Default active page if not set
 $activePage = isset($activePage) ? $activePage : 'dashboard';

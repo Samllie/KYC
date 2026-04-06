@@ -3,8 +3,12 @@ require_once '../config/session.php';
 requireLogin();
 
 $selectedClientType = 'obligee';
+$selectedClassification = 'client';
+
 $clientTypeLabel = 'Obligee Client';
-$backToEditUrl = 'kyc-obligee.php';
+$breadcrumbParentLabel = 'Clients';
+$savedEntityLabel = 'Client';
+$backToEditUrl = 'kyc-obligee.php?classification=' . urlencode($selectedClassification);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -108,7 +112,7 @@ include '../includes/sidebar.php';
             <h1>KYC Verification — <?php echo htmlspecialchars($clientTypeLabel); ?> Review</h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
-                Dashboard &rsaquo; Clients &rsaquo; <span>Review Information</span>
+                Dashboard &rsaquo; <?php echo htmlspecialchars($breadcrumbParentLabel); ?> &rsaquo; <span>Review Information</span>
             </div>
         </div>
         <div class="topbar-right">
@@ -190,6 +194,7 @@ include '../includes/sidebar.php';
 <script>
 const currentClientType = <?php echo json_encode($selectedClientType); ?>;
 const backToEditUrl = <?php echo json_encode($backToEditUrl); ?>;
+const savedEntityLabel = <?php echo json_encode($savedEntityLabel); ?>;
 
 // ── Toast ──────────────────────────────────────────────────
 function showToast(type, title, msg) {
@@ -292,7 +297,6 @@ function displayReview() {
     ];
 
     const governmentIdUploads = JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]');
-    const governmentIdProfile = JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}');
     
     let html = '';
     sections.forEach((section, idx) => {
@@ -332,25 +336,7 @@ function displayReview() {
         `;
     }
 
-    const profileParts = [];
-    if (governmentIdProfile.fullName) profileParts.push(`<div><strong>Name:</strong> ${escapeHtml(governmentIdProfile.fullName)}</div>`);
-    if (governmentIdProfile.idNumber) profileParts.push(`<div><strong>ID Number:</strong> ${escapeHtml(governmentIdProfile.idNumber)}</div>`);
-    if (governmentIdProfile.birthdate) profileParts.push(`<div><strong>Birthdate:</strong> ${escapeHtml(governmentIdProfile.birthdate)}</div>`);
-    if (governmentIdProfile.gender) profileParts.push(`<div><strong>Gender:</strong> ${escapeHtml(governmentIdProfile.gender)}</div>`);
-    if (governmentIdProfile.nationality) profileParts.push(`<div><strong>Nationality:</strong> ${escapeHtml(governmentIdProfile.nationality)}</div>`);
-    if (governmentIdProfile.address) profileParts.push(`<div><strong>Address:</strong> ${escapeHtml(governmentIdProfile.address)}</div>`);
 
-    if (profileParts.length) {
-        html += `
-            <section class="review-section" style="animation-delay:${Math.min((sections.length + 1) * 70, 420)}ms;">
-                <div class="review-title">OCR Extracted Profile</div>
-                <div class="review-grid">
-                    ${profileParts.join('')}
-                </div>
-            </section>
-        `;
-    }
-    
     document.getElementById('reviewBody').innerHTML = html;
 }
 
@@ -378,7 +364,6 @@ function submitForm() {
     formDataObj.append('action', 'add_client');
     formDataObj.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
     formDataObj.append('uploadedIdFiles', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]')));
-    formDataObj.append('governmentIdOcrData', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}')));
     
     Object.keys(formData).forEach(key => {
         formDataObj.append(key, formData[key]);
@@ -391,13 +376,12 @@ function submitForm() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Client registered successfully.');
+            showToast('success', `${savedEntityLabel} Saved!`, data.reference_code ? `Reference Code: ${data.reference_code}` : `${savedEntityLabel} registered successfully.`);
             
             // Clear sessionStorage
             sessionStorage.removeItem('kycFormData');
             sessionStorage.removeItem('kycUploadedFiles');
             sessionStorage.removeItem('kycGovernmentIdFiles');
-            sessionStorage.removeItem('kycGovernmentIdOcrData');
             
             setTimeout(() => {
                 window.location.href = 'dashboard.php';

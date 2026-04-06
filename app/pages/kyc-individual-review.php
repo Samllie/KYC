@@ -1,6 +1,15 @@
 <?php
 require_once '../config/session.php';
 requireLogin();
+
+$classificationFromQuery = strtolower(trim($_GET['classification'] ?? 'client'));
+$selectedClassification = $classificationFromQuery === 'agent' ? 'agent' : 'client';
+$isAgentFlow = $selectedClassification === 'agent';
+
+$clientTypeLabel = $isAgentFlow ? 'Individual Agent' : 'Individual Client';
+$breadcrumbParentLabel = $isAgentFlow ? 'Agents' : 'Clients';
+$recordLabelTitle = $isAgentFlow ? 'Agent' : 'Client';
+$backToEditUrl = 'kyc-individual.php?classification=' . urlencode($selectedClassification);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -101,10 +110,10 @@ include '../includes/sidebar.php';
     <!-- Topbar -->
     <header class="topbar">
         <div class="topbar-left">
-            <h1>KYC Verification — Individual Client Review</h1>
+            <h1>KYC Verification — <?php echo htmlspecialchars($clientTypeLabel); ?> Review</h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
-                Dashboard &rsaquo; Clients &rsaquo; <span>Review Information</span>
+                Dashboard &rsaquo; <?php echo htmlspecialchars($breadcrumbParentLabel); ?> &rsaquo; <span>Review Information</span>
             </div>
         </div>
         <div class="topbar-right">
@@ -184,6 +193,9 @@ include '../includes/sidebar.php';
 
 <!-- ═══════════════════════════════════════════════ SCRIPTS -->
 <script>
+const backToEditUrl = <?php echo json_encode($backToEditUrl); ?>;
+const savedEntityLabel = <?php echo json_encode($recordLabelTitle); ?>;
+
 // ── Toast ──────────────────────────────────────────────────
 function showToast(type, title, msg) {
     const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', info: 'bi-info-circle-fill' };
@@ -225,9 +237,10 @@ function displayReview() {
     
     const sections = [
         {
-            title: 'Client Type',
+            title: 'KYC Type',
             fields: [
-                { label: 'Client Type', key: 'clientType', format: 'individual' }
+                { label: 'Client Type', key: 'clientType', format: 'individual' },
+                { label: 'Classification', key: 'clientClassification' }
             ]
         },
         {
@@ -303,7 +316,6 @@ function displayReview() {
     ];
 
     const governmentIdUploads = JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]');
-    const governmentIdProfile = JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}');
     
     let html = '';
     sections.forEach((section, idx) => {
@@ -346,30 +358,12 @@ function displayReview() {
         `;
     }
 
-    const profileParts = [];
-    if (governmentIdProfile.fullName) profileParts.push(`<div><strong>Name:</strong> ${escapeHtml(governmentIdProfile.fullName)}</div>`);
-    if (governmentIdProfile.idNumber) profileParts.push(`<div><strong>ID Number:</strong> ${escapeHtml(governmentIdProfile.idNumber)}</div>`);
-    if (governmentIdProfile.birthdate) profileParts.push(`<div><strong>Birthdate:</strong> ${escapeHtml(governmentIdProfile.birthdate)}</div>`);
-    if (governmentIdProfile.gender) profileParts.push(`<div><strong>Gender:</strong> ${escapeHtml(governmentIdProfile.gender)}</div>`);
-    if (governmentIdProfile.nationality) profileParts.push(`<div><strong>Nationality:</strong> ${escapeHtml(governmentIdProfile.nationality)}</div>`);
-    if (governmentIdProfile.address) profileParts.push(`<div><strong>Address:</strong> ${escapeHtml(governmentIdProfile.address)}</div>`);
 
-    if (profileParts.length) {
-        html += `
-            <section class="review-section" style="animation-delay:${Math.min((sections.length + 1) * 70, 420)}ms;">
-                <div class="review-title">OCR Extracted Profile</div>
-                <div class="review-grid">
-                    ${profileParts.join('')}
-                </div>
-            </section>
-        `;
-    }
-    
     document.getElementById('reviewBody').innerHTML = html;
 }
 
 function goBackToEdit() {
-    window.location.href = 'kyc-individual.php';
+    window.location.href = backToEditUrl;
 }
 
 function submitForm() {
@@ -392,7 +386,6 @@ function submitForm() {
     formDataObj.append('action', 'submit_kyc');
     formDataObj.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
     formDataObj.append('uploadedIdFiles', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]')));
-    formDataObj.append('governmentIdOcrData', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdOcrData') || '{}')));
     
     Object.keys(formData).forEach(key => {
         formDataObj.append(key, formData[key]);
@@ -405,13 +398,12 @@ function submitForm() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Client registered successfully.');
+            showToast('success', `${savedEntityLabel} Saved!`, data.reference_code ? `Reference Code: ${data.reference_code}` : `${savedEntityLabel} registered successfully.`);
             
             // Clear sessionStorage
             sessionStorage.removeItem('kycFormData');
             sessionStorage.removeItem('kycUploadedFiles');
             sessionStorage.removeItem('kycGovernmentIdFiles');
-            sessionStorage.removeItem('kycGovernmentIdOcrData');
             
             setTimeout(() => {
                 window.location.href = 'dashboard.php';

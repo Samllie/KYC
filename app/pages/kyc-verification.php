@@ -1,6 +1,10 @@
 <?php
 require_once '../config/session.php';
 requireLogin();
+
+$requestedClassification = strtolower(trim($_GET['classification'] ?? 'client'));
+$defaultClassification = $requestedClassification === 'agent' ? 'agent' : 'client';
+$isAgentDefault = $defaultClassification === 'agent';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,6 +26,49 @@ requireLogin();
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin: 40px 0;
+        }
+
+        .selection-group {
+            border: 1px solid #d8e7de;
+            border-radius: 16px;
+            padding: 16px 16px 6px;
+            background: #f9fcfa;
+            margin-bottom: 16px;
+        }
+
+        .selection-group.preferred {
+            border-color: #9dcdb4;
+            box-shadow: 0 10px 24px rgba(20, 58, 41, 0.08);
+        }
+
+        .selection-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 6px 0;
+        }
+
+        .selection-group-header i {
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: #e9f5ee;
+            color: #0f5a35;
+        }
+
+        .selection-group-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #173427;
+        }
+
+        .selection-group-subtitle {
+            margin: 2px 0 0 40px;
+            font-size: 0.82rem;
+            color: var(--gray-500);
         }
         
         .type-card {
@@ -198,6 +245,20 @@ requireLogin();
             margin: 14px 0 2px;
         }
 
+        body.kyc-compact .selection-group {
+            padding: 12px 12px 2px;
+            margin-bottom: 12px;
+        }
+
+        body.kyc-compact .selection-group-title {
+            font-size: 0.9rem;
+        }
+
+        body.kyc-compact .selection-group-subtitle {
+            font-size: 0.75rem;
+            margin-left: 34px;
+        }
+
         body.kyc-compact .type-card {
             border-radius: 12px;
             padding: 20px 18px;
@@ -261,6 +322,10 @@ requireLogin();
                 margin-top: 10px;
             }
 
+            body.kyc-compact .selection-group {
+                padding: 12px 10px 2px;
+            }
+
             body.kyc-compact .type-card {
                 padding: 16px 14px;
             }
@@ -283,7 +348,7 @@ include '../includes/sidebar.php';
             <h1>KYC Verification</h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
-                Dashboard &rsaquo; Clients &rsaquo; <span>Select Client Type</span>
+                Dashboard &rsaquo; KYC Verification &rsaquo; <span>Select Registration Type</span>
             </div>
         </div>
         <div class="topbar-right">
@@ -300,7 +365,7 @@ include '../includes/sidebar.php';
                 <div class="step-num">1</div>
                 <div class="step-info">
                     <span>Step 1</span>
-                    <strong>Client Type</strong>
+                    <strong>KYC Type</strong>
                 </div>
             </div>
             <div class="step-line"></div>
@@ -333,49 +398,75 @@ include '../includes/sidebar.php';
         <div class="card">
             <div class="card-header">
                 <div>
-                    <div class="card-title">Select Client Type</div>
-                    <div class="card-subtitle">Choose the type of client you're registering for KYC verification</div>
+                    <div class="card-title">Select Registration Type</div>
+                    <div class="card-subtitle">Choose whether you're registering a client or an agent, then select the KYC type.</div>
                 </div>
             </div>
 
             <div class="card-body">
-                <div class="type-selector">
-                    <!-- Individual Client Card -->
-                    <a href="kyc-individual.php" class="type-card">
-                        <div class="type-card-icon">
-                            <i class="bi bi-person-fill"></i>
-                        </div>
-                        <div class="type-card-title">Individual Client</div>
-                        <div class="type-card-desc">
-                            Register a natural person as a client. Complete personal information and identity verification.
-                        </div>
-                        <div class="type-card-btn">Select Individual</div>
-                    </a>
+                <section class="selection-group <?php echo $isAgentDefault ? '' : 'preferred'; ?>">
+                    <div class="selection-group-header">
+                        <i class="bi bi-people"></i>
+                        <div class="selection-group-title">Client Registrations</div>
+                    </div>
+                    <p class="selection-group-subtitle">Use this when registering policyholders and obligees as clients.</p>
 
-                    <!-- Corporate Client Card -->
-                    <a href="kyc-corporate.php" class="type-card">
-                        <div class="type-card-icon">
-                            <i class="bi bi-building"></i>
-                        </div>
-                        <div class="type-card-title">Corporate Client</div>
-                        <div class="type-card-desc">
-                            Register a company or organization as a client. Provide corporate information and business verification.
-                        </div>
-                        <div class="type-card-btn">Select Corporate</div>
-                    </a>
+                    <div class="type-selector">
+                        <a href="kyc-individual.php?classification=client" class="type-card">
+                            <div class="type-card-icon">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <div class="type-card-title">Individual Client</div>
+                            <div class="type-card-desc">
+                                Register a natural person as a client. Complete personal information and identity verification.
+                            </div>
+                            <div class="type-card-btn">Select Individual Client</div>
+                        </a>
 
-                    <!-- Obligee Client Card -->
-                    <a href="kyc-obligee.php" class="type-card">
-                        <div class="type-card-icon">
-                            <i class="bi bi-shield-check"></i>
-                        </div>
-                        <div class="type-card-title">Obligee Client</div>
-                        <div class="type-card-desc">
-                            Register an obligee client using a dedicated obligee workflow.
-                        </div>
-                        <div class="type-card-btn">Select Obligee</div>
-                    </a>
-                </div>
+                        <a href="kyc-corporate.php?type=corporate&amp;classification=client" class="type-card">
+                            <div class="type-card-icon">
+                                <i class="bi bi-building"></i>
+                            </div>
+                            <div class="type-card-title">Corporate Client</div>
+                            <div class="type-card-desc">
+                                Register a company or organization as a client. Provide corporate information and business verification.
+                            </div>
+                            <div class="type-card-btn">Select Corporate Client</div>
+                        </a>
+
+                        <a href="kyc-obligee.php?classification=client" class="type-card">
+                            <div class="type-card-icon">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div class="type-card-title">Obligee Client</div>
+                            <div class="type-card-desc">
+                                Register an obligee client using a dedicated obligee workflow.
+                            </div>
+                            <div class="type-card-btn">Select Obligee Client</div>
+                        </a>
+                    </div>
+                </section>
+
+                <section class="selection-group <?php echo $isAgentDefault ? 'preferred' : ''; ?>">
+                    <div class="selection-group-header">
+                        <i class="bi bi-person-badge"></i>
+                        <div class="selection-group-title">Agent Registrations</div>
+                    </div>
+                    <p class="selection-group-subtitle">Use this when the account being onboarded is an individual agent.</p>
+
+                    <div class="type-selector">
+                        <a href="kyc-individual.php?classification=agent" class="type-card">
+                            <div class="type-card-icon">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <div class="type-card-title">Individual Agent</div>
+                            <div class="type-card-desc">
+                                Register an individual as an agent with identity and contact verification.
+                            </div>
+                            <div class="type-card-btn">Select Individual Agent</div>
+                        </a>
+                    </div>
+                </section>
             </div>
         </div>
 

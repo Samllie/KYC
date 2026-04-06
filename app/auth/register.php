@@ -113,6 +113,7 @@
                                 <option value="OZAMIZ BRANCH">OZAMIZ BRANCH</option>
                                 <option value="PAGADIAN BRANCH">PAGADIAN BRANCH</option>
                                 <option value="SAN FERNANDO, PAMPANGA BRANCH">SAN FERNANDO, PAMPANGA BRANCH</option>
+                                <option value="HEAD OFFICE BRANCH">HEAD OFFICE BRANCH</option>
                                 <option value="SMRO BRANCH">SMRO BRANCH</option>
                                 <option value="TACLOBAN BRANCH">TACLOBAN BRANCH</option>
                                 <option value="TUGUEGARAO BRANCH">TUGUEGARAO BRANCH</option>
@@ -262,6 +263,7 @@ const VALID_BRANCHES = [
     'OZAMIZ BRANCH',
     'PAGADIAN BRANCH',
     'SAN FERNANDO, PAMPANGA BRANCH',
+    'HEAD OFFICE BRANCH',
     'SMRO BRANCH',
     'TACLOBAN BRANCH',
     'TUGUEGARAO BRANCH',
