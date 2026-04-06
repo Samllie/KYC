@@ -135,8 +135,8 @@
 /* Table Wrapper */
 .table-wrapper {
     position: relative;
-    overflow-x: hidden;
-    overflow-y: visible;
+    overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     height: auto;
     min-height: 0;
@@ -156,10 +156,12 @@ body.clients-page .main {
 
 body.clients-page .content {
     min-height: 0;
+    overflow: hidden;
 }
 
 .content > .card {
     margin-top: 16px;
+    overflow: hidden;
 }
 
 .table-wrapper.is-loading::after {
@@ -194,8 +196,8 @@ body.clients-page .content {
 
 /* Clients Table */
 .clients-table {
-    width: 100%;
-    min-width: 0;
+    width: max(100%, 1240px);
+    min-width: 1240px;
     border-collapse: collapse;
     font-size: 0.8rem;
     table-layout: fixed;
@@ -208,7 +210,7 @@ body.clients-page .content {
 }
 
 .clients-table th {
-    padding: 6px 8px;
+    padding: 5px 8px;
     text-align: left;
     font-weight: 600;
     color: #f2fff3;
@@ -220,7 +222,7 @@ body.clients-page .content {
 .clients-table th.col-status,
 .clients-table th.col-verified,
 .clients-table th.col-actions {
-    white-space: normal;
+    white-space: nowrap;
     line-height: 1.2;
     font-size: 0.74rem;
 }
@@ -232,7 +234,7 @@ body.clients-page .content {
 
 .clients-table tbody tr:hover {
     background: #f6fcf8;
-    transform: translateY(-1px);
+    transform: none;
     box-shadow: inset 0 0 0 1px #d8e8df;
 }
 
@@ -250,7 +252,7 @@ body.clients-page .content {
 }
 
 .clients-table td {
-    padding: 8px;
+    padding: 7px 8px;
     color: var(--gray-700);
     white-space: nowrap;
     overflow: hidden;
@@ -392,6 +394,7 @@ body.clients-page .content {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-shrink: 0;
     padding: 16px;
     border-top: 1px solid #dce9e1;
     background: #f4fbf6;
@@ -569,6 +572,47 @@ body.clients-page .content {
     padding: 24px;
     max-height: 60vh;
     overflow-y: auto;
+}
+
+.delete-modal-content {
+    max-width: 520px;
+}
+
+.delete-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.delete-modal-body p {
+    margin: 0;
+    color: var(--gray-700);
+    line-height: 1.45;
+}
+
+.delete-client-meta {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #f4cccc;
+    background: #fff5f5;
+}
+
+.delete-client-meta span {
+    display: block;
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #a61b1b;
+    margin-bottom: 4px;
+}
+
+.delete-client-meta strong {
+    display: block;
+    font-size: 0.93rem;
+    color: #681010;
+    word-break: break-word;
 }
 
 .view-modal-content {
@@ -820,16 +864,36 @@ body.clients-page .content {
     box-shadow: var(--shadow-md);
 }
 
+.btn-delete-confirm {
+    padding: 8px 20px;
+    border: 1px solid #b91c1c;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-delete-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 20px rgba(185, 28, 28, 0.25);
+}
+
 /* ─── Responsive Design ─────────────────────────── */
 @media (max-width: 1024px) {
     body.clients-page {
-        overflow: auto;
+        overflow: hidden;
     }
 
     body.clients-page .main {
-        height: auto;
-        min-height: 100dvh;
-        overflow: visible;
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
     }
 
     .table-controls {
@@ -850,6 +914,7 @@ body.clients-page .content {
     }
 
     .clients-table {
+        width: 100%;
         min-width: 0;
     }
 

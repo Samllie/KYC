@@ -81,7 +81,7 @@ include '../includes/sidebar.php';
                             <th class="col-checkbox"><input type="checkbox" id="selectAll"></th>
                             <th class="col-ref">Ref Code</th>
                             <th class="col-name">Business/Client Name</th>
-                            <th class="col-owner">Company Owner</th>
+                            <th class="col-owner">Branch</th>
                             <th class="col-type">Type</th>
                             <th class="col-contact">Contact</th>
                             <th class="col-email">Email</th>
@@ -99,7 +99,7 @@ include '../includes/sidebar.php';
             <!-- Pagination -->
             <div class="table-footer">
                 <div class="pagination-info">
-                    Showing <span class="info-start">1</span> to <span class="info-end">8</span> of <span class="info-total">0</span> clients
+                    Showing <span class="info-start">1</span> to <span class="info-end">10</span> of <span class="info-total">0</span> clients
                 </div>
                 <div class="pagination" id="paginationContainer">
                     <!-- Pagination buttons will be generated dynamically -->
@@ -381,15 +381,45 @@ include '../includes/sidebar.php';
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════ MODAL: Delete Confirmation -->
+<div id="deleteConfirmModal" class="modal" aria-hidden="true">
+    <div class="modal-content delete-modal-content" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+        <div class="modal-header">
+            <h2 id="deleteConfirmTitle">Confirm Delete</h2>
+            <button id="deleteModalCloseBtn" type="button" class="modal-close" title="Close"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="modal-body delete-modal-body">
+            <p>Are you sure you want to delete this client record? This action cannot be undone.</p>
+            <div class="delete-client-meta" aria-live="polite">
+                <div>
+                    <span>Ref Code</span>
+                    <strong id="deleteConfirmRefCode">N/A</strong>
+                </div>
+                <div>
+                    <span>Client Name</span>
+                    <strong id="deleteConfirmName">N/A</strong>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" id="deleteCancelBtn" type="button">Cancel</button>
+            <button class="btn-delete-confirm" id="deleteConfirmBtn" type="button">
+                <i class="bi bi-trash"></i> Confirm Delete
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     // Pagination state
     let currentPage = 1;
-    let pageSize = 8;
+    let pageSize = 10;
     let totalPages = 1;
     let totalClients = 0;
     let currentEditingClientId = null;
     let searchDebounceTimer = null;
     let currentPageClients = [];
+    let pendingDeleteClient = null;
     const selectedClientIds = new Set();
     const selectedClientRows = new Map();
 
@@ -502,9 +532,7 @@ include '../includes/sidebar.php';
             const typeClass = normalizedType || 'corporate';
             const typeText = formatClientType(client.client_type);
             const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
-            const ownerName = isCorporateLike(client.client_type)
-                ? (client.contact_person || 'N/A')
-                : 'N/A';
+            const submittedBranch = client.submitted_by_branch || 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
             const clientNumber = client.client_number || 'N/A';
             const contactNumber = isCorporateLike(client.client_type)
@@ -520,7 +548,7 @@ include '../includes/sidebar.php';
                 <td class="col-checkbox"><input type="checkbox" class="row-select" data-client-id="${client.client_id}"></td>
                 <td class="col-ref"><span class="ref-badge">${client.reference_code}</span></td>
                 <td class="col-name">${displayName}</td>
-                <td class="col-owner">${ownerName}</td>
+                <td class="col-owner">${submittedBranch}</td>
                 <td class="col-type"><span class="type-badge ${typeClass}">${typeText}</span></td>
                 <td class="col-contact">${contactNumber}</td>
                 <td class="col-email">${client.email}</td>
@@ -667,7 +695,7 @@ include '../includes/sidebar.php';
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', function() {
                     const clientId = row.dataset.clientId;
-                    deleteClient(clientId, row);
+                    openDeleteClientModal(clientId, row);
                 });
             }
 
@@ -695,7 +723,7 @@ include '../includes/sidebar.php';
             firstName: nameParts[0] || '',
             lastName: nameParts.length > 1 ? nameParts[nameParts.length - 1] : '',
             displayName: displayName,
-            ownerName: cells[3].textContent.trim(),
+            submittedBranch: cells[3].textContent.trim(),
             type: cells[4].textContent.trim(),
             contact: cells[5].textContent.trim(),
             email: cells[6].textContent.trim(),
@@ -708,6 +736,53 @@ include '../includes/sidebar.php';
     const viewModal = document.getElementById('viewModal');
     const cancelBtn = document.getElementById('cancelBtn');
     const editModalCloseBtn = document.getElementById('editModalCloseBtn');
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    const deleteConfirmRefCode = document.getElementById('deleteConfirmRefCode');
+    const deleteConfirmName = document.getElementById('deleteConfirmName');
+    const deleteCancelBtn = document.getElementById('deleteCancelBtn');
+    const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+    const deleteModalCloseBtn = document.getElementById('deleteModalCloseBtn');
+
+    function setDeleteModalOpen(isOpen) {
+        if (!deleteConfirmModal) {
+            return;
+        }
+
+        deleteConfirmModal.style.display = isOpen ? 'block' : 'none';
+        deleteConfirmModal.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    }
+
+    function closeDeleteClientModal() {
+        pendingDeleteClient = null;
+        setDeleteModalOpen(false);
+    }
+
+    function openDeleteClientModal(clientId, row) {
+        if (!clientId || !row || !deleteConfirmModal) {
+            createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
+            return;
+        }
+
+        const refCode = (row.querySelector('.col-ref span')?.textContent || '').trim() || 'N/A';
+        const clientName = (row.querySelector('.col-name')?.textContent || '').trim() || 'Client';
+
+        pendingDeleteClient = {
+            clientId,
+            row,
+            clientName,
+            refCode
+        };
+
+        if (deleteConfirmRefCode) {
+            deleteConfirmRefCode.textContent = refCode;
+        }
+
+        if (deleteConfirmName) {
+            deleteConfirmName.textContent = clientName;
+        }
+
+        setDeleteModalOpen(true);
+    }
 
     // View Client Function
     function viewClient(data) {
@@ -855,19 +930,14 @@ include '../includes/sidebar.php';
     }
 
     // Delete Client Function
-    function deleteClient(clientId, row) {
+    function deleteClient(clientId, row, clientNameOverride = '') {
         if (!clientId) {
             createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
             return;
         }
-
-        const refCode = row.querySelector('.col-ref span').textContent;
-        if (!confirm('Are you sure you want to delete this client?\n\n' + refCode)) {
-            return;
-        }
         
         // Extract client name for reference
-        const clientName = row.querySelector('.col-name').textContent;
+        const clientName = clientNameOverride || (row.querySelector('.col-name')?.textContent || 'Client').trim();
         
         const formData = new FormData();
         formData.append('action', 'delete_client');
@@ -885,19 +955,18 @@ include '../includes/sidebar.php';
             if (data.success) {
                 selectedClientIds.delete(String(clientId));
                 selectedClientRows.delete(String(clientId));
-                syncSelectAllCheckbox();
+                const remainingTotal = Math.max(0, totalClients - 1);
+                const maxPageAfterDelete = Math.max(1, Math.ceil(remainingTotal / pageSize));
+                const targetPage = Math.min(currentPage, maxPageAfterDelete);
 
-                // Show toast
-                const toast = createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
-                // Fade out and remove row
-                row.style.opacity = '0';
-                setTimeout(() => row.remove(), 300);
+                createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
+                loadClients(targetPage);
             } else {
-                const toast = createToast('error', 'Error', data.message || 'Failed to delete client.', 'toastContainer');
+                createToast('error', 'Error', data.message || 'Failed to delete client.', 'toastContainer');
             }
         })
         .catch(error => {
-            const toast = createToast('error', 'Error', 'An error occurred.', 'toastContainer');
+            createToast('error', 'Error', 'An error occurred.', 'toastContainer');
             console.error('Error:', error);
         })
         .finally(() => {
@@ -951,6 +1020,28 @@ include '../includes/sidebar.php';
         });
     }
 
+    if (deleteCancelBtn) {
+        deleteCancelBtn.addEventListener('click', closeDeleteClientModal);
+    }
+
+    if (deleteModalCloseBtn) {
+        deleteModalCloseBtn.addEventListener('click', closeDeleteClientModal);
+    }
+
+    if (deleteConfirmBtn) {
+        deleteConfirmBtn.addEventListener('click', function() {
+            if (!pendingDeleteClient) {
+                setDeleteModalOpen(false);
+                return;
+            }
+
+            const target = pendingDeleteClient;
+            setDeleteModalOpen(false);
+            pendingDeleteClient = null;
+            deleteClient(target.clientId, target.row, target.clientName);
+        });
+    }
+
     document.getElementById('saveBtn').addEventListener('click', saveClientChanges);
 
     window.addEventListener('click', function(event) {
@@ -959,6 +1050,15 @@ include '../includes/sidebar.php';
         }
         if (event.target === viewModal) {
             viewModal.style.display = 'none';
+        }
+        if (event.target === deleteConfirmModal) {
+            closeDeleteClientModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && deleteConfirmModal && deleteConfirmModal.style.display === 'block') {
+            closeDeleteClientModal();
         }
     });
 
@@ -989,7 +1089,7 @@ include '../includes/sidebar.php';
     let exportData = [];
     let exportScopeLabel = 'Filtered clients';
 
-    const exportHeaders = ['Ref Code', 'Business / Client Name', 'Company Owner', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
+    const exportHeaders = ['Ref Code', 'Business / Client Name', 'Submitted Branch', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
 
     function getFilterSummaryText() {
         const filters = getActiveFilters();
@@ -1017,10 +1117,7 @@ include '../includes/sidebar.php';
         const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
         const normalizedType = (client.client_type || '').toLowerCase();
         const isCorporateLike = normalizedType === 'corporate' || normalizedType === 'obligee';
-
-        const ownerName = isCorporateLike
-            ? (client.contact_person || 'N/A')
-            : 'N/A';
+        const submittedBranch = client.submitted_by_branch || 'N/A';
 
         let typeText = 'N/A';
         if (normalizedType === 'individual') typeText = 'Individual';
@@ -1034,7 +1131,7 @@ include '../includes/sidebar.php';
         return {
             refCode: client.reference_code || 'N/A',
             displayName: displayName,
-            ownerName: ownerName,
+            submittedBranch: submittedBranch,
             type: typeText || 'N/A',
             contact: contactNumber,
             email: client.email || 'N/A',
@@ -1120,7 +1217,7 @@ include '../includes/sidebar.php';
             html += `<tr class="${index % 2 === 0 ? 'is-even' : 'is-odd'}">`;
             html += `<td>${row.refCode}</td>`;
             html += `<td>${row.displayName}</td>`;
-            html += `<td>${row.ownerName}</td>`;
+            html += `<td>${row.submittedBranch}</td>`;
             html += `<td>${row.type}</td>`;
             html += `<td>${row.contact}</td>`;
             html += `<td>${row.email}</td>`;
@@ -1169,7 +1266,7 @@ include '../includes/sidebar.php';
             const cells = [
                 row.refCode,
                 row.displayName,
-                row.ownerName,
+                row.submittedBranch,
                 row.type,
                 row.contact,
                 row.email,
