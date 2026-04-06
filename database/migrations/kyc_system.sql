@@ -225,7 +225,7 @@ CREATE TABLE `users` (
   `email` varchar(120) NOT NULL,
   `password` varchar(255) NOT NULL,
   `department` varchar(50) NOT NULL,
-  `branch` varchar(80) NOT NULL DEFAULT 'ALABANG BRANCH',
+  `branch` enum('ALABANG BRANCH','MANILA BRANCH I','MANILA BRANCH II','WEST AVENUE BRANCH','CUBAO BRANCH','ANGELES BRANCH','BATANGAS BRANCH','BACOLOD BRANCH','CABANATUAN BRANCH','BUTUAN BRANCH','CAGAYAN DE ORO BRANCH','CEBU BRANCH','CEBU REGIONAL OFFICE BRANCH','DAGUPAN BRANCH','DAVAO I BRANCH','DAVAO II BRANCH','GENSAN BRANCH','ISABELA BRANCH','LA UNION BRANCH','LAOAG BRANCH','LEGAZPI I BRANCH','LEGAZPI II BRANCH','MINDORO BRANCH','NAGA BRANCH','ORMOC BRANCH','OZAMIZ BRANCH','PAGADIAN BRANCH','SAN FERNANDO, PAMPANGA BRANCH','SMRO BRANCH','TACLOBAN BRANCH','TUGUEGARAO BRANCH','VIGAN BRANCH','ILOILO BRANCH') NOT NULL DEFAULT 'ALABANG BRANCH',
   `role` varchar(30) DEFAULT 'kyc_officer',
   `avatar_initials` varchar(5) DEFAULT NULL,
   `status` enum('active','inactive','suspended') DEFAULT 'active',
@@ -238,15 +238,15 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `department`, `role`, `avatar_initials`, `status`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, 'Juan Dela Cruz', 'juan@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'kyc_officer', 'JD', 'active', '2026-03-24 03:23:27', '2026-03-17 03:27:01', '2026-03-24 02:23:27'),
-(2, 'Maria Garcia', 'maria@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'compliance', 'kyc_officer', 'MG', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(3, 'Robert Santos', 'robert@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'operations', 'manager', 'RS', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(4, 'Angela Torres', 'angela@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'kyc_officer', 'AT', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(5, 'John Reyes', 'john@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'compliance', 'kyc_officer', 'JR', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(6, 'Luisa Cruz', 'luisa@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'kyc_officer', 'LC', 'active', '2026-03-23 07:47:42', '2026-03-17 03:27:01', '2026-03-23 06:47:42'),
-(7, 'Ezekiel Robin Codillo', 'ezekielcodillo56@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'kyc_officer', 'EC', 'active', NULL, '2026-03-23 03:36:50', '2026-03-23 03:36:50'),
-(8, 'Paulynous K. Gonzales', 'gonzalespaul528@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'kyc_officer', 'PG', 'active', '2026-03-23 09:03:50', '2026-03-23 07:37:10', '2026-03-23 08:03:50');
+INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `department`, `branch`, `role`, `avatar_initials`, `status`, `last_login`, `created_at`, `updated_at`) VALUES
+(1, 'Juan Dela Cruz', 'juan@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'ALABANG BRANCH', 'kyc_officer', 'JD', 'active', '2026-03-24 03:23:27', '2026-03-17 03:27:01', '2026-03-24 02:23:27'),
+(2, 'Maria Garcia', 'maria@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'compliance', 'MANILA BRANCH I', 'kyc_officer', 'MG', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(3, 'Robert Santos', 'robert@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'operations', 'MANILA BRANCH II', 'manager', 'RS', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(4, 'Angela Torres', 'angela@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'WEST AVENUE BRANCH', 'kyc_officer', 'AT', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(5, 'John Reyes', 'john@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'compliance', 'CUBAO BRANCH', 'kyc_officer', 'JR', 'active', NULL, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(6, 'Luisa Cruz', 'luisa@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'CEBU BRANCH', 'kyc_officer', 'LC', 'active', '2026-03-23 07:47:42', '2026-03-17 03:27:01', '2026-03-23 06:47:42'),
+(7, 'Ezekiel Robin Codillo', 'ezekielcodillo56@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'BATANGAS BRANCH', 'kyc_officer', 'EC', 'active', NULL, '2026-03-23 03:36:50', '2026-03-23 03:36:50'),
+(8, 'Paulynous K. Gonzales', 'gonzalespaul528@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'ILOILO BRANCH', 'kyc_officer', 'PG', 'active', '2026-03-23 09:03:50', '2026-03-23 07:37:10', '2026-03-23 08:03:50');
 
 -- --------------------------------------------------------
 
@@ -330,6 +330,7 @@ ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
   ADD UNIQUE KEY `email` (`email`),
   ADD KEY `idx_email` (`email`),
+  ADD KEY `idx_branch` (`branch`),
   ADD KEY `idx_department` (`department`),
   ADD KEY `idx_status` (`status`),
   ADD KEY `idx_users_role_status` (`role`,`status`);

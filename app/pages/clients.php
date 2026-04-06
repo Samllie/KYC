@@ -81,7 +81,7 @@ include '../includes/sidebar.php';
                             <th class="col-checkbox"><input type="checkbox" id="selectAll"></th>
                             <th class="col-ref">Ref Code</th>
                             <th class="col-name">Business/Client Name</th>
-                            <th class="col-owner">Company Owner</th>
+                            <th class="col-owner">Branch</th>
                             <th class="col-type">Type</th>
                             <th class="col-contact">Contact</th>
                             <th class="col-email">Email</th>
@@ -532,9 +532,7 @@ include '../includes/sidebar.php';
             const typeClass = normalizedType || 'corporate';
             const typeText = formatClientType(client.client_type);
             const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
-            const ownerName = isCorporateLike(client.client_type)
-                ? (client.contact_person || 'N/A')
-                : 'N/A';
+            const submittedBranch = client.submitted_by_branch || 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
             const clientNumber = client.client_number || 'N/A';
             const contactNumber = isCorporateLike(client.client_type)
@@ -550,7 +548,7 @@ include '../includes/sidebar.php';
                 <td class="col-checkbox"><input type="checkbox" class="row-select" data-client-id="${client.client_id}"></td>
                 <td class="col-ref"><span class="ref-badge">${client.reference_code}</span></td>
                 <td class="col-name">${displayName}</td>
-                <td class="col-owner">${ownerName}</td>
+                <td class="col-owner">${submittedBranch}</td>
                 <td class="col-type"><span class="type-badge ${typeClass}">${typeText}</span></td>
                 <td class="col-contact">${contactNumber}</td>
                 <td class="col-email">${client.email}</td>
@@ -725,7 +723,7 @@ include '../includes/sidebar.php';
             firstName: nameParts[0] || '',
             lastName: nameParts.length > 1 ? nameParts[nameParts.length - 1] : '',
             displayName: displayName,
-            ownerName: cells[3].textContent.trim(),
+            submittedBranch: cells[3].textContent.trim(),
             type: cells[4].textContent.trim(),
             contact: cells[5].textContent.trim(),
             email: cells[6].textContent.trim(),
@@ -1091,7 +1089,7 @@ include '../includes/sidebar.php';
     let exportData = [];
     let exportScopeLabel = 'Filtered clients';
 
-    const exportHeaders = ['Ref Code', 'Business / Client Name', 'Company Owner', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
+    const exportHeaders = ['Ref Code', 'Business / Client Name', 'Submitted Branch', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
 
     function getFilterSummaryText() {
         const filters = getActiveFilters();
@@ -1119,10 +1117,7 @@ include '../includes/sidebar.php';
         const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
         const normalizedType = (client.client_type || '').toLowerCase();
         const isCorporateLike = normalizedType === 'corporate' || normalizedType === 'obligee';
-
-        const ownerName = isCorporateLike
-            ? (client.contact_person || 'N/A')
-            : 'N/A';
+        const submittedBranch = client.submitted_by_branch || 'N/A';
 
         let typeText = 'N/A';
         if (normalizedType === 'individual') typeText = 'Individual';
@@ -1136,7 +1131,7 @@ include '../includes/sidebar.php';
         return {
             refCode: client.reference_code || 'N/A',
             displayName: displayName,
-            ownerName: ownerName,
+            submittedBranch: submittedBranch,
             type: typeText || 'N/A',
             contact: contactNumber,
             email: client.email || 'N/A',
@@ -1222,7 +1217,7 @@ include '../includes/sidebar.php';
             html += `<tr class="${index % 2 === 0 ? 'is-even' : 'is-odd'}">`;
             html += `<td>${row.refCode}</td>`;
             html += `<td>${row.displayName}</td>`;
-            html += `<td>${row.ownerName}</td>`;
+            html += `<td>${row.submittedBranch}</td>`;
             html += `<td>${row.type}</td>`;
             html += `<td>${row.contact}</td>`;
             html += `<td>${row.email}</td>`;
@@ -1271,7 +1266,7 @@ include '../includes/sidebar.php';
             const cells = [
                 row.refCode,
                 row.displayName,
-                row.ownerName,
+                row.submittedBranch,
                 row.type,
                 row.contact,
                 row.email,

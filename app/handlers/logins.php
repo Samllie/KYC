@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Query user
-    $user = fetchOne("SELECT user_id, full_name, email, password, department, role FROM users WHERE email = ?", [$email]);
+    $user = fetchOne("SELECT user_id, full_name, email, password, department, branch, role FROM users WHERE email = ?", [$email]);
     
     if (!$user) {
         // User not found - could be wrong email or users table doesn't exist
@@ -75,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['full_name'] = $user['full_name'];
     $_SESSION['email'] = $user['email'];
     $_SESSION['department'] = $user['department'];
+    $_SESSION['branch'] = $user['branch'];
     $_SESSION['role'] = $user['role'];
 
     // Remember email for future logins (including after logout)

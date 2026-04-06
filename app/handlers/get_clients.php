@@ -104,7 +104,7 @@ $countResult = $countStmt->get_result();
 $countRow = $countResult->fetch_assoc();
 $totalClients = intval($countRow['total']);
 
-// Get paginated clients with submitted_by and verified_by user names
+// Get paginated clients with submitted-by account details and verifier name
 $query = "
     SELECT 
         c.client_id, 
@@ -123,6 +123,7 @@ $query = "
         c.verified_by,
         c.created_at,
         su.full_name as submitted_by_name,
+        su.branch as submitted_by_branch,
         vu.full_name as verified_by_name
     FROM clients c
     LEFT JOIN users su ON c.submitted_by = su.user_id
