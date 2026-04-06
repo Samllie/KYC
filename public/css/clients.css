@@ -136,7 +136,7 @@
 .table-wrapper {
     position: relative;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     height: auto;
     min-height: 0;
