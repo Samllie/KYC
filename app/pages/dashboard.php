@@ -3,6 +3,35 @@ require_once '../config/session.php';
 require_once '../config/db.php';
 requireLogin();
 
+$currentUserRole = strtolower(trim((string)($_SESSION['role'] ?? '')));
+$currentUserDepartment = strtoupper(trim((string)($_SESSION['department'] ?? '')));
+$currentUserBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
+$currentUserRoleNormalized = str_replace('-', '_', $currentUserRole);
+$isHeadOfficeUser = $currentUserRole === 'admin'
+    || $currentUserDepartment === 'HEAD OFFICE'
+    || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+$isKycOfficerUser = $currentUserRoleNormalized === 'kyc_officer' && !$isHeadOfficeUser;
+
+$workflowQuickAction = [
+    'href' => 'kyc-verification.php',
+    'icon' => 'bi-file-earmark-check',
+    'label' => 'Continue Draft',
+];
+
+if ($isHeadOfficeUser) {
+    $workflowQuickAction = [
+        'href' => 'client-approvals.php',
+        'icon' => 'bi-clipboard2-check',
+        'label' => 'Approvals',
+    ];
+} elseif ($isKycOfficerUser) {
+    $workflowQuickAction = [
+        'href' => 'my-applications.php',
+        'icon' => 'bi-clipboard-data',
+        'label' => 'Applications',
+    ];
+}
+
 $stats = fetchOne("SELECT
     COUNT(*) AS total_clients,
     SUM(client_type = 'obligee') AS obligee_count
@@ -19,7 +48,8 @@ FROM kyc_verifications") ?? [];
 
 $clientTypeSplit = fetchOne("SELECT
     SUM(client_type = 'individual') AS individual_count,
-    SUM(client_type = 'corporate') AS corporate_count
+    SUM(client_type = 'corporate') AS corporate_count,
+    SUM(client_type = 'obligee') AS obligee_count
 FROM clients") ?? [];
 
 $recentActivity = fetchAll("SELECT
@@ -42,9 +72,11 @@ $newThisWeek = intval($newThisWeekRow['new_this_week'] ?? 0);
 
 $individualCount = intval($clientTypeSplit['individual_count'] ?? 0);
 $corporateCount = intval($clientTypeSplit['corporate_count'] ?? 0);
-$typeTotal = max(1, $individualCount + $corporateCount);
+$obligeeMixCount = intval($clientTypeSplit['obligee_count'] ?? 0);
+$typeTotal = max(1, $individualCount + $corporateCount + $obligeeMixCount);
 $individualPct = round(($individualCount / $typeTotal) * 100);
-$corporatePct = 100 - $individualPct;
+$obligeePct = round(($obligeeMixCount / $typeTotal) * 100);
+$corporatePct = max(0, 100 - $individualPct - $obligeePct);
 
 $funnelDraft = intval($kycFunnel['draft_count'] ?? 0);
 $funnelSubmitted = intval($kycFunnel['submitted_count'] ?? 0);
@@ -189,7 +221,7 @@ include '../includes/sidebar.php';
                     <div class="action-buttons">
                         <a class="action-btn" href="kyc-individual.php"><i class="bi bi-person-plus"></i><span>New Individual</span></a>
                         <a class="action-btn" href="kyc-corporate.php"><i class="bi bi-building-add"></i><span>New Corporate</span></a>
-                        <a class="action-btn" href="kyc-verification.php"><i class="bi bi-file-earmark-check"></i><span>Continue Draft</span></a>
+                        <a class="action-btn" href="<?php echo e($workflowQuickAction['href']); ?>"><i class="bi <?php echo e($workflowQuickAction['icon']); ?>"></i><span><?php echo e($workflowQuickAction['label']); ?></span></a>
                         <a class="action-btn" href="clients.php"><i class="bi bi-inboxes"></i><span>View Clients</span></a>
                     </div>
                 </div>
@@ -224,7 +256,7 @@ include '../includes/sidebar.php';
                 <div class="card-header">
                     <div>
                         <h3 class="card-title">Client Mix</h3>
-                        <div class="card-subtitle">Individual vs corporate split</div>
+                        <div class="card-subtitle">Individual, corporate, and obligee split</div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -232,10 +264,12 @@ include '../includes/sidebar.php';
                         <div class="split-bar">
                             <span class="individual" style="width: <?php echo e($individualPct); ?>%;"></span>
                             <span class="corporate" style="width: <?php echo e($corporatePct); ?>%;"></span>
+                            <span class="obligee" style="width: <?php echo e($obligeePct); ?>%;"></span>
                         </div>
                         <div class="split-legend">
                             <div><i class="bi bi-circle-fill"></i> Individual: <?php echo e($individualCount); ?> (<?php echo e($individualPct); ?>%)</div>
                             <div><i class="bi bi-circle-fill"></i> Corporate: <?php echo e($corporateCount); ?> (<?php echo e($corporatePct); ?>%)</div>
+                            <div><i class="bi bi-circle-fill"></i> Obligee: <?php echo e($obligeeMixCount); ?> (<?php echo e($obligeePct); ?>%)</div>
                         </div>
                     </div>
                 </div>

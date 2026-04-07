@@ -699,7 +699,7 @@ include '../includes/sidebar.php';
     let totalPages = 1;
     const pageSize = 10;
     const APPROVALS_AUTO_REFRESH_MS = 12000;
-    const OFFICER_RESUBMITTED_JUST_NOW_MS = 15 * 60 * 1000;
+    const OFFICER_RESUBMITTED_JUST_NOW_MS = 5 * 60 * 1000;
     let searchDebounceTimer;
     let approvalsRefreshTimer = null;
     let approvalsRequestInFlight = false;

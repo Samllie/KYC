@@ -1,5 +1,6 @@
 <?php
 require_once '../config/session.php';
+require_once '../config/device_accounts.php';
 
 $isSwitchMode = isset($_GET['switch']);
 
@@ -19,6 +20,10 @@ if (isset($_SESSION['user_id']) && $isSwitchMode) {
 
 $prefillEmail = trim($_GET['email'] ?? '');
 $prefillEmail = filter_var($prefillEmail, FILTER_VALIDATE_EMAIL) ? $prefillEmail : '';
+
+if ($isSwitchMode && $prefillEmail !== '' && !deviceAccountsEmailAllowed($prefillEmail)) {
+    $prefillEmail = '';
+}
 
 $rememberedEmail = trim($_COOKIE['remembered_email'] ?? '');
 $rememberedEmail = filter_var($rememberedEmail, FILTER_VALIDATE_EMAIL) ? $rememberedEmail : '';

@@ -130,7 +130,22 @@ if ($isHeadOfficeUser) {
 $activePage = isset($activePage) ? $activePage : 'dashboard';
 
 $displayName = $_SESSION['full_name'] ?? 'User';
-$displayRole = $_SESSION['role'] ?? 'KYC Officer';
+$displayRole = $_SESSION['role'] ?? 'kyc_officer';
+$displayRoleNormalized = str_replace('-', '_', strtolower(trim((string)$displayRole)));
+
+$accountTitle = 'User';
+if ($isHeadOfficeUser) {
+    $accountTitle = 'Head Office Reviewer';
+} elseif ($displayRoleNormalized === 'kyc_officer') {
+    $accountTitle = 'KYC Officer';
+} elseif ($displayRoleNormalized === 'manager') {
+    $accountTitle = 'Branch Manager';
+} elseif ($displayRoleNormalized === 'compliance') {
+    $accountTitle = 'Compliance Officer';
+} elseif ($displayRoleNormalized !== '') {
+    $accountTitle = ucwords(str_replace('_', ' ', $displayRoleNormalized));
+}
+
 $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($displayName) : 'US';
 ?>
 
@@ -176,7 +191,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
             <div class="user-avatar"><?php echo htmlspecialchars($avatarInitials); ?></div>
             <div class="user-info sidebar-text">
                 <span><?php echo htmlspecialchars($displayName); ?></span>
-                <span><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $displayRole))); ?></span>
+                <span><?php echo htmlspecialchars($accountTitle); ?></span>
             </div>
             <button type="button" id="userMenuBtn" class="user-menu-btn" aria-expanded="false" aria-label="Open user menu">
                 <i class="bi bi-three-dots-vertical"></i>

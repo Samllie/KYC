@@ -247,6 +247,10 @@
     background: #5c9bff;
 }
 
+.split-bar .obligee {
+    background: #9b6bda;
+}
+
 .split-legend {
     display: grid;
     gap: 8px;
@@ -258,12 +262,16 @@
     margin-right: 6px;
 }
 
-.split-legend div:first-child i {
+.split-legend div:nth-child(1) i {
     color: #1d7f50;
 }
 
-.split-legend div:last-child i {
+.split-legend div:nth-child(2) i {
     color: #5c9bff;
+}
+
+.split-legend div:nth-child(3) i {
+    color: #9b6bda;
 }
 
 .activity-card {
