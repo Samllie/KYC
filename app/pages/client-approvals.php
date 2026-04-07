@@ -528,9 +528,235 @@ if (!$isHeadOfficeUser) {
             color: #fff;
             font-weight: 600;
         }
+
+        .approvals-page .main {
+            position: relative;
+            isolation: isolate;
+        }
+
+        .approvals-page .main::before {
+            content: '';
+            position: absolute;
+            top: -140px;
+            right: -180px;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(151, 214, 173, 0.34) 0%, rgba(151, 214, 173, 0) 72%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .approvals-topbar {
+            margin-bottom: 8px;
+            border: 1px solid #d9e8dd;
+            border-radius: 12px;
+            background: linear-gradient(130deg, rgba(255, 255, 255, 0.95) 0%, rgba(244, 251, 246, 0.98) 60%, rgba(235, 245, 255, 0.9) 100%);
+            box-shadow: 0 12px 24px -26px rgba(16, 54, 33, 0.45);
+            padding: 12px 14px;
+        }
+
+        .approvals-topbar .topbar-left h1 {
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
+        }
+
+        .controls-container {
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            margin-bottom: 8px;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .controls-container .controls-left {
+            gap: 6px;
+            align-items: center;
+        }
+
+        .controls-container .filter-group {
+            min-width: 135px;
+            flex: 0 1 150px;
+        }
+
+        .controls-container .filter-select,
+        .controls-container .search-input {
+            width: 100%;
+            min-height: 32px;
+            border-radius: 999px;
+            border-color: #ccded2;
+            background: rgba(253, 255, 254, 0.96);
+            font-size: 0.76rem;
+        }
+
+        .controls-container .search-input {
+            padding: 6px 12px 6px 28px;
+        }
+
+        .controls-container .filter-select {
+            padding: 5px 28px 5px 12px;
+        }
+
+        .controls-container .search-box i {
+            left: 9px;
+            font-size: 0.78rem;
+        }
+
+        .controls-container .search-box {
+            width: min(240px, 100%);
+            flex: 0 1 240px;
+        }
+
+        .approvals-page .table-wrapper {
+            border: 1px solid #d7e8dd;
+            border-radius: 14px 14px 0 0;
+            background: #ffffff;
+            box-shadow: 0 16px 28px -28px rgba(23, 62, 42, 0.7);
+        }
+
+        .approvals-page .clients-table thead {
+            background: linear-gradient(180deg, #2f7d4e 0%, #266741 100%);
+            border-top: 1px solid #2a7549;
+        }
+
+        .approvals-page .clients-table th {
+            font-size: 0.67rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 4px 7px;
+        }
+
+        .approvals-page .clients-table td {
+            padding-top: 5px;
+            padding-bottom: 5px;
+            padding-left: 7px;
+            padding-right: 7px;
+            font-size: 0.76rem;
+        }
+
+        .approvals-page .table-footer {
+            border: 1px solid #d7e8dd;
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            background: linear-gradient(180deg, #f6fcf8 0%, #edf7f1 100%);
+            padding: 12px 14px;
+        }
+
+        .approvals-page .action-stack {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: 100%;
+            gap: 0;
+        }
+
+        .approvals-page .action-stack .action-icon {
+            padding: 5px 8px;
+            font-size: 0.69rem;
+            border-radius: 8px;
+        }
+
+        .approvals-page .action-stack .action-icon i {
+            font-size: 0.78rem;
+        }
+
+        .row-action-toggle {
+            min-height: 26px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            border: 1px solid #c8ddd0;
+            background: #f7fcf8;
+            color: #174a31;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .row-action-toggle:hover {
+            border-color: #a9ccb8;
+            background: #eff8f2;
+        }
+
+        .row-action-toggle i {
+            font-size: 0.72rem;
+        }
+
+        .row-action-menu {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 6px);
+            min-width: 150px;
+            border: 1px solid #cfe1d6;
+            border-radius: 10px;
+            background: #ffffff;
+            box-shadow: 0 12px 22px rgba(17, 24, 39, 0.13);
+            padding: 5px;
+            display: none;
+            z-index: 20;
+        }
+
+        .action-stack.is-open .row-action-menu {
+            display: grid;
+            gap: 4px;
+        }
+
+        .row-action-item {
+            width: 100%;
+            border: 1px solid transparent;
+            justify-content: flex-start;
+            padding: 5px 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: #f8fcfa;
+        }
+
+        .approvals-page .application-details-dialog {
+            border-radius: 16px;
+            border-color: #cadfd2;
+            box-shadow: 0 26px 52px rgba(15, 23, 42, 0.26);
+        }
+
+        .approvals-page .application-details-header {
+            padding: 16px;
+        }
+
+        @media (max-width: 980px) {
+            .approvals-topbar {
+                padding: 10px 12px;
+            }
+
+            .controls-container .search-box,
+            .controls-container .filter-group {
+                width: 100%;
+                flex: 1 1 100%;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .approvals-page .table-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .approvals-page .application-details-header {
+                padding: 12px;
+            }
+
+            .approvals-page .application-modal-subtitle {
+                font-size: 0.74rem;
+            }
+        }
     </style>
 </head>
-<body class="clients-page">
+<body class="clients-page approvals-page">
 <?php if (!$isHeadOfficeUser): ?>
     <main class="denied-shell">
         <section class="denied-card">
@@ -548,7 +774,7 @@ include '../includes/sidebar.php';
 ?>
 
 <div class="main">
-    <header class="topbar">
+    <header class="topbar approvals-topbar">
         <div class="topbar-left">
             <h1>Client Approvals</h1>
             <div class="breadcrumb-trail">
@@ -556,7 +782,6 @@ include '../includes/sidebar.php';
                 Dashboard &rsaquo; <span>Client Approvals</span>
             </div>
         </div>
-        <div class="topbar-right"></div>
     </header>
 
     <main class="content">
@@ -607,6 +832,7 @@ include '../includes/sidebar.php';
                 <thead>
                     <tr>
                         <th class="col-ref">Ref Code</th>
+                        <th class="col-name">Display Name</th>
                         <th class="col-type">Class</th>
                         <th class="col-type">Type</th>
                         <th class="col-contact">Contact</th>
@@ -621,7 +847,7 @@ include '../includes/sidebar.php';
                 </thead>
                 <tbody id="approvalsTableBody">
                     <tr>
-                        <td colspan="11" style="text-align:center; padding:20px;">Loading approvals...</td>
+                        <td colspan="12" style="text-align:center; padding:20px;">Loading approvals...</td>
                     </tr>
                 </tbody>
             </table>
@@ -708,6 +934,7 @@ include '../includes/sidebar.php';
     let currentOpenApprovalId = 0;
     let currentOpenApprovalStatus = '';
     let detailsActionsBusy = false;
+    let rowActionOutsideClickBound = false;
 
     const applicationDetailsPanel = document.getElementById('applicationDetailsPanel');
     const applicationDetailsBackdrop = document.getElementById('applicationDetailsBackdrop');
@@ -1169,7 +1396,7 @@ include '../includes/sidebar.php';
         if (!tbody) return;
 
         if (!Array.isArray(rows) || rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 22px;">No approval records found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding: 22px;">No approval records found</td></tr>';
             return;
         }
 
@@ -1207,11 +1434,9 @@ include '../includes/sidebar.php';
 
             tr.innerHTML = `
                 <td class="col-ref">
-                    <div class="ref-with-name">
-                        <span class="ref-badge">${escapeHtml(row.reference_code || 'N/A')}</span>
-                        <span class="ref-name">${escapeHtml(clientName)}</span>
-                    </div>
+                    <span class="ref-badge">${escapeHtml(row.reference_code || 'N/A')}</span>
                 </td>
+                <td class="col-name">${escapeHtml(clientName)}</td>
                 <td class="col-type">${escapeHtml(formatClassification(row.client_classification))}</td>
                 <td class="col-type">${escapeHtml(formatType(row.client_type))}</td>
                 <td class="col-contact">${escapeHtml(contact)}</td>
@@ -1223,9 +1448,14 @@ include '../includes/sidebar.php';
                 <td class="notes-cell">${notesHtml}</td>
                 <td class="col-actions">
                     <div class="action-stack">
-                        <button class="action-icon action-approve" data-action="approve" data-id="${approvalId}"><i class="bi bi-check2-circle"></i>Approve</button>
-                        <button class="action-icon action-decline" data-action="decline" data-id="${approvalId}"><i class="bi bi-x-circle"></i>Decline</button>
-                        <button class="action-icon action-resubmit" data-action="resubmit" data-id="${approvalId}"><i class="bi bi-arrow-repeat"></i>Resubmit</button>
+                        <button type="button" class="row-action-toggle" aria-haspopup="true" aria-expanded="false">
+                            <i class="bi bi-three-dots"></i>Actions
+                        </button>
+                        <div class="row-action-menu" role="menu">
+                            <button type="button" class="action-icon row-action-item action-approve" data-action="approve" data-id="${approvalId}" role="menuitem"><i class="bi bi-check2-circle"></i>Approve</button>
+                            <button type="button" class="action-icon row-action-item action-decline" data-action="decline" data-id="${approvalId}" role="menuitem"><i class="bi bi-x-circle"></i>Decline</button>
+                            <button type="button" class="action-icon row-action-item action-resubmit" data-action="resubmit" data-id="${approvalId}" role="menuitem"><i class="bi bi-arrow-repeat"></i>Resubmit</button>
+                        </div>
                     </div>
                 </td>
             `;
@@ -1618,7 +1848,7 @@ include '../includes/sidebar.php';
             .catch(error => {
                 const tbody = document.getElementById('approvalsTableBody');
                 if (tbody) {
-                    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#b42318; padding: 22px;">${escapeHtml(error.message || 'Failed to load approvals')}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:#b42318; padding: 22px;">${escapeHtml(error.message || 'Failed to load approvals')}</td></tr>`;
                 }
                 updatePaginationInfo({ total: 0, page: 1, pageSize, totalPages: 1 });
                 renderPagination({ page: 1, totalPages: 1 });
@@ -1721,11 +1951,54 @@ include '../includes/sidebar.php';
             });
     }
 
+    function closeAllRowActionMenus() {
+        document.querySelectorAll('#approvalsTableBody .action-stack.is-open').forEach(stack => {
+            stack.classList.remove('is-open');
+            const toggle = stack.querySelector('.row-action-toggle');
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    function attachRowActionMenuHandlers() {
+        document.querySelectorAll('#approvalsTableBody .row-action-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const stack = this.closest('.action-stack');
+                if (!stack) return;
+
+                const shouldOpen = !stack.classList.contains('is-open');
+                closeAllRowActionMenus();
+
+                if (shouldOpen) {
+                    stack.classList.add('is-open');
+                    this.setAttribute('aria-expanded', 'true');
+                } else {
+                    this.setAttribute('aria-expanded', 'false');
+                }
+            });
+        });
+
+        if (!rowActionOutsideClickBound) {
+            document.addEventListener('click', event => {
+                if (!event.target.closest('#approvalsTableBody .action-stack')) {
+                    closeAllRowActionMenus();
+                }
+            });
+            rowActionOutsideClickBound = true;
+        }
+    }
+
     function attachActionHandlers() {
         document.querySelectorAll('#approvalsTableBody .action-icon[data-action]').forEach(button => {
             button.addEventListener('click', function (event) {
                 event.preventDefault();
                 event.stopPropagation();
+
+                closeAllRowActionMenus();
 
                 const approvalId = Number(this.dataset.id || 0);
                 const action = this.dataset.action || '';
@@ -1733,6 +2006,8 @@ include '../includes/sidebar.php';
                 runAction(approvalId, action);
             });
         });
+
+        attachRowActionMenuHandlers();
     }
 
     function initializeApplicationModalEvents() {
