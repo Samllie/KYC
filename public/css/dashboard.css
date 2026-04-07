@@ -35,6 +35,50 @@
     font-size: 0.9rem;
 }
 
+.dashboard-source-indicator {
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.source-kicker {
+    font-size: 0.64rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #4e6a66;
+}
+
+.source-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 3px 10px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.source-pill i {
+    font-size: 0.72rem;
+}
+
+.source-pill.is-approvals {
+    background: #e7f8ee;
+    border-color: #b8ddc5;
+    color: #0d6b37;
+}
+
+.source-pill.is-legacy {
+    background: #eef2f8;
+    border-color: #c7d3e6;
+    color: #2e4c75;
+}
+
 .welcome-target {
     width: 210px;
     padding: 14px;
@@ -222,6 +266,18 @@
     background: linear-gradient(90deg, #168f58 0%, #42b586 100%);
 }
 
+.pipeline-item.pending .pipeline-track span {
+    background: linear-gradient(90deg, #c18b13 0%, #dca843 100%);
+}
+
+.pipeline-item.resubmit .pipeline-track span {
+    background: linear-gradient(90deg, #2c6bcf 0%, #5a93e8 100%);
+}
+
+.pipeline-item.approved .pipeline-track span {
+    background: linear-gradient(90deg, #168f58 0%, #42b586 100%);
+}
+
 .pipeline-item.rejected .pipeline-track span {
     background: linear-gradient(90deg, #d65151 0%, #e57d7d 100%);
 }
@@ -278,6 +334,14 @@
     margin-top: 18px;
 }
 
+.activity-card .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .activity-list {
     display: flex;
     flex-direction: column;
@@ -286,7 +350,7 @@
 
 .activity-item {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 10px;
     align-items: center;
     padding: 10px;
@@ -315,21 +379,77 @@
     color: #0f6b38;
 }
 
+.activity-info {
+    min-width: 0;
+}
+
 .activity-title {
     font-size: 0.86rem;
     font-weight: 700;
     color: #11271e;
     margin-bottom: 2px;
+    word-break: break-word;
 }
 
 .activity-desc {
     font-size: 0.76rem;
     color: #536c68;
+    word-break: break-word;
+}
+
+.activity-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.activity-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 0.67rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.activity-status.status-pending {
+    background: #fff7e0;
+    color: #8d6400;
+}
+
+.activity-status.status-approved {
+    background: #e7f8ee;
+    color: #0d6b37;
+}
+
+.activity-status.status-declined {
+    background: #fde9e9;
+    color: #a61d24;
+}
+
+.activity-status.status-resubmit {
+    background: #e8f1ff;
+    color: #245ea8;
+}
+
+.activity-branch {
+    font-size: 0.68rem;
+    color: #3f5e58;
+    background: #edf5f2;
+    border: 1px solid #d2e4dc;
+    border-radius: 999px;
+    padding: 3px 8px;
 }
 
 .activity-time {
     font-size: 0.72rem;
     color: #6b8380;
+    white-space: nowrap;
+    align-self: flex-start;
 }
 
 .link {
@@ -364,6 +484,10 @@ body.kyc-compact .topbar-left h1 {
 
 body.kyc-compact .breadcrumb-trail {
     font-size: 0.68rem;
+}
+
+body.kyc-compact .dashboard-source-indicator {
+    margin-top: 6px;
 }
 
 body.kyc-compact .content {
@@ -477,12 +601,38 @@ body.kyc-compact .activity-card {
     }
 
     .activity-item {
-        grid-template-columns: 1fr;
-        align-items: flex-start;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+            'icon info'
+            'icon time';
+        align-items: start;
+        column-gap: 10px;
+        row-gap: 6px;
+    }
+
+    .activity-icon {
+        grid-area: icon;
+    }
+
+    .activity-info {
+        grid-area: info;
+    }
+
+    .activity-time {
+        grid-area: time;
+        justify-self: start;
+    }
+
+    .activity-meta {
+        flex-wrap: wrap;
     }
 
     .welcome-text h2 {
         font-size: 1.28rem;
+    }
+
+    .dashboard-source-indicator {
+        width: 100%;
     }
 
     .hero-action {

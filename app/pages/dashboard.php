@@ -12,76 +12,36 @@ $isHeadOfficeUser = $currentUserRole === 'admin'
     || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
 $isKycOfficerUser = $currentUserRoleNormalized === 'kyc_officer' && !$isHeadOfficeUser;
 
-$workflowQuickAction = [
-    'href' => 'kyc-verification.php',
-    'icon' => 'bi-file-earmark-check',
-    'label' => 'Continue Draft',
-];
+function tableExists(string $tableName): bool {
+    global $db;
 
-if ($isHeadOfficeUser) {
-    $workflowQuickAction = [
-        'href' => 'client-approvals.php',
-        'icon' => 'bi-clipboard2-check',
-        'label' => 'Approvals',
-    ];
-} elseif ($isKycOfficerUser) {
-    $workflowQuickAction = [
-        'href' => 'my-applications.php',
-        'icon' => 'bi-clipboard-data',
-        'label' => 'Applications',
-    ];
+    if (!$db instanceof mysqli || trim($tableName) === '') {
+        return false;
+    }
+
+    $stmt = $db->prepare(
+        'SELECT 1
+         FROM information_schema.tables
+         WHERE table_schema = DATABASE()
+           AND table_name = ?
+         LIMIT 1'
+    );
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('s', $tableName);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return false;
+    }
+
+    $result = $stmt->get_result();
+    $exists = $result instanceof mysqli_result && $result->num_rows > 0;
+    $stmt->close();
+
+    return $exists;
 }
-
-$stats = fetchOne("SELECT
-    COUNT(*) AS total_clients,
-    SUM(client_type = 'obligee') AS obligee_count
-FROM clients") ?? [];
-
-$obligeeTodayRow = fetchOne("SELECT COUNT(*) AS obligee_today FROM clients WHERE client_type = 'obligee' AND DATE(created_at) = CURDATE()") ?? [];
-$newThisWeekRow = fetchOne("SELECT COUNT(*) AS new_this_week FROM clients WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)") ?? [];
-
-$kycFunnel = fetchOne("SELECT
-    SUM(status = 'draft') AS draft_count,
-    SUM(status = 'submitted') AS submitted_count,
-    SUM(status = 'in_progress') AS in_progress_count
-FROM kyc_verifications") ?? [];
-
-$clientTypeSplit = fetchOne("SELECT
-    SUM(client_type = 'individual') AS individual_count,
-    SUM(client_type = 'corporate') AS corporate_count,
-    SUM(client_type = 'obligee') AS obligee_count
-FROM clients") ?? [];
-
-$recentActivity = fetchAll("SELECT
-    c.client_id,
-    c.reference_code,
-    c.client_type,
-    c.verification_status,
-    COALESCE(NULLIF(c.client_name, ''), TRIM(CONCAT(c.first_name, ' ', c.last_name))) AS display_name,
-    COALESCE(c.submitted_at, c.created_at) AS action_time,
-    COALESCE(u.full_name, 'System') AS submitted_by_name
-FROM clients c
-LEFT JOIN users u ON u.user_id = c.submitted_by
-ORDER BY COALESCE(c.submitted_at, c.created_at) DESC
-LIMIT 6");
-
-$totalClients = intval($stats['total_clients'] ?? 0);
-$obligeeCount = intval($stats['obligee_count'] ?? 0);
-$obligeeToday = intval($obligeeTodayRow['obligee_today'] ?? 0);
-$newThisWeek = intval($newThisWeekRow['new_this_week'] ?? 0);
-
-$individualCount = intval($clientTypeSplit['individual_count'] ?? 0);
-$corporateCount = intval($clientTypeSplit['corporate_count'] ?? 0);
-$obligeeMixCount = intval($clientTypeSplit['obligee_count'] ?? 0);
-$typeTotal = max(1, $individualCount + $corporateCount + $obligeeMixCount);
-$individualPct = round(($individualCount / $typeTotal) * 100);
-$obligeePct = round(($obligeeMixCount / $typeTotal) * 100);
-$corporatePct = max(0, 100 - $individualPct - $obligeePct);
-
-$funnelDraft = intval($kycFunnel['draft_count'] ?? 0);
-$funnelSubmitted = intval($kycFunnel['submitted_count'] ?? 0);
-$funnelInProgress = intval($kycFunnel['in_progress_count'] ?? 0);
-$funnelTotal = max(1, $funnelDraft + $funnelSubmitted + $funnelInProgress);
 
 function e($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -112,6 +72,235 @@ function relativeTime(?string $dateTime): string {
 
     return floor($diff / 86400) . ' day ago';
 }
+
+function normalizeActivityStatus(?string $status): string {
+    $value = strtolower(trim((string)$status));
+    if ($value === '') {
+        return 'pending';
+    }
+
+    if (in_array($value, ['approved', 'verified'], true)) {
+        return 'approved';
+    }
+
+    if (in_array($value, ['declined', 'rejected'], true)) {
+        return 'declined';
+    }
+
+    if (in_array($value, ['resubmit'], true)) {
+        return 'resubmit';
+    }
+
+    return 'pending';
+}
+
+function activityStatusLabel(?string $status): string {
+    $normalized = normalizeActivityStatus($status);
+    if ($normalized === 'approved') {
+        return 'Approved';
+    }
+
+    if ($normalized === 'declined') {
+        return 'Declined';
+    }
+
+    if ($normalized === 'resubmit') {
+        return 'Resubmit';
+    }
+
+    return 'Pending';
+}
+
+$workflowQuickAction = [
+    'href' => 'kyc-verification.php',
+    'icon' => 'bi-diagram-3',
+    'label' => 'KYC Queue',
+];
+
+if ($isHeadOfficeUser) {
+    $workflowQuickAction = [
+        'href' => 'client-approvals.php',
+        'icon' => 'bi-clipboard2-check',
+        'label' => 'Approvals',
+    ];
+} elseif ($isKycOfficerUser) {
+    $workflowQuickAction = [
+        'href' => 'my-applications.php',
+        'icon' => 'bi-clipboard-data',
+        'label' => 'Applications',
+    ];
+}
+
+$scopeLabel = $isHeadOfficeUser
+    ? 'All branches'
+    : ($currentUserBranch !== '' ? $currentUserBranch : 'Unassigned branch');
+
+$clientsScopeWhere = '';
+$clientsScopeParams = [];
+if (!$isHeadOfficeUser) {
+    if ($currentUserBranch !== '') {
+        $clientsScopeWhere = " WHERE UPPER(TRIM(COALESCE(su.branch, ''))) = ?";
+        $clientsScopeParams[] = $currentUserBranch;
+    } else {
+        $clientsScopeWhere = ' WHERE 1 = 0';
+    }
+}
+
+$hasClientApprovalsTable = tableExists('client_approvals');
+
+$approvalsScopeWhere = '';
+$approvalsScopeParams = [];
+if (!$isHeadOfficeUser) {
+    if ($currentUserBranch !== '') {
+        $approvalsScopeWhere = " WHERE UPPER(TRIM(COALESCE(ca.submitted_by_branch, su.branch, ''))) = ?";
+        $approvalsScopeParams[] = $currentUserBranch;
+    } else {
+        $approvalsScopeWhere = ' WHERE 1 = 0';
+    }
+}
+
+$stats = [];
+$obligeeTodayRow = [];
+$newThisWeekRow = [];
+$clientTypeSplit = [];
+$pipeline = [];
+$recentActivity = [];
+
+if ($hasClientApprovalsTable) {
+    $stats = fetchOne("SELECT
+        COUNT(*) AS total_clients,
+        SUM(ca.client_type = 'obligee') AS obligee_count
+    FROM client_approvals ca
+    LEFT JOIN users su ON su.user_id = ca.submitted_by
+    {$approvalsScopeWhere}", $approvalsScopeParams) ?? [];
+
+    $obligeeTodayRow = fetchOne("SELECT
+        COUNT(*) AS obligee_today
+    FROM client_approvals ca
+    LEFT JOIN users su ON su.user_id = ca.submitted_by
+    {$approvalsScopeWhere}
+    " . ($approvalsScopeWhere === '' ? 'WHERE' : ' AND') . " ca.client_type = 'obligee' AND DATE(COALESCE(ca.submitted_at, ca.created_at)) = CURDATE()", $approvalsScopeParams) ?? [];
+
+    $newThisWeekRow = fetchOne("SELECT
+        COUNT(*) AS new_this_week
+    FROM client_approvals ca
+    LEFT JOIN users su ON su.user_id = ca.submitted_by
+    {$approvalsScopeWhere}
+    " . ($approvalsScopeWhere === '' ? 'WHERE' : ' AND') . " COALESCE(ca.submitted_at, ca.created_at) >= DATE_SUB(NOW(), INTERVAL 7 DAY)", $approvalsScopeParams) ?? [];
+
+    $clientTypeSplit = fetchOne("SELECT
+        SUM(ca.client_type = 'individual') AS individual_count,
+        SUM(ca.client_type = 'corporate') AS corporate_count,
+        SUM(ca.client_type = 'obligee') AS obligee_count
+    FROM client_approvals ca
+    LEFT JOIN users su ON su.user_id = ca.submitted_by
+    {$approvalsScopeWhere}", $approvalsScopeParams) ?? [];
+
+    $pipeline = fetchOne("SELECT
+        SUM(ca.approval_status = 'pending') AS pending_count,
+        SUM(ca.approval_status = 'resubmit') AS resubmit_count,
+        SUM(ca.approval_status = 'approved') AS approved_count
+    FROM client_approvals ca
+    LEFT JOIN users su ON su.user_id = ca.submitted_by
+    {$approvalsScopeWhere}", $approvalsScopeParams) ?? [];
+
+    $recentActivity = fetchAll("SELECT
+        ca.client_id,
+        ca.reference_code,
+        ca.client_type,
+        ca.client_classification,
+        ca.approval_status AS activity_status,
+        COALESCE(
+            NULLIF(ca.display_name, ''),
+            NULLIF(ca.client_name, ''),
+            NULLIF(TRIM(CONCAT(COALESCE(ca.first_name, ''), ' ', COALESCE(ca.last_name, ''))), ''),
+            ca.reference_code
+        ) AS display_name,
+        COALESCE(ca.reviewed_at, ca.submitted_at, ca.updated_at, ca.created_at) AS action_time,
+        COALESCE(su.full_name, 'System') AS submitted_by_name,
+        COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''), 'N/A') AS submitted_by_branch
+    FROM client_approvals ca
+    LEFT JOIN users su ON su.user_id = ca.submitted_by
+    {$approvalsScopeWhere}
+    ORDER BY COALESCE(ca.reviewed_at, ca.submitted_at, ca.updated_at, ca.created_at) DESC
+    LIMIT 6", $approvalsScopeParams);
+} else {
+    $stats = fetchOne("SELECT
+        COUNT(*) AS total_clients,
+        SUM(c.client_type = 'obligee') AS obligee_count
+    FROM clients c
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$clientsScopeWhere}", $clientsScopeParams) ?? [];
+
+    $obligeeTodayRow = fetchOne("SELECT
+        COUNT(*) AS obligee_today
+    FROM clients c
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$clientsScopeWhere}
+    " . ($clientsScopeWhere === '' ? 'WHERE' : ' AND') . " c.client_type = 'obligee' AND DATE(c.created_at) = CURDATE()", $clientsScopeParams) ?? [];
+
+    $newThisWeekRow = fetchOne("SELECT
+        COUNT(*) AS new_this_week
+    FROM clients c
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$clientsScopeWhere}
+    " . ($clientsScopeWhere === '' ? 'WHERE' : ' AND') . " c.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)", $clientsScopeParams) ?? [];
+
+    $clientTypeSplit = fetchOne("SELECT
+        SUM(c.client_type = 'individual') AS individual_count,
+        SUM(c.client_type = 'corporate') AS corporate_count,
+        SUM(c.client_type = 'obligee') AS obligee_count
+    FROM clients c
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$clientsScopeWhere}", $clientsScopeParams) ?? [];
+
+    $pipeline = fetchOne("SELECT
+        SUM(k.status = 'submitted') AS pending_count,
+        SUM(k.status = 'in_progress') AS resubmit_count,
+        SUM(k.status = 'approved') AS approved_count
+    FROM kyc_verifications k
+    LEFT JOIN clients c ON c.client_id = k.client_id
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$clientsScopeWhere}", $clientsScopeParams) ?? [];
+
+    $recentActivity = fetchAll("SELECT
+        c.client_id,
+        c.reference_code,
+        c.client_type,
+        c.client_classification,
+        c.verification_status AS activity_status,
+        COALESCE(NULLIF(c.client_name, ''), TRIM(CONCAT(c.first_name, ' ', c.last_name))) AS display_name,
+        COALESCE(c.submitted_at, c.created_at) AS action_time,
+        COALESCE(su.full_name, 'System') AS submitted_by_name,
+        COALESCE(NULLIF(TRIM(su.branch), ''), 'N/A') AS submitted_by_branch
+    FROM clients c
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$clientsScopeWhere}
+    ORDER BY COALESCE(c.submitted_at, c.created_at) DESC
+    LIMIT 6", $clientsScopeParams);
+}
+
+$totalClients = intval($stats['total_clients'] ?? 0);
+$obligeeCount = intval($stats['obligee_count'] ?? 0);
+$obligeeToday = intval($obligeeTodayRow['obligee_today'] ?? 0);
+$newThisWeek = intval($newThisWeekRow['new_this_week'] ?? 0);
+
+$individualCount = intval($clientTypeSplit['individual_count'] ?? 0);
+$corporateCount = intval($clientTypeSplit['corporate_count'] ?? 0);
+$obligeeMixCount = intval($clientTypeSplit['obligee_count'] ?? 0);
+$typeTotal = max(1, $individualCount + $corporateCount + $obligeeMixCount);
+$individualPct = round(($individualCount / $typeTotal) * 100);
+$obligeePct = round(($obligeeMixCount / $typeTotal) * 100);
+$corporatePct = max(0, 100 - $individualPct - $obligeePct);
+
+
+$pipelinePending = intval($pipeline['pending_count'] ?? 0);
+$pipelineResubmit = intval($pipeline['resubmit_count'] ?? 0);
+$pipelineApproved = intval($pipeline['approved_count'] ?? 0);
+$pipelineTotal = max(1, $pipelinePending + $pipelineResubmit + $pipelineApproved);
+$dashboardDataSourceLabel = $hasClientApprovalsTable ? 'Approvals Queue' : 'Legacy Clients';
+$dashboardDataSourceClass = $hasClientApprovalsTable ? 'is-approvals' : 'is-legacy';
+$dashboardDataSourceIcon = $hasClientApprovalsTable ? 'bi-diagram-3' : 'bi-database';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -146,6 +335,13 @@ include '../includes/sidebar.php';
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
                 <span>Home</span>
+            </div>
+            <div class="dashboard-source-indicator" aria-label="Dashboard data source">
+                <span class="source-kicker">Data Source</span>
+                <span class="source-pill <?php echo e($dashboardDataSourceClass); ?>">
+                    <i class="bi <?php echo e($dashboardDataSourceIcon); ?>"></i>
+                    <?php echo e($dashboardDataSourceLabel); ?>
+                </span>
             </div>
         </div>
         <div class="topbar-right">
@@ -231,22 +427,22 @@ include '../includes/sidebar.php';
                 <div class="card-header">
                     <div>
                         <h3 class="card-title">KYC Pipeline</h3>
-                        <div class="card-subtitle">Current flow across active statuses</div>
+                        <div class="card-subtitle">Approval flow snapshot · <?php echo e($scopeLabel); ?></div>
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="pipeline-list">
-                        <div class="pipeline-item">
-                            <div class="pipeline-head"><span>Draft</span><strong><?php echo e($funnelDraft); ?></strong></div>
-                            <div class="pipeline-track"><span style="width: <?php echo e(round(($funnelDraft / $funnelTotal) * 100)); ?>%;"></span></div>
+                        <div class="pipeline-item pending">
+                            <div class="pipeline-head"><span>Pending Review</span><strong><?php echo e($pipelinePending); ?></strong></div>
+                            <div class="pipeline-track"><span style="width: <?php echo e(round(($pipelinePending / $pipelineTotal) * 100)); ?>%;"></span></div>
                         </div>
-                        <div class="pipeline-item">
-                            <div class="pipeline-head"><span>Submitted</span><strong><?php echo e($funnelSubmitted); ?></strong></div>
-                            <div class="pipeline-track"><span style="width: <?php echo e(round(($funnelSubmitted / $funnelTotal) * 100)); ?>%;"></span></div>
+                        <div class="pipeline-item resubmit">
+                            <div class="pipeline-head"><span>For Resubmission</span><strong><?php echo e($pipelineResubmit); ?></strong></div>
+                            <div class="pipeline-track"><span style="width: <?php echo e(round(($pipelineResubmit / $pipelineTotal) * 100)); ?>%;"></span></div>
                         </div>
-                        <div class="pipeline-item">
-                            <div class="pipeline-head"><span>In Progress</span><strong><?php echo e($funnelInProgress); ?></strong></div>
-                            <div class="pipeline-track"><span style="width: <?php echo e(round(($funnelInProgress / $funnelTotal) * 100)); ?>%;"></span></div>
+                        <div class="pipeline-item approved">
+                            <div class="pipeline-head"><span>Approved</span><strong><?php echo e($pipelineApproved); ?></strong></div>
+                            <div class="pipeline-track"><span style="width: <?php echo e(round(($pipelineApproved / $pipelineTotal) * 100)); ?>%;"></span></div>
                         </div>
                     </div>
                 </div>
@@ -280,7 +476,13 @@ include '../includes/sidebar.php';
             <div class="card-header">
                 <div>
                     <h3 class="card-title">Recent Activity</h3>
-                    <div class="card-subtitle">Latest KYC submissions and updates</div>
+                    <div class="card-subtitle">
+                        <?php if ($isHeadOfficeUser): ?>
+                            Latest KYC updates across all branches
+                        <?php else: ?>
+                            Latest KYC updates for <?php echo e($scopeLabel); ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <a href="clients.php" class="link">View all clients</a>
             </div>
@@ -296,7 +498,13 @@ include '../includes/sidebar.php';
                                 </div>
                                 <div class="activity-info">
                                     <div class="activity-title"><?php echo e($row['display_name'] ?: 'Unnamed Client'); ?> (<?php echo e($row['reference_code']); ?>)</div>
-                                    <div class="activity-desc"><?php echo e(ucfirst($row['client_type'])); ?> client record · Submitted by <?php echo e($row['submitted_by_name']); ?></div>
+                                    <div class="activity-desc"><?php echo e(ucfirst($row['client_type'])); ?> <?php echo e(($row['client_classification'] ?? 'client') === 'agent' ? 'agent' : 'client'); ?> record · Submitted by <?php echo e($row['submitted_by_name']); ?></div>
+                                    <div class="activity-meta">
+                                        <span class="activity-status status-<?php echo e(normalizeActivityStatus($row['activity_status'] ?? 'pending')); ?>"><?php echo e(activityStatusLabel($row['activity_status'] ?? 'pending')); ?></span>
+                                        <?php if ($isHeadOfficeUser): ?>
+                                            <span class="activity-branch"><?php echo e($row['submitted_by_branch'] ?? 'N/A'); ?></span>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                                 <div class="activity-time"><?php echo e(relativeTime($row['action_time'])); ?></div>
                             </div>
