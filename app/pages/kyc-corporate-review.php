@@ -325,7 +325,7 @@ function displayReview() {
     });
 
     if (governmentIdUploads.length) {
-        const uploadedNames = governmentIdUploads.map(file => escapeHtml(file.original_name || file.file_name || 'ID photo')).join(', ');
+        const uploadedNames = governmentIdUploads.map(file => escapeHtml(file.original_name || file.file_name || 'ID file')).join(', ');
         html += `
             <section class="review-section" style="animation-delay:${Math.min(sections.length * 70, 350)}ms;">
                 <div class="review-title">Government ID Upload</div>

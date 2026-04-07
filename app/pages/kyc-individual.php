@@ -975,16 +975,17 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label for="idNumber" class="form-label">ID Number <span class="req">*</span></label>
                                 <input type="text" id="idNumber" name="idNumber" class="form-control" placeholder="Enter ID number" required>
+                                <input type="text" id="idNumber" name="idNumber" class="form-control" placeholder="Enter ID number" required>
                                 <div class="form-error">ID number is required</div>
                             </div>
                         </div>
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label class="form-label">ID Photo Upload <span class="req">*</span></label>
+                                <label class="form-label">ID File Attachment <span class="req">*</span></label>
                                 <div class="upload-zone" id="governmentIdUploadZone" onclick="document.getElementById('governmentIdInput').click()">
                                     <i class="bi bi-camera upload-icon"></i>
-                                    <p><strong>Click to upload</strong> or drag and drop the ID photo</p>
-                                    <small>JPG, PNG (Max 5MB)</small>
+                                    <p><strong>Click to upload</strong> or drag and drop the ID file</p>
+                                    <small>JPG, PNG, PDF (Max 5MB)</small>
                                 </div>
                                 <input type="file" id="governmentIdInput" accept=".jpg,.jpeg,.png" style="display:none;">
                                 <div class="id-upload-hint">Upload your ID photo, then enter the ID number manually.</div>
@@ -1721,9 +1722,6 @@ function validateGovernmentIdSection() {
     const status = document.getElementById('governmentIdStatus');
 
     if (zone) zone.classList.toggle('is-invalid', !uploadsOk);
-    if (status && !uploadsOk) {
-        status.textContent = 'Government ID photo is required.';
-    }
 
     return typeOk && numberOk && uploadsOk;
 }
@@ -1766,7 +1764,7 @@ function renderGovernmentIdUploads() {
         item.className = 'file-item';
         item.dataset.idx = String(index);
 
-        const name = file.original_name || file.file_name || 'ID photo';
+        const name = file.original_name || file.file_name || 'ID file';
         const openUrl = buildGovernmentIdOpenUrl(file);
         const previewImage = openUrl
             ? `<img src="${openUrl}" alt="ID Preview" style="width:64px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #d5e3db;">`
@@ -1782,7 +1780,6 @@ function renderGovernmentIdUploads() {
             const current = getStoredGovernmentIdUploads();
             const removed = current.splice(index, 1)[0];
             setStoredGovernmentIdUploads(current);
-            currentGovernmentIdFile = null;
             renderGovernmentIdUploads();
             if (removed?.temp_path) {
                 await deleteTempUpload(removed.temp_path);
@@ -1814,7 +1811,7 @@ function sanitizeGovernmentIdFiles(fileList) {
     }
 
     const file = files[0];
-    const allowedTypes = ['image/jpeg', 'image/png'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
     const maxBytes = 5 * 1024 * 1024;
 
     if (!allowedTypes.includes(file.type)) {
@@ -1865,7 +1862,6 @@ async function uploadGovernmentIdTempFile(files) {
     }
 }
 
-let currentGovernmentIdFile = null;
 
 const governmentIdInput = document.getElementById('governmentIdInput');
 const governmentIdZone = document.getElementById('governmentIdUploadZone');
@@ -1922,6 +1918,7 @@ if (governmentIdZone) {
 }
 
 if (governmentIdTypeSelect) {
+    governmentIdTypeSelect.addEventListener('change', () => {
     governmentIdTypeSelect.addEventListener('change', () => {
         validateGovernmentIdSection();
     });
@@ -2937,3 +2934,6 @@ window.addEventListener('scroll', function() {
 
 </body>
 </html>
+
+
+
