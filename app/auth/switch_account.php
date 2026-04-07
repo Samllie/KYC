@@ -14,7 +14,7 @@ require_once '../config/db.php';
 $accounts = [];
 try {
 	$accounts = fetchAll(
-		"SELECT full_name, email, department, role FROM users WHERE status = 'active' ORDER BY full_name ASC LIMIT 30"
+		"SELECT full_name, email, department, branch, role FROM users WHERE status = 'active' ORDER BY full_name ASC LIMIT 30"
 	);
 } catch (Exception $e) {
 	$accounts = [];
@@ -122,7 +122,7 @@ try {
 							<a class="switch-account-btn" href="login.php?switch=1&email=<?php echo urlencode($account['email']); ?>">
 								<div class="switch-account-main">
 									<div class="switch-account-name"><?php echo htmlspecialchars($account['full_name']); ?></div>
-									<div class="switch-account-meta"><?php echo htmlspecialchars($account['email']); ?> | <?php echo htmlspecialchars($account['department']); ?></div>
+									<div class="switch-account-meta"><?php echo htmlspecialchars($account['email']); ?> | <?php echo htmlspecialchars($account['department']); ?> | <?php echo htmlspecialchars($account['branch']); ?></div>
 								</div>
 								<i class="bi bi-chevron-right" style="color:#6b7280;"></i>
 							</a>

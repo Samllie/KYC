@@ -1,16 +1,71 @@
 <?php
 /**
  * Fetch Clients Data Handler
- * Returns all clients from database
+ * Returns paginated clients as JSON.
  */
 
 header('Content-Type: application/json');
+ini_set('display_errors', '0');
+
 require_once '../config/db.php';
 session_start();
 
-$response = ['success' => false, 'data' => [], 'debug' => []];
+$response = ['success' => false, 'data' => []];
 
-function bindDynamicParams($stmt, $types, $params) {
+function hasColumn(mysqli $db, string $table, string $column): bool
+{
+    try {
+        $tableSafe = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+        $columnSafe = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
+
+        if ($tableSafe === '' || $columnSafe === '') {
+            return false;
+        }
+
+        $stmt = $db->prepare("SHOW COLUMNS FROM `$tableSafe` LIKE ?");
+        if (!$stmt) {
+            return false;
+        }
+
+        $stmt->bind_param('s', $columnSafe);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $exists = $result instanceof mysqli_result && $result->num_rows > 0;
+        $stmt->close();
+
+        return $exists;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+function tableExists(mysqli $db, string $table): bool
+{
+    static $cache = [];
+
+    if (array_key_exists($table, $cache)) {
+        return $cache[$table];
+    }
+
+    $tableSafe = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+    if ($tableSafe === '') {
+        $cache[$table] = false;
+        return false;
+    }
+
+    $result = $db->query("SHOW TABLES LIKE '$tableSafe'");
+    $exists = $result instanceof mysqli_result && $result->num_rows > 0;
+
+    if ($result instanceof mysqli_result) {
+        $result->free();
+    }
+
+    $cache[$table] = $exists;
+    return $exists;
+}
+
+function bindDynamicParams(mysqli_stmt $stmt, string $types, array $params): void
+{
     if ($types === '' || empty($params)) {
         return;
     }
@@ -25,169 +80,325 @@ function bindDynamicParams($stmt, $types, $params) {
     call_user_func_array([$stmt, 'bind_param'], $bindParams);
 }
 
-// Check user session
+function fetchRows(mysqli $db, string $sql, string $types = '', array $params = []): array
+{
+    $stmt = $db->prepare($sql);
+    if (!$stmt) {
+        throw new RuntimeException('Database prepare failed: ' . $db->error);
+    }
+
+    bindDynamicParams($stmt, $types, $params);
+
+    if (!$stmt->execute()) {
+        $error = $stmt->error ?: 'Query execution failed';
+        $stmt->close();
+        throw new RuntimeException($error);
+    }
+
+    $result = $stmt->get_result();
+    $rows = [];
+
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $rows[] = $row;
+        }
+    }
+
+    $stmt->close();
+    return $rows;
+}
+
+function fetchSingle(mysqli $db, string $sql, string $types = '', array $params = []): ?array
+{
+    $rows = fetchRows($db, $sql, $types, $params);
+    return $rows[0] ?? null;
+}
+
 if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
     $response['message'] = 'Unauthorized access';
     echo json_encode($response);
     exit;
 }
 
-// Get pagination parameters
-$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-$pageSize = isset($_GET['pageSize']) ? intval($_GET['pageSize']) : 8;
-$page = max(1, $page);  // Ensure page is at least 1
-$pageSize = max(1, $pageSize);
-$exportAll = isset($_GET['exportAll']) && $_GET['exportAll'] === '1';
+try {
+    $page = max(1, intval($_GET['page'] ?? 1));
+    $pageSize = max(1, intval($_GET['pageSize'] ?? 8));
+    $exportAll = (($_GET['exportAll'] ?? '') === '1');
 
-// Get filters
-$search = trim($_GET['search'] ?? '');
-$status = trim($_GET['status'] ?? '');
-$type = trim($_GET['type'] ?? '');
+    $search = trim((string)($_GET['search'] ?? ''));
+    $status = trim((string)($_GET['status'] ?? ''));
+    $type = trim((string)($_GET['type'] ?? ''));
+    $branch = trim((string)($_GET['branch'] ?? ''));
+    $classification = strtolower(trim((string)($_GET['classification'] ?? 'client')));
+    if (!in_array($classification, ['client', 'agent'], true)) {
+        $classification = 'client';
+    }
 
-$whereClauses = [];
-$filterParams = [];
-$filterTypes = '';
+    $currentUserId = intval($_SESSION['user_id'] ?? 0);
+    $currentUserRole = strtolower(trim((string)($_SESSION['role'] ?? '')));
+    $currentUserDepartment = strtoupper(trim((string)($_SESSION['department'] ?? '')));
+    $currentUserBranch = trim((string)($_SESSION['branch'] ?? ''));
+    $isHeadOfficeUser = $currentUserRole === 'admin'
+        || $currentUserDepartment === 'HEAD OFFICE'
+        || in_array(strtoupper($currentUserBranch), ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
 
-if ($search !== '') {
-    $searchLike = '%' . $search . '%';
-    $whereClauses[] = "(
-        c.reference_code LIKE ? OR
-        c.client_number LIKE ? OR
-        c.client_name LIKE ? OR
-        c.contact_person LIKE ? OR
-        CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, '')) LIKE ? OR
-        c.email LIKE ? OR
-        c.mobile_phone LIKE ? OR
-        c.office_phone LIKE ?
-    )";
+    $usersHasBranch = hasColumn($db, 'users', 'branch');
+    $clientsHasClassification = hasColumn($db, 'clients', 'client_classification');
+    $usingAgentsTable = $classification === 'agent' && tableExists($db, 'agents');
+    $usingApprovalQueue = tableExists($db, 'client_approvals');
 
-    for ($i = 0; $i < 8; $i++) {
-        $filterParams[] = $searchLike;
+    $tableAlias = $usingAgentsTable ? 'a' : 'c';
+    $baseTableSql = $usingAgentsTable ? 'agents a' : 'clients c';
+    $approvalJoinSql = $usingApprovalQueue
+        ? " LEFT JOIN client_approvals ca ON ca.reference_code = {$tableAlias}.reference_code"
+        : '';
+
+    $clientsClassificationSqlExpr = $clientsHasClassification
+        ? "COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client')"
+        : "'client'";
+
+    $whereClauses = [];
+    $filterParams = [];
+    $filterTypes = '';
+
+    if (!$usingAgentsTable) {
+        $whereClauses[] = $clientsClassificationSqlExpr . ' = ?';
+        $filterParams[] = $classification;
         $filterTypes .= 's';
     }
-}
 
-if ($status !== '') {
-    $whereClauses[] = "c.verification_status = ?";
-    $filterParams[] = $status;
-    $filterTypes .= 's';
-}
-
-if ($type !== '') {
-    $whereClauses[] = "c.client_type = ?";
-    $filterParams[] = $type;
-    $filterTypes .= 's';
-}
-
-$whereSql = '';
-if (!empty($whereClauses)) {
-    $whereSql = 'WHERE ' . implode(' AND ', $whereClauses);
-}
-
-// Calculate offset
-$offset = ($page - 1) * $pageSize;
-
-// First, get filtered total count
-$countQuery = "SELECT COUNT(*) as total FROM clients c $whereSql";
-$countStmt = $db->prepare($countQuery);
-
-if (!$countStmt) {
-    $response['message'] = 'Database error: ' . $db->error;
-    $response['debug']['prepare_error'] = $db->error;
-    echo json_encode($response);
-    exit;
-}
-
-bindDynamicParams($countStmt, $filterTypes, $filterParams);
-$countStmt->execute();
-$countResult = $countStmt->get_result();
-$countRow = $countResult->fetch_assoc();
-$totalClients = intval($countRow['total']);
-
-// Get paginated clients with submitted_by and verified_by user names
-$query = "
-    SELECT 
-        c.client_id, 
-        c.reference_code, 
-        c.client_number,
-        c.client_name,
-        c.contact_person,
-        c.first_name, 
-        c.last_name, 
-        c.client_type, 
-        c.mobile_phone, 
-        c.office_phone,
-        c.email, 
-        c.verification_status,
-        c.submitted_by,
-        c.verified_by,
-        c.created_at,
-        su.full_name as submitted_by_name,
-        vu.full_name as verified_by_name
-    FROM clients c
-    LEFT JOIN users su ON c.submitted_by = su.user_id
-    LEFT JOIN users vu ON c.verified_by = vu.user_id
-    $whereSql
-    ORDER BY c.created_at DESC
-";
-
-if (!$exportAll) {
-    $query .= " LIMIT ? OFFSET ?";
-}
-
-// Get paginated clients using prepared statement
-$stmt = $db->prepare($query);
-
-if (!$stmt) {
-    $response['message'] = 'Database error: ' . $db->error;
-    $response['debug']['prepare_error'] = $db->error;
-    echo json_encode($response);
-    exit;
-}
-
-$queryParams = $filterParams;
-$queryTypes = $filterTypes;
-
-if (!$exportAll) {
-    $queryParams[] = $pageSize;
-    $queryParams[] = $offset;
-    $queryTypes .= 'ii';
-}
-
-bindDynamicParams($stmt, $queryTypes, $queryParams);
-
-if (!$stmt->execute()) {
-    $response['message'] = 'Query execution failed: ' . $stmt->error;
-    $response['debug']['execute_error'] = $stmt->error;
-    echo json_encode($response);
-    exit;
-}
-
-$result = $stmt->get_result();
-$clients = [];
-
-if ($result && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $clients[] = $row;
+    if ($usingApprovalQueue) {
+        $whereClauses[] = "(ca.approval_status IS NULL OR ca.approval_status = 'approved')";
     }
+
+    if ($search !== '') {
+        $searchLike = '%' . $search . '%';
+
+        if ($usingAgentsTable) {
+            $whereClauses[] = "(
+                a.reference_code LIKE ? OR
+                a.client_number LIKE ? OR
+                a.client_name LIKE ? OR
+                CONCAT(COALESCE(a.first_name, ''), ' ', COALESCE(a.last_name, '')) LIKE ? OR
+                a.email LIKE ? OR
+                a.mobile_phone LIKE ? OR
+                a.office_phone LIKE ?
+            )";
+
+            for ($i = 0; $i < 7; $i++) {
+                $filterParams[] = $searchLike;
+                $filterTypes .= 's';
+            }
+        } else {
+            $whereClauses[] = "(
+                c.reference_code LIKE ? OR
+                c.client_number LIKE ? OR
+                c.client_name LIKE ? OR
+                c.contact_person LIKE ? OR
+                CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, '')) LIKE ? OR
+                c.email LIKE ? OR
+                c.mobile_phone LIKE ? OR
+                c.office_phone LIKE ?
+            )";
+
+            for ($i = 0; $i < 8; $i++) {
+                $filterParams[] = $searchLike;
+                $filterTypes .= 's';
+            }
+        }
+    }
+
+    if ($status !== '') {
+        $whereClauses[] = $tableAlias . '.verification_status = ?';
+        $filterParams[] = $status;
+        $filterTypes .= 's';
+    }
+
+    if ($type !== '') {
+        $whereClauses[] = $tableAlias . '.client_type = ?';
+        $filterParams[] = $type;
+        $filterTypes .= 's';
+    }
+
+    if ($usersHasBranch) {
+        if ($isHeadOfficeUser) {
+            if ($branch !== '') {
+                $whereClauses[] = 'su.branch = ?';
+                $filterParams[] = $branch;
+                $filterTypes .= 's';
+            }
+        } else {
+            if ($currentUserBranch === '') {
+                $whereClauses[] = '1 = 0';
+            } else {
+                $whereClauses[] = 'su.branch = ?';
+                $filterParams[] = $currentUserBranch;
+                $filterTypes .= 's';
+            }
+        }
+    } elseif (!$isHeadOfficeUser) {
+        if ($currentUserId <= 0) {
+            $whereClauses[] = '1 = 0';
+        } else {
+            $whereClauses[] = $tableAlias . '.submitted_by = ?';
+            $filterParams[] = $currentUserId;
+            $filterTypes .= 'i';
+        }
+    }
+
+    $whereSql = empty($whereClauses) ? '' : (' WHERE ' . implode(' AND ', $whereClauses));
+
+    $countSql = "
+        SELECT COUNT(*) AS total
+        FROM {$baseTableSql}
+        LEFT JOIN users su ON {$tableAlias}.submitted_by = su.user_id
+        {$approvalJoinSql}
+        {$whereSql}
+    ";
+    $countRow = fetchSingle($db, $countSql, $filterTypes, $filterParams);
+    $totalClients = intval($countRow['total'] ?? 0);
+
+    $submittedBranchSelect = $usersHasBranch ? 'su.branch' : "''";
+    $contactPersonSelect = $usingAgentsTable ? 'NULL AS contact_person' : 'c.contact_person';
+
+    $listSql = "
+        SELECT
+            {$tableAlias}.client_id,
+            {$tableAlias}.reference_code,
+            {$tableAlias}.client_number,
+            {$tableAlias}.client_name,
+            {$contactPersonSelect},
+            {$tableAlias}.first_name,
+            {$tableAlias}.last_name,
+            {$tableAlias}.client_type,
+            {$tableAlias}.mobile_phone,
+            {$tableAlias}.office_phone,
+            {$tableAlias}.email,
+            {$tableAlias}.verification_status,
+            {$tableAlias}.submitted_by,
+            {$tableAlias}.verified_by,
+            {$tableAlias}.created_at,
+            su.full_name AS submitted_by_name,
+            {$submittedBranchSelect} AS submitted_by_branch,
+            vu.full_name AS verified_by_name
+        FROM {$baseTableSql}
+        LEFT JOIN users su ON {$tableAlias}.submitted_by = su.user_id
+        LEFT JOIN users vu ON {$tableAlias}.verified_by = vu.user_id
+        {$approvalJoinSql}
+        {$whereSql}
+        ORDER BY {$tableAlias}.created_at DESC
+    ";
+
+    $listParams = $filterParams;
+    $listTypes = $filterTypes;
+
+    if (!$exportAll) {
+        $offset = ($page - 1) * $pageSize;
+        $listSql .= ' LIMIT ? OFFSET ?';
+        $listParams[] = $pageSize;
+        $listParams[] = $offset;
+        $listTypes .= 'ii';
+    }
+
+    $clients = fetchRows($db, $listSql, $listTypes, $listParams);
+
+    $availableBranches = [];
+    if ($isHeadOfficeUser && $usersHasBranch) {
+        if ($usingAgentsTable) {
+            $branchJoinSql = $usingApprovalQueue
+                ? ' LEFT JOIN client_approvals ca ON ca.reference_code = a.reference_code'
+                : '';
+
+            $branchWhereClauses = [
+                'su.branch IS NOT NULL',
+                "TRIM(su.branch) <> ''"
+            ];
+
+            if ($usingApprovalQueue) {
+                $branchWhereClauses[] = "(ca.approval_status IS NULL OR ca.approval_status = 'approved')";
+            }
+
+            $branchSql = "
+                SELECT DISTINCT su.branch
+                FROM agents a
+                LEFT JOIN users su ON a.submitted_by = su.user_id
+                {$branchJoinSql}
+                WHERE " . implode(' AND ', $branchWhereClauses) . "
+                ORDER BY su.branch ASC
+            ";
+
+            $branchRows = fetchRows($db, $branchSql);
+        } else {
+            $branchJoinSql = $usingApprovalQueue
+                ? ' LEFT JOIN client_approvals ca ON ca.reference_code = c.reference_code'
+                : '';
+
+            $branchWhereClauses = [
+                'su.branch IS NOT NULL',
+                "TRIM(su.branch) <> ''"
+            ];
+            $branchParams = [];
+            $branchTypes = '';
+
+            if ($clientsHasClassification) {
+                $branchWhereClauses[] = $clientsClassificationSqlExpr . ' = ?';
+                $branchParams[] = $classification;
+                $branchTypes .= 's';
+            } elseif ($classification !== 'client') {
+                $branchWhereClauses[] = '1 = 0';
+            }
+
+            if ($usingApprovalQueue) {
+                $branchWhereClauses[] = "(ca.approval_status IS NULL OR ca.approval_status = 'approved')";
+            }
+
+            $branchSql = "
+                SELECT DISTINCT su.branch
+                FROM clients c
+                LEFT JOIN users su ON c.submitted_by = su.user_id
+                {$branchJoinSql}
+                WHERE " . implode(' AND ', $branchWhereClauses) . "
+                ORDER BY su.branch ASC
+            ";
+
+            $branchRows = fetchRows($db, $branchSql, $branchTypes, $branchParams);
+        }
+
+        foreach ($branchRows as $branchRow) {
+            $branchValue = trim((string)($branchRow['branch'] ?? ''));
+            if ($branchValue !== '') {
+                $availableBranches[] = $branchValue;
+            }
+        }
+    }
+
+    $totalPages = $exportAll ? 1 : (int)ceil($totalClients / $pageSize);
+
+    $response['success'] = true;
+    $response['data'] = $clients;
+    $response['count'] = count($clients);
+    $response['total'] = $totalClients;
+    $response['page'] = $page;
+    $response['pageSize'] = $pageSize;
+    $response['totalPages'] = $totalPages;
+    $response['isHeadOffice'] = $isHeadOfficeUser;
+    $response['availableBranches'] = $availableBranches;
+    $response['sourceTable'] = $usingAgentsTable ? 'agents' : 'clients';
+    $response['filters'] = [
+        'search' => $search,
+        'status' => $status,
+        'type' => $type,
+        'branch' => $branch,
+        'classification' => $classification,
+        'exportAll' => $exportAll
+    ];
+} catch (Throwable $e) {
+    http_response_code(500);
+    $response['success'] = false;
+    $response['message'] = 'Failed to load clients.';
+    $response['error'] = $e->getMessage();
 }
-
-$totalPages = $exportAll ? 1 : ceil($totalClients / $pageSize);
-
-$response['success'] = true;
-$response['data'] = $clients;
-$response['count'] = count($clients);
-$response['total'] = $totalClients;
-$response['page'] = $page;
-$response['pageSize'] = $pageSize;
-$response['totalPages'] = $totalPages;
-$response['debug']['row_count'] = $result ? $result->num_rows : 0;
-$response['filters'] = [
-    'search' => $search,
-    'status' => $status,
-    'type' => $type,
-    'exportAll' => $exportAll
-];
 
 echo json_encode($response);
 ?>
