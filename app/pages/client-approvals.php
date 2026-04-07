@@ -119,33 +119,41 @@ if (!$isHeadOfficeUser) {
             background-color: #f5fbf8;
         }
 
-        .application-modal-content {
-            width: min(1120px, calc(100vw - 32px));
-            height: min(92vh, calc(100vh - 32px));
-            max-height: calc(100vh - 16px);
+        #approvalsTableBody tr.approval-row.is-selected td {
+            background-color: #eaf5ef;
+        }
+
+        .application-details-panel {
+            margin-top: 18px;
+            border: 1px solid #d4e3da;
+            border-radius: 14px;
+            background: #ffffff;
+            padding: 14px;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
+        }
+
+        .application-details-header {
             display: flex;
-            flex-direction: column;
-            position: fixed;
-            left: 24px;
-            top: 24px;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .application-details-header h2 {
             margin: 0;
-            transform: none;
-            transition: box-shadow 0.18s ease;
-            overflow: hidden;
+            font-size: 1.1rem;
+            color: #0f172a;
         }
 
-        #applicationModalHeader {
-            cursor: move;
-            user-select: none;
-        }
-
-        body.application-modal-dragging {
-            user-select: none;
-            cursor: grabbing;
-        }
-
-        body.application-modal-dragging #applicationModalHeader {
-            cursor: grabbing;
+        .application-details-empty {
+            border: 1px dashed #c8d7ce;
+            border-radius: 12px;
+            padding: 18px;
+            background: #f8fbf9;
+            color: #4b5563;
+            font-size: 0.88rem;
         }
 
         .application-modal-subtitle {
@@ -157,11 +165,7 @@ if (!$isHeadOfficeUser) {
         .application-modal-body {
             display: flex;
             flex-direction: column;
-            flex: 1 1 auto;
-            min-height: 0;
             gap: 16px;
-            overflow-y: auto;
-            overscroll-behavior: contain;
         }
 
         .detail-section {
@@ -212,11 +216,41 @@ if (!$isHeadOfficeUser) {
             font-weight: 600;
         }
 
-        .detail-item .value {
-            font-size: 0.84rem;
+        .detail-input {
+            width: 100%;
+            border: 1px solid #d3e1d8;
+            border-radius: 8px;
+            background: #f8fbfa;
             color: #1f2937;
+            padding: 8px 9px;
+            font-size: 0.82rem;
             line-height: 1.35;
-            word-break: break-word;
+        }
+
+        textarea.detail-input {
+            min-height: 76px;
+            resize: vertical;
+            font-family: 'Sora', sans-serif;
+        }
+
+        .details-decision-notes {
+            padding: 12px;
+            display: grid;
+            gap: 8px;
+            border-top: 1px solid #d7e8dc;
+        }
+
+        .details-decision-notes label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .details-decision-notes small {
+            color: #64748b;
+            font-size: 0.74rem;
         }
 
         .document-grid {
@@ -309,6 +343,8 @@ if (!$isHeadOfficeUser) {
             justify-content: space-between;
             gap: 10px;
             flex-wrap: wrap;
+            border-top: 1px solid #d7e8dc;
+            padding-top: 12px;
         }
 
         .application-modal-actions {
@@ -475,73 +511,83 @@ include '../includes/sidebar.php';
             </div>
             <div class="pagination" id="paginationContainer"></div>
         </div>
+
+        <section id="applicationDetailsPanel" class="application-details-panel">
+            <div class="application-details-header">
+                <div>
+                    <h2 id="applicationModalTitle">Application Details</h2>
+                    <p id="applicationModalSubtitle" class="application-modal-subtitle">Select a row to view full credentials and submitted KYC fields.</p>
+                </div>
+                <button type="button" class="btn-cancel" id="applicationDetailsClearBtn">Clear Selection</button>
+            </div>
+
+            <div id="applicationDetailsEmpty" class="application-details-empty">
+                Choose an approval row from the table to load all submitted credentials and documents.
+            </div>
+
+            <form id="applicationDetailsContent" class="application-modal-body" hidden>
+                <section class="detail-section">
+                    <div class="detail-section-header">
+                        <h3>Approval Summary</h3>
+                    </div>
+                    <div id="approvalDetailsGrid" class="detail-grid"></div>
+                </section>
+
+                <section class="detail-section">
+                    <div class="detail-section-header">
+                        <h3>Client Information</h3>
+                    </div>
+                    <div id="clientDetailsGrid" class="detail-grid"></div>
+                </section>
+
+                <section class="detail-section">
+                    <div class="detail-section-header">
+                        <h3>KYC Verification</h3>
+                    </div>
+                    <div id="kycDetailsGrid" class="detail-grid"></div>
+                </section>
+
+                <section class="detail-section">
+                    <div class="detail-section-header">
+                        <h3>KYC Submission Data (All Fields)</h3>
+                    </div>
+                    <div id="allSubmittedDetailsGrid" class="detail-grid"></div>
+                </section>
+
+                <section class="detail-section">
+                    <div class="detail-section-header">
+                        <h3>Uploaded Documents</h3>
+                    </div>
+                    <div id="applicationDocumentGrid" class="document-grid"></div>
+                </section>
+
+                <section class="detail-section">
+                    <div class="detail-section-header">
+                        <h3>Review Decision Notes</h3>
+                    </div>
+                    <div class="details-decision-notes">
+                        <label for="decisionReviewNotes">Notes / Reason</label>
+                        <textarea id="decisionReviewNotes" class="detail-input" rows="3" placeholder="Enter notes for approve/decline/resubmit"></textarea>
+                        <small>These notes are submitted when you use the action buttons below.</small>
+                    </div>
+                </section>
+
+                <div class="application-modal-footer">
+                    <div class="application-modal-actions">
+                        <button type="button" class="action-icon action-approve" id="modalApproveBtn" data-action="approve">
+                            <i class="bi bi-check2-circle"></i>Approve
+                        </button>
+                        <button type="button" class="action-icon action-decline" id="modalDeclineBtn" data-action="decline">
+                            <i class="bi bi-x-circle"></i>Decline
+                        </button>
+                        <button type="button" class="action-icon action-resubmit" id="modalResubmitBtn" data-action="resubmit">
+                            <i class="bi bi-arrow-repeat"></i>Resubmit
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </section>
     </main>
-</div>
-
-<div id="applicationModal" class="modal" aria-hidden="true">
-    <div class="modal-content application-modal-content">
-        <div class="modal-header" id="applicationModalHeader">
-            <div>
-                <h2 id="applicationModalTitle">Application Details</h2>
-                <p id="applicationModalSubtitle" class="application-modal-subtitle">Loading application details...</p>
-            </div>
-            <button type="button" class="modal-close" id="applicationModalCloseBtn" aria-label="Close">
-                <i class="bi bi-x-lg"></i>
-            </button>
-        </div>
-
-        <div class="modal-body application-modal-body">
-            <section class="detail-section">
-                <div class="detail-section-header">
-                    <h3>Approval Summary</h3>
-                </div>
-                <div id="approvalDetailsGrid" class="detail-grid"></div>
-            </section>
-
-            <section class="detail-section">
-                <div class="detail-section-header">
-                    <h3>Client Information</h3>
-                </div>
-                <div id="clientDetailsGrid" class="detail-grid"></div>
-            </section>
-
-            <section class="detail-section">
-                <div class="detail-section-header">
-                    <h3>KYC Verification</h3>
-                </div>
-                <div id="kycDetailsGrid" class="detail-grid"></div>
-            </section>
-
-            <section class="detail-section">
-                <div class="detail-section-header">
-                    <h3>KYC Submission Data (All Fields)</h3>
-                </div>
-                <div id="allSubmittedDetailsGrid" class="detail-grid"></div>
-            </section>
-
-            <section class="detail-section">
-                <div class="detail-section-header">
-                    <h3>Uploaded Documents</h3>
-                </div>
-                <div id="applicationDocumentGrid" class="document-grid"></div>
-            </section>
-        </div>
-
-        <div class="modal-footer application-modal-footer">
-            <div class="application-modal-actions">
-                <button type="button" class="action-icon action-approve" id="modalApproveBtn" data-action="approve">
-                    <i class="bi bi-check2-circle"></i>Approve
-                </button>
-                <button type="button" class="action-icon action-decline" id="modalDeclineBtn" data-action="decline">
-                    <i class="bi bi-x-circle"></i>Decline
-                </button>
-                <button type="button" class="action-icon action-resubmit" id="modalResubmitBtn" data-action="resubmit">
-                    <i class="bi bi-arrow-repeat"></i>Resubmit
-                </button>
-            </div>
-            <button type="button" class="btn-cancel" id="applicationModalCloseFooterBtn">Close</button>
-        </div>
-    </div>
 </div>
 
 <div id="toastContainer" class="toast-container"></div>
@@ -553,9 +599,12 @@ include '../includes/sidebar.php';
     let searchDebounceTimer;
     let currentOpenApprovalId = 0;
     let currentOpenApprovalStatus = '';
-    let modalActionsBusy = false;
+    let detailsActionsBusy = false;
 
-    const applicationModal = document.getElementById('applicationModal');
+    const applicationDetailsPanel = document.getElementById('applicationDetailsPanel');
+    const applicationDetailsContent = document.getElementById('applicationDetailsContent');
+    const applicationDetailsEmpty = document.getElementById('applicationDetailsEmpty');
+    const applicationDetailsClearBtn = document.getElementById('applicationDetailsClearBtn');
     const applicationModalTitle = document.getElementById('applicationModalTitle');
     const applicationModalSubtitle = document.getElementById('applicationModalSubtitle');
     const approvalDetailsGrid = document.getElementById('approvalDetailsGrid');
@@ -563,20 +612,11 @@ include '../includes/sidebar.php';
     const kycDetailsGrid = document.getElementById('kycDetailsGrid');
     const allSubmittedDetailsGrid = document.getElementById('allSubmittedDetailsGrid');
     const applicationDocumentGrid = document.getElementById('applicationDocumentGrid');
-    const applicationModalContent = applicationModal ? applicationModal.querySelector('.application-modal-content') : null;
-    const applicationModalHeader = document.getElementById('applicationModalHeader');
+    const decisionReviewNotes = document.getElementById('decisionReviewNotes');
     const modalApproveBtn = document.getElementById('modalApproveBtn');
     const modalDeclineBtn = document.getElementById('modalDeclineBtn');
     const modalResubmitBtn = document.getElementById('modalResubmitBtn');
     const modalActionButtons = [modalApproveBtn, modalDeclineBtn, modalResubmitBtn].filter(Boolean);
-
-    const modalDragState = {
-        active: false,
-        startX: 0,
-        startY: 0,
-        startLeft: 0,
-        startTop: 0
-    };
 
     function escapeHtml(value) {
         return String(value)
@@ -625,8 +665,8 @@ include '../includes/sidebar.php';
         if (!container) return;
         container.innerHTML = `
             <article class="detail-item">
-                <span class="label">Info</span>
-                <span class="value">${escapeHtml(message || 'No data available')}</span>
+                <label class="label">Info</label>
+                <textarea class="detail-input" rows="3" readonly>${escapeHtml(message || 'No data available')}</textarea>
             </article>
         `;
     }
@@ -647,7 +687,7 @@ include '../includes/sidebar.php';
             return;
         }
 
-        const html = entries.map(([key, rawValue]) => {
+        const html = entries.map(([key, rawValue], index) => {
             const normalizedKey = String(key || '').toLowerCase();
             let value = rawValue;
 
@@ -665,11 +705,17 @@ include '../includes/sidebar.php';
             }
 
             const displayValue = isBlank(value) ? 'N/A' : String(value);
+            const keyId = String(key || 'field').toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+            const inputId = `${container.id}_${keyId}_${index}`;
+            const useTextarea = displayValue.length > 80 || displayValue.includes('\n');
+            const control = useTextarea
+                ? `<textarea id="${escapeHtml(inputId)}" class="detail-input" rows="3" readonly>${escapeHtml(displayValue)}</textarea>`
+                : `<input id="${escapeHtml(inputId)}" class="detail-input" type="text" value="${escapeHtml(displayValue)}" readonly>`;
 
             return `
                 <article class="detail-item">
-                    <span class="label">${escapeHtml(humanizeKey(key))}</span>
-                    <span class="value">${escapeHtml(displayValue)}</span>
+                    <label class="label" for="${escapeHtml(inputId)}">${escapeHtml(humanizeKey(key))}</label>
+                    ${control}
                 </article>
             `;
         }).join('');
@@ -896,95 +942,30 @@ include '../includes/sidebar.php';
         modalActionButtons.forEach(button => {
             const action = String(button.dataset.action || '').toLowerCase();
             const disableByStatus = currentOpenApprovalStatus !== '' && action === currentOpenApprovalStatus;
-            button.disabled = modalActionsBusy || currentOpenApprovalId <= 0 || disableByStatus;
+            button.disabled = detailsActionsBusy || currentOpenApprovalId <= 0 || disableByStatus;
         });
     }
 
     function setModalActionsBusy(isBusy) {
-        modalActionsBusy = Boolean(isBusy);
+        detailsActionsBusy = Boolean(isBusy);
         refreshModalActionButtons();
     }
 
-    function clampModalPosition(left, top) {
-        if (!applicationModalContent) {
-            return { left, top };
+    function setDetailsPanelVisibility(hasSelection) {
+        if (applicationDetailsContent) {
+            applicationDetailsContent.hidden = !hasSelection;
         }
 
-        const padding = 10;
-        const width = applicationModalContent.offsetWidth || 0;
-        const height = applicationModalContent.offsetHeight || 0;
-
-        const minLeft = padding;
-        const minTop = padding;
-        const maxLeft = Math.max(minLeft, window.innerWidth - width - padding);
-        const maxTop = Math.max(minTop, window.innerHeight - height - padding);
-
-        return {
-            left: Math.min(Math.max(left, minLeft), maxLeft),
-            top: Math.min(Math.max(top, minTop), maxTop)
-        };
-    }
-
-    function setApplicationModalPosition(left, top) {
-        if (!applicationModalContent) return;
-
-        const clamped = clampModalPosition(Number(left || 0), Number(top || 0));
-        applicationModalContent.style.left = `${clamped.left}px`;
-        applicationModalContent.style.top = `${clamped.top}px`;
-    }
-
-    function centerApplicationModalContent() {
-        if (!applicationModalContent) return;
-
-        const width = applicationModalContent.offsetWidth || 980;
-        const height = applicationModalContent.offsetHeight || 620;
-
-        const centeredLeft = Math.max(10, Math.round((window.innerWidth - width) / 2));
-        const centeredTop = Math.max(10, Math.round((window.innerHeight - height) / 2));
-
-        setApplicationModalPosition(centeredLeft, centeredTop);
-    }
-
-    function beginApplicationModalDrag(event) {
-        if (!applicationModalContent || !applicationModal) return;
-        if (applicationModal.style.display !== 'block') return;
-        if (event.button !== 0) return;
-        if (event.target.closest('button, a, input, select, textarea, [data-no-drag]')) return;
-
-        const rect = applicationModalContent.getBoundingClientRect();
-        modalDragState.active = true;
-        modalDragState.startX = event.clientX;
-        modalDragState.startY = event.clientY;
-        modalDragState.startLeft = rect.left;
-        modalDragState.startTop = rect.top;
-
-        document.body.classList.add('application-modal-dragging');
-        event.preventDefault();
-    }
-
-    function onApplicationModalDrag(event) {
-        if (!modalDragState.active) return;
-
-        const deltaX = event.clientX - modalDragState.startX;
-        const deltaY = event.clientY - modalDragState.startY;
-
-        setApplicationModalPosition(modalDragState.startLeft + deltaX, modalDragState.startTop + deltaY);
-    }
-
-    function endApplicationModalDrag() {
-        if (!modalDragState.active) return;
-
-        modalDragState.active = false;
-        document.body.classList.remove('application-modal-dragging');
-    }
-
-    function keepApplicationModalInViewport() {
-        if (!applicationModalContent || !applicationModal || applicationModal.style.display !== 'block') {
-            return;
+        if (applicationDetailsEmpty) {
+            applicationDetailsEmpty.hidden = hasSelection;
         }
+    }
 
-        const rect = applicationModalContent.getBoundingClientRect();
-        setApplicationModalPosition(rect.left, rect.top);
+    function highlightSelectedApprovalRow() {
+        document.querySelectorAll('#approvalsTableBody tr.approval-row').forEach(row => {
+            const rowApprovalId = Number(row.dataset.approvalId || 0);
+            row.classList.toggle('is-selected', currentOpenApprovalId > 0 && rowApprovalId === currentOpenApprovalId);
+        });
     }
 
     function renderTable(rows) {
@@ -1006,6 +987,9 @@ include '../includes/sidebar.php';
             const approvalId = Number(row.approval_id || 0);
 
             tr.className = 'approval-row';
+            if (approvalId === currentOpenApprovalId) {
+                tr.classList.add('is-selected');
+            }
             tr.dataset.approvalId = String(approvalId);
 
             tr.innerHTML = `
@@ -1092,15 +1076,13 @@ include '../includes/sidebar.php';
     }
 
     function openApplicationModalShell(approvalId) {
-        if (!applicationModal) return;
+        if (!applicationDetailsPanel) return;
 
         currentOpenApprovalId = Number(approvalId || 0);
         currentOpenApprovalStatus = '';
-        applicationModal.style.display = 'block';
-        applicationModal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
         setModalActionsBusy(true);
-        centerApplicationModalContent();
+        setDetailsPanelVisibility(true);
+        highlightSelectedApprovalRow();
 
         if (applicationModalTitle) {
             applicationModalTitle.textContent = `Application #${currentOpenApprovalId || '...'}`;
@@ -1130,14 +1112,27 @@ include '../includes/sidebar.php';
     }
 
     function closeApplicationModal() {
-        if (!applicationModal) return;
-        endApplicationModalDrag();
-        applicationModal.style.display = 'none';
-        applicationModal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
         currentOpenApprovalId = 0;
         currentOpenApprovalStatus = '';
         setModalActionsBusy(false);
+        setDetailsPanelVisibility(false);
+        highlightSelectedApprovalRow();
+
+        if (decisionReviewNotes) {
+            decisionReviewNotes.value = '';
+        }
+
+        if (applicationModalTitle) {
+            applicationModalTitle.textContent = 'Application Details';
+        }
+
+        if (applicationModalSubtitle) {
+            applicationModalSubtitle.textContent = 'Select a row to view full credentials and submitted KYC fields.';
+        }
+
+        if (applicationDetailsEmpty) {
+            applicationDetailsEmpty.textContent = 'Choose an approval row from the table to load all submitted credentials and documents.';
+        }
     }
 
     function renderApplicationDetails(payload) {
@@ -1152,6 +1147,8 @@ include '../includes/sidebar.php';
         currentOpenApprovalStatus = approval && approval.approval_status
             ? String(approval.approval_status).toLowerCase()
             : '';
+        setDetailsPanelVisibility(true);
+        highlightSelectedApprovalRow();
         setModalActionsBusy(false);
 
         if (applicationModalTitle) {
@@ -1162,6 +1159,12 @@ include '../includes/sidebar.php';
             const submittedBy = approval && approval.submitted_by_name ? approval.submitted_by_name : 'Unknown submitter';
             const submittedAt = approval ? formatDateTime(approval.submitted_at) : 'N/A';
             applicationModalSubtitle.textContent = `Status: ${status} | Submitted by ${submittedBy} | ${submittedAt}`;
+        }
+
+        if (decisionReviewNotes) {
+            decisionReviewNotes.value = approval && !isBlank(approval.review_notes)
+                ? String(approval.review_notes)
+                : '';
         }
 
         renderRecordGrid(approvalDetailsGrid, approval, [
@@ -1393,13 +1396,26 @@ include '../includes/sidebar.php';
     function runAction(approvalId, action, options = {}) {
         const source = String(options.source || 'table');
         const actionTitle = getActionTitle(action);
-        const notePrompt = action === 'approve'
-            ? 'Optional note for approval:'
-            : `Reason for ${actionTitle.toLowerCase()}:`;
+        let reviewNote = '';
 
-        const reviewNote = window.prompt(notePrompt, '');
-        if (reviewNote === null) {
-            return;
+        if (source === 'details') {
+            reviewNote = decisionReviewNotes ? String(decisionReviewNotes.value || '').trim() : '';
+            if (action !== 'approve' && reviewNote === '') {
+                createToast('info', 'Notes Required', `Please provide a reason before you ${actionTitle.toLowerCase()} this application.`);
+                if (decisionReviewNotes) {
+                    decisionReviewNotes.focus();
+                }
+                return;
+            }
+        } else {
+            const notePrompt = action === 'approve'
+                ? 'Optional note for approval:'
+                : `Reason for ${actionTitle.toLowerCase()}:`;
+            const promptedNote = window.prompt(notePrompt, '');
+            if (promptedNote === null) {
+                return;
+            }
+            reviewNote = promptedNote;
         }
 
         const confirmed = window.confirm(`Confirm ${actionTitle.toLowerCase()} for approval #${approvalId}?`);
@@ -1407,7 +1423,7 @@ include '../includes/sidebar.php';
             return;
         }
 
-        if (source === 'modal') {
+        if (source === 'details') {
             setModalActionsBusy(true);
         }
 
@@ -1430,14 +1446,14 @@ include '../includes/sidebar.php';
                 createToast('success', 'Updated', `Approval has been marked as ${action}.`);
                 loadApprovals(currentPage);
 
-                if (source === 'modal' && currentOpenApprovalId === approvalId) {
+                if (currentOpenApprovalId === approvalId) {
                     openApplicationModal(approvalId);
                 }
             })
             .catch(error => {
                 createToast('error', 'Update Failed', error.message || `Unable to ${action} approval.`);
 
-                if (source === 'modal') {
+                if (source === 'details') {
                     setModalActionsBusy(false);
                 }
             });
@@ -1458,23 +1474,8 @@ include '../includes/sidebar.php';
     }
 
     function initializeApplicationModalEvents() {
-        const closeBtn = document.getElementById('applicationModalCloseBtn');
-        const footerCloseBtn = document.getElementById('applicationModalCloseFooterBtn');
-
-        if (applicationModalHeader) {
-            applicationModalHeader.addEventListener('mousedown', beginApplicationModalDrag);
-        }
-
-        document.addEventListener('mousemove', onApplicationModalDrag);
-        document.addEventListener('mouseup', endApplicationModalDrag);
-        window.addEventListener('resize', keepApplicationModalInViewport);
-
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeApplicationModal);
-        }
-
-        if (footerCloseBtn) {
-            footerCloseBtn.addEventListener('click', closeApplicationModal);
+        if (applicationDetailsClearBtn) {
+            applicationDetailsClearBtn.addEventListener('click', closeApplicationModal);
         }
 
         modalActionButtons.forEach(button => {
@@ -1486,23 +1487,11 @@ include '../includes/sidebar.php';
                     return;
                 }
 
-                runAction(currentOpenApprovalId, action, { source: 'modal' });
+                runAction(currentOpenApprovalId, action, { source: 'details' });
             });
         });
 
-        if (applicationModal) {
-            applicationModal.addEventListener('click', event => {
-                if (event.target === applicationModal) {
-                    closeApplicationModal();
-                }
-            });
-        }
-
-        document.addEventListener('keydown', event => {
-            if (event.key === 'Escape' && applicationModal && applicationModal.style.display === 'block') {
-                closeApplicationModal();
-            }
-        });
+        setDetailsPanelVisibility(false);
 
         refreshModalActionButtons();
     }
