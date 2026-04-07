@@ -83,6 +83,13 @@ $menuItems = [
         'badge' => null
     ],
     [
+        'label' => 'KYC Verification',
+        'icon' => 'bi-person-check',
+        'href' => 'kyc-verification.php',
+        'page' => 'kyc-verification',
+        'badge' => null
+    ],
+    [
         'label' => 'Clients',
         'icon' => 'bi-people',
         'href' => 'clients.php',
@@ -94,13 +101,6 @@ $menuItems = [
         'icon' => 'bi-person-badge',
         'href' => 'clients.php?classification=agent',
         'page' => 'agents',
-        'badge' => null
-    ],
-    [
-        'label' => 'KYC Verification',
-        'icon' => 'bi-person-check',
-        'href' => 'kyc-verification.php',
-        'page' => 'kyc-verification',
         'badge' => null
     ],
 ];

@@ -73,6 +73,19 @@ function relativeTime(?string $dateTime): string {
     return floor($diff / 86400) . ' day ago';
 }
 
+function formatDateTime(?string $dateTime): string {
+    if (!$dateTime) {
+        return 'N/A';
+    }
+
+    $timestamp = strtotime($dateTime);
+    if (!$timestamp) {
+        return 'N/A';
+    }
+
+    return date('M d, Y h:i A', $timestamp);
+}
+
 function normalizeActivityStatus(?string $status): string {
     $value = strtolower(trim((string)$status));
     if ($value === '') {
@@ -216,13 +229,14 @@ if ($hasClientApprovalsTable) {
             NULLIF(TRIM(CONCAT(COALESCE(ca.first_name, ''), ' ', COALESCE(ca.last_name, ''))), ''),
             ca.reference_code
         ) AS display_name,
-        COALESCE(ca.reviewed_at, ca.submitted_at, ca.updated_at, ca.created_at) AS action_time,
+        COALESCE(ca.submitted_at, c.submitted_at, c.created_at, ca.created_at) AS action_time,
         COALESCE(su.full_name, 'System') AS submitted_by_name,
-        COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''), 'N/A') AS submitted_by_branch
+        COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''), 'UNASSIGNED') AS submitted_by_branch
     FROM client_approvals ca
+    LEFT JOIN clients c ON c.client_id = ca.client_id
     LEFT JOIN users su ON su.user_id = ca.submitted_by
     {$approvalsScopeWhere}
-    ORDER BY COALESCE(ca.reviewed_at, ca.submitted_at, ca.updated_at, ca.created_at) DESC
+    ORDER BY COALESCE(ca.submitted_at, c.submitted_at, c.created_at, ca.created_at) DESC
     LIMIT 6", $approvalsScopeParams);
 } else {
     $stats = fetchOne("SELECT
@@ -272,7 +286,7 @@ if ($hasClientApprovalsTable) {
         COALESCE(NULLIF(c.client_name, ''), TRIM(CONCAT(c.first_name, ' ', c.last_name))) AS display_name,
         COALESCE(c.submitted_at, c.created_at) AS action_time,
         COALESCE(su.full_name, 'System') AS submitted_by_name,
-        COALESCE(NULLIF(TRIM(su.branch), ''), 'N/A') AS submitted_by_branch
+        COALESCE(NULLIF(TRIM(su.branch), ''), 'UNASSIGNED') AS submitted_by_branch
     FROM clients c
     LEFT JOIN users su ON su.user_id = c.submitted_by
     {$clientsScopeWhere}
@@ -417,6 +431,7 @@ include '../includes/sidebar.php';
                     <div class="action-buttons">
                         <a class="action-btn" href="kyc-individual.php"><i class="bi bi-person-plus"></i><span>New Individual</span></a>
                         <a class="action-btn" href="kyc-corporate.php"><i class="bi bi-building-add"></i><span>New Corporate</span></a>
+                        <a class="action-btn" href="kyc-individual.php?classification=agent"><i class="bi bi-person-badge"></i><span>New Agent</span></a>
                         <a class="action-btn" href="<?php echo e($workflowQuickAction['href']); ?>"><i class="bi <?php echo e($workflowQuickAction['icon']); ?>"></i><span><?php echo e($workflowQuickAction['label']); ?></span></a>
                         <a class="action-btn" href="clients.php"><i class="bi bi-inboxes"></i><span>View Clients</span></a>
                     </div>
@@ -478,9 +493,9 @@ include '../includes/sidebar.php';
                     <h3 class="card-title">Recent Activity</h3>
                     <div class="card-subtitle">
                         <?php if ($isHeadOfficeUser): ?>
-                            Latest KYC updates across all branches
+                            Latest client entries across all branches
                         <?php else: ?>
-                            Latest KYC updates for <?php echo e($scopeLabel); ?>
+                            Latest client entries for <?php echo e($scopeLabel); ?>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -498,15 +513,17 @@ include '../includes/sidebar.php';
                                 </div>
                                 <div class="activity-info">
                                     <div class="activity-title"><?php echo e($row['display_name'] ?: 'Unnamed Client'); ?> (<?php echo e($row['reference_code']); ?>)</div>
-                                    <div class="activity-desc"><?php echo e(ucfirst($row['client_type'])); ?> <?php echo e(($row['client_classification'] ?? 'client') === 'agent' ? 'agent' : 'client'); ?> record · Submitted by <?php echo e($row['submitted_by_name']); ?></div>
+                                    <div class="activity-desc"><?php echo e(ucfirst($row['client_type'])); ?> <?php echo e(($row['client_classification'] ?? 'client') === 'agent' ? 'agent' : 'client'); ?> record · Added by <?php echo e($row['submitted_by_name']); ?></div>
                                     <div class="activity-meta">
                                         <span class="activity-status status-<?php echo e(normalizeActivityStatus($row['activity_status'] ?? 'pending')); ?>"><?php echo e(activityStatusLabel($row['activity_status'] ?? 'pending')); ?></span>
-                                        <?php if ($isHeadOfficeUser): ?>
-                                            <span class="activity-branch"><?php echo e($row['submitted_by_branch'] ?? 'N/A'); ?></span>
-                                        <?php endif; ?>
+                                        <span class="activity-branch"><?php echo e($row['submitted_by_branch'] ?? 'UNASSIGNED'); ?></span>
+                                        <span class="activity-added-at"><?php echo e(formatDateTime($row['action_time'] ?? '')); ?></span>
                                     </div>
                                 </div>
-                                <div class="activity-time"><?php echo e(relativeTime($row['action_time'])); ?></div>
+                                <div
+                                    class="activity-time"
+                                    data-action-time-ts="<?php echo e((string)(intval(strtotime((string)($row['action_time'] ?? '')) ?: 0))); ?>"
+                                ><?php echo e(relativeTime($row['action_time'])); ?></div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -516,6 +533,60 @@ include '../includes/sidebar.php';
     </main>
 
 </div>
+
+<script>
+(function () {
+    const activityTimeElements = Array.from(document.querySelectorAll('.activity-time[data-action-time-ts]'));
+    if (!activityTimeElements.length) {
+        return;
+    }
+
+    function getRelativeLabel(timestampSeconds) {
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        const diff = Math.max(0, nowSeconds - timestampSeconds);
+
+        if (diff < 60) {
+            return 'just now';
+        }
+
+        if (diff < 3600) {
+            return Math.floor(diff / 60) + ' min ago';
+        }
+
+        if (diff < 86400) {
+            return Math.floor(diff / 3600) + ' hr ago';
+        }
+
+        return Math.floor(diff / 86400) + ' day ago';
+    }
+
+    function refreshActivityTimes() {
+        activityTimeElements.forEach(function (element) {
+            const timestampRaw = element.getAttribute('data-action-time-ts') || '0';
+            const timestampSeconds = parseInt(timestampRaw, 10);
+
+            if (!Number.isFinite(timestampSeconds) || timestampSeconds <= 0) {
+                return;
+            }
+
+            element.textContent = getRelativeLabel(timestampSeconds);
+        });
+    }
+
+    refreshActivityTimes();
+    const refreshTimer = window.setInterval(refreshActivityTimes, 60000);
+
+    // Refresh feed data every hour so newly added records appear without manual reload.
+    const reloadTimer = window.setTimeout(function () {
+        window.location.reload();
+    }, 3600000);
+
+    window.addEventListener('beforeunload', function () {
+        window.clearInterval(refreshTimer);
+        window.clearTimeout(reloadTimer);
+    });
+})();
+</script>
 
 </body>
 </html>

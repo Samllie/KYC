@@ -14,27 +14,46 @@ $response = ['success' => false, 'data' => []];
 
 function hasColumn(mysqli $db, string $table, string $column): bool
 {
+    static $cache = [];
+
+    $cacheKey = $table . '::' . $column;
+    if (array_key_exists($cacheKey, $cache)) {
+        return $cache[$cacheKey];
+    }
+
     try {
         $tableSafe = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
         $columnSafe = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
 
         if ($tableSafe === '' || $columnSafe === '') {
+            $cache[$cacheKey] = false;
             return false;
         }
 
-        $stmt = $db->prepare("SHOW COLUMNS FROM `$tableSafe` LIKE ?");
+        $stmt = $db->prepare(
+            "SELECT 1
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND table_name = ?
+               AND column_name = ?
+             LIMIT 1"
+        );
         if (!$stmt) {
+            $cache[$cacheKey] = false;
             return false;
         }
 
-        $stmt->bind_param('s', $columnSafe);
+        $stmt->bind_param('ss', $tableSafe, $columnSafe);
         $stmt->execute();
         $result = $stmt->get_result();
         $exists = $result instanceof mysqli_result && $result->num_rows > 0;
         $stmt->close();
 
+        $cache[$cacheKey] = $exists;
+
         return $exists;
     } catch (Throwable $e) {
+        $cache[$cacheKey] = false;
         return false;
     }
 }
@@ -148,6 +167,14 @@ try {
     $usingAgentsTable = $classification === 'agent' && tableExists($db, 'agents');
     $usingApprovalQueue = tableExists($db, 'client_approvals');
 
+    $branchSqlExpr = "NULLIF(TRIM(su.branch), '')";
+    if ($usersHasBranch && $usingApprovalQueue) {
+        $branchSqlExpr = "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))";
+    }
+
+    $branchFilterExpr = "UPPER(COALESCE($branchSqlExpr, ''))";
+    $branchSelectExpr = "COALESCE($branchSqlExpr, 'UNASSIGNED')";
+
     $tableAlias = $usingAgentsTable ? 'a' : 'c';
     $baseTableSql = $usingAgentsTable ? 'agents a' : 'clients c';
     $approvalJoinSql = $usingApprovalQueue
@@ -224,16 +251,16 @@ try {
     if ($usersHasBranch) {
         if ($isHeadOfficeUser) {
             if ($branch !== '') {
-                $whereClauses[] = 'su.branch = ?';
-                $filterParams[] = $branch;
+                $whereClauses[] = $branchFilterExpr . ' = ?';
+                $filterParams[] = strtoupper($branch);
                 $filterTypes .= 's';
             }
         } else {
             if ($currentUserBranch === '') {
                 $whereClauses[] = '1 = 0';
             } else {
-                $whereClauses[] = 'su.branch = ?';
-                $filterParams[] = $currentUserBranch;
+                $whereClauses[] = $branchFilterExpr . ' = ?';
+                $filterParams[] = strtoupper($currentUserBranch);
                 $filterTypes .= 's';
             }
         }
@@ -259,7 +286,7 @@ try {
     $countRow = fetchSingle($db, $countSql, $filterTypes, $filterParams);
     $totalClients = intval($countRow['total'] ?? 0);
 
-    $submittedBranchSelect = $usersHasBranch ? 'su.branch' : "''";
+    $submittedBranchSelect = $usersHasBranch ? $branchSelectExpr : "''";
     $contactPersonSelect = $usingAgentsTable ? 'NULL AS contact_person' : 'c.contact_person';
 
     $listSql = "
@@ -310,9 +337,12 @@ try {
                 ? ' LEFT JOIN client_approvals ca ON ca.reference_code = a.reference_code'
                 : '';
 
+            $branchExpr = $usingApprovalQueue
+                ? "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))"
+                : "NULLIF(TRIM(su.branch), '')";
+
             $branchWhereClauses = [
-                'su.branch IS NOT NULL',
-                "TRIM(su.branch) <> ''"
+                $branchExpr . ' IS NOT NULL'
             ];
 
             if ($usingApprovalQueue) {
@@ -320,12 +350,12 @@ try {
             }
 
             $branchSql = "
-                SELECT DISTINCT su.branch
+                SELECT DISTINCT $branchExpr AS branch
                 FROM agents a
                 LEFT JOIN users su ON a.submitted_by = su.user_id
                 {$branchJoinSql}
                 WHERE " . implode(' AND ', $branchWhereClauses) . "
-                ORDER BY su.branch ASC
+                ORDER BY branch ASC
             ";
 
             $branchRows = fetchRows($db, $branchSql);
@@ -334,9 +364,12 @@ try {
                 ? ' LEFT JOIN client_approvals ca ON ca.reference_code = c.reference_code'
                 : '';
 
+            $branchExpr = $usingApprovalQueue
+                ? "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))"
+                : "NULLIF(TRIM(su.branch), '')";
+
             $branchWhereClauses = [
-                'su.branch IS NOT NULL',
-                "TRIM(su.branch) <> ''"
+                $branchExpr . ' IS NOT NULL'
             ];
             $branchParams = [];
             $branchTypes = '';
@@ -354,12 +387,12 @@ try {
             }
 
             $branchSql = "
-                SELECT DISTINCT su.branch
+                SELECT DISTINCT $branchExpr AS branch
                 FROM clients c
                 LEFT JOIN users su ON c.submitted_by = su.user_id
                 {$branchJoinSql}
                 WHERE " . implode(' AND ', $branchWhereClauses) . "
-                ORDER BY su.branch ASC
+                ORDER BY branch ASC
             ";
 
             $branchRows = fetchRows($db, $branchSql, $branchTypes, $branchParams);

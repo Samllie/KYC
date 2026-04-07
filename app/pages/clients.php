@@ -19,7 +19,9 @@ $recordLabelPlural = $isAgentsMode ? 'agents' : 'clients';
 $recordTitleCaseSingular = ucfirst($recordLabelSingular);
 $recordTitleCasePlural = ucfirst($recordLabelPlural);
 $newRecordLabel = $isAgentsMode ? 'New Agent' : 'New Client';
-$kycEntryUrl = 'kyc-verification.php?classification=' . urlencode($listClassification);
+$kycEntryUrl = $isAgentsMode
+    ? 'kyc-individual.php?classification=agent'
+    : ('kyc-verification.php?classification=' . urlencode($listClassification));
 ?>
 <!DOCTYPE html>
 <html lang="en">
