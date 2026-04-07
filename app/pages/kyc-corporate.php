@@ -2020,11 +2020,43 @@ async function refreshDrafts() {
     }
 }
 
+function getResumeReferenceFromQuery() {
+    const params = new URLSearchParams(window.location.search || '');
+    return String(params.get('resume_ref') || params.get('ref_code') || '').trim();
+}
+
+async function autoLoadDraftFromQuery() {
+    const resumeRef = getResumeReferenceFromQuery();
+    if (!resumeRef) {
+        return;
+    }
+
+    const draftSelect = document.getElementById('draftSelect');
+    const loadDraftBtn = document.getElementById('loadDraftBtn');
+    if (!draftSelect) {
+        return;
+    }
+
+    const hasDraftOption = Array.from(draftSelect.options || []).some(option => option.value === resumeRef);
+    if (!hasDraftOption) {
+        showToast('info', 'Draft Not Found', `Draft ${resumeRef} is not available for this account.`);
+        return;
+    }
+
+    draftSelect.value = resumeRef;
+    if (loadDraftBtn) {
+        loadDraftBtn.disabled = false;
+    }
+
+    await loadSelectedDraft();
+}
+
 // Load drafts list on page open.
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const draftSelect = document.getElementById('draftSelect');
     if (!draftSelect) return;
-    refreshDrafts();
+    await refreshDrafts();
+    await autoLoadDraftFromQuery();
 });
 
 function toggleDraftsPanel() {

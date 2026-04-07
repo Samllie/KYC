@@ -5,15 +5,73 @@
  * Usage:
  * <?php $activePage = 'dashboard'; include 'includes/sidebar.php'; ?>
  * 
- * Parameters: $activePage (string) - the current page (dashboard, clients, agents, client-approvals, kyc-verification, policy)
+ * Parameters: $activePage (string) - the current page (dashboard, clients, agents, my-applications, client-approvals, kyc-verification, policy)
  */
 
 $currentUserRole = strtolower(trim($_SESSION['role'] ?? ''));
 $currentUserDepartment = strtoupper(trim($_SESSION['department'] ?? ''));
 $currentUserBranch = strtoupper(trim($_SESSION['branch'] ?? ''));
+$normalizedRole = str_replace('-', '_', $currentUserRole);
 $isHeadOfficeUser = $currentUserRole === 'admin'
     || $currentUserDepartment === 'HEAD OFFICE'
     || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+$isKycOfficerUser = $normalizedRole === 'kyc_officer' && !$isHeadOfficeUser;
+
+$myApplicationsBadge = null;
+$myApplicationsBadgeType = null;
+if ($isKycOfficerUser) {
+    $officerUserId = intval($_SESSION['user_id'] ?? 0);
+
+    if ($officerUserId > 0) {
+        if (!isset($db) || !($db instanceof mysqli)) {
+            $dbConfigPath = __DIR__ . '/../config/db.php';
+            if (is_file($dbConfigPath)) {
+                require_once $dbConfigPath;
+            }
+        }
+
+        if (isset($db) && $db instanceof mysqli) {
+            $tableResult = $db->query("SHOW TABLES LIKE 'client_approvals'");
+            $approvalsTableExists = $tableResult instanceof mysqli_result && $tableResult->num_rows > 0;
+
+            if ($tableResult instanceof mysqli_result) {
+                $tableResult->free();
+            }
+
+            if ($approvalsTableExists) {
+                $stmt = $db->prepare(
+                    "SELECT
+                        SUM(CASE WHEN approval_status = 'resubmit' THEN 1 ELSE 0 END) AS resubmit_total,
+                        SUM(CASE WHEN approval_status = 'pending' THEN 1 ELSE 0 END) AS pending_total
+                     FROM client_approvals
+                     WHERE submitted_by = ?
+                       AND approval_status IN ('pending', 'resubmit')"
+                );
+
+                if ($stmt) {
+                    $stmt->bind_param('i', $officerUserId);
+
+                    if ($stmt->execute()) {
+                        $result = $stmt->get_result();
+                        $row = $result ? $result->fetch_assoc() : null;
+                        $resubmitCount = intval($row['resubmit_total'] ?? 0);
+                        $pendingCount = intval($row['pending_total'] ?? 0);
+
+                        if ($resubmitCount > 0) {
+                            $myApplicationsBadge = (string)$resubmitCount;
+                            $myApplicationsBadgeType = 'resubmit';
+                        } elseif ($pendingCount > 0) {
+                            $myApplicationsBadge = (string)$pendingCount;
+                            $myApplicationsBadgeType = 'pending';
+                        }
+                    }
+
+                    $stmt->close();
+                }
+            }
+        }
+    }
+}
 
 // Define sidebar menu items
 $menuItems = [
@@ -46,6 +104,17 @@ $menuItems = [
         'badge' => null
     ],
 ];
+
+if ($isKycOfficerUser) {
+    $menuItems[] = [
+        'label' => 'My Applications',
+        'icon' => 'bi-clipboard-data',
+        'href' => 'my-applications.php',
+        'page' => 'my-applications',
+        'badge' => $myApplicationsBadge,
+        'badge_type' => $myApplicationsBadgeType
+    ];
+}
 
 if ($isHeadOfficeUser) {
     $menuItems[] = [
@@ -90,7 +159,13 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
                 <i class="bi <?php echo htmlspecialchars($item['icon']); ?>"></i> 
                 <span class="nav-text sidebar-text"><?php echo htmlspecialchars($item['label']); ?></span>
                 <?php if ($item['badge']): ?>
-                    <span class="nav-badge"><?php echo htmlspecialchars($item['badge']); ?></span>
+                    <?php
+                        $badgeTypeRaw = strtolower(trim((string)($item['badge_type'] ?? '')));
+                        $badgeClass = in_array($badgeTypeRaw, ['pending', 'resubmit'], true)
+                            ? (' nav-badge-' . $badgeTypeRaw)
+                            : '';
+                    ?>
+                    <span class="nav-badge<?php echo htmlspecialchars($badgeClass); ?>"><?php echo htmlspecialchars($item['badge']); ?></span>
                 <?php endif; ?>
             </a>
         <?php endforeach; ?>

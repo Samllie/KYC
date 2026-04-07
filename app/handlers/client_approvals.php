@@ -56,6 +56,83 @@ function approvalsTableExists($db) {
     return $exists;
 }
 
+function approvalStatusHistoryTableExists($db) {
+    static $exists = null;
+
+    if ($exists !== null) {
+        return $exists;
+    }
+
+    $result = $db->query("SHOW TABLES LIKE 'client_approval_status_history'");
+    $exists = $result && $result->num_rows > 0;
+
+    if ($result instanceof mysqli_result) {
+        $result->free();
+    }
+
+    return $exists;
+}
+
+function recordApprovalStatusHistory($db, $existingApproval, $targetStatus, $reviewNotes, $reviewerId, $reviewedAt) {
+    if (!approvalStatusHistoryTableExists($db)) {
+        return;
+    }
+
+    $approvalId = intval($existingApproval['approval_id'] ?? 0);
+    $clientId = intval($existingApproval['client_id'] ?? 0);
+    $referenceCode = trim((string)($existingApproval['reference_code'] ?? ''));
+    $previousStatus = strtolower(trim((string)($existingApproval['approval_status'] ?? 'pending')));
+
+    if ($approvalId <= 0 || $clientId <= 0 || $referenceCode === '') {
+        return;
+    }
+
+    if (!in_array($previousStatus, ['pending', 'approved', 'declined', 'resubmit'], true)) {
+        $previousStatus = 'pending';
+    }
+
+    $historyNotes = trim((string)$reviewNotes);
+    $historyNotesOrNull = $historyNotes !== '' ? $historyNotes : null;
+
+    $stmt = $db->prepare(
+        "INSERT INTO client_approval_status_history (
+            approval_id,
+            client_id,
+            reference_code,
+            previous_status,
+            new_status,
+            review_notes,
+            reviewed_by,
+            reviewed_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    );
+
+    if (!$stmt) {
+        return;
+    }
+
+    $safeTargetStatus = in_array($targetStatus, ['pending', 'approved', 'declined', 'resubmit'], true)
+        ? $targetStatus
+        : 'pending';
+    $safeReviewerId = intval($reviewerId);
+    $safeReviewedAt = trim((string)$reviewedAt);
+
+    $stmt->bind_param(
+        'iissssis',
+        $approvalId,
+        $clientId,
+        $referenceCode,
+        $previousStatus,
+        $safeTargetStatus,
+        $historyNotesOrNull,
+        $safeReviewerId,
+        $safeReviewedAt
+    );
+
+    $stmt->execute();
+    $stmt->close();
+}
+
 function buildDocumentPreviewUrl($rawPath) {
     $path = trim((string)$rawPath);
     if ($path === '') {
@@ -106,14 +183,14 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $pageSize = max(1, intval($_GET['pageSize'] ?? 10));
 
     $search = trim($_GET['search'] ?? '');
-    $status = strtolower(trim($_GET['status'] ?? 'pending'));
+    $status = strtolower(trim($_GET['status'] ?? ''));
     $classification = strtolower(trim($_GET['classification'] ?? ''));
     $type = strtolower(trim($_GET['type'] ?? ''));
     $branch = trim($_GET['branch'] ?? '');
 
     $allowedStatuses = ['pending', 'approved', 'declined', 'resubmit', ''];
     if (!in_array($status, $allowedStatuses, true)) {
-        $status = 'pending';
+        $status = '';
     }
 
     $allowedClassifications = ['client', 'agent', ''];
@@ -129,6 +206,9 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $whereClauses = [];
     $filterParams = [];
     $filterTypes = '';
+
+    // Limit queue view to applications submitted by KYC officer accounts.
+    $whereClauses[] = "LOWER(REPLACE(COALESCE(su.role, ''), '-', '_')) = 'kyc_officer'";
 
     if ($search !== '') {
         $searchLike = '%' . $search . '%';
@@ -200,6 +280,49 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $countRow = $countResult->fetch_assoc();
     $total = intval($countRow['total'] ?? 0);
 
+    $resubmissionJoinSql = '';
+    $resubmissionSelectSql = "
+            NULL AS officer_resubmitted_at,
+            0 AS has_officer_updates,
+    ";
+    $resubmissionOrderSql = "
+            COALESCE(ca.submitted_at, ca.created_at) DESC,
+            ca.approval_id DESC
+    ";
+
+    if (approvalStatusHistoryTableExists($db)) {
+        $resubmissionJoinSql = "
+        LEFT JOIN (
+            SELECT
+                h.approval_id,
+                MAX(h.reviewed_at) AS officer_resubmitted_at
+            FROM client_approval_status_history h
+            LEFT JOIN users hu ON h.reviewed_by = hu.user_id
+            WHERE h.previous_status = 'resubmit'
+              AND h.new_status = 'pending'
+              AND LOWER(REPLACE(COALESCE(hu.role, ''), '-', '_')) = 'kyc_officer'
+            GROUP BY h.approval_id
+        ) hr ON hr.approval_id = ca.approval_id
+        ";
+
+        $resubmissionSelectSql = "
+            hr.officer_resubmitted_at,
+            CASE
+                WHEN ca.approval_status = 'pending' AND hr.officer_resubmitted_at IS NOT NULL THEN 1
+                ELSE 0
+            END AS has_officer_updates,
+        ";
+
+        $resubmissionOrderSql = "
+            CASE
+                WHEN ca.approval_status = 'pending' AND hr.officer_resubmitted_at IS NOT NULL THEN 0
+                ELSE 1
+            END ASC,
+            COALESCE(hr.officer_resubmitted_at, ca.submitted_at, ca.created_at) DESC,
+            ca.approval_id DESC
+        ";
+    }
+
     $query = "
         SELECT
             ca.approval_id,
@@ -224,17 +347,18 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
             ca.approved_at,
             ca.submitted_by,
             ca.reviewed_by,
+            $resubmissionSelectSql
             su.full_name AS submitted_by_name,
             su.branch AS submitted_by_branch,
             ru.full_name AS reviewed_by_name
         FROM client_approvals ca
         LEFT JOIN users su ON ca.submitted_by = su.user_id
         LEFT JOIN users ru ON ca.reviewed_by = ru.user_id
+        $resubmissionJoinSql
         $whereSql
         ORDER BY
             FIELD(ca.approval_status, 'pending', 'resubmit', 'declined', 'approved'),
-            COALESCE(ca.submitted_at, ca.created_at) DESC,
-            ca.approval_id DESC
+            $resubmissionOrderSql
         LIMIT ? OFFSET ?
     ";
 
@@ -269,7 +393,8 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
         "SELECT DISTINCT su.branch
          FROM client_approvals ca
          LEFT JOIN users su ON ca.submitted_by = su.user_id
-         WHERE su.branch IS NOT NULL AND TRIM(su.branch) <> ''
+                 WHERE LOWER(REPLACE(COALESCE(su.role, ''), '-', '_')) = 'kyc_officer'
+                     AND su.branch IS NOT NULL AND TRIM(su.branch) <> ''
          ORDER BY su.branch ASC"
     );
 
@@ -407,7 +532,7 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
     }
 
     $existing = fetchOne(
-        "SELECT approval_id, client_id FROM client_approvals WHERE approval_id = ?",
+        "SELECT approval_id, client_id, reference_code, approval_status FROM client_approvals WHERE approval_id = ?",
         [$approvalId]
     );
 
@@ -422,11 +547,12 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
         : ($action === 'decline' ? 'declined' : 'resubmit');
 
     $now = date('Y-m-d H:i:s');
+    $reviewerId = intval($_SESSION['user_id']);
 
     $updatePayload = [
         'approval_status' => $targetStatus,
         'review_notes' => $reviewNotes !== '' ? $reviewNotes : null,
-        'reviewed_by' => intval($_SESSION['user_id']),
+        'reviewed_by' => $reviewerId,
         'reviewed_at' => $now,
         'approved_at' => $targetStatus === 'approved' ? $now : null,
     ];
@@ -437,6 +563,15 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
         echo json_encode($response);
         exit;
     }
+
+    recordApprovalStatusHistory(
+        $db,
+        $existing,
+        $targetStatus,
+        $reviewNotes,
+        $reviewerId,
+        $now
+    );
 
     $targetClientId = intval($existing['client_id']);
     if ($targetClientId > 0) {
@@ -471,7 +606,6 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
                  WHERE client_id = ?"
             );
             if ($stmt) {
-                $reviewerId = intval($_SESSION['user_id']);
                 $stmt->bind_param('sisi', $now, $reviewerId, $declineReason, $targetClientId);
                 $stmt->execute();
                 $stmt->close();
@@ -496,7 +630,6 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
                  WHERE client_id = ?"
             );
             if ($stmt) {
-                $reviewerId = intval($_SESSION['user_id']);
                 $stmt->bind_param('isi', $reviewerId, $resubmitReason, $targetClientId);
                 $stmt->execute();
                 $stmt->close();

@@ -107,6 +107,89 @@ if (!$isHeadOfficeUser) {
             line-height: 1.35;
         }
 
+        .notes-cell .notes-text {
+            margin-top: 4px;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .officer-update-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            background: #fff4d8;
+            color: #8d6400;
+            border: 1px solid #f1d187;
+        }
+
+        .officer-update-meta {
+            margin-top: 4px;
+            font-size: 0.72rem;
+            color: #6b7280;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-gutter: stable both-edges;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .clients-table {
+            min-width: 1260px;
+        }
+
+        .clients-table th.col-ref,
+        .clients-table td.col-ref {
+            width: 22%;
+            min-width: 260px;
+        }
+
+        .ref-with-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .ref-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .status-stack {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .resubmitted-now-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 0.64rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            background: #ffe9d6;
+            color: #8a3800;
+            border: 1px solid #f2c49f;
+            white-space: nowrap;
+        }
+
         #approvalsTableBody tr.approval-row {
             cursor: pointer;
         }
@@ -124,12 +207,34 @@ if (!$isHeadOfficeUser) {
         }
 
         .application-details-panel {
-            margin-top: 18px;
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: none;
+        }
+
+        .application-details-panel.open {
+            display: block;
+        }
+
+        .application-details-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.58);
+        }
+
+        .application-details-dialog {
+            position: relative;
+            width: min(1180px, calc(100vw - 26px));
+            max-height: calc(100vh - 32px);
+            margin: 16px auto;
+            background: #ffffff;
             border: 1px solid #d4e3da;
             border-radius: 14px;
-            background: #ffffff;
-            padding: 14px;
-            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 22px 52px rgba(15, 23, 42, 0.28);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .application-details-header {
@@ -137,8 +242,10 @@ if (!$isHeadOfficeUser) {
             align-items: flex-start;
             justify-content: space-between;
             gap: 12px;
-            margin-bottom: 12px;
             flex-wrap: wrap;
+            padding: 14px 16px;
+            border-bottom: 1px solid #d7e8dc;
+            background: #fbfefd;
         }
 
         .application-details-header h2 {
@@ -154,6 +261,14 @@ if (!$isHeadOfficeUser) {
             background: #f8fbf9;
             color: #4b5563;
             font-size: 0.88rem;
+            margin: 12px;
+        }
+
+        .application-details-scroll {
+            overflow-y: auto;
+            min-height: 0;
+            flex: 1;
+            padding: 12px;
         }
 
         .application-modal-subtitle {
@@ -166,6 +281,14 @@ if (!$isHeadOfficeUser) {
             display: flex;
             flex-direction: column;
             gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .application-details-dialog {
+                width: calc(100vw - 14px);
+                max-height: calc(100vh - 14px);
+                margin: 7px;
+            }
         }
 
         .detail-section {
@@ -446,11 +569,11 @@ include '../includes/sidebar.php';
 
                 <div class="filter-group">
                     <select id="filterStatus" class="filter-select">
-                        <option value="pending" selected>Pending</option>
+                        <option value="" selected>All Statuses</option>
+                        <option value="pending">Pending</option>
                         <option value="approved">Approved</option>
                         <option value="declined">Declined</option>
                         <option value="resubmit">Resubmit</option>
-                        <option value="">All Statuses</option>
                     </select>
                 </div>
 
@@ -484,7 +607,6 @@ include '../includes/sidebar.php';
                 <thead>
                     <tr>
                         <th class="col-ref">Ref Code</th>
-                        <th class="col-name">Name</th>
                         <th class="col-type">Class</th>
                         <th class="col-type">Type</th>
                         <th class="col-contact">Contact</th>
@@ -499,7 +621,7 @@ include '../includes/sidebar.php';
                 </thead>
                 <tbody id="approvalsTableBody">
                     <tr>
-                        <td colspan="12" style="text-align:center; padding:20px;">Loading approvals...</td>
+                        <td colspan="11" style="text-align:center; padding:20px;">Loading approvals...</td>
                     </tr>
                 </tbody>
             </table>
@@ -511,21 +633,28 @@ include '../includes/sidebar.php';
             </div>
             <div class="pagination" id="paginationContainer"></div>
         </div>
+    </main>
+</div>
 
-        <section id="applicationDetailsPanel" class="application-details-panel">
-            <div class="application-details-header">
-                <div>
-                    <h2 id="applicationModalTitle">Application Details</h2>
-                    <p id="applicationModalSubtitle" class="application-modal-subtitle">Select a row to view full credentials and submitted KYC fields.</p>
-                </div>
-                <button type="button" class="btn-cancel" id="applicationDetailsClearBtn">Clear Selection</button>
+<div id="toastContainer" class="toast-container"></div>
+
+<section id="applicationDetailsPanel" class="application-details-panel" hidden>
+    <div id="applicationDetailsBackdrop" class="application-details-backdrop"></div>
+    <div class="application-details-dialog" role="dialog" aria-modal="true" aria-labelledby="applicationModalTitle" aria-describedby="applicationModalSubtitle">
+        <div class="application-details-header">
+            <div>
+                <h2 id="applicationModalTitle">Application Details</h2>
+                <p id="applicationModalSubtitle" class="application-modal-subtitle">Select a row to view full credentials and submitted KYC fields.</p>
             </div>
+            <button type="button" class="btn-cancel" id="applicationDetailsClearBtn">Close</button>
+        </div>
 
+        <div class="application-details-scroll">
             <div id="applicationDetailsEmpty" class="application-details-empty">
                 Choose an approval row from the table to load all submitted credentials and documents.
             </div>
 
-            <form id="applicationDetailsContent" class="application-modal-body" hidden>
+            <div id="applicationDetailsContent" class="application-modal-body" hidden>
                 <section class="detail-section">
                     <div class="detail-section-header">
                         <h3>Approval Summary</h3>
@@ -549,59 +678,39 @@ include '../includes/sidebar.php';
 
                 <section class="detail-section">
                     <div class="detail-section-header">
-                        <h3>KYC Submission Data (All Fields)</h3>
+                        <h3>Submitted Credentials (All Fields)</h3>
                     </div>
                     <div id="allSubmittedDetailsGrid" class="detail-grid"></div>
                 </section>
 
                 <section class="detail-section">
                     <div class="detail-section-header">
-                        <h3>Uploaded Documents</h3>
+                        <h3>Submitted Documents</h3>
                     </div>
                     <div id="applicationDocumentGrid" class="document-grid"></div>
                 </section>
-
-                <section class="detail-section">
-                    <div class="detail-section-header">
-                        <h3>Review Decision Notes</h3>
-                    </div>
-                    <div class="details-decision-notes">
-                        <label for="decisionReviewNotes">Notes / Reason</label>
-                        <textarea id="decisionReviewNotes" class="detail-input" rows="3" placeholder="Enter notes for approve/decline/resubmit"></textarea>
-                        <small>These notes are submitted when you use the action buttons below.</small>
-                    </div>
-                </section>
-
-                <div class="application-modal-footer">
-                    <div class="application-modal-actions">
-                        <button type="button" class="action-icon action-approve" id="modalApproveBtn" data-action="approve">
-                            <i class="bi bi-check2-circle"></i>Approve
-                        </button>
-                        <button type="button" class="action-icon action-decline" id="modalDeclineBtn" data-action="decline">
-                            <i class="bi bi-x-circle"></i>Decline
-                        </button>
-                        <button type="button" class="action-icon action-resubmit" id="modalResubmitBtn" data-action="resubmit">
-                            <i class="bi bi-arrow-repeat"></i>Resubmit
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </section>
-    </main>
-</div>
-
-<div id="toastContainer" class="toast-container"></div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <script>
     let currentPage = 1;
     let totalPages = 1;
     const pageSize = 10;
+    const APPROVALS_AUTO_REFRESH_MS = 12000;
+    const OFFICER_RESUBMITTED_JUST_NOW_MS = 15 * 60 * 1000;
     let searchDebounceTimer;
+    let approvalsRefreshTimer = null;
+    let approvalsRequestInFlight = false;
+    let lastOfficerUpdateSignature = '';
+    let officerUpdateSignatureInitialized = false;
     let currentOpenApprovalId = 0;
     let currentOpenApprovalStatus = '';
     let detailsActionsBusy = false;
 
     const applicationDetailsPanel = document.getElementById('applicationDetailsPanel');
+    const applicationDetailsBackdrop = document.getElementById('applicationDetailsBackdrop');
     const applicationDetailsContent = document.getElementById('applicationDetailsContent');
     const applicationDetailsEmpty = document.getElementById('applicationDetailsEmpty');
     const applicationDetailsClearBtn = document.getElementById('applicationDetailsClearBtn');
@@ -938,6 +1047,93 @@ include '../includes/sidebar.php';
         return 'approval-status-pending';
     }
 
+    function resolveClientName(row) {
+        const reference = String(row && row.reference_code ? row.reference_code : '').trim().toLowerCase();
+        const fullName = [
+            row && row.first_name ? row.first_name : '',
+            row && row.middle_name ? row.middle_name : '',
+            row && row.last_name ? row.last_name : ''
+        ]
+            .map(part => String(part || '').trim())
+            .filter(Boolean)
+            .join(' ');
+
+        const candidates = [
+            row && row.client_name ? row.client_name : '',
+            fullName,
+            row && row.contact_person ? row.contact_person : '',
+            row && row.display_name ? row.display_name : ''
+        ];
+
+        for (const candidate of candidates) {
+            const value = String(candidate || '').trim();
+            if (!value) {
+                continue;
+            }
+
+            if (reference && value.toLowerCase() === reference) {
+                continue;
+            }
+
+            return value;
+        }
+
+        return 'N/A';
+    }
+
+    function hasOfficerUpdates(row) {
+        return Number(row && row.has_officer_updates ? row.has_officer_updates : 0) === 1;
+    }
+
+    function isOfficerResubmittedJustNow(value) {
+        if (!value) {
+            return false;
+        }
+
+        const date = new Date(String(value).replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) {
+            return false;
+        }
+
+        const elapsed = Date.now() - date.getTime();
+        return elapsed >= 0 && elapsed <= OFFICER_RESUBMITTED_JUST_NOW_MS;
+    }
+
+    function buildOfficerUpdateSignature(rows) {
+        if (!Array.isArray(rows) || rows.length === 0) {
+            return '';
+        }
+
+        return rows
+            .filter(row => hasOfficerUpdates(row))
+            .map(row => `${Number(row.approval_id || 0)}:${String(row.officer_resubmitted_at || '')}`)
+            .sort()
+            .join('|');
+    }
+
+    function notifyOfficerResubmissions(rows) {
+        const signature = buildOfficerUpdateSignature(rows);
+
+        if (!officerUpdateSignatureInitialized) {
+            lastOfficerUpdateSignature = signature;
+            officerUpdateSignatureInitialized = true;
+            return;
+        }
+
+        if (signature !== '' && signature !== lastOfficerUpdateSignature) {
+            const count = Array.isArray(rows)
+                ? rows.filter(row => hasOfficerUpdates(row)).length
+                : 0;
+            createToast(
+                'info',
+                'Officer Update Received',
+                `${count} application${count === 1 ? '' : 's'} updated by officer and pending review.`
+            );
+        }
+
+        lastOfficerUpdateSignature = signature;
+    }
+
     function refreshModalActionButtons() {
         modalActionButtons.forEach(button => {
             const action = String(button.dataset.action || '').toLowerCase();
@@ -973,7 +1169,7 @@ include '../includes/sidebar.php';
         if (!tbody) return;
 
         if (!Array.isArray(rows) || rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding: 22px;">No approval records found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 22px;">No approval records found</td></tr>';
             return;
         }
 
@@ -983,8 +1179,25 @@ include '../includes/sidebar.php';
             const tr = document.createElement('tr');
             const contact = row.mobile_phone || row.office_phone || 'N/A';
             const notes = row.review_notes || '';
+            const clientName = resolveClientName(row);
             const status = String(row.approval_status || 'pending').toLowerCase();
             const approvalId = Number(row.approval_id || 0);
+            const officerUpdated = hasOfficerUpdates(row);
+            const officerResubmittedJustNow = officerUpdated && isOfficerResubmittedJustNow(row.officer_resubmitted_at);
+            const officerUpdatedAt = officerUpdated ? formatDateTime(row.officer_resubmitted_at) : '';
+            const notesHtml = officerUpdated
+                ? `
+                    <div class="officer-update-badge"><i class="bi bi-bell-fill"></i>Updated by Officer</div>
+                    <div class="notes-text">${escapeHtml(notes || 'Changes were submitted and sent back for review.')}</div>
+                    <div class="officer-update-meta">Resubmitted: ${escapeHtml(officerUpdatedAt || 'N/A')}</div>
+                `
+                : `<div class="notes-text">${escapeHtml(notes || '—')}</div>`;
+            const statusHtml = `
+                <span class="status-stack">
+                    <span class="approval-status-badge ${statusBadgeClass(status)}">${escapeHtml(status)}</span>
+                    ${officerResubmittedJustNow ? '<span class="resubmitted-now-badge">Resubmitted just now</span>' : ''}
+                </span>
+            `;
 
             tr.className = 'approval-row';
             if (approvalId === currentOpenApprovalId) {
@@ -993,8 +1206,12 @@ include '../includes/sidebar.php';
             tr.dataset.approvalId = String(approvalId);
 
             tr.innerHTML = `
-                <td class="col-ref"><span class="ref-badge">${escapeHtml(row.reference_code || 'N/A')}</span></td>
-                <td class="col-name">${escapeHtml(row.display_name || 'N/A')}</td>
+                <td class="col-ref">
+                    <div class="ref-with-name">
+                        <span class="ref-badge">${escapeHtml(row.reference_code || 'N/A')}</span>
+                        <span class="ref-name">${escapeHtml(clientName)}</span>
+                    </div>
+                </td>
                 <td class="col-type">${escapeHtml(formatClassification(row.client_classification))}</td>
                 <td class="col-type">${escapeHtml(formatType(row.client_type))}</td>
                 <td class="col-contact">${escapeHtml(contact)}</td>
@@ -1002,8 +1219,8 @@ include '../includes/sidebar.php';
                 <td class="col-owner">${escapeHtml(row.submitted_by_name || 'N/A')}</td>
                 <td class="col-owner">${escapeHtml(row.submitted_by_branch || 'N/A')}</td>
                 <td class="col-owner">${escapeHtml(formatDateTime(row.submitted_at))}</td>
-                <td class="col-status"><span class="approval-status-badge ${statusBadgeClass(status)}">${escapeHtml(status)}</span></td>
-                <td class="notes-cell">${escapeHtml(notes || '—')}</td>
+                <td class="col-status">${statusHtml}</td>
+                <td class="notes-cell">${notesHtml}</td>
                 <td class="col-actions">
                     <div class="action-stack">
                         <button class="action-icon action-approve" data-action="approve" data-id="${approvalId}"><i class="bi bi-check2-circle"></i>Approve</button>
@@ -1078,6 +1295,10 @@ include '../includes/sidebar.php';
     function openApplicationModalShell(approvalId) {
         if (!applicationDetailsPanel) return;
 
+        applicationDetailsPanel.hidden = false;
+        applicationDetailsPanel.classList.add('open');
+        document.body.style.overflow = 'hidden';
+
         currentOpenApprovalId = Number(approvalId || 0);
         currentOpenApprovalStatus = '';
         setModalActionsBusy(true);
@@ -1112,6 +1333,12 @@ include '../includes/sidebar.php';
     }
 
     function closeApplicationModal() {
+        if (applicationDetailsPanel) {
+            applicationDetailsPanel.classList.remove('open');
+            applicationDetailsPanel.hidden = true;
+        }
+        document.body.style.overflow = '';
+
         currentOpenApprovalId = 0;
         currentOpenApprovalStatus = '';
         setModalActionsBusy(false);
@@ -1328,6 +1555,10 @@ include '../includes/sidebar.php';
     }
 
     function attachRowHandlers() {
+        if (!applicationDetailsPanel) {
+            return;
+        }
+
         document.querySelectorAll('#approvalsTableBody tr.approval-row[data-approval-id]').forEach(row => {
             row.addEventListener('click', function (event) {
                 if (event.target.closest('.action-stack')) {
@@ -1341,8 +1572,17 @@ include '../includes/sidebar.php';
         });
     }
 
-    function loadApprovals(page = 1) {
-        setTableLoading(true);
+    function loadApprovals(page = 1, options = {}) {
+        if (approvalsRequestInFlight) {
+            return;
+        }
+
+        const silent = Boolean(options.silent);
+        if (!silent) {
+            setTableLoading(true);
+        }
+
+        approvalsRequestInFlight = true;
 
         const filters = getActiveFilters();
         const query = new URLSearchParams({
@@ -1371,20 +1611,42 @@ include '../includes/sidebar.php';
 
                 updateBranchFilterOptions(payload.availableBranches || []);
                 renderTable(payload.data || []);
+                notifyOfficerResubmissions(payload.data || []);
                 updatePaginationInfo(payload);
                 renderPagination(payload);
             })
             .catch(error => {
                 const tbody = document.getElementById('approvalsTableBody');
                 if (tbody) {
-                    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:#b42318; padding: 22px;">${escapeHtml(error.message || 'Failed to load approvals')}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#b42318; padding: 22px;">${escapeHtml(error.message || 'Failed to load approvals')}</td></tr>`;
                 }
                 updatePaginationInfo({ total: 0, page: 1, pageSize, totalPages: 1 });
                 renderPagination({ page: 1, totalPages: 1 });
             })
             .finally(() => {
-                setTableLoading(false);
+                approvalsRequestInFlight = false;
+                if (!silent) {
+                    setTableLoading(false);
+                }
             });
+    }
+
+    function stopApprovalsAutoRefresh() {
+        if (approvalsRefreshTimer) {
+            window.clearInterval(approvalsRefreshTimer);
+            approvalsRefreshTimer = null;
+        }
+    }
+
+    function startApprovalsAutoRefresh() {
+        stopApprovalsAutoRefresh();
+        approvalsRefreshTimer = window.setInterval(() => {
+            if (document.hidden) {
+                return;
+            }
+
+            loadApprovals(currentPage, { silent: true });
+        }, APPROVALS_AUTO_REFRESH_MS);
     }
 
     function getActionTitle(action) {
@@ -1478,6 +1740,10 @@ include '../includes/sidebar.php';
             applicationDetailsClearBtn.addEventListener('click', closeApplicationModal);
         }
 
+        if (applicationDetailsBackdrop) {
+            applicationDetailsBackdrop.addEventListener('click', closeApplicationModal);
+        }
+
         modalActionButtons.forEach(button => {
             button.addEventListener('click', event => {
                 event.preventDefault();
@@ -1494,6 +1760,12 @@ include '../includes/sidebar.php';
         setDetailsPanelVisibility(false);
 
         refreshModalActionButtons();
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && applicationDetailsPanel && applicationDetailsPanel.classList.contains('open')) {
+                closeApplicationModal();
+            }
+        });
     }
 
     function applyFilters() {
@@ -1513,6 +1785,17 @@ include '../includes/sidebar.php';
     document.addEventListener('DOMContentLoaded', () => {
         initializeApplicationModalEvents();
         loadApprovals(1);
+        startApprovalsAutoRefresh();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            loadApprovals(currentPage, { silent: true });
+        }
+    });
+
+    window.addEventListener('beforeunload', () => {
+        stopApprovalsAutoRefresh();
     });
 </script>
 <?php endif; ?>
