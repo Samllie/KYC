@@ -12,6 +12,21 @@ if (session_status() === PHP_SESSION_NONE) {
 header('Content-Type: application/json');
 require_once '../config/db.php';
 
+function usersTableHasBranchColumn($db) {
+    try {
+        $stmt = $db->prepare("SHOW COLUMNS FROM `users` LIKE 'branch'");
+        if (!$stmt) {
+            return false;
+        }
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result && $result->num_rows > 0;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
 $response = ['success' => false, 'message' => ''];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -47,8 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
-    // Query user
-    $user = fetchOne("SELECT user_id, full_name, email, password, department, branch, role FROM users WHERE email = ?", [$email]);
+    // Query user (older databases may not have users.branch yet)
+    $hasBranchColumn = usersTableHasBranchColumn($db);
+    $branchSelect = $hasBranchColumn ? ', branch' : '';
+    $user = fetchOne("SELECT user_id, full_name, email, password, department{$branchSelect}, role FROM users WHERE email = ?", [$email]);
     
     if (!$user) {
         // User not found - could be wrong email or users table doesn't exist
@@ -75,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['full_name'] = $user['full_name'];
     $_SESSION['email'] = $user['email'];
     $_SESSION['department'] = $user['department'];
-    $_SESSION['branch'] = $user['branch'];
+    $_SESSION['branch'] = $user['branch'] ?? '';
     $_SESSION['role'] = $user['role'];
 
     // Remember email for future logins (including after logout)

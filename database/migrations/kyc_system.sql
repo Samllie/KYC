@@ -55,6 +55,7 @@ CREATE TABLE `clients` (
   `first_name` varchar(50) NOT NULL,
   `middle_name` varchar(50) DEFAULT NULL,
   `last_name` varchar(50) NOT NULL,
+  `salutation` varchar(20) DEFAULT NULL,
   `suffix` varchar(10) DEFAULT NULL,
   `last_name_first` tinyint(1) DEFAULT 0,
   `comma_separated` tinyint(1) DEFAULT 0,
