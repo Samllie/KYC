@@ -220,7 +220,8 @@ if (!$isHeadOfficeUser) {
         .application-details-backdrop {
             position: absolute;
             inset: 0;
-            background: rgba(15, 23, 42, 0.58);
+            background: rgba(10, 24, 18, 0.56);
+            backdrop-filter: blur(2px);
         }
 
         .application-details-dialog {
@@ -228,10 +229,10 @@ if (!$isHeadOfficeUser) {
             width: min(1180px, calc(100vw - 26px));
             max-height: calc(100vh - 32px);
             margin: 16px auto;
-            background: #ffffff;
-            border: 1px solid #d4e3da;
-            border-radius: 14px;
-            box-shadow: 0 22px 52px rgba(15, 23, 42, 0.28);
+            background: #fbfefd;
+            border: 1px solid #c9ded0;
+            border-radius: 18px;
+            box-shadow: 0 30px 64px rgba(15, 23, 42, 0.3);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -243,15 +244,33 @@ if (!$isHeadOfficeUser) {
             justify-content: space-between;
             gap: 12px;
             flex-wrap: wrap;
-            padding: 14px 16px;
-            border-bottom: 1px solid #d7e8dc;
-            background: #fbfefd;
+            padding: 12px 14px;
+            border-bottom: 1px solid #d4e5d9;
+            background: linear-gradient(160deg, #fbfefd 0%, #f1f9f4 100%);
+            position: sticky;
+            top: 0;
+            z-index: 5;
         }
 
         .application-details-header h2 {
             margin: 0;
-            font-size: 1.1rem;
-            color: #0f172a;
+            font-size: 1rem;
+            color: #143927;
+            letter-spacing: -0.01em;
+        }
+
+        #applicationDetailsClearBtn {
+            min-height: 30px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            border: 1px solid #c9ddd0;
+            background: #ffffff;
+            color: #24523a;
+        }
+
+        #applicationDetailsClearBtn:hover {
+            background: #eef8f2;
+            border-color: #b7d4c3;
         }
 
         .application-details-empty {
@@ -268,19 +287,19 @@ if (!$isHeadOfficeUser) {
             overflow-y: auto;
             min-height: 0;
             flex: 1;
-            padding: 12px;
+            padding: 10px;
+            background: linear-gradient(180deg, #f8fcf9 0%, #f3f9f5 100%);
         }
 
         .application-modal-subtitle {
-            font-size: 0.8rem;
-            color: #6b7280;
-            margin: 4px 0 0;
+            font-size: 0.74rem;
+            color: #4f6a5c;
+            margin: 2px 0 0;
         }
 
         .application-modal-body {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            column-count: 2;
+            column-gap: 10px;
         }
 
         @media (max-width: 900px) {
@@ -292,10 +311,40 @@ if (!$isHeadOfficeUser) {
         }
 
         .detail-section {
-            border: 1px solid #dbe7df;
-            border-radius: 12px;
-            background: #fdfefe;
+            border: 1px solid #d4e5da;
+            border-radius: 11px;
+            background: #ffffff;
             overflow: hidden;
+            box-shadow: 0 10px 20px -22px rgba(21, 56, 38, 0.65);
+            display: inline-block;
+            width: 100%;
+            margin: 0 0 10px;
+            break-inside: avoid;
+        }
+
+        .application-modal-body .detail-section:nth-child(1) .detail-section-header {
+            background: linear-gradient(180deg, #ecf7ff 0%, #e2f1ff 100%);
+            border-bottom-color: #d1e3f5;
+        }
+
+        .application-modal-body .detail-section:nth-child(2) .detail-section-header {
+            background: linear-gradient(180deg, #effaf2 0%, #e4f2e9 100%);
+            border-bottom-color: #d2e7d9;
+        }
+
+        .application-modal-body .detail-section:nth-child(3) .detail-section-header {
+            background: linear-gradient(180deg, #fff8ea 0%, #fef1d6 100%);
+            border-bottom-color: #eedbb4;
+        }
+
+        .application-modal-body .detail-section:nth-child(4) .detail-section-header {
+            background: linear-gradient(180deg, #f5f3ff 0%, #ece8ff 100%);
+            border-bottom-color: #ddd6fe;
+        }
+
+        .application-modal-body .detail-section:nth-child(5) .detail-section-header {
+            background: linear-gradient(180deg, #eaf8ff 0%, #ddf1ff 100%);
+            border-bottom-color: #cde6f8;
         }
 
         .detail-section-header {
@@ -303,57 +352,69 @@ if (!$isHeadOfficeUser) {
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            padding: 11px 14px;
-            background: linear-gradient(180deg, #f4faf6 0%, #edf6ef 100%);
-            border-bottom: 1px solid #d7e8dc;
+            padding: 8px 11px;
+            background: linear-gradient(180deg, #eff8f2 0%, #e8f2eb 100%);
+            border-bottom: 1px solid #d4e5da;
         }
 
         .detail-section-header h3 {
             margin: 0;
-            font-size: 0.9rem;
-            color: #1f3e2f;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #23503b;
         }
 
         .detail-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding: 4px 10px 8px;
+        }
+
+        .detail-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
             gap: 10px;
-            padding: 12px;
+            align-items: start;
+            padding: 7px 4px;
+            border-bottom: 1px solid #e7efe9;
         }
 
-        .detail-item {
-            border: 1px solid #e6eeea;
-            border-radius: 10px;
-            padding: 9px 10px;
-            background: #fff;
-            min-height: 62px;
+        .detail-row:nth-child(even) {
+            background: #f9fdfb;
         }
 
-        .detail-item .label {
-            display: block;
-            font-size: 0.7rem;
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-row .label {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.63rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            color: #728091;
-            margin-bottom: 5px;
+            color: #5f7082;
             font-weight: 600;
+            line-height: 1.3;
         }
 
-        .detail-input {
-            width: 100%;
-            border: 1px solid #d3e1d8;
-            border-radius: 8px;
-            background: #f8fbfa;
+        .detail-value {
             color: #1f2937;
-            padding: 8px 9px;
-            font-size: 0.82rem;
+            font-size: 0.75rem;
             line-height: 1.35;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
-        textarea.detail-input {
-            min-height: 76px;
-            resize: vertical;
-            font-family: 'Sora', sans-serif;
+        .detail-row-fallback {
+            grid-template-columns: 1fr;
+            background: #f8fbf9;
+            border-bottom: none;
+            border-radius: 8px;
+            border: 1px dashed #d5e4db;
+            padding: 10px;
         }
 
         .details-decision-notes {
@@ -378,24 +439,29 @@ if (!$isHeadOfficeUser) {
 
         .document-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 12px;
-            padding: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 9px;
+            padding: 9px;
         }
 
         .document-card {
-            border: 1px solid #d9e3eb;
-            border-radius: 12px;
+            border: 1px solid #d3e1ea;
+            border-radius: 10px;
             background: #fff;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            min-height: 280px;
+            transition: transform 0.16s ease, box-shadow 0.16s ease;
+        }
+
+        .document-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px -18px rgba(17, 24, 39, 0.55);
         }
 
         .document-preview {
             background: #f6f8fb;
-            min-height: 190px;
+            min-height: 130px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -412,7 +478,7 @@ if (!$isHeadOfficeUser) {
 
         .document-preview iframe {
             width: 100%;
-            min-height: 220px;
+            min-height: 150px;
             border: 0;
             background: #fff;
         }
@@ -432,25 +498,25 @@ if (!$isHeadOfficeUser) {
         }
 
         .document-meta {
-            padding: 10px 12px;
+            padding: 8px 10px;
             display: grid;
-            gap: 5px;
+            gap: 4px;
         }
 
         .document-meta .doc-name {
-            font-size: 0.84rem;
+            font-size: 0.76rem;
             color: #111827;
             font-weight: 600;
             word-break: break-word;
         }
 
         .document-meta .doc-info {
-            font-size: 0.76rem;
+            font-size: 0.7rem;
             color: #6b7280;
         }
 
         .document-meta .doc-link {
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             font-weight: 600;
             color: #0b5b87;
             text-decoration: none;
@@ -746,6 +812,16 @@ if (!$isHeadOfficeUser) {
                 gap: 8px;
             }
 
+            .application-modal-body {
+                column-count: 1;
+            }
+
+            .detail-row {
+                grid-template-columns: 1fr;
+                gap: 4px;
+                padding: 8px 2px;
+            }
+
             .approvals-page .application-details-header {
                 padding: 12px;
             }
@@ -1000,9 +1076,9 @@ include '../includes/sidebar.php';
     function renderFallbackGrid(container, message) {
         if (!container) return;
         container.innerHTML = `
-            <article class="detail-item">
+            <article class="detail-row detail-row-fallback">
                 <label class="label">Info</label>
-                <textarea class="detail-input" rows="3" readonly>${escapeHtml(message || 'No data available')}</textarea>
+                <div class="detail-value">${escapeHtml(message || 'No data available')}</div>
             </article>
         `;
     }
@@ -1023,7 +1099,7 @@ include '../includes/sidebar.php';
             return;
         }
 
-        const html = entries.map(([key, rawValue], index) => {
+        const html = entries.map(([key, rawValue]) => {
             const normalizedKey = String(key || '').toLowerCase();
             let value = rawValue;
 
@@ -1041,17 +1117,12 @@ include '../includes/sidebar.php';
             }
 
             const displayValue = isBlank(value) ? 'N/A' : String(value);
-            const keyId = String(key || 'field').toLowerCase().replace(/[^a-z0-9_]+/g, '_');
-            const inputId = `${container.id}_${keyId}_${index}`;
-            const useTextarea = displayValue.length > 80 || displayValue.includes('\n');
-            const control = useTextarea
-                ? `<textarea id="${escapeHtml(inputId)}" class="detail-input" rows="3" readonly>${escapeHtml(displayValue)}</textarea>`
-                : `<input id="${escapeHtml(inputId)}" class="detail-input" type="text" value="${escapeHtml(displayValue)}" readonly>`;
+            const valueHtml = escapeHtml(displayValue).replace(/\n/g, '<br>');
 
             return `
-                <article class="detail-item">
-                    <label class="label" for="${escapeHtml(inputId)}">${escapeHtml(humanizeKey(key))}</label>
-                    ${control}
+                <article class="detail-row">
+                    <label class="label">${escapeHtml(humanizeKey(key))}</label>
+                    <div class="detail-value">${valueHtml}</div>
                 </article>
             `;
         }).join('');
