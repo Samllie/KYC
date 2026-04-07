@@ -11,6 +11,246 @@ session_start();
 
 $response = ['success' => false, 'message' => ''];
 
+if (!function_exists('agentsTableExists')) {
+    function agentsTableExists() {
+        global $db;
+
+        static $exists = null;
+        if ($exists !== null) {
+            return $exists;
+        }
+
+        $result = $db->query("SHOW TABLES LIKE 'agents'");
+        $exists = $result && $result->num_rows > 0;
+
+        if ($result instanceof mysqli_result) {
+            $result->free();
+        }
+
+        return $exists;
+    }
+}
+
+if (!function_exists('syncAgentRowFromClient')) {
+    function syncAgentRowFromClient($clientId) {
+        global $db;
+
+        $clientId = intval($clientId);
+        if ($clientId <= 0 || !agentsTableExists()) {
+            return;
+        }
+
+        $sql = "
+            INSERT INTO agents (
+                client_id,
+                reference_code,
+                client_number,
+                client_type,
+                client_name,
+                first_name,
+                middle_name,
+                last_name,
+                mobile_phone,
+                office_phone,
+                email,
+                verification_status,
+                submitted_by,
+                submitted_at,
+                verified_by,
+                created_at
+            )
+            SELECT
+                c.client_id,
+                c.reference_code,
+                c.client_number,
+                c.client_type,
+                c.client_name,
+                c.first_name,
+                c.middle_name,
+                c.last_name,
+                c.mobile_phone,
+                c.office_phone,
+                c.email,
+                c.verification_status,
+                c.submitted_by,
+                c.submitted_at,
+                c.verified_by,
+                c.created_at
+            FROM clients c
+            WHERE c.client_id = ?
+            LIMIT 1
+            ON DUPLICATE KEY UPDATE
+                reference_code = VALUES(reference_code),
+                client_number = VALUES(client_number),
+                client_type = VALUES(client_type),
+                client_name = VALUES(client_name),
+                first_name = VALUES(first_name),
+                middle_name = VALUES(middle_name),
+                last_name = VALUES(last_name),
+                mobile_phone = VALUES(mobile_phone),
+                office_phone = VALUES(office_phone),
+                email = VALUES(email),
+                verification_status = VALUES(verification_status),
+                submitted_by = VALUES(submitted_by),
+                submitted_at = VALUES(submitted_at),
+                verified_by = VALUES(verified_by),
+                updated_at = CURRENT_TIMESTAMP
+        ";
+
+        $stmt = $db->prepare($sql);
+        if (!$stmt) {
+            return;
+        }
+
+        $stmt->bind_param('i', $clientId);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
+if (!function_exists('deleteAgentRowByClient')) {
+    function deleteAgentRowByClient($clientId) {
+        global $db;
+
+        $clientId = intval($clientId);
+        if ($clientId <= 0 || !agentsTableExists()) {
+            return;
+        }
+
+        $stmt = $db->prepare("DELETE FROM agents WHERE client_id = ?");
+        if (!$stmt) {
+            return;
+        }
+
+        $stmt->bind_param('i', $clientId);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
+if (!function_exists('clientApprovalsTableExists')) {
+    function clientApprovalsTableExists() {
+        global $db;
+
+        static $exists = null;
+        if ($exists !== null) {
+            return $exists;
+        }
+
+        $result = $db->query("SHOW TABLES LIKE 'client_approvals'");
+        $exists = $result && $result->num_rows > 0;
+
+        if ($result instanceof mysqli_result) {
+            $result->free();
+        }
+
+        return $exists;
+    }
+}
+
+if (!function_exists('queueClientForApproval')) {
+    function queueClientForApproval($clientId) {
+        global $db;
+
+        $clientId = intval($clientId);
+        if ($clientId <= 0 || !clientApprovalsTableExists()) {
+            return;
+        }
+
+        $sql = "
+            INSERT INTO client_approvals (
+                client_id,
+                reference_code,
+                client_number,
+                client_classification,
+                client_type,
+                display_name,
+                client_name,
+                first_name,
+                middle_name,
+                last_name,
+                contact_person,
+                mobile_phone,
+                office_phone,
+                email,
+                submitted_by,
+                submitted_by_branch,
+                submitted_at,
+                approval_status,
+                review_notes,
+                reviewed_by,
+                reviewed_at,
+                approved_at,
+                created_at
+            )
+            SELECT
+                c.client_id,
+                c.reference_code,
+                c.client_number,
+                COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client') AS client_classification,
+                c.client_type,
+                COALESCE(
+                    NULLIF(TRIM(c.client_name), ''),
+                    NULLIF(TRIM(c.contact_person), ''),
+                    NULLIF(TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, ''))), ''),
+                    c.reference_code
+                ) AS display_name,
+                c.client_name,
+                c.first_name,
+                c.middle_name,
+                c.last_name,
+                c.contact_person,
+                c.mobile_phone,
+                c.office_phone,
+                c.email,
+                c.submitted_by,
+                su.branch AS submitted_by_branch,
+                c.submitted_at,
+                'pending' AS approval_status,
+                NULL AS review_notes,
+                NULL AS reviewed_by,
+                NULL AS reviewed_at,
+                NULL AS approved_at,
+                c.created_at
+            FROM clients c
+            LEFT JOIN users su ON c.submitted_by = su.user_id
+            WHERE c.client_id = ?
+            LIMIT 1
+            ON DUPLICATE KEY UPDATE
+                client_number = VALUES(client_number),
+                client_classification = VALUES(client_classification),
+                client_type = VALUES(client_type),
+                display_name = VALUES(display_name),
+                client_name = VALUES(client_name),
+                first_name = VALUES(first_name),
+                middle_name = VALUES(middle_name),
+                last_name = VALUES(last_name),
+                contact_person = VALUES(contact_person),
+                mobile_phone = VALUES(mobile_phone),
+                office_phone = VALUES(office_phone),
+                email = VALUES(email),
+                submitted_by = VALUES(submitted_by),
+                submitted_by_branch = VALUES(submitted_by_branch),
+                submitted_at = VALUES(submitted_at),
+                approval_status = 'pending',
+                review_notes = NULL,
+                reviewed_by = NULL,
+                reviewed_at = NULL,
+                approved_at = NULL,
+                updated_at = CURRENT_TIMESTAMP
+        ";
+
+        $stmt = $db->prepare($sql);
+        if (!$stmt) {
+            return;
+        }
+
+        $stmt->bind_param('i', $clientId);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
 // Check user session
 if (!isset($_SESSION['user_id'])) {
     $response['message'] = 'Unauthorized access';
@@ -118,6 +358,9 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
+    $classificationRaw = strtolower(trim($_POST['clientClassification'] ?? ($insertData['client_classification'] ?? 'client')));
+    $insertData['client_classification'] = $classificationRaw === 'agent' ? 'agent' : 'client';
 
     if (in_array($clientType, ['corporate', 'obligee'], true)) {
         $corporateLikeName = trim($_POST['corporateClientName'] ?? '');
@@ -236,6 +479,16 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    if ($clientId > 0) {
+        if (($insertData['client_classification'] ?? 'client') === 'agent') {
+            syncAgentRowFromClient($clientId);
+        } else {
+            deleteAgentRowByClient($clientId);
+        }
+
+        queueClientForApproval($clientId);
+    }
+
     $response['success'] = true;
     $response['message'] = 'Client added successfully';
     $response['client_id'] = $clientId;
@@ -281,6 +534,13 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'full_address' => $address,
         'client_type' => $clientType
     ], 'client_id = ?', [$clientId]);
+
+    $effectiveClassification = strtolower(trim($client['client_classification'] ?? 'client'));
+    if ($effectiveClassification === 'agent') {
+        syncAgentRowFromClient($clientId);
+    } else {
+        deleteAgentRowByClient($clientId);
+    }
     
     $response['success'] = true;
     $response['message'] = 'Client updated successfully';
@@ -305,6 +565,8 @@ else if ($action === 'delete_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($response);
         exit;
     }
+
+    deleteAgentRowByClient($clientId);
     
     // Delete client (will cascade delete related records)
     $db->query("DELETE FROM clients WHERE client_id = $clientId");
@@ -381,7 +643,7 @@ else if ($action === 'update_status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Get current status for history
-    $client = fetchOne("SELECT verification_status FROM clients WHERE client_id = ?", [$clientId]);
+    $client = fetchOne("SELECT verification_status, client_classification FROM clients WHERE client_id = ?", [$clientId]);
     if (!$client) {
         $response['message'] = 'Client not found';
         echo json_encode($response);
@@ -409,6 +671,13 @@ else if ($action === 'update_status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'changed_by' => $_SESSION['user_id'],
         'change_reason' => $reason
     ]);
+
+    $effectiveClassification = strtolower(trim($client['client_classification'] ?? 'client'));
+    if ($effectiveClassification === 'agent') {
+        syncAgentRowFromClient($clientId);
+    } else {
+        deleteAgentRowByClient($clientId);
+    }
     
     $response['success'] = true;
     $response['message'] = 'Client status updated successfully';

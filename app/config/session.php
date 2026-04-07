@@ -45,6 +45,7 @@ function getCurrentUser() {
         'full_name' => $_SESSION['full_name'] ?? '',
         'email' => $_SESSION['email'] ?? '',
         'department' => $_SESSION['department'] ?? '',
+        'branch' => $_SESSION['branch'] ?? '',
         'role' => $_SESSION['role'] ?? '',
         'avatar_initials' => getAvatarInitials($_SESSION['full_name'] ?? '')
     ];

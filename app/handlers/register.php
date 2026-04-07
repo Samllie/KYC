@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'OZAMIZ BRANCH',
         'PAGADIAN BRANCH',
         'SAN FERNANDO, PAMPANGA BRANCH',
+        'HEAD OFFICE BRANCH',
         'SMRO BRANCH',
         'TACLOBAN BRANCH',
         'TUGUEGARAO BRANCH',

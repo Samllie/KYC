@@ -1,6 +1,25 @@
 <?php
 require_once '../config/session.php';
 requireLogin();
+
+$currentUserBranch = trim($_SESSION['branch'] ?? '');
+$currentUserRole = strtolower(trim($_SESSION['role'] ?? ''));
+$currentUserDepartment = strtoupper(trim($_SESSION['department'] ?? ''));
+$isHeadOfficeView = $currentUserRole === 'admin'
+    || $currentUserDepartment === 'HEAD OFFICE'
+    || in_array(strtoupper($currentUserBranch), ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+
+$requestedClassification = strtolower(trim($_GET['classification'] ?? 'client'));
+$listClassification = $requestedClassification === 'agent' ? 'agent' : 'client';
+$isAgentsMode = $listClassification === 'agent';
+
+$pageHeading = $isAgentsMode ? 'Agents Management' : 'Clients Management';
+$recordLabelSingular = $isAgentsMode ? 'agent' : 'client';
+$recordLabelPlural = $isAgentsMode ? 'agents' : 'clients';
+$recordTitleCaseSingular = ucfirst($recordLabelSingular);
+$recordTitleCasePlural = ucfirst($recordLabelPlural);
+$newRecordLabel = $isAgentsMode ? 'New Agent' : 'New Client';
+$kycEntryUrl = 'kyc-verification.php?classification=' . urlencode($listClassification);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,7 +41,7 @@ requireLogin();
 <body class="clients-page">
 
 <?php
-$activePage = 'clients';
+$activePage = $isAgentsMode ? 'agents' : 'clients';
 include '../includes/sidebar.php';
 ?>
 
@@ -32,10 +51,10 @@ include '../includes/sidebar.php';
     <!-- Topbar -->
     <header class="topbar">
         <div class="topbar-left">
-            <h1>Clients Management</h1>
+            <h1><?php echo htmlspecialchars($pageHeading); ?></h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
-                Dashboard &rsaquo; <span>Clients</span>
+                Dashboard &rsaquo; <span><?php echo htmlspecialchars($recordTitleCasePlural); ?></span>
             </div>
         </div>
         <div class="topbar-right">
@@ -51,7 +70,7 @@ include '../includes/sidebar.php';
             <div class="controls-left">
                 <div class="search-box">
                     <i class="bi bi-search"></i>
-                    <input type="text" id="searchInput" placeholder="Search clients..." class="search-input">
+                    <input type="text" id="searchInput" placeholder="Search <?php echo htmlspecialchars($recordLabelPlural); ?>..." class="search-input">
                 </div>
                 <div class="filter-group">
                     <select id="filterType" class="filter-select">
@@ -61,13 +80,20 @@ include '../includes/sidebar.php';
                         <option value="obligee">Obligee</option>
                     </select>
                 </div>
+                <?php if ($isHeadOfficeView): ?>
+                <div class="filter-group">
+                    <select id="filterBranch" class="filter-select">
+                        <option value="">All Branches</option>
+                    </select>
+                </div>
+                <?php endif; ?>
             </div>
             <div class="controls-right">
                 <button class="btn-export" title="Export" onclick="showExportPreview()">
                     <i class="bi bi-download"></i> Export
                 </button>
-                <button class="btn-add-client" title="Add New Client" onclick="window.location.href='kyc-verification.php'">
-                    <i class="bi bi-plus-circle"></i> New Client
+                <button class="btn-add-client" title="Add New <?php echo htmlspecialchars($recordTitleCaseSingular); ?>" onclick="window.location.href='<?php echo htmlspecialchars($kycEntryUrl); ?>'">
+                    <i class="bi bi-plus-circle"></i> <?php echo htmlspecialchars($newRecordLabel); ?>
                 </button>
             </div>
         </div>
@@ -80,8 +106,8 @@ include '../includes/sidebar.php';
                         <tr>
                             <th class="col-checkbox"><input type="checkbox" id="selectAll"></th>
                             <th class="col-ref">Ref Code</th>
-                            <th class="col-name">Business/Client Name</th>
-                            <th class="col-owner">Company Owner</th>
+                            <th class="col-name">Business/<?php echo htmlspecialchars($recordTitleCaseSingular); ?> Name</th>
+                            <th class="col-owner">Branch</th>
                             <th class="col-type">Type</th>
                             <th class="col-contact">Contact</th>
                             <th class="col-email">Email</th>
@@ -99,7 +125,7 @@ include '../includes/sidebar.php';
             <!-- Pagination -->
             <div class="table-footer">
                 <div class="pagination-info">
-                    Showing <span class="info-start">1</span> to <span class="info-end">8</span> of <span class="info-total">0</span> clients
+                    Showing <span class="info-start">1</span> to <span class="info-end">10</span> of <span class="info-total">0</span> <?php echo htmlspecialchars($recordLabelPlural); ?>
                 </div>
                 <div class="pagination" id="paginationContainer">
                     <!-- Pagination buttons will be generated dynamically -->
@@ -115,7 +141,7 @@ include '../includes/sidebar.php';
 <div id="editModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Edit Client Information</h2>
+            <h2>Edit <?php echo htmlspecialchars($recordTitleCaseSingular); ?> Information</h2>
             <button id="editModalCloseBtn" type="button" class="modal-close" title="Close"><i class="bi bi-x"></i></button>
         </div>
         <div class="modal-body">
@@ -232,7 +258,7 @@ include '../includes/sidebar.php';
 <div id="viewModal" class="modal">
     <div class="modal-content view-modal-content" style="max-width: 900px; max-height: 92vh; display: flex; flex-direction: column;">
         <div class="modal-header">
-            <h2>Client Preview</h2>
+            <h2><?php echo htmlspecialchars($recordTitleCaseSingular); ?> Preview</h2>
             <button class="modal-close" title="Close" onclick="document.getElementById('viewModal').style.display='none'"><i class="bi bi-x"></i></button>
         </div>
         <div class="modal-body">
@@ -356,7 +382,7 @@ include '../includes/sidebar.php';
 <div id="exportPreviewModal" class="modal">
     <div class="modal-content export-preview-modal-content" style="max-width: 1440px; max-height: 92vh; display: flex; flex-direction: column;">
         <div class="modal-header">
-            <h2>Export Clients Report</h2>
+            <h2>Export <?php echo htmlspecialchars($recordTitleCasePlural); ?> Report</h2>
             <button class="modal-close export-modal-close" title="Close" onclick="document.getElementById('exportPreviewModal').style.display='none'"><i class="bi bi-x"></i></button>
         </div>
         <div class="modal-body" style="flex: 1; overflow-y: auto;">
@@ -381,17 +407,94 @@ include '../includes/sidebar.php';
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════ MODAL: Delete Confirmation -->
+<div id="deleteConfirmModal" class="modal" aria-hidden="true">
+    <div class="modal-content delete-modal-content" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+        <div class="modal-header">
+            <h2 id="deleteConfirmTitle">Confirm Delete</h2>
+            <button id="deleteModalCloseBtn" type="button" class="modal-close" title="Close"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="modal-body delete-modal-body">
+            <p>Are you sure you want to delete this <?php echo htmlspecialchars($recordLabelSingular); ?> record? This action cannot be undone.</p>
+            <div class="delete-client-meta" aria-live="polite">
+                <div>
+                    <span>Ref Code</span>
+                    <strong id="deleteConfirmRefCode">N/A</strong>
+                </div>
+                <div>
+                    <span><?php echo htmlspecialchars($recordTitleCaseSingular); ?> Name</span>
+                    <strong id="deleteConfirmName">N/A</strong>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" id="deleteCancelBtn" type="button">Cancel</button>
+            <button class="btn-delete-confirm" id="deleteConfirmBtn" type="button">
+                <i class="bi bi-trash"></i> Confirm Delete
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     // Pagination state
     let currentPage = 1;
-    let pageSize = 8;
+    let pageSize = 10;
     let totalPages = 1;
     let totalClients = 0;
     let currentEditingClientId = null;
     let searchDebounceTimer = null;
     let currentPageClients = [];
+    let pendingDeleteClient = null;
     const selectedClientIds = new Set();
     const selectedClientRows = new Map();
+    const isHeadOfficeUser = <?php echo $isHeadOfficeView ? 'true' : 'false'; ?>;
+    const listClassification = <?php echo json_encode($listClassification); ?>;
+    const recordLabelSingular = <?php echo json_encode($recordLabelSingular); ?>;
+    const recordLabelPlural = <?php echo json_encode($recordLabelPlural); ?>;
+    const recordTitleCaseSingular = <?php echo json_encode($recordTitleCaseSingular); ?>;
+    const recordTitleCasePlural = <?php echo json_encode($recordTitleCasePlural); ?>;
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function updateBranchFilterOptions(branches) {
+        if (!isHeadOfficeUser) {
+            return;
+        }
+
+        const branchSelect = document.getElementById('filterBranch');
+        if (!branchSelect) {
+            return;
+        }
+
+        const currentValue = branchSelect.value;
+        const uniqueBranches = Array.from(
+            new Set(
+                (Array.isArray(branches) ? branches : [])
+                    .map(branch => String(branch || '').trim())
+                    .filter(branch => branch !== '')
+            )
+        );
+
+        let optionsHtml = '<option value="">All Branches</option>';
+        uniqueBranches.forEach(branch => {
+            const safeBranch = escapeHtml(branch);
+            optionsHtml += `<option value="${safeBranch}">${safeBranch}</option>`;
+        });
+
+        branchSelect.innerHTML = optionsHtml;
+
+        if (currentValue && uniqueBranches.includes(currentValue)) {
+            branchSelect.value = currentValue;
+        }
+    }
 
     function setTableLoading(isLoading) {
         const wrapper = document.querySelector('.table-wrapper');
@@ -415,9 +518,12 @@ include '../includes/sidebar.php';
     }
 
     function getActiveFilters() {
+        const branchSelect = document.getElementById('filterBranch');
+
         return {
             search: document.getElementById('searchInput').value.trim(),
-            type: document.getElementById('filterType').value
+            type: document.getElementById('filterType').value,
+            branch: isHeadOfficeUser && branchSelect ? branchSelect.value : ''
         };
     }
 
@@ -429,7 +535,9 @@ include '../includes/sidebar.php';
             page: page,
             pageSize: pageSize,
             search: filters.search,
-            type: filters.type
+            type: filters.type,
+            branch: filters.branch,
+            classification: listClassification
         });
 
         console.log('loadClients() starting for page:', page);
@@ -437,14 +545,21 @@ include '../includes/sidebar.php';
             method: 'GET',
             credentials: 'include'  // Include session cookies in the request
         })
-            .then(response => {
+            .then(async response => {
                 console.log('Response received:', response.status);
-                return response.json();
+                const rawText = await response.text();
+                try {
+                    return JSON.parse(rawText);
+                } catch (parseError) {
+                    const preview = rawText.slice(0, 200).replace(/\s+/g, ' ').trim();
+                    throw new Error(`Invalid JSON response from server (HTTP ${response.status}). ${preview}`);
+                }
             })
             .then(data => {
                 console.log('Data parsed:', data);
                 if (data.success) {
-                    console.log('Rendering ' + data.data.length + ' clients');
+                    console.log('Rendering ' + data.data.length + ' ' + recordLabelPlural);
+                    updateBranchFilterOptions(data.availableBranches || []);
                     currentPage = data.page;
                     totalPages = data.totalPages;
                     totalClients = data.total;
@@ -454,7 +569,7 @@ include '../includes/sidebar.php';
                         attachClientEventListeners();
                         syncSelectAllCheckbox();
                     } else {
-                        document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">No clients found</td></tr>';
+                        document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px;">No ${recordLabelPlural} found</td></tr>`;
                         syncSelectAllCheckbox();
                     }
 
@@ -462,16 +577,16 @@ include '../includes/sidebar.php';
                     generatePaginationButtons(data);
                 } else {
                     currentPageClients = [];
-                    console.log('No clients found or fetch failed');
-                    document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px;">No clients found</td></tr>';
+                    console.log(`No ${recordLabelPlural} found or fetch failed`);
+                    document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px;">No ${recordLabelPlural} found</td></tr>`;
                     updatePaginationInfo({ page: 1, total: 0, pageSize: pageSize, totalPages: 0 });
                     generatePaginationButtons({ page: 1, totalPages: 0 });
                 }
             })
             .catch(error => {
                 currentPageClients = [];
-                console.error('Error loading clients:', error);
-                document.getElementById('clientsTableBody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px; color: red;">Error loading clients: ' + error.message + '</td></tr>';
+                console.error('Error loading records:', error);
+                document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: red;">Error loading ${recordLabelPlural}: ${error.message}</td></tr>`;
                 syncSelectAllCheckbox();
             })
             .finally(() => {
@@ -502,9 +617,7 @@ include '../includes/sidebar.php';
             const typeClass = normalizedType || 'corporate';
             const typeText = formatClientType(client.client_type);
             const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
-            const ownerName = isCorporateLike(client.client_type)
-                ? (client.contact_person || 'N/A')
-                : 'N/A';
+            const submittedBranch = client.submitted_by_branch || 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
             const clientNumber = client.client_number || 'N/A';
             const contactNumber = isCorporateLike(client.client_type)
@@ -520,7 +633,7 @@ include '../includes/sidebar.php';
                 <td class="col-checkbox"><input type="checkbox" class="row-select" data-client-id="${client.client_id}"></td>
                 <td class="col-ref"><span class="ref-badge">${client.reference_code}</span></td>
                 <td class="col-name">${displayName}</td>
-                <td class="col-owner">${ownerName}</td>
+                <td class="col-owner">${submittedBranch}</td>
                 <td class="col-type"><span class="type-badge ${typeClass}">${typeText}</span></td>
                 <td class="col-contact">${contactNumber}</td>
                 <td class="col-email">${client.email}</td>
@@ -667,7 +780,7 @@ include '../includes/sidebar.php';
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', function() {
                     const clientId = row.dataset.clientId;
-                    deleteClient(clientId, row);
+                    openDeleteClientModal(clientId, row);
                 });
             }
 
@@ -695,7 +808,7 @@ include '../includes/sidebar.php';
             firstName: nameParts[0] || '',
             lastName: nameParts.length > 1 ? nameParts[nameParts.length - 1] : '',
             displayName: displayName,
-            ownerName: cells[3].textContent.trim(),
+            submittedBranch: cells[3].textContent.trim(),
             type: cells[4].textContent.trim(),
             contact: cells[5].textContent.trim(),
             email: cells[6].textContent.trim(),
@@ -708,11 +821,58 @@ include '../includes/sidebar.php';
     const viewModal = document.getElementById('viewModal');
     const cancelBtn = document.getElementById('cancelBtn');
     const editModalCloseBtn = document.getElementById('editModalCloseBtn');
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    const deleteConfirmRefCode = document.getElementById('deleteConfirmRefCode');
+    const deleteConfirmName = document.getElementById('deleteConfirmName');
+    const deleteCancelBtn = document.getElementById('deleteCancelBtn');
+    const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+    const deleteModalCloseBtn = document.getElementById('deleteModalCloseBtn');
+
+    function setDeleteModalOpen(isOpen) {
+        if (!deleteConfirmModal) {
+            return;
+        }
+
+        deleteConfirmModal.style.display = isOpen ? 'block' : 'none';
+        deleteConfirmModal.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    }
+
+    function closeDeleteClientModal() {
+        pendingDeleteClient = null;
+        setDeleteModalOpen(false);
+    }
+
+    function openDeleteClientModal(clientId, row) {
+        if (!clientId || !row || !deleteConfirmModal) {
+            createToast('error', 'Error', `Unable to identify selected ${recordLabelSingular}.`, 'toastContainer');
+            return;
+        }
+
+        const refCode = (row.querySelector('.col-ref span')?.textContent || '').trim() || 'N/A';
+        const clientName = (row.querySelector('.col-name')?.textContent || '').trim() || recordTitleCaseSingular;
+
+        pendingDeleteClient = {
+            clientId,
+            row,
+            clientName,
+            refCode
+        };
+
+        if (deleteConfirmRefCode) {
+            deleteConfirmRefCode.textContent = refCode;
+        }
+
+        if (deleteConfirmName) {
+            deleteConfirmName.textContent = clientName;
+        }
+
+        setDeleteModalOpen(true);
+    }
 
     // View Client Function
     function viewClient(data) {
         if (!data || !data.clientId) {
-            createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
+            createToast('error', 'Error', `Unable to identify selected ${recordLabelSingular}.`, 'toastContainer');
             return;
         }
 
@@ -723,7 +883,7 @@ include '../includes/sidebar.php';
         .then(response => response.json())
         .then(result => {
             if (!result.success || !result.data) {
-                createToast('error', 'Error', result.message || 'Failed to load client details.', 'toastContainer');
+                createToast('error', 'Error', result.message || `Failed to load ${recordLabelSingular} details.`, 'toastContainer');
                 return;
             }
 
@@ -755,8 +915,8 @@ include '../includes/sidebar.php';
             viewModal.style.display = 'block';
         })
         .catch(error => {
-            createToast('error', 'Error', 'Failed to load client details.', 'toastContainer');
-            console.error('Error loading client details:', error);
+            createToast('error', 'Error', `Failed to load ${recordLabelSingular} details.`, 'toastContainer');
+            console.error('Error loading details:', error);
         });
     }
 
@@ -765,7 +925,7 @@ include '../includes/sidebar.php';
         currentEditingClientId = data.clientId;
 
         if (!currentEditingClientId) {
-            createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
+            createToast('error', 'Error', `Unable to identify selected ${recordLabelSingular}.`, 'toastContainer');
             return;
         }
 
@@ -776,7 +936,7 @@ include '../includes/sidebar.php';
         .then(response => response.json())
         .then(result => {
             if (!result.success || !result.data) {
-                createToast('error', 'Error', result.message || 'Failed to load client details.', 'toastContainer');
+                createToast('error', 'Error', result.message || `Failed to load ${recordLabelSingular} details.`, 'toastContainer');
                 return;
             }
 
@@ -803,8 +963,8 @@ include '../includes/sidebar.php';
             editModal.style.display = 'block';
         })
         .catch(error => {
-            createToast('error', 'Error', 'Failed to load client details.', 'toastContainer');
-            console.error('Error loading client details:', error);
+            createToast('error', 'Error', `Failed to load ${recordLabelSingular} details.`, 'toastContainer');
+            console.error('Error loading details:', error);
         });
     }
 
@@ -842,12 +1002,12 @@ include '../includes/sidebar.php';
             }
 
             editModal.style.display = 'none';
-            createToast('success', 'Updated', 'Client information saved successfully.', 'toastContainer');
+            createToast('success', 'Updated', `${recordTitleCaseSingular} information saved successfully.`, 'toastContainer');
             loadClients(currentPage);
         })
         .catch(error => {
-            createToast('error', 'Error', 'Failed to save client changes.', 'toastContainer');
-            console.error('Error saving client:', error);
+            createToast('error', 'Error', `Failed to save ${recordLabelSingular} changes.`, 'toastContainer');
+            console.error('Error saving record:', error);
         })
         .finally(() => {
             setButtonBusy(saveBtn, false);
@@ -855,19 +1015,14 @@ include '../includes/sidebar.php';
     }
 
     // Delete Client Function
-    function deleteClient(clientId, row) {
+    function deleteClient(clientId, row, clientNameOverride = '') {
         if (!clientId) {
-            createToast('error', 'Error', 'Unable to identify selected client.', 'toastContainer');
-            return;
-        }
-
-        const refCode = row.querySelector('.col-ref span').textContent;
-        if (!confirm('Are you sure you want to delete this client?\n\n' + refCode)) {
+            createToast('error', 'Error', `Unable to identify selected ${recordLabelSingular}.`, 'toastContainer');
             return;
         }
         
         // Extract client name for reference
-        const clientName = row.querySelector('.col-name').textContent;
+        const clientName = clientNameOverride || (row.querySelector('.col-name')?.textContent || 'Client').trim();
         
         const formData = new FormData();
         formData.append('action', 'delete_client');
@@ -885,19 +1040,18 @@ include '../includes/sidebar.php';
             if (data.success) {
                 selectedClientIds.delete(String(clientId));
                 selectedClientRows.delete(String(clientId));
-                syncSelectAllCheckbox();
+                const remainingTotal = Math.max(0, totalClients - 1);
+                const maxPageAfterDelete = Math.max(1, Math.ceil(remainingTotal / pageSize));
+                const targetPage = Math.min(currentPage, maxPageAfterDelete);
 
-                // Show toast
-                const toast = createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
-                // Fade out and remove row
-                row.style.opacity = '0';
-                setTimeout(() => row.remove(), 300);
+                createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
+                loadClients(targetPage);
             } else {
-                const toast = createToast('error', 'Error', data.message || 'Failed to delete client.', 'toastContainer');
+                createToast('error', 'Error', data.message || `Failed to delete ${recordLabelSingular}.`, 'toastContainer');
             }
         })
         .catch(error => {
-            const toast = createToast('error', 'Error', 'An error occurred.', 'toastContainer');
+            createToast('error', 'Error', 'An error occurred.', 'toastContainer');
             console.error('Error:', error);
         })
         .finally(() => {
@@ -951,6 +1105,28 @@ include '../includes/sidebar.php';
         });
     }
 
+    if (deleteCancelBtn) {
+        deleteCancelBtn.addEventListener('click', closeDeleteClientModal);
+    }
+
+    if (deleteModalCloseBtn) {
+        deleteModalCloseBtn.addEventListener('click', closeDeleteClientModal);
+    }
+
+    if (deleteConfirmBtn) {
+        deleteConfirmBtn.addEventListener('click', function() {
+            if (!pendingDeleteClient) {
+                setDeleteModalOpen(false);
+                return;
+            }
+
+            const target = pendingDeleteClient;
+            setDeleteModalOpen(false);
+            pendingDeleteClient = null;
+            deleteClient(target.clientId, target.row, target.clientName);
+        });
+    }
+
     document.getElementById('saveBtn').addEventListener('click', saveClientChanges);
 
     window.addEventListener('click', function(event) {
@@ -959,6 +1135,15 @@ include '../includes/sidebar.php';
         }
         if (event.target === viewModal) {
             viewModal.style.display = 'none';
+        }
+        if (event.target === deleteConfirmModal) {
+            closeDeleteClientModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && deleteConfirmModal && deleteConfirmModal.style.display === 'block') {
+            closeDeleteClientModal();
         }
     });
 
@@ -985,11 +1170,16 @@ include '../includes/sidebar.php';
 
     document.getElementById('filterType').addEventListener('change', applyServerFilters);
 
-    // Export Clients functionality
-    let exportData = [];
-    let exportScopeLabel = 'Filtered clients';
+    const filterBranchEl = document.getElementById('filterBranch');
+    if (filterBranchEl) {
+        filterBranchEl.addEventListener('change', applyServerFilters);
+    }
 
-    const exportHeaders = ['Ref Code', 'Business / Client Name', 'Company Owner', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
+    // Export list functionality
+    let exportData = [];
+    let exportScopeLabel = `Filtered ${recordLabelPlural}`;
+
+    const exportHeaders = ['Ref Code', `Business / ${recordTitleCaseSingular} Name`, 'Submitted Branch', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
 
     function getFilterSummaryText() {
         const filters = getActiveFilters();
@@ -1009,6 +1199,9 @@ include '../includes/sidebar.php';
         if (filters.type) {
             parts.push(`Type: ${formatClientType(filters.type)}`);
         }
+        if (filters.branch) {
+            parts.push(`Branch: ${filters.branch}`);
+        }
 
         return parts.length > 0 ? parts.join(' | ') : 'No filters applied';
     }
@@ -1017,10 +1210,7 @@ include '../includes/sidebar.php';
         const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
         const normalizedType = (client.client_type || '').toLowerCase();
         const isCorporateLike = normalizedType === 'corporate' || normalizedType === 'obligee';
-
-        const ownerName = isCorporateLike
-            ? (client.contact_person || 'N/A')
-            : 'N/A';
+        const submittedBranch = client.submitted_by_branch || 'N/A';
 
         let typeText = 'N/A';
         if (normalizedType === 'individual') typeText = 'Individual';
@@ -1034,7 +1224,7 @@ include '../includes/sidebar.php';
         return {
             refCode: client.reference_code || 'N/A',
             displayName: displayName,
-            ownerName: ownerName,
+            submittedBranch: submittedBranch,
             type: typeText || 'N/A',
             contact: contactNumber,
             email: client.email || 'N/A',
@@ -1060,6 +1250,8 @@ include '../includes/sidebar.php';
 
         query.set('search', filters.search);
         query.set('type', filters.type);
+        query.set('branch', filters.branch);
+        query.set('classification', listClassification);
 
         const response = await fetch(`../handlers/get_clients.php?${query.toString()}`, {
             method: 'GET',
@@ -1081,7 +1273,7 @@ include '../includes/sidebar.php';
             return {
                 data: selectedRows,
                 scope: 'selected',
-                label: 'Selected clients only (checked rows)'
+                label: `Selected ${recordLabelPlural} only (checked rows)`
             };
         }
 
@@ -1089,7 +1281,7 @@ include '../includes/sidebar.php';
         return {
             data: filteredRows,
             scope: 'filtered',
-            label: `Filtered clients (${getFilterSummaryText()})`
+            label: `Filtered ${recordLabelPlural} (${getFilterSummaryText()})`
         };
     }
 
@@ -1101,7 +1293,7 @@ include '../includes/sidebar.php';
         if (data.length === 0) {
             exportData = [];
             exportScopeLabel = resolved.label;
-            previewContent.innerHTML = `<div style="padding: 20px; color: #6b7280;"><strong>No clients found</strong> for ${resolved.label}.</div>`;
+            previewContent.innerHTML = `<div style="padding: 20px; color: #6b7280;"><strong>No ${recordLabelPlural} found</strong> for ${resolved.label}.</div>`;
             return;
         }
 
@@ -1120,7 +1312,7 @@ include '../includes/sidebar.php';
             html += `<tr class="${index % 2 === 0 ? 'is-even' : 'is-odd'}">`;
             html += `<td>${row.refCode}</td>`;
             html += `<td>${row.displayName}</td>`;
-            html += `<td>${row.ownerName}</td>`;
+            html += `<td>${row.submittedBranch}</td>`;
             html += `<td>${row.type}</td>`;
             html += `<td>${row.contact}</td>`;
             html += `<td>${row.email}</td>`;
@@ -1169,7 +1361,7 @@ include '../includes/sidebar.php';
             const cells = [
                 row.refCode,
                 row.displayName,
-                row.ownerName,
+                row.submittedBranch,
                 row.type,
                 row.contact,
                 row.email,
@@ -1191,7 +1383,7 @@ include '../includes/sidebar.php';
         const url = URL.createObjectURL(blob);
         
         link.setAttribute('href', url);
-        link.setAttribute('download', `clients_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `${recordLabelPlural}_export_${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
         
         document.body.appendChild(link);
@@ -1205,7 +1397,7 @@ include '../includes/sidebar.php';
         const element = document.getElementById('previewContent');
         const opt = {
             margin: 10,
-            filename: `clients_export_${new Date().toISOString().split('T')[0]}.pdf`,
+            filename: `${recordLabelPlural}_export_${new Date().toISOString().split('T')[0]}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 },
             jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' }
@@ -1238,7 +1430,7 @@ include '../includes/sidebar.php';
                 </style>
             </head>
             <body>
-                <h1>Clients Management Report</h1>
+                <h1>${recordTitleCasePlural} Management Report</h1>
                 ${content}
                 <div class="footer">
                     <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>

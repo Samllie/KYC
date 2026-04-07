@@ -241,6 +241,16 @@ body.sidebar-collapsed .sidebar-text {
     border-radius: 99px;
 }
 
+.nav-badge.nav-badge-pending {
+    background: #b45309;
+    color: #fff;
+}
+
+.nav-badge.nav-badge-resubmit {
+    background: #b91c1c;
+    color: #fff;
+}
+
 .sidebar-footer {
     padding: 12px 10px;
     border-top: 1px solid rgba(255,255,255,.08);
