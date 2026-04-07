@@ -6,9 +6,6 @@ env/
 # Local environment secrets
 .env
 
-# Project-specific OCR service environment
-python-ocr/.venv/
-
 # Python cache files
 __pycache__/
 *.py[cod]
