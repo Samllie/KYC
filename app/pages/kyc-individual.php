@@ -2652,6 +2652,10 @@ function submitForm() {
             formData.append(el.name, el.value);
         }
     });
+
+    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
+    formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
+    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
     
     // Submit to handler
     fetch('../handlers/kyc.php', {

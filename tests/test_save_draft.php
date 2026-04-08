@@ -28,5 +28,11 @@ session_start();
 $_SESSION['user_id'] = 1;  // Simulate logged-in user
 
 // Include the handler
-require_once '../app/handlers/kyc.php';
+$handlerDir = realpath(__DIR__ . '/../app/handlers');
+if ($handlerDir === false) {
+    die('Unable to resolve handler directory');
+}
+
+chdir($handlerDir);
+require_once 'kyc.php';
 ?>

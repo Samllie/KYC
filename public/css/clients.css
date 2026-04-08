@@ -196,8 +196,8 @@ body.clients-page .content {
 
 /* Clients Table */
 .clients-table {
-    width: max(100%, 1240px);
-    min-width: 1240px;
+    width: max(100%, 1560px);
+    min-width: 1560px;
     border-collapse: collapse;
     font-size: 0.8rem;
     table-layout: fixed;
@@ -219,8 +219,10 @@ body.clients-page .content {
     text-overflow: ellipsis;
 }
 
-.clients-table th.col-status,
 .clients-table th.col-verified,
+.clients-table th.col-last-transaction,
+.clients-table th.col-activity,
+.clients-table th.col-activity-updated,
 .clients-table th.col-actions {
     white-space: nowrap;
     line-height: 1.2;
@@ -260,16 +262,18 @@ body.clients-page .content {
 }
 
 /* Column Widths */
-.col-checkbox { width: 4%; }
-.col-ref { width: 9%; }
-.col-name { width: 15%; }
-.col-owner { width: 14%; }
-.col-type { width: 9%; }
-.col-contact { width: 10%; }
-.col-email { width: 15%; }
-.col-status { width: 8%; }
-.col-verified { width: 8%; }
-.col-actions { width: 8%; text-align: center; }
+.col-checkbox { width: 3%; }
+.col-ref { width: 7%; }
+.col-name { width: 10%; }
+.col-owner { width: 10%; }
+.col-type { width: 7%; }
+.col-contact { width: 8%; }
+.col-email { width: 10%; }
+.col-verified { width: 7%; }
+.col-last-transaction { width: 8%; }
+.col-activity { width: 10%; }
+.col-activity-updated { width: 8%; }
+.col-actions { width: 5%; text-align: center; }
 
 .clients-table th.col-actions,
 .clients-table td.col-actions {
@@ -283,8 +287,110 @@ body.clients-page .content {
     text-overflow: clip;
 }
 
+.clients-table td.col-activity {
+    overflow: visible;
+    text-overflow: clip;
+}
+
 .clients-table td.col-type .type-badge {
     white-space: nowrap;
+}
+
+.activity-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.activity-indicator-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.activity-indicator {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    flex: 0 0 auto;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+}
+
+.activity-indicator.active {
+    background: #22C55E;
+    color: #166534;
+}
+
+.activity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    width: fit-content;
+    white-space: nowrap;
+}
+
+.activity-badge.active {
+    background: #DCFCE7;
+    color: #166534;
+}
+
+.activity-indicator.inactive {
+    background: #F59E0B;
+    color: #92400E;
+}
+
+.activity-badge.inactive {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.activity-indicator.deactivated {
+    background: #EF4444;
+    color: #991B1B;
+}
+
+.activity-badge.deactivated {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.activity-indicator.none {
+    background: #9CA3AF;
+    color: #4B5563;
+}
+
+.activity-badge.none {
+    background: #E5E7EB;
+    color: #4B5563;
+}
+
+.activity-countdown {
+    display: block;
+    white-space: normal;
+    line-height: 1.25;
+    font-size: 0.72rem;
+}
+
+.activity-countdown.active {
+    color: #166534;
+}
+
+.activity-countdown.inactive {
+    color: #92400E;
+}
+
+.activity-countdown.deactivated {
+    color: #991B1B;
+}
+
+.activity-countdown.none {
+    color: #4B5563;
 }
 
 /* Checkbox */
@@ -823,6 +929,42 @@ body.clients-page .content {
     box-shadow: 0 0 0 3px rgba(34, 145, 109, 0.1);
 }
 
+.date-input-group {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.date-input-group .date-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.date-picker-btn {
+    width: 40px;
+    min-width: 40px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+    background: #f8fbf9;
+    color: #1f4f37;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.date-picker-btn:hover {
+    border-color: var(--green-500);
+    background: #eef8f2;
+}
+
+.date-picker-btn:focus {
+    outline: none;
+    border-color: var(--green-500);
+    box-shadow: 0 0 0 3px rgba(34, 145, 109, 0.1);
+}
+
 .modal-footer {
     display: flex;
     gap: 12px;
@@ -934,6 +1076,11 @@ body.clients-page .content {
         display: none;
     }
 
+    .col-last-transaction,
+    .col-activity-updated {
+        display: none;
+    }
+
     .col-name { width: 200px; }
     .col-actions { width: 100px; }
 }
@@ -1018,14 +1165,16 @@ body.clients-page .content {
     .clients-table td.col-owner,
     .clients-table td.col-contact,
     .clients-table td.col-email,
-    .clients-table td.col-status,
     .clients-table td.col-verified,
-    .clients-table td.col-type {
+    .clients-table td.col-type,
+    .clients-table td.col-last-transaction,
+    .clients-table td.col-activity-updated {
         display: none;
     }
 
     .clients-table td.col-ref::before { content: 'Ref Code'; }
     .clients-table td.col-name::before { content: 'Client Name'; }
+    .clients-table td.col-activity::before { content: 'Activity'; }
     .clients-table td.col-actions::before { content: 'Actions'; }
 
     .clients-table td.col-ref {
@@ -1061,6 +1210,10 @@ body.clients-page .content {
         grid-template-columns: 1fr;
     }
 
+    .date-input-group {
+        width: 100%;
+    }
+
     .btn-export,
     .btn-add-client {
         width: 100%;
@@ -1069,7 +1222,7 @@ body.clients-page .content {
 
 @media (max-width: 480px) {
     .col-checkbox { display: none; }
-    .col-status { display: none; }
+    .col-activity-updated { display: none; }
 
     .clients-table td::before {
         min-width: 92px;

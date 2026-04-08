@@ -364,7 +364,7 @@ function submitForm() {
     submitBtn.innerHTML = '<span class="spinner"></span> Submitting...';
     
     const formDataObj = new FormData();
-    formDataObj.append('action', 'add_client');
+    formDataObj.append('action', 'submit_kyc');
     formDataObj.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
     formDataObj.append('uploadedIdFiles', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]')));
     
@@ -372,7 +372,7 @@ function submitForm() {
         formDataObj.append(key, formData[key]);
     });
     
-    fetch('../handlers/client.php', {
+    fetch('../handlers/kyc.php', {
         method: 'POST',
         body: formDataObj
     })

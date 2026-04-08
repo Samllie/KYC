@@ -1,5 +1,5 @@
 <?php
-require_once 'config/db.php';
+require_once __DIR__ . '/../app/config/db.php';
 session_start();
 $_SESSION['user_id'] = 1; // Fake session for testing
 
@@ -10,11 +10,16 @@ echo "<p>DB_NAME: " . DB_NAME . "</p>";
 
 // Test 2: Check if clients table exists
 echo "<h3>Table Structure Test</h3>";
-$tableCheck = $db->query("DESCRIBE clients LIMIT 5");
+$tableCheck = $db->query("SHOW COLUMNS FROM clients");
 if ($tableCheck) {
     echo "<pre>";
+    $shown = 0;
     while ($row = $tableCheck->fetch_assoc()) {
         echo $row['Field'] . " - " . $row['Type'] . "\n";
+        $shown++;
+        if ($shown >= 5) {
+            break;
+        }
     }
     echo "</pre>";
 } else {

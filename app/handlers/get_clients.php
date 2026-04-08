@@ -8,6 +8,7 @@ header('Content-Type: application/json');
 ini_set('display_errors', '0');
 
 require_once '../config/db.php';
+require_once __DIR__ . '/client_activity_utils.php';
 session_start();
 
 $response = ['success' => false, 'data' => []];
@@ -166,6 +167,14 @@ try {
     $clientsHasClassification = hasColumn($db, 'clients', 'client_classification');
     $usingAgentsTable = $classification === 'agent' && tableExists($db, 'agents');
     $usingApprovalQueue = tableExists($db, 'client_approvals');
+    $activityTable = $usingAgentsTable ? 'agents' : 'clients';
+    $activityColumnsAvailable = clientActivityHasColumn($db, $activityTable, 'last_transaction_date')
+        && clientActivityHasColumn($db, $activityTable, 'activity_status')
+        && clientActivityHasColumn($db, $activityTable, 'activity_status_updated_at');
+
+    if ($activityColumnsAvailable) {
+        clientActivityRefreshTable($db, $activityTable);
+    }
 
     $branchSqlExpr = "NULLIF(TRIM(su.branch), '')";
     if ($usersHasBranch && $usingApprovalQueue) {
@@ -288,6 +297,9 @@ try {
 
     $submittedBranchSelect = $usersHasBranch ? $branchSelectExpr : "''";
     $contactPersonSelect = $usingAgentsTable ? 'NULL AS contact_person' : 'c.contact_person';
+    $activitySelectSql = $activityColumnsAvailable
+        ? "{$tableAlias}.last_transaction_date, {$tableAlias}.activity_status, {$tableAlias}.activity_status_updated_at"
+        : "NULL AS last_transaction_date, NULL AS activity_status, NULL AS activity_status_updated_at";
 
     $listSql = "
         SELECT
@@ -302,6 +314,7 @@ try {
             {$tableAlias}.mobile_phone,
             {$tableAlias}.office_phone,
             {$tableAlias}.email,
+            {$activitySelectSql},
             {$tableAlias}.verification_status,
             {$tableAlias}.submitted_by,
             {$tableAlias}.verified_by,
@@ -329,6 +342,9 @@ try {
     }
 
     $clients = fetchRows($db, $listSql, $listTypes, $listParams);
+    $clients = array_map(static function (array $client): array {
+        return array_merge($client, clientActivityBuildSnapshot($client));
+    }, $clients);
 
     $availableBranches = [];
     if ($isHeadOfficeUser && $usersHasBranch) {

@@ -7,6 +7,7 @@
 header('Content-Type: application/json');
 require_once '../config/db.php';
 require_once __DIR__ . '/upload_utils.php';
+require_once __DIR__ . '/client_activity_utils.php';
 session_start();
 
 $response = ['success' => false, 'message' => ''];
@@ -40,6 +41,17 @@ if (!function_exists('syncAgentRowFromClient')) {
             return;
         }
 
+        $includeActivityColumns = clientActivityHasColumn($db, 'clients', 'last_transaction_date')
+            && clientActivityHasColumn($db, 'clients', 'activity_status')
+            && clientActivityHasColumn($db, 'clients', 'activity_status_updated_at')
+            && clientActivityHasColumn($db, 'agents', 'last_transaction_date')
+            && clientActivityHasColumn($db, 'agents', 'activity_status')
+            && clientActivityHasColumn($db, 'agents', 'activity_status_updated_at');
+
+        $activityInsertColumns = $includeActivityColumns ? ",\n                last_transaction_date,\n                activity_status,\n                activity_status_updated_at" : '';
+        $activitySelectColumns = $includeActivityColumns ? ",\n                c.last_transaction_date,\n                c.activity_status,\n                c.activity_status_updated_at" : '';
+        $activityUpdateColumns = $includeActivityColumns ? ",\n                last_transaction_date = VALUES(last_transaction_date),\n                activity_status = VALUES(activity_status),\n                activity_status_updated_at = VALUES(activity_status_updated_at)" : '';
+
         $sql = "
             INSERT INTO agents (
                 client_id,
@@ -57,7 +69,7 @@ if (!function_exists('syncAgentRowFromClient')) {
                 submitted_by,
                 submitted_at,
                 verified_by,
-                created_at
+                created_at{$activityInsertColumns}
             )
             SELECT
                 c.client_id,
@@ -75,7 +87,7 @@ if (!function_exists('syncAgentRowFromClient')) {
                 c.submitted_by,
                 c.submitted_at,
                 c.verified_by,
-                c.created_at
+                c.created_at{$activitySelectColumns}
             FROM clients c
             WHERE c.client_id = ?
             LIMIT 1
@@ -93,7 +105,7 @@ if (!function_exists('syncAgentRowFromClient')) {
                 verification_status = VALUES(verification_status),
                 submitted_by = VALUES(submitted_by),
                 submitted_at = VALUES(submitted_at),
-                verified_by = VALUES(verified_by),
+                verified_by = VALUES(verified_by){$activityUpdateColumns},
                 updated_at = CURRENT_TIMESTAMP
         ";
 
@@ -251,6 +263,18 @@ if (!function_exists('queueClientForApproval')) {
     }
 }
 
+if (!function_exists('generateClientNumber')) {
+    function generateClientNumber() {
+        try {
+            $suffix = strtoupper(bin2hex(random_bytes(3)));
+        } catch (Exception $e) {
+            $suffix = strtoupper(substr(md5(uniqid((string)mt_rand(), true)), 0, 6));
+        }
+
+        return 'CN-' . date('YmdHis') . '-' . $suffix;
+    }
+}
+
 // Check user session
 if (!isset($_SESSION['user_id'])) {
     $response['message'] = 'Unauthorized access';
@@ -278,7 +302,7 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $refCode = generateUniqueReferenceCode();
     
     // Generate client number
-    $clientNumber = 'CN-' . time();
+    $clientNumber = generateClientNumber();
     
     // Build insert data based on client type
     $insertData = [
@@ -508,6 +532,8 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $occupation = trim($_POST['occupation'] ?? '');
     $address = trim($_POST['address'] ?? '');
     $clientType = trim($_POST['clientType'] ?? '');
+    $lastTransactionDateInput = trim($_POST['lastTransactionDate'] ?? '');
+    $lastTransactionDate = null;
     
     if ($clientId === 0) {
         $response['message'] = 'Invalid client ID';
@@ -522,9 +548,26 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($response);
         exit;
     }
+
+    $currentLastTransactionDate = null;
+    if (clientActivityHasColumn($db, 'clients', 'last_transaction_date')) {
+        $currentLastTransaction = clientActivityParseDate($client['last_transaction_date'] ?? null);
+        $currentLastTransactionDate = $currentLastTransaction ? $currentLastTransaction->format('Y-m-d') : null;
+    }
+
+    if ($lastTransactionDateInput !== '') {
+        $parsedLastTransactionDate = clientActivityParseDate($lastTransactionDateInput);
+        if (!$parsedLastTransactionDate) {
+            $response['message'] = 'Invalid last transaction date';
+            echo json_encode($response);
+            exit;
+        }
+
+        $lastTransactionDate = $parsedLastTransactionDate->format('Y-m-d');
+    }
     
     // Update client
-    $result = update('clients', [
+    $updateData = [
         'first_name' => $firstName,
         'last_name' => $lastName,
         'middle_name' => $middleName,
@@ -533,7 +576,29 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'occupation' => $occupation,
         'full_address' => $address,
         'client_type' => $clientType
-    ], 'client_id = ?', [$clientId]);
+    ];
+
+    if (clientActivityHasColumn($db, 'clients', 'last_transaction_date')) {
+        $updateData['last_transaction_date'] = $lastTransactionDate;
+    }
+
+    $lastTransactionDateChanged = $lastTransactionDateInput !== ''
+        ? $currentLastTransactionDate !== $lastTransactionDate
+        : $currentLastTransactionDate !== null;
+
+    $result = update('clients', $updateData, 'client_id = ?', [$clientId]);
+    if (!($result['success'] ?? false)) {
+        $response['message'] = $result['error'] ?? 'Failed to update client';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (clientActivityHasColumn($db, 'clients', 'last_transaction_date')
+        && clientActivityHasColumn($db, 'clients', 'activity_status')
+        && clientActivityHasColumn($db, 'clients', 'activity_status_updated_at')
+    ) {
+        clientActivityRefreshRow($db, 'clients', $clientId, 'client_id', $lastTransactionDateChanged);
+    }
 
     $effectiveClassification = strtolower(trim($client['client_classification'] ?? 'client'));
     if ($effectiveClassification === 'agent') {
@@ -587,6 +652,13 @@ else if ($action === 'get_client' && $_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
     
+    if (clientActivityHasColumn($db, 'clients', 'last_transaction_date')
+        && clientActivityHasColumn($db, 'clients', 'activity_status')
+        && clientActivityHasColumn($db, 'clients', 'activity_status_updated_at')
+    ) {
+        clientActivityRefreshRow($db, 'clients', $clientId);
+    }
+
     $client = fetchOne("SELECT * FROM clients WHERE client_id = ?", [$clientId]);
     
     if (!$client) {
@@ -596,7 +668,7 @@ else if ($action === 'get_client' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     
     $response['success'] = true;
-    $response['data'] = $client;
+    $response['data'] = array_merge($client, clientActivityBuildSnapshot($client));
 }
 
 // ============================================
@@ -622,6 +694,9 @@ else if ($action === 'get_all_clients' && $_SERVER['REQUEST_METHOD'] === 'GET') 
     $query .= " ORDER BY created_at DESC";
     
     $clients = fetchAll($query, $params);
+    $clients = array_map(static function (array $client): array {
+        return array_merge($client, clientActivityBuildSnapshot($client));
+    }, $clients);
     
     $response['success'] = true;
     $response['data'] = $clients;

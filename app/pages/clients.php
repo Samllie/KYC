@@ -113,8 +113,10 @@ include '../includes/sidebar.php';
                             <th class="col-type">Type</th>
                             <th class="col-contact">Contact</th>
                             <th class="col-email">Email</th>
-                            <th class="col-status">Client Number</th>
                             <th class="col-verified">Submitted By</th>
+                            <th class="col-last-transaction">Last Transaction</th>
+                            <th class="col-activity">Activity Status</th>
+                            <th class="col-activity-updated">Status Updated</th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
@@ -247,6 +249,33 @@ include '../includes/sidebar.php';
                     </div>
                 </div>
 
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Last Transaction Date</label>
+                        <div class="date-input-group">
+                            <input type="date" id="editLastTransactionDate" class="form-control date-input">
+                            <button type="button" class="date-picker-btn" id="editLastTransactionDatePickerBtn" aria-label="Open calendar" title="Open calendar">
+                                <i class="bi bi-calendar3"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Activity Status</label>
+                        <input type="text" id="editActivityStatus" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status Updated At</label>
+                        <input type="text" id="editActivityStatusUpdatedAt" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label class="form-label">Countdown</label>
+                        <input type="text" id="editActivityCountdown" class="form-control" readonly>
+                    </div>
+                </div>
+
             </form>
         </div>
         <div class="modal-footer">
@@ -372,6 +401,28 @@ include '../includes/sidebar.php';
                         <input type="text" id="viewAddress" class="form-control" readonly>
                     </div>
                 </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Last Transaction Date</label>
+                        <input type="date" id="viewLastTransactionDate" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Activity Status</label>
+                        <input type="text" id="viewActivityStatus" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status Updated At</label>
+                        <input type="text" id="viewActivityStatusUpdatedAt" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label class="form-label">Countdown</label>
+                        <input type="text" id="viewActivityCountdown" class="form-control" readonly>
+                    </div>
+                </div>
             </form>
         </div>
         <div class="modal-footer">
@@ -456,6 +507,7 @@ include '../includes/sidebar.php';
     const recordLabelPlural = <?php echo json_encode($recordLabelPlural); ?>;
     const recordTitleCaseSingular = <?php echo json_encode($recordTitleCaseSingular); ?>;
     const recordTitleCasePlural = <?php echo json_encode($recordTitleCasePlural); ?>;
+    const clientTableColumnCount = 12;
 
     function escapeHtml(value) {
         return String(value)
@@ -464,6 +516,14 @@ include '../includes/sidebar.php';
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+    }
+
+    function normalizeActivityStatusClass(status) {
+        const normalized = String(status || '').toLowerCase();
+        if (normalized === 'active' || normalized === 'inactive' || normalized === 'deactivated') {
+            return normalized;
+        }
+        return 'none';
     }
 
     function updateBranchFilterOptions(branches) {
@@ -571,7 +631,7 @@ include '../includes/sidebar.php';
                         attachClientEventListeners();
                         syncSelectAllCheckbox();
                     } else {
-                        document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px;">No ${recordLabelPlural} found</td></tr>`;
+                        document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="${clientTableColumnCount}" style="text-align: center; padding: 20px;">No ${recordLabelPlural} found</td></tr>`;
                         syncSelectAllCheckbox();
                     }
 
@@ -580,7 +640,7 @@ include '../includes/sidebar.php';
                 } else {
                     currentPageClients = [];
                     console.log(`No ${recordLabelPlural} found or fetch failed`);
-                    document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px;">No ${recordLabelPlural} found</td></tr>`;
+                    document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="${clientTableColumnCount}" style="text-align: center; padding: 20px;">No ${recordLabelPlural} found</td></tr>`;
                     updatePaginationInfo({ page: 1, total: 0, pageSize: pageSize, totalPages: 0 });
                     generatePaginationButtons({ page: 1, totalPages: 0 });
                 }
@@ -588,7 +648,7 @@ include '../includes/sidebar.php';
             .catch(error => {
                 currentPageClients = [];
                 console.error('Error loading records:', error);
-                document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: red;">Error loading ${recordLabelPlural}: ${error.message}</td></tr>`;
+                document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="${clientTableColumnCount}" style="text-align: center; padding: 20px; color: red;">Error loading ${recordLabelPlural}: ${error.message}</td></tr>`;
                 syncSelectAllCheckbox();
             })
             .finally(() => {
@@ -621,26 +681,41 @@ include '../includes/sidebar.php';
             const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
             const submittedBranch = client.submitted_by_branch || 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
-            const clientNumber = client.client_number || 'N/A';
             const contactNumber = isCorporateLike(client.client_type)
                 ? (client.office_phone || 'N/A')
                 : (client.mobile_phone || 'N/A');
+            const lastTransactionDate = client.last_transaction_date_display || 'Not set';
+            const activityStatus = client.activity_status_display || 'Active';
+            const activityStatusClass = normalizeActivityStatusClass(client.activity_status_class || 'active');
+            const activityCountdown = client.activity_countdown_display || 'Set last transaction date';
+            const activityUpdatedAt = client.activity_status_updated_display || 'N/A';
 
             const row = document.createElement('tr');
             row.classList.add('row-enter');
             row.dataset.clientId = client.client_id;
             row.dataset.clientType = client.client_type || '';
+            row.dataset.clientNumber = client.client_number || 'N/A';
             row.style.animationDelay = `${Math.min(tbody.children.length * 35, 220)}ms`;
             row.innerHTML = `
                 <td class="col-checkbox"><input type="checkbox" class="row-select" data-client-id="${client.client_id}"></td>
-                <td class="col-ref"><span class="ref-badge">${client.reference_code}</span></td>
-                <td class="col-name">${displayName}</td>
-                <td class="col-owner">${submittedBranch}</td>
-                <td class="col-type"><span class="type-badge ${typeClass}">${typeText}</span></td>
-                <td class="col-contact">${contactNumber}</td>
-                <td class="col-email">${client.email}</td>
-                <td class="col-status">${clientNumber}</td>
-                <td class="col-verified">${submittedByName}</td>
+                <td class="col-ref"><span class="ref-badge">${escapeHtml(client.reference_code || 'N/A')}</span></td>
+                <td class="col-name">${escapeHtml(displayName)}</td>
+                <td class="col-owner">${escapeHtml(submittedBranch)}</td>
+                <td class="col-type"><span class="type-badge ${typeClass}">${escapeHtml(typeText)}</span></td>
+                <td class="col-contact">${escapeHtml(contactNumber)}</td>
+                <td class="col-email">${escapeHtml(client.email || 'N/A')}</td>
+                <td class="col-verified">${escapeHtml(submittedByName)}</td>
+                <td class="col-last-transaction">${escapeHtml(lastTransactionDate)}</td>
+                <td class="col-activity">
+                    <div class="activity-cell">
+                        <div class="activity-indicator-row">
+                            <span class="activity-indicator ${activityStatusClass}" aria-hidden="true"></span>
+                            <span class="activity-badge ${activityStatusClass}">${escapeHtml(activityStatus)}</span>
+                        </div>
+                        <span class="activity-countdown ${activityStatusClass}">${escapeHtml(activityCountdown)}</span>
+                    </div>
+                </td>
+                <td class="col-activity-updated">${escapeHtml(activityUpdatedAt)}</td>
                 <td class="col-actions">
                     <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
                     <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
@@ -814,7 +889,7 @@ include '../includes/sidebar.php';
             type: cells[4].textContent.trim(),
             contact: cells[5].textContent.trim(),
             email: cells[6].textContent.trim(),
-            clientNumber: cells[7].textContent.trim()
+            clientNumber: row.dataset.clientNumber || 'N/A'
         };
     }
 
@@ -823,6 +898,8 @@ include '../includes/sidebar.php';
     const viewModal = document.getElementById('viewModal');
     const cancelBtn = document.getElementById('cancelBtn');
     const editModalCloseBtn = document.getElementById('editModalCloseBtn');
+    const editLastTransactionDate = document.getElementById('editLastTransactionDate');
+    const editLastTransactionDatePickerBtn = document.getElementById('editLastTransactionDatePickerBtn');
     const deleteConfirmModal = document.getElementById('deleteConfirmModal');
     const deleteConfirmRefCode = document.getElementById('deleteConfirmRefCode');
     const deleteConfirmName = document.getElementById('deleteConfirmName');
@@ -837,6 +914,20 @@ include '../includes/sidebar.php';
 
         deleteConfirmModal.style.display = isOpen ? 'block' : 'none';
         deleteConfirmModal.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    }
+
+    function openNativeDatePicker(input) {
+        if (!input) {
+            return;
+        }
+
+        if (typeof input.showPicker === 'function') {
+            input.showPicker();
+            return;
+        }
+
+        input.focus();
+        input.click();
     }
 
     function closeDeleteClientModal() {
@@ -913,6 +1004,10 @@ include '../includes/sidebar.php';
             document.getElementById('viewMobile').value = client.mobile_phone || client.office_phone || '';
             document.getElementById('viewTelephone').value = client.landline_phone || client.office_phone || '';
             document.getElementById('viewAddress').value = client.full_address || client.home_address || client.business_address || '';
+            document.getElementById('viewLastTransactionDate').value = client.last_transaction_date_value || '';
+            document.getElementById('viewActivityStatus').value = client.activity_status_display || 'Active';
+            document.getElementById('viewActivityStatusUpdatedAt').value = client.activity_status_updated_display || 'N/A';
+            document.getElementById('viewActivityCountdown').value = client.activity_countdown_display || 'Set last transaction date';
 
             viewModal.style.display = 'block';
         })
@@ -961,6 +1056,10 @@ include '../includes/sidebar.php';
             document.getElementById('editMobile').value = client.mobile_phone || client.office_phone || '';
             document.getElementById('editTelephone').value = client.landline_phone || client.office_phone || '';
             document.getElementById('editAddress').value = client.full_address || client.home_address || client.business_address || '';
+            document.getElementById('editLastTransactionDate').value = client.last_transaction_date_value || '';
+            document.getElementById('editActivityStatus').value = client.activity_status_display || 'Active';
+            document.getElementById('editActivityStatusUpdatedAt').value = client.activity_status_updated_display || 'N/A';
+            document.getElementById('editActivityCountdown').value = client.activity_countdown_display || 'Set last transaction date';
 
             editModal.style.display = 'block';
         })
@@ -990,6 +1089,7 @@ include '../includes/sidebar.php';
         formData.append('mobile', document.getElementById('editMobile').value.trim());
         formData.append('occupation', document.getElementById('editOccupation').value.trim());
         formData.append('address', document.getElementById('editAddress').value.trim());
+        formData.append('lastTransactionDate', document.getElementById('editLastTransactionDate').value.trim());
         formData.append('clientType', document.getElementById('editClientType').value);
 
         fetch('../handlers/client.php', {
@@ -1104,6 +1204,12 @@ include '../includes/sidebar.php';
     if (editModalCloseBtn) {
         editModalCloseBtn.addEventListener('click', function() {
             editModal.style.display = 'none';
+        });
+    }
+
+    if (editLastTransactionDatePickerBtn && editLastTransactionDate) {
+        editLastTransactionDatePickerBtn.addEventListener('click', function() {
+            openNativeDatePicker(editLastTransactionDate);
         });
     }
 

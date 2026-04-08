@@ -2463,7 +2463,7 @@ function submitForm() {
     
     // Collect form data
     const formData = new FormData();
-    formData.append('action', 'add_client');
+    formData.append('action', 'submit_kyc');
     
     // Add all form fields
     const form = document.getElementById('kycForm');
@@ -2473,9 +2473,13 @@ function submitForm() {
             formData.append(el.name, el.value);
         }
     });
+
+    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
+    formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
+    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
     
     // Submit to handler
-    fetch('../handlers/client.php', {
+    fetch('../handlers/kyc.php', {
         method: 'POST',
         body: formData
     })
