@@ -165,6 +165,21 @@ if ($isHeadOfficeUser) {
 $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($displayName) : 'US';
 ?>
 
+<script>
+(function () {
+    try {
+        if (window.matchMedia('(max-width: 768px)').matches) {
+            return;
+        }
+
+        if (localStorage.getItem('kyc.sidebar.collapsed') === '1') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    } catch (error) {
+    }
+})();
+</script>
+
 <!-- ═══════════════════════════════════════════════ SIDEBAR -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
@@ -252,12 +267,80 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
     const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
     const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const sidebarElement = document.getElementById('sidebar');
     const brandLogoLink = document.getElementById('brandDashboardLink');
     const sidebarNavLinks = document.querySelectorAll('.sidebar .nav-item');
     const COLLAPSE_KEY = 'kyc.sidebar.collapsed';
+    const NAVIGATION_TRANSITION_MS = 240;
+    let pendingSidebarNavigation = null;
     const isMobile = function () {
         return window.matchMedia('(max-width: 768px)').matches;
     };
+
+    function isPrimaryNavigationClick(event) {
+        return (typeof event.button === 'undefined' || event.button === 0)
+            && !event.metaKey
+            && !event.ctrlKey
+            && !event.shiftKey
+            && !event.altKey;
+    }
+
+    function clearPendingSidebarNavigation() {
+        if (!pendingSidebarNavigation) {
+            return;
+        }
+
+        if (pendingSidebarNavigation.timeoutId) {
+            window.clearTimeout(pendingSidebarNavigation.timeoutId);
+        }
+
+        if (pendingSidebarNavigation.transitionTarget && pendingSidebarNavigation.transitionHandler) {
+            pendingSidebarNavigation.transitionTarget.removeEventListener('transitionend', pendingSidebarNavigation.transitionHandler);
+        }
+
+        pendingSidebarNavigation = null;
+    }
+
+    function navigateAfterSidebarTransition(href, transitionTarget) {
+        clearPendingSidebarNavigation();
+
+        if (!transitionTarget) {
+            window.location.href = href;
+            return;
+        }
+
+        let finished = false;
+
+        function finishNavigation() {
+            if (finished) {
+                return;
+            }
+
+            finished = true;
+            clearPendingSidebarNavigation();
+            window.location.href = href;
+        }
+
+        function handleTransitionEnd(event) {
+            if (event.target !== transitionTarget) {
+                return;
+            }
+
+            if (event.propertyName !== 'width' && event.propertyName !== 'transform') {
+                return;
+            }
+
+            finishNavigation();
+        }
+
+        pendingSidebarNavigation = {
+            transitionTarget: transitionTarget,
+            transitionHandler: handleTransitionEnd,
+            timeoutId: window.setTimeout(finishNavigation, NAVIGATION_TRANSITION_MS)
+        };
+
+        transitionTarget.addEventListener('transitionend', handleTransitionEnd);
+    }
 
     function isDashboardPage() {
         const normalizedPath = (window.location.pathname || '').replace(/\\/g, '/').toLowerCase();
@@ -320,14 +403,38 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
         applyCollapsedState(readCollapsedState());
     }
 
-    function collapseSidebarForNavigation() {
-        if (isMobile()) {
-            closeMobileSidebar();
+    function handleSidebarNavLinkClick(event) {
+        const link = event.currentTarget;
+
+        if (!link || !isPrimaryNavigationClick(event) || (link.target && link.target !== '_self') || link.hasAttribute('download')) {
             return;
         }
 
-        applyCollapsedState(true);
-        persistCollapsedState(true);
+        const isMobileSidebarOpen = isMobile() && document.body.classList.contains('sidebar-mobile-open');
+        const shouldCollapseDesktopSidebar = !isMobile() && !document.body.classList.contains('sidebar-collapsed');
+
+        if (!isMobileSidebarOpen && !shouldCollapseDesktopSidebar) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (isMobileSidebarOpen) {
+            closeMobileSidebar();
+        }
+
+        if (shouldCollapseDesktopSidebar) {
+            applyCollapsedState(true);
+            persistCollapsedState(true);
+        }
+
+        navigateAfterSidebarTransition(link.href, sidebarElement);
+    }
+
+    function handleSidebarNavigationClick() {
+        if (isMobile()) {
+            closeMobileSidebar();
+        }
     }
 
     function syncMobileToggleState(isOpen) {
@@ -378,7 +485,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 
     if (brandLogoLink) {
         brandLogoLink.addEventListener('click', function (event) {
-            collapseSidebarForNavigation();
+            handleSidebarNavigationClick();
 
             if (isDashboardPage()) {
                 event.preventDefault();
@@ -388,7 +495,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     }
 
     sidebarNavLinks.forEach(function (link) {
-        link.addEventListener('click', collapseSidebarForNavigation);
+        link.addEventListener('click', handleSidebarNavLinkClick);
     });
 
     window.addEventListener('resize', function () {

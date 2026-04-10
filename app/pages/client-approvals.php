@@ -134,65 +134,6 @@ if (!$isHeadOfficeUser) {
             color: #6b7280;
         }
 
-        .approvals-table-shell {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            flex: 1;
-            min-height: 0;
-            padding: 14px;
-            border: 1px solid #d6e4db;
-            border-radius: 18px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #fbfefc 100%);
-            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
-            overflow: hidden;
-        }
-
-        .controls-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 0;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #e2ece4;
-        }
-
-        .table-wrapper {
-            width: 100%;
-            max-width: 100%;
-            overflow-x: auto;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-gutter: stable both-edges;
-            flex: 1;
-            min-height: 0;
-            border: 1px solid #d8e5dd;
-            border-radius: 14px;
-            background: #ffffff;
-        }
-
-        .clients-table {
-            width: max(100%, 1220px);
-            min-width: 1220px;
-            table-layout: fixed;
-            font-size: 0.76rem;
-        }
-
-        .clients-table th,
-        .clients-table td {
-            padding: 4px 6px;
-            line-height: 1.1;
-            vertical-align: middle;
-        }
-
-        .clients-table th:not(:last-child),
-        .clients-table td:not(:last-child) {
-            background-image: linear-gradient(to bottom, transparent 22%, rgba(203, 213, 225, 0.95) 22%, rgba(203, 213, 225, 0.95) 78%, transparent 78%);
-            background-repeat: no-repeat;
-            background-position: right center;
-            background-size: 1px 56%;
-        }
-
         .clients-table th.col-ref,
         .clients-table td.col-ref {
             width: 13%;
@@ -243,11 +184,6 @@ if (!$isHeadOfficeUser) {
             min-width: 170px;
             overflow: visible;
             text-overflow: clip;
-        }
-
-        .ref-badge {
-            padding: 3px 7px;
-            font-size: 0.69rem;
         }
 
         .col-name {
@@ -387,18 +323,13 @@ if (!$isHeadOfficeUser) {
             grid-column: 1 / -1;
         }
 
-        .table-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding-top: 2px;
-            margin-top: 0;
-            flex-wrap: wrap;
-        }
-
-        .pagination-info {
-            font-size: 0.8rem;
+        .action-stack .action-icon[disabled],
+        .application-modal-actions .action-icon[disabled] {
+            opacity: 0.45;
+            cursor: not-allowed;
+            pointer-events: none;
+            filter: grayscale(0.1);
+            box-shadow: none;
         }
 
         #approvalsTableBody tr.approval-row {
@@ -771,7 +702,6 @@ include '../includes/sidebar.php';
     </header>
 
     <main class="content">
-        <section class="approvals-table-shell">
         <div class="controls-container">
             <div class="controls-left">
                 <div class="search-box">
@@ -843,7 +773,6 @@ include '../includes/sidebar.php';
             </div>
             <div class="pagination" id="paginationContainer"></div>
         </div>
-        </section>
     </main>
 </div>
 
@@ -908,7 +837,7 @@ include '../includes/sidebar.php';
 <script>
     let currentPage = 1;
     let totalPages = 1;
-    const pageSize = 10;
+    const pageSize = 8;
     const APPROVALS_AUTO_REFRESH_MS = 12000;
     const OFFICER_RESUBMITTED_JUST_NOW_MS = 5 * 60 * 1000;
     let searchDebounceTimer;
@@ -1332,6 +1261,11 @@ include '../includes/sidebar.php';
         return elapsed >= 0 && elapsed <= OFFICER_RESUBMITTED_JUST_NOW_MS;
     }
 
+    function isFinalApprovalStatus(status) {
+        const normalized = String(status || '').toLowerCase();
+        return normalized === 'approved' || normalized === 'declined';
+    }
+
     function buildOfficerUpdateSignature(rows) {
         if (!Array.isArray(rows) || rows.length === 0) {
             return '';
@@ -1368,10 +1302,13 @@ include '../includes/sidebar.php';
     }
 
     function refreshModalActionButtons() {
+        const isLockedStatus = isFinalApprovalStatus(currentOpenApprovalStatus);
+
         modalActionButtons.forEach(button => {
             const action = String(button.dataset.action || '').toLowerCase();
-            const disableByStatus = currentOpenApprovalStatus !== '' && action === currentOpenApprovalStatus;
-            button.disabled = detailsActionsBusy || currentOpenApprovalId <= 0 || disableByStatus;
+            const disableByStatus = !isLockedStatus && currentOpenApprovalStatus !== '' && action === currentOpenApprovalStatus;
+            button.disabled = detailsActionsBusy || currentOpenApprovalId <= 0 || isLockedStatus || disableByStatus;
+            button.setAttribute('aria-disabled', button.disabled ? 'true' : 'false');
         });
     }
 
@@ -1413,6 +1350,7 @@ include '../includes/sidebar.php';
             const clientName = resolveClientName(row);
             const status = String(row.approval_status || 'pending').toLowerCase();
             const approvalId = Number(row.approval_id || 0);
+            const isLockedStatus = isFinalApprovalStatus(status);
             const officerUpdated = hasOfficerUpdates(row);
             const officerResubmittedJustNow = officerUpdated && isOfficerResubmittedJustNow(row.officer_resubmitted_at);
             const classificationValue = formatClassification(row.client_classification);
@@ -1443,9 +1381,9 @@ include '../includes/sidebar.php';
                 <td class="col-submitted-at">${escapeHtml(formatDateOnly(row.submitted_at))}</td>
                 <td class="col-actions">
                     <div class="action-stack">
-                        <button class="action-icon action-approve" data-action="approve" data-id="${approvalId}"><i class="bi bi-check2-circle"></i>Approve</button>
-                        <button class="action-icon action-decline" data-action="decline" data-id="${approvalId}"><i class="bi bi-x-circle"></i>Decline</button>
-                        <button class="action-icon action-resubmit" data-action="resubmit" data-id="${approvalId}"><i class="bi bi-arrow-repeat"></i>Resubmit</button>
+                        <button type="button" class="action-icon action-approve" data-action="approve" data-id="${approvalId}" ${isLockedStatus ? 'disabled aria-disabled="true" title="Action locked after final decision"' : ''}><i class="bi bi-check2-circle"></i>Approve</button>
+                        <button type="button" class="action-icon action-decline" data-action="decline" data-id="${approvalId}" ${isLockedStatus ? 'disabled aria-disabled="true" title="Action locked after final decision"' : ''}><i class="bi bi-x-circle"></i>Decline</button>
+                        <button type="button" class="action-icon action-resubmit" data-action="resubmit" data-id="${approvalId}" ${isLockedStatus ? 'disabled aria-disabled="true" title="Action locked after final decision"' : ''}><i class="bi bi-arrow-repeat"></i>Resubmit</button>
                     </div>
                 </td>
             `;

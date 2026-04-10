@@ -40,7 +40,7 @@ $kycEntryUrl = $isAgentsMode
     <link rel="stylesheet" href="../../public/css/global.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body class="clients-page <?php echo $isAgentsMode ? 'agents-mode' : ''; ?>">
+<body class="clients-page clients-management-page <?php echo $isAgentsMode ? 'agents-mode' : ''; ?>">
 
 <?php
 $activePage = $isAgentsMode ? 'agents' : 'clients';
@@ -66,58 +66,59 @@ include '../includes/sidebar.php';
 
     <!-- Content -->
     <main class="content">
-
-        <!-- Table Controls -->
-        <div class="table-controls">
-            <div class="controls-left">
-                <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input type="text" id="searchInput" placeholder="Search <?php echo htmlspecialchars($recordLabelPlural); ?>..." class="search-input">
+        <section class="clients-table-shell">
+            <div class="controls-container">
+                <!-- Table Controls -->
+                <div class="table-controls">
+                    <div class="controls-left">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search <?php echo htmlspecialchars($recordLabelPlural); ?>..." class="search-input">
+                        </div>
+                        <div class="filter-group">
+                            <select id="filterType" class="filter-select">
+                                <option value="">All Types</option>
+                                <option value="individual">Individual</option>
+                                <option value="corporate">Corporate</option>
+                                <option value="obligee">Obligee</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select id="filterActivity" class="filter-select">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select id="sortOrder" class="filter-select">
+                                <option value="created_desc">Latest Added</option>
+                                <option value="alphabetical_asc">Alphabetical A-Z</option>
+                                <option value="alphabetical_desc">Alphabetical Z-A</option>
+                                <option value="updated_asc">Time Updated: Oldest First</option>
+                                <option value="updated_desc">Time Updated: Newest First</option>
+                            </select>
+                        </div>
+                        <?php if ($isHeadOfficeView): ?>
+                        <div class="filter-group">
+                            <select id="filterBranch" class="filter-select">
+                                <option value="">All Branches</option>
+                            </select>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="controls-right">
+                        <button class="btn-export" title="Export" onclick="showExportPreview()">
+                            <i class="bi bi-download"></i> Export
+                        </button>
+                        <button class="btn-add-client" title="Add New <?php echo htmlspecialchars($recordTitleCaseSingular); ?>" onclick="window.location.href='<?php echo htmlspecialchars($kycEntryUrl); ?>'">
+                            <i class="bi bi-plus-circle"></i> <?php echo htmlspecialchars($newRecordLabel); ?>
+                        </button>
+                    </div>
                 </div>
-                <div class="filter-group">
-                    <select id="filterType" class="filter-select">
-                        <option value="">All Types</option>
-                        <option value="individual">Individual</option>
-                        <option value="corporate">Corporate</option>
-                        <option value="obligee">Obligee</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <select id="filterActivity" class="filter-select">
-                        <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <select id="sortOrder" class="filter-select">
-                        <option value="created_desc">Latest Added</option>
-                        <option value="alphabetical_asc">Alphabetical A-Z</option>
-                        <option value="alphabetical_desc">Alphabetical Z-A</option>
-                        <option value="updated_asc">Time Updated: Oldest First</option>
-                        <option value="updated_desc">Time Updated: Newest First</option>
-                    </select>
-                </div>
-                <?php if ($isHeadOfficeView): ?>
-                <div class="filter-group">
-                    <select id="filterBranch" class="filter-select">
-                        <option value="">All Branches</option>
-                    </select>
-                </div>
-                <?php endif; ?>
             </div>
-            <div class="controls-right">
-                <button class="btn-export" title="Export" onclick="showExportPreview()">
-                    <i class="bi bi-download"></i> Export
-                </button>
-                <button class="btn-add-client" title="Add New <?php echo htmlspecialchars($recordTitleCaseSingular); ?>" onclick="window.location.href='<?php echo htmlspecialchars($kycEntryUrl); ?>'">
-                    <i class="bi bi-plus-circle"></i> <?php echo htmlspecialchars($newRecordLabel); ?>
-                </button>
-            </div>
-        </div>
 
-        <!-- Clients Table -->
-        <div class="card">
+            <!-- Clients Table -->
             <div class="table-wrapper">
                 <table class="clients-table">
                     <thead>
@@ -150,7 +151,7 @@ include '../includes/sidebar.php';
                     <!-- Pagination buttons will be generated dynamically -->
                 </div>
             </div>
-        </div>
+        </section>
 
     </main>
 
@@ -737,8 +738,10 @@ include '../includes/sidebar.php';
                 </td>
                 <td class="col-activity-updated">${escapeHtml(activityUpdatedAt)}</td>
                 <td class="col-actions">
-                    <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
-                    <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
+                    <div class="action-stack">
+                        <button type="button" class="action-icon action-edit" title="Edit"><i class="bi bi-pencil"></i><span>Edit</span></button>
+                        <button type="button" class="action-icon delete" title="Delete"><i class="bi bi-trash"></i><span>Delete</span></button>
+                    </div>
                 </td>
             `;
 

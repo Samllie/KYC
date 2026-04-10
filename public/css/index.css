@@ -87,14 +87,20 @@ body.sidebar-collapsed {
 }
 
 .sidebar-text {
+    display: block;
+    max-width: 240px;
+    overflow: hidden;
     opacity: 1;
-    transition: opacity var(--transition), visibility var(--transition);
+    transform: translateX(0);
+    transition: opacity 0.14s ease, transform 0.18s ease, max-width 0.24s cubic-bezier(.22,1,.36,1);
+    will-change: opacity, transform, max-width;
 }
 
 body.sidebar-collapsed .sidebar-text {
     opacity: 0;
-    visibility: hidden;
-    display: none;
+    transform: translateX(-8px);
+    max-width: 0;
+    pointer-events: none;
 }
 
 /* ─── Sidebar ────────────────────────────────────── */
@@ -107,7 +113,8 @@ body.sidebar-collapsed .sidebar-text {
     position: fixed;
     top: 0; left: 0;
     z-index: 100;
-    transition: width var(--transition);
+    transition: width 0.24s cubic-bezier(.22,1,.36,1);
+    will-change: width;
 }
 
 .sidebar-brand {
@@ -115,6 +122,7 @@ body.sidebar-collapsed .sidebar-text {
     border-bottom: 1px solid rgba(255,255,255,.08);
     display: flex;
     align-items: center;
+    transition: padding 0.24s cubic-bezier(.22,1,.36,1);
 }
 
 .brand-logo {
@@ -175,6 +183,7 @@ body.sidebar-collapsed .sidebar-text {
     display: flex;
     justify-content: flex-end;
     padding: 0 12px 4px;
+    transition: padding 0.24s cubic-bezier(.22,1,.36,1);
 }
 
 .nav-label {
@@ -250,6 +259,11 @@ body.sidebar-collapsed .sidebar-text {
     font-weight: 700;
     padding: 2px 7px;
     border-radius: 99px;
+    overflow: hidden;
+    max-width: 96px;
+    white-space: nowrap;
+    transition: opacity 0.14s ease, transform 0.18s ease, max-width 0.24s cubic-bezier(.22,1,.36,1), padding 0.24s cubic-bezier(.22,1,.36,1);
+    will-change: opacity, transform, max-width;
 }
 
 .nav-badge.nav-badge-pending {
@@ -265,6 +279,7 @@ body.sidebar-collapsed .sidebar-text {
 .sidebar-footer {
     padding: 12px 10px;
     border-top: 1px solid rgba(255,255,255,.08);
+    transition: padding 0.24s cubic-bezier(.22,1,.36,1);
 }
 
 .user-card {
@@ -525,7 +540,11 @@ body.sidebar-collapsed .sidebar-text {
 
 body.sidebar-collapsed .nav-badge {
     opacity: 0;
-    transition: opacity var(--transition);
+    transform: translateX(-4px) scale(0.96);
+    max-width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    pointer-events: none;
 }
 
 body.sidebar-collapsed .brand-logo {
@@ -549,18 +568,26 @@ body.sidebar-collapsed .brand-icon img {
 }
 
 body.sidebar-collapsed .nav-item {
-    grid-template-columns: 20px;
-    justify-content: center;
-    justify-items: center;
+    display: flex;
     align-items: center;
-    place-items: center;
+    justify-content: center;
+    gap: 0;
     width: 44px;
     min-width: 44px;
     height: 44px;
     margin: 0 auto 6px;
     padding: 0;
     border-radius: 12px;
-    column-gap: 0;
+    overflow: hidden;
+}
+
+body.sidebar-collapsed .nav-item .nav-text.sidebar-text {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
 }
 
 body.sidebar-collapsed .sidebar-toggle-row {
@@ -578,7 +605,13 @@ body.sidebar-collapsed .nav-item.active::before {
 }
 
 body.sidebar-collapsed .nav-item .nav-badge {
-    display: none;
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    transform: translateX(-4px) scale(0.96);
+    overflow: hidden;
+    pointer-events: none;
 }
 
 body.sidebar-collapsed .user-card {
@@ -607,7 +640,7 @@ body.sidebar-collapsed .sidebar-footer {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    transition: margin-left var(--transition), width var(--transition);
+    transition: margin-left 0.24s cubic-bezier(.22,1,.36,1), width 0.24s cubic-bezier(.22,1,.36,1);
     min-width: 0;
 }
 
