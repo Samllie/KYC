@@ -325,9 +325,10 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'suffix' => $isCorporateLike ? '' : trim($_POST['suffixName'] ?? ''),
         'birthdate' => $isCorporateLike ? null : trim($_POST['birthdate'] ?? ''),
         'gender' => trim($_POST['gender'] ?? $_POST['corporateGender'] ?? ''),
-        'nationality' => $isCorporateLike ? '' : trim($_POST['nationality'] ?? ''),
+        'nationality' => trim($_POST['nationality'] ?? ''),
         'id_type' => trim($_POST['idType'] ?? ''),
         'id_number' => trim($_POST['idNumber'] ?? ''),
+        'tin_number' => trim($_POST['tinNumber'] ?? ''),
         'occupation' => $isCorporateLike
             ? trim($_POST['corporateContactPerson'] ?? '')
             : trim($_POST['occupation'] ?? ''),
@@ -392,6 +393,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'nationality' => $formData['nationality'],
             'id_type' => $formData['id_type'],
             'id_number' => $formData['id_number'],
+            'tin_number' => $formData['tin_number'] ?: null,
             'salutation' => trim($_POST['salutation'] ?? ''),
             'client_since' => trim($_POST['clientSince'] ?? ''),
             'ap_sl_code' => trim($_POST['apSlCode'] ?? ''),
@@ -439,6 +441,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'email' => $formData['email'],
             'contact_person' => $formData['occupation'],
             'gender' => $formData['gender'],
+            'nationality' => $formData['nationality'],
             'verification_status' => 'pending'
         ];
     }
@@ -616,9 +619,10 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'suffix' => $isCorporateLike ? '' : trim($_POST['suffixName'] ?? ''),
         'birthdate' => $isCorporateLike ? null : trim($_POST['birthdate'] ?? ''),
         'gender' => trim($_POST['gender'] ?? $_POST['corporateGender'] ?? ''),
-        'nationality' => $isCorporateLike ? '' : trim($_POST['nationality'] ?? ''),
+        'nationality' => trim($_POST['nationality'] ?? ''),
         'id_type' => trim($_POST['idType'] ?? ''),
         'id_number' => trim($_POST['idNumber'] ?? ''),
+        'tin_number' => trim($_POST['tinNumber'] ?? ''),
         'occupation' => $isCorporateLike
             ? trim($_POST['corporateContactPerson'] ?? '')
             : trim($_POST['occupation'] ?? ''),
@@ -670,6 +674,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'email' => trim($_POST['corporateEmail'] ?? '') ?: null,
             'contact_person' => trim($_POST['corporateContactPerson'] ?? '') ?: null,
             'gender' => trim($_POST['corporateGender'] ?? '') ?: null,
+            'nationality' => trim($_POST['nationality'] ?? '') ?: null,
             'verification_status' => 'draft'
         ];
     } else {
@@ -690,6 +695,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'spouse_occupation' => trim($_POST['spouseOccupation'] ?? '') ?: null,
             'id_type' => $formData['id_type'] ?: null,
             'id_number' => $formData['id_number'] ?: null,
+            'tin_number' => $formData['tin_number'] ?: null,
             'occupation' => $formData['occupation'] ?: null,
             'company_name' => $formData['company'] ?: null,
             'ap_sl_code' => trim($_POST['apSlCode'] ?? '') ?: null,

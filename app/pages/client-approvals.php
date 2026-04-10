@@ -289,26 +289,26 @@ if (!$isHeadOfficeUser) {
         }
 
         .approval-pill-agent {
-            background: #e8f1ff;
-            color: #245ea8;
-            border-color: #c6daf8;
+            background: #f3e8ff;
+            color: #5b21b6;
+            border-color: #d9c2ff;
         }
 
         .approval-pill-individual {
-            background: #e7f8ee;
-            color: #0d6b37;
-            border-color: #b7e6ca;
+            background: #eaf2ff;
+            color: #1f5ea9;
+            border-color: #c8ddf6;
         }
 
         .approval-pill-corporate {
-            background: #edf4ff;
-            color: #245ea8;
-            border-color: #c6daf8;
+            background: #ecfdf5;
+            color: #16633f;
+            border-color: #bbe6c9;
         }
 
         .approval-pill-obligee {
-            background: #f6eadf;
-            color: #8a4b00;
+            background: #f4e8de;
+            color: #6b4320;
             border-color: #e3c39c;
         }
 

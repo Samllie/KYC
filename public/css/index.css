@@ -25,6 +25,9 @@
     --danger:   #EF4444;
     --warning:  #F59E0B;
     --info:     #3B82F6;
+    --wizard-accent: var(--green-500);
+    --wizard-accent-soft: var(--green-100);
+    --wizard-accent-deep: var(--green-700);
 
     --sidebar-w: 228px;
     --sidebar-toggle-top: 330px;
@@ -770,14 +773,15 @@ body.sidebar-collapsed .steps-bar.sticky {
 }
 .step-info strong { font-size: .8rem; font-weight: 600; color: var(--gray-500); }
 
-.step.active .step-num { background: var(--green-500); border-color: var(--green-500); color: var(--white); }
-.step.active .step-info strong { color: var(--green-700); }
-.step.active .step-info span:first-child { color: var(--green-500); }
 
-.step.done .step-num { background: var(--green-100); border-color: var(--green-400); color: var(--green-700); }
+.step.active .step-num { background: var(--wizard-accent); border-color: var(--wizard-accent); color: var(--white); }
+.step.active .step-info strong { color: var(--wizard-accent-deep); }
+.step.active .step-info span:first-child { color: var(--wizard-accent); }
+
+.step.done .step-num { background: var(--wizard-accent-soft); border-color: var(--wizard-accent); color: var(--wizard-accent-deep); }
 
 .step-line { height: 2px; flex: 1; background: var(--gray-300); margin: 0 12px; border-radius: 2px; }
-.step-line.done { background: var(--green-400); }
+.step-line.done { background: var(--wizard-accent); }
 
 /* ─── Card ───────────────────────────────────────── */
 .card {

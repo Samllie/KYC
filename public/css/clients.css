@@ -60,6 +60,11 @@
     box-shadow: 0 0 0 3px rgba(34, 145, 109, 0.1);
 }
 
+body.clients-page.agents-mode .search-input:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
 .filter-group {
     display: flex;
     gap: 6px;
@@ -83,6 +88,11 @@
     outline: none;
     border-color: var(--green-500);
     box-shadow: 0 0 0 3px rgba(34, 145, 109, 0.1);
+}
+
+body.clients-page.agents-mode .filter-select:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
 }
 
 .controls-right {
@@ -112,6 +122,23 @@
 
 .btn-export:hover {
     background: #eef8f2;
+}
+
+body.clients-page.agents-mode .search-box i {
+    color: #7c3aed;
+}
+
+body.clients-page.agents-mode .btn-primary {
+    background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
+    border-color: #7c3aed;
+}
+
+body.clients-page.agents-mode .btn-primary:hover {
+    background: linear-gradient(180deg, #7c3aed 0%, #6d28d9 100%);
+}
+
+body.clients-page.agents-mode .table-wrapper.is-loading::before {
+    border-top-color: #7c3aed;
 }
 
 .btn-export:active,
@@ -459,20 +486,43 @@ body.clients-page .content {
 }
 
 .type-badge.individual {
-    background: #ddeefe;
-    color: #1e4f92;
+    background: #eaf2ff;
+    color: #1f5ea9;
     opacity: 1;
 }
 
+body.clients-page.agents-mode .type-badge.individual {
+    background: #f3e8ff;
+    color: #5b21b6;
+}
+
 .type-badge.corporate {
-    background: #e7f9ee;
-    color: #135c35;
+    background: #ecfdf5;
+    color: #16633f;
     opacity: 1;
 }
 
 .type-badge.obligee {
-    background: #e8edff;
-    color: #243e8f;
+    background: #f4e8de;
+    color: #6b4320;
+    opacity: 1;
+}
+
+.type-badge.client {
+    background: #e8f4ee;
+    color: #16633f;
+    opacity: 1;
+}
+
+.type-badge.agent {
+    background: #f3e8ff;
+    color: #5b21b6;
+    opacity: 1;
+}
+
+.type-badge.muted {
+    background: #f3f4f6;
+    color: #4b5563;
     opacity: 1;
 }
 

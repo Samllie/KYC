@@ -40,7 +40,7 @@ $kycEntryUrl = $isAgentsMode
     <link rel="stylesheet" href="../../public/css/global.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body class="clients-page">
+<body class="clients-page <?php echo $isAgentsMode ? 'agents-mode' : ''; ?>">
 
 <?php
 $activePage = $isAgentsMode ? 'agents' : 'clients';

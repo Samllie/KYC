@@ -385,7 +385,7 @@ include '../includes/sidebar.php';
 
         <!-- Stats Row -->
         <div class="stats-row">
-            <div class="stat-card">
+            <div class="stat-card total">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($totalClients)); ?></div>
                     <div class="stat-label">Total Clients</div>
@@ -393,7 +393,7 @@ include '../includes/sidebar.php';
                 </div>
                 <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card obligee">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($obligeeCount)); ?></div>
                     <div class="stat-label">Obligee Clients</div>
@@ -401,7 +401,7 @@ include '../includes/sidebar.php';
                 </div>
                 <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card individual">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($individualCount)); ?></div>
                     <div class="stat-label">Individual Clients</div>
@@ -409,7 +409,7 @@ include '../includes/sidebar.php';
                 </div>
                 <div class="stat-icon"><i class="bi bi-person-fill"></i></div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card corporate">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($corporateCount)); ?></div>
                     <div class="stat-label">Corporate Clients</div>
@@ -429,11 +429,11 @@ include '../includes/sidebar.php';
                 </div>
                 <div class="card-body">
                     <div class="action-buttons">
-                        <a class="action-btn" href="kyc-individual.php"><i class="bi bi-person-plus"></i><span>New Individual</span></a>
-                        <a class="action-btn" href="kyc-corporate.php"><i class="bi bi-building-add"></i><span>New Corporate</span></a>
-                        <a class="action-btn" href="kyc-individual.php?classification=agent"><i class="bi bi-person-badge"></i><span>New Agent</span></a>
-                        <a class="action-btn" href="<?php echo e($workflowQuickAction['href']); ?>"><i class="bi <?php echo e($workflowQuickAction['icon']); ?>"></i><span><?php echo e($workflowQuickAction['label']); ?></span></a>
-                        <a class="action-btn" href="clients.php"><i class="bi bi-inboxes"></i><span>View Clients</span></a>
+                        <a class="action-btn individual" href="kyc-individual.php"><i class="bi bi-person-plus"></i><span>New Individual</span></a>
+                        <a class="action-btn corporate" href="kyc-corporate.php"><i class="bi bi-building-add"></i><span>New Corporate</span></a>
+                        <a class="action-btn agent" href="kyc-individual.php?classification=agent"><i class="bi bi-person-badge"></i><span>New Agent</span></a>
+                        <a class="action-btn workflow" href="<?php echo e($workflowQuickAction['href']); ?>"><i class="bi <?php echo e($workflowQuickAction['icon']); ?>"></i><span><?php echo e($workflowQuickAction['label']); ?></span></a>
+                        <a class="action-btn clients" href="clients.php"><i class="bi bi-inboxes"></i><span>View Clients</span></a>
                     </div>
                 </div>
             </div>
@@ -507,13 +507,14 @@ include '../includes/sidebar.php';
                         <div class="empty-state">No activity available yet.</div>
                     <?php else: ?>
                         <?php foreach ($recentActivity as $row): ?>
+                            <?php $activityClassification = (($row['client_classification'] ?? 'client') === 'agent') ? 'agent' : 'client'; ?>
                             <div class="activity-item">
                                 <div class="activity-icon">
                                     <i class="bi bi-clipboard2-check"></i>
                                 </div>
                                 <div class="activity-info">
                                     <div class="activity-title"><?php echo e($row['display_name'] ?: 'Unnamed Client'); ?> (<?php echo e($row['reference_code']); ?>)</div>
-                                    <div class="activity-desc"><?php echo e(ucfirst($row['client_type'])); ?> <?php echo e(($row['client_classification'] ?? 'client') === 'agent' ? 'agent' : 'client'); ?> record · Added by <?php echo e($row['submitted_by_name']); ?></div>
+                                    <div class="activity-desc"><?php echo e(ucfirst($row['client_type'])); ?> <span class="activity-classification <?php echo e($activityClassification); ?>"><?php echo e($activityClassification === 'agent' ? 'Agent' : 'Client'); ?></span> record · Added by <?php echo e($row['submitted_by_name']); ?></div>
                                     <div class="activity-meta">
                                         <span class="activity-status status-<?php echo e(normalizeActivityStatus($row['activity_status'] ?? 'pending')); ?>"><?php echo e(activityStatusLabel($row['activity_status'] ?? 'pending')); ?></span>
                                         <span class="activity-branch"><?php echo e($row['submitted_by_branch'] ?? 'UNASSIGNED'); ?></span>

@@ -207,11 +207,11 @@ $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedCl
             bottom: 0;
             left: 0;
             width: 4px;
-            background: linear-gradient(180deg, #1e8a5c 0%, #2ea371 100%);
+            background: linear-gradient(180deg, var(--wizard-accent-deep, #1f5ea9) 0%, var(--wizard-accent, #2f7fd6) 100%);
         }
 
         #kycForm > .card[data-wizard-step="3"]:not(#draftsCard)::before {
-            background: linear-gradient(180deg, #2f7fd6 0%, #4b95e6 100%);
+            background: linear-gradient(180deg, var(--wizard-accent-deep, #1f5ea9) 0%, var(--wizard-accent, #2f7fd6) 100%);
         }
 
         #kycForm > .card .card-header {
@@ -233,14 +233,14 @@ $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedCl
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #e8f4ee;
-            color: #16633f;
+            background: var(--wizard-accent-soft, #e8f0fb);
+            color: var(--wizard-accent-deep, #1f5ea9);
             font-size: 0.86rem;
         }
 
         #kycForm > .card[data-wizard-step="3"] .card-title i {
-            background: #e8f0fb;
-            color: #1f5ea9;
+            background: var(--wizard-accent-soft, #e8f0fb);
+            color: var(--wizard-accent-deep, #1f5ea9);
         }
 
         #kycForm > .card .card-body {
@@ -696,7 +696,7 @@ $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedCl
         }
     </style>
 </head>
-<body class="kyc-compact">
+<body class="kyc-compact" style="--wizard-accent:<?php echo $isAgentFlow ? '#7c3aed' : '#2f7fd6'; ?>;--wizard-accent-soft:<?php echo $isAgentFlow ? '#f3e8ff' : '#e8f0fb'; ?>;--wizard-accent-deep:<?php echo $isAgentFlow ? '#5b21b6' : '#1f5ea9'; ?>;">
 
 <?php
 $activePage = 'kyc-verification';
@@ -766,8 +766,8 @@ include '../includes/sidebar.php';
             <!-- Client Type Display -->
             <div class="client-type-inline" data-wizard-step="2">
                 <div class="client-type-inline-left">
-                    <span class="client-type-inline-label">KYC Type</span>
-                    <div class="client-type-display individual">
+                    <span class="client-type-inline-label">Client Type</span>
+                    <div class="client-type-display <?php echo $isAgentFlow ? 'agent' : 'individual'; ?>">
                         <i class="bi bi-person-fill"></i>
                         <span><?php echo htmlspecialchars($clientTypeLabel); ?></span>
                     </div>
@@ -904,6 +904,18 @@ include '../includes/sidebar.php';
                                 <input type="date" id="clientSince" name="clientSince" class="form-control">
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="tinNumber" class="form-label">TIN Number</label>
+                                <input type="text" id="tinNumber" name="tinNumber" class="form-control" placeholder="TIN #">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="nationality" class="form-label">Nationality</label>
+                                <input type="text" id="nationality" name="nationality" class="form-control" placeholder="e.g. Filipino">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -967,14 +979,13 @@ include '../includes/sidebar.php';
                                         <option value="barangay_id">Barangay ID</option>
                                         <option value="acr_id">Alien Certificate of Registration</option>
                                     </select>
+                                    <div class="form-error">Government ID type is required</div>
                                 </div>
-                                <div class="form-error">Government ID type is required</div>
                             </div>
                         </div>
                         <div class="col-md-7">
                             <div class="form-group">
                                 <label for="idNumber" class="form-label">ID Number <span class="req">*</span></label>
-                                <input type="text" id="idNumber" name="idNumber" class="form-control" placeholder="Enter ID number" required>
                                 <input type="text" id="idNumber" name="idNumber" class="form-control" placeholder="Enter ID number" required>
                                 <div class="form-error">ID number is required</div>
                             </div>
@@ -1092,41 +1103,45 @@ include '../includes/sidebar.php';
                     <div class="row g-3">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="homeRegion" class="form-label">Region</label>
+                                <label for="homeRegion" class="form-label">Region <span class="req">*</span></label>
                                 <div class="select-wrap">
-                                    <select id="homeRegion" name="homeRegion" class="form-select">
+                                    <select id="homeRegion" name="homeRegion" class="form-select" required>
                                         <option value="">Select region...</option>
                                     </select>
+                                    <div class="form-error">Region is required</div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="homeProvince" class="form-label">Province</label>
+                                <label for="homeProvince" class="form-label">Province <span class="req">*</span></label>
                                 <div class="select-wrap">
-                                    <select id="homeProvince" name="homeProvince" class="form-select">
+                                    <select id="homeProvince" name="homeProvince" class="form-select" required>
                                         <option value="">Select province...</option>
                                     </select>
+                                    <div class="form-error">Province is required</div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="homeCtm" class="form-label">City / Municipality</label>
+                                <label for="homeCtm" class="form-label">City / Municipality <span class="req">*</span></label>
                                 <div class="select-wrap">
-                                    <select id="homeCtm" name="homeCtm" class="form-select">
+                                    <select id="homeCtm" name="homeCtm" class="form-select" required>
                                         <option value="">Select city/municipality...</option>
                                     </select>
+                                    <div class="form-error">City / municipality is required</div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="homeBarangay" class="form-label">Barangay</label>
+                                <label for="homeBarangay" class="form-label">Barangay <span class="req">*</span></label>
                                 <div class="select-wrap">
-                                    <select id="homeBarangay" name="homeBarangay" class="form-select">
+                                    <select id="homeBarangay" name="homeBarangay" class="form-select" required>
                                         <option value="">Select barangay...</option>
                                     </select>
+                                    <div class="form-error">Barangay is required</div>
                                 </div>
                             </div>
                         </div>
@@ -1382,6 +1397,12 @@ document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), sel
     });
     el.addEventListener('change', function() {
         if (this.id) validateField(this.id);
+    });
+});
+
+document.querySelectorAll('input[type="radio"]').forEach((radio) => {
+    radio.addEventListener('change', function () {
+        validateRadioGroup(this.name);
     });
 });
 
@@ -1918,7 +1939,6 @@ if (governmentIdZone) {
 }
 
 if (governmentIdTypeSelect) {
-    governmentIdTypeSelect.addEventListener('change', () => {
     governmentIdTypeSelect.addEventListener('change', () => {
         validateGovernmentIdSection();
     });
@@ -2562,6 +2582,10 @@ document.addEventListener('DOMContentLoaded', () => {
         stepEl.setAttribute('tabindex', '0');
         stepEl.addEventListener('click', () => {
             if (step === 4) {
+                if (currentWizardStep !== WIZARD_MAX_STEP) {
+                    showToast('info', 'Step Locked', 'Complete Step 3 before opening the review.');
+                    return;
+                }
                 proceedToReview();
                 return;
             }
@@ -2571,6 +2595,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 if (step === 4) {
+                    if (currentWizardStep !== WIZARD_MAX_STEP) {
+                        showToast('info', 'Step Locked', 'Complete Step 3 before opening the review.');
+                        return;
+                    }
                     proceedToReview();
                     return;
                 }

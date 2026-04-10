@@ -473,7 +473,7 @@ include '../includes/sidebar.php';
         { key: 'last_name', label: 'Last Name', visibleFor: ['individual', 'obligee'], group: 'Identity' },
         { key: 'suffix', label: 'Suffix', visibleFor: ['individual', 'obligee'], group: 'Identity' },
         { key: 'gender', label: 'Gender', type: 'select', options: ['male', 'female', 'other'], visibleFor: ['individual', 'obligee'], group: 'Identity' },
-        { key: 'nationality', label: 'Nationality', visibleFor: ['individual', 'obligee'], group: 'Identity' },
+        { key: 'nationality', label: 'Nationality', visibleFor: ['individual', 'corporate', 'obligee'], group: 'Identity' },
         { key: 'date_of_birth', label: 'Date of Birth', type: 'date', visibleFor: ['individual', 'obligee'], group: 'Identity' },
 
         { key: 'email', label: 'Email', type: 'email', group: 'Contact' },
@@ -594,6 +594,24 @@ include '../includes/sidebar.php';
         const text = String(value || '').toLowerCase();
         if (text === 'agent') return 'Agent';
         return text === 'client' ? 'Client' : 'N/A';
+    }
+
+    function classificationBadgeClass(value) {
+        const text = String(value || '').toLowerCase();
+        if (text === 'agent' || text === 'client') {
+            return text;
+        }
+
+        return 'muted';
+    }
+
+    function typeBadgeClass(value) {
+        const text = String(value || '').toLowerCase();
+        if (text === 'individual' || text === 'corporate' || text === 'obligee') {
+            return text;
+        }
+
+        return 'muted';
     }
 
     function statusBadgeClass(status) {
@@ -863,8 +881,8 @@ include '../includes/sidebar.php';
             tr.innerHTML = `
                 <td class="col-ref"><span class="ref-badge">${escapeHtml(row.reference_code || 'N/A')}</span></td>
                 <td class="col-name">${escapeHtml(row.display_name || row.client_name || 'N/A')}</td>
-                <td class="col-type">${escapeHtml(formatClassification(row.client_classification))}</td>
-                <td class="col-type">${escapeHtml(formatType(row.client_type))}</td>
+                <td class="col-type"><span class="type-badge ${classificationBadgeClass(row.client_classification)}">${escapeHtml(formatClassification(row.client_classification))}</span></td>
+                <td class="col-type"><span class="type-badge ${typeBadgeClass(row.client_type)}">${escapeHtml(formatType(row.client_type))}</span></td>
                 <td class="col-owner">${escapeHtml(formatDateTime(row.submitted_at))}</td>
                 <td class="col-status"><span class="status-badge ${statusBadgeClass(statusAfter)}">${escapeHtml(statusAfter)}</span></td>
                 <td class="col-owner review-meta-cell">${escapeHtml(row.reviewed_by_name || 'N/A')}</td>

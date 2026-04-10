@@ -26,6 +26,7 @@ $backToEditUrl = 'kyc-obligee.php?classification=' . urlencode($selectedClassifi
             margin-bottom: 20px;
             padding: 16px;
             border: 1px solid #d8e5dd;
+            border-left: 4px solid var(--wizard-accent, #8b5a2b);
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.92);
             opacity: 0;
@@ -35,7 +36,7 @@ $backToEditUrl = 'kyc-obligee.php?classification=' . urlencode($selectedClassifi
 
         .review-title {
             font-weight: 700;
-            color: var(--primary);
+            color: var(--wizard-accent, var(--primary));
             margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 1px solid #d7e5dc;
@@ -96,7 +97,7 @@ $backToEditUrl = 'kyc-obligee.php?classification=' . urlencode($selectedClassifi
         }
     </style>
 </head>
-<body>
+<body style="--wizard-accent:#8b5a2b;--wizard-accent-soft:#f4e8de;--wizard-accent-deep:#6b4320;">
 
 <?php
 $activePage = 'kyc-verification';
@@ -254,7 +255,8 @@ function displayReview() {
             fields: [
                 { label: 'Business / Company Name', key: 'corporateClientName' },
                 { label: 'Business Type', key: 'businessType' },
-                { label: 'Client Since', key: 'corporateClientSince' }
+                { label: 'Client Since', key: 'corporateClientSince' },
+                { label: 'Nationality', key: 'nationality' }
             ]
         },
         {

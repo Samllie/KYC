@@ -166,6 +166,26 @@
     background: linear-gradient(180deg, #ffffff 0%, #fff2f2 100%);
 }
 
+.stat-card.total {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-left: 4px solid #64748b;
+}
+
+.stat-card.obligee {
+    background: linear-gradient(180deg, #ffffff 0%, #f9f2ea 100%);
+    border-left: 4px solid #8b5a2b;
+}
+
+.stat-card.individual {
+    background: linear-gradient(180deg, #ffffff 0%, #f3f9ff 100%);
+    border-left: 4px solid #2f7fd6;
+}
+
+.stat-card.corporate {
+    background: linear-gradient(180deg, #ffffff 0%, #f1fdf4 100%);
+    border-left: 4px solid #2ea371;
+}
+
 .dashboard-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
@@ -226,6 +246,65 @@
     transform: translateY(-2px);
     border-color: #8ec9a9;
     box-shadow: var(--shadow-sm);
+}
+
+.action-btn.individual {
+    border-color: #c8ddf6;
+    background: linear-gradient(180deg, #ffffff 0%, #f3f9ff 100%);
+    color: #1f4e92;
+}
+
+.action-btn.individual i {
+    color: #2f7fd6;
+}
+
+.action-btn.individual:hover {
+    border-color: #8eb7ec;
+}
+
+.action-btn.corporate {
+    border-color: #bbe6c9;
+    background: linear-gradient(180deg, #ffffff 0%, #f1fdf4 100%);
+    color: #145b39;
+}
+
+.action-btn.corporate i {
+    color: #2ea371;
+}
+
+.action-btn.corporate:hover {
+    border-color: #86cba1;
+}
+
+.action-btn.agent {
+    border-color: #d9c2ff;
+    background: linear-gradient(180deg, #ffffff 0%, #f3e8ff 100%);
+    color: #5b21b6;
+}
+
+.action-btn.agent i {
+    color: #7c3aed;
+}
+
+.action-btn.agent:hover {
+    border-color: #b89af9;
+}
+
+.action-btn.workflow,
+.action-btn.clients {
+    border-color: #d5dbe3;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    color: #344054;
+}
+
+.action-btn.workflow i,
+.action-btn.clients i {
+    color: #475467;
+}
+
+.action-btn.workflow:hover,
+.action-btn.clients:hover {
+    border-color: #b8c2d0;
 }
 
 .pipeline-list {
@@ -296,15 +375,38 @@
 }
 
 .split-bar .individual {
-    background: #1d7f50;
+    background: #2f7fd6;
 }
 
 .split-bar .corporate {
-    background: #5c9bff;
+    background: #2ea371;
 }
 
 .split-bar .obligee {
-    background: #9b6bda;
+    background: #8b5a2b;
+}
+
+.activity-classification {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.activity-classification.client {
+    background: #e8f4ee;
+    color: #16633f;
+}
+
+.activity-classification.agent {
+    background: #f3e8ff;
+    color: #5b21b6;
 }
 
 .split-legend {
