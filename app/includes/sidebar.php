@@ -124,6 +124,22 @@ if ($isHeadOfficeUser) {
         'page' => 'client-approvals',
         'badge' => null
     ];
+
+    $menuItems[] = [
+        'label' => 'Accounts Management',
+        'icon' => 'bi-person-gear',
+        'href' => 'accounts-management.php',
+        'page' => 'accounts-management',
+        'badge' => null
+    ];
+
+    $menuItems[] = [
+        'label' => 'Add Account',
+        'icon' => 'bi-person-plus',
+        'href' => '../auth/register.php',
+        'page' => 'register',
+        'badge' => null
+    ];
 }
 
 // Default active page if not set
@@ -161,12 +177,14 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
                 <strong>KYC System</strong>
             </div>
         </a>
-        <button type="button" id="sidebarToggleBtn" class="sidebar-toggle" aria-label="Toggle sidebar" title="Toggle sidebar">
-            <i class="bi bi-arrow-left"></i>
-        </button>
     </div>
 
     <nav class="sidebar-nav">
+        <div class="sidebar-toggle-row">
+            <button type="button" id="sidebarToggleBtn" class="sidebar-toggle" aria-label="Hide sidebar" title="Hide sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
         <div class="nav-label sidebar-text">Main Menu</div>
 
         <?php foreach ($menuItems as $item): ?>
@@ -268,23 +286,48 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
         }
 
         sidebarToggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        sidebarToggleBtn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
-        sidebarToggleBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        sidebarToggleBtn.setAttribute('title', collapsed ? 'Show sidebar' : 'Hide sidebar');
+        sidebarToggleBtn.setAttribute('aria-label', collapsed ? 'Show sidebar' : 'Hide sidebar');
+    }
+
+    function syncToggleIcon(collapsed) {
+        if (!sidebarToggleBtn) {
+            return;
+        }
+
+        const icon = sidebarToggleBtn.querySelector('i');
+        if (!icon) {
+            return;
+        }
+
+        icon.className = 'bi bi-list';
     }
 
     function applyCollapsedState(collapsed) {
         if (isMobile()) {
             document.body.classList.remove('sidebar-collapsed');
             syncToggleA11y(false);
+            syncToggleIcon(false);
             return;
         }
 
         document.body.classList.toggle('sidebar-collapsed', collapsed);
         syncToggleA11y(collapsed);
+        syncToggleIcon(collapsed);
     }
 
     function initSidebarState() {
         applyCollapsedState(readCollapsedState());
+    }
+
+    function collapseSidebarForNavigation() {
+        if (isMobile()) {
+            closeMobileSidebar();
+            return;
+        }
+
+        applyCollapsedState(true);
+        persistCollapsedState(true);
     }
 
     function syncMobileToggleState(isOpen) {
@@ -335,7 +378,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 
     if (brandLogoLink) {
         brandLogoLink.addEventListener('click', function (event) {
-            closeMobileSidebar();
+            collapseSidebarForNavigation();
 
             if (isDashboardPage()) {
                 event.preventDefault();
@@ -345,7 +388,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     }
 
     sidebarNavLinks.forEach(function (link) {
-        link.addEventListener('click', closeMobileSidebar);
+        link.addEventListener('click', collapseSidebarForNavigation);
     });
 
     window.addEventListener('resize', function () {

@@ -134,6 +134,29 @@ if (!$isHeadOfficeUser) {
             color: #6b7280;
         }
 
+        .approvals-table-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            min-height: 0;
+            padding: 14px;
+            border: 1px solid #d6e4db;
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #fbfefc 100%);
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
+            overflow: hidden;
+        }
+
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 0;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2ece4;
+        }
+
         .table-wrapper {
             width: 100%;
             max-width: 100%;
@@ -143,28 +166,156 @@ if (!$isHeadOfficeUser) {
             scrollbar-gutter: stable both-edges;
             flex: 1;
             min-height: 0;
+            border: 1px solid #d8e5dd;
+            border-radius: 14px;
+            background: #ffffff;
         }
 
         .clients-table {
-            min-width: 1260px;
+            width: max(100%, 1220px);
+            min-width: 1220px;
+            table-layout: fixed;
+            font-size: 0.76rem;
+        }
+
+        .clients-table th,
+        .clients-table td {
+            padding: 4px 6px;
+            line-height: 1.1;
+            vertical-align: middle;
+        }
+
+        .clients-table th:not(:last-child),
+        .clients-table td:not(:last-child) {
+            background-image: linear-gradient(to bottom, transparent 22%, rgba(203, 213, 225, 0.95) 22%, rgba(203, 213, 225, 0.95) 78%, transparent 78%);
+            background-repeat: no-repeat;
+            background-position: right center;
+            background-size: 1px 56%;
         }
 
         .clients-table th.col-ref,
         .clients-table td.col-ref {
-            width: 22%;
-            min-width: 260px;
+            width: 13%;
+            min-width: 140px;
         }
 
-        .ref-with-name {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
+        .clients-table th.col-name,
+        .clients-table td.col-name {
+            width: 16%;
+            min-width: 170px;
         }
 
-        .ref-name {
+        .clients-table th.col-type,
+        .clients-table td.col-type {
+            width: 8%;
+            min-width: 84px;
+        }
+
+        .clients-table th.col-branch,
+        .clients-table td.col-branch {
+            width: 16%;
+            min-width: 140px;
+        }
+
+        .clients-table th.col-submitted-by,
+        .clients-table td.col-submitted-by {
+            width: 15%;
+            min-width: 140px;
+        }
+
+        .clients-table th.col-submitted-at,
+        .clients-table td.col-submitted-at {
+            width: 10%;
+            min-width: 120px;
+        }
+
+        .clients-table th.col-status,
+        .clients-table td.col-status {
+            width: 10%;
+            min-width: 92px;
+            overflow: visible;
+            text-overflow: clip;
+        }
+
+        .clients-table th.col-actions,
+        .clients-table td.col-actions {
+            width: 14%;
+            min-width: 170px;
+            overflow: visible;
+            text-overflow: clip;
+        }
+
+        .ref-badge {
+            padding: 3px 7px;
+            font-size: 0.69rem;
+        }
+
+        .col-name {
             font-weight: 600;
-            color: #1f2937;
+            color: #111827;
+        }
+
+        .col-submitted-by {
+            color: #111827;
+        }
+
+        .col-branch {
+            font-weight: 700;
+            color: #111827;
+            font-size: 0.72rem;
+            letter-spacing: 0.01em;
+        }
+
+        .approval-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            line-height: 1;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+
+        .approval-pill-client {
+            background: #e7f8ee;
+            color: #0d6b37;
+            border-color: #b7e6ca;
+        }
+
+        .approval-pill-agent {
+            background: #e8f1ff;
+            color: #245ea8;
+            border-color: #c6daf8;
+        }
+
+        .approval-pill-individual {
+            background: #e7f8ee;
+            color: #0d6b37;
+            border-color: #b7e6ca;
+        }
+
+        .approval-pill-corporate {
+            background: #edf4ff;
+            color: #245ea8;
+            border-color: #c6daf8;
+        }
+
+        .approval-pill-obligee {
+            background: #f6eadf;
+            color: #8a4b00;
+            border-color: #e3c39c;
+        }
+
+        .approval-pill-muted {
+            background: #f3f4f6;
+            color: #4b5563;
+            border-color: #d1d5db;
         }
 
         .status-stack {
@@ -179,7 +330,7 @@ if (!$isHeadOfficeUser) {
             align-items: center;
             gap: 4px;
             border-radius: 999px;
-            padding: 2px 8px;
+            padding: 2px 7px;
             font-size: 0.64rem;
             font-weight: 700;
             letter-spacing: 0.03em;
@@ -188,6 +339,66 @@ if (!$isHeadOfficeUser) {
             color: #8a3800;
             border: 1px solid #f2c49f;
             white-space: nowrap;
+        }
+
+        .notes-cell {
+            max-width: 180px;
+            color: #4b5563;
+            font-size: 0.74rem;
+            line-height: 1.28;
+            white-space: normal;
+            overflow: hidden;
+        }
+
+        .notes-cell .notes-text {
+            margin-top: 3px;
+            white-space: normal;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .action-stack {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 4px;
+            align-items: stretch;
+        }
+
+        .action-stack .action-icon {
+            width: 100%;
+            min-width: 0;
+            height: auto;
+            border-radius: 8px;
+            padding: 4px 6px;
+            font-size: 0.64rem;
+            line-height: 1;
+            font-weight: 600;
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .action-stack .action-resubmit {
+            grid-column: 1 / -1;
+        }
+
+        .table-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-top: 2px;
+            margin-top: 0;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            font-size: 0.8rem;
         }
 
         #approvalsTableBody tr.approval-row {
@@ -560,6 +771,7 @@ include '../includes/sidebar.php';
     </header>
 
     <main class="content">
+        <section class="approvals-table-shell">
         <div class="controls-container">
             <div class="controls-left">
                 <div class="search-box">
@@ -607,21 +819,19 @@ include '../includes/sidebar.php';
                 <thead>
                     <tr>
                         <th class="col-ref">Ref Code</th>
+                        <th class="col-name">Name</th>
                         <th class="col-type">Class</th>
                         <th class="col-type">Type</th>
-                        <th class="col-contact">Contact</th>
-                        <th class="col-email">Email</th>
-                        <th class="col-owner">Submitted By</th>
-                        <th class="col-owner">Branch</th>
-                        <th class="col-owner">Submitted At</th>
+                        <th class="col-branch">Branch</th>
+                        <th class="col-submitted-by">Submitted By</th>
                         <th class="col-status">Status</th>
-                        <th class="col-owner">Notes</th>
+                        <th class="col-submitted-at">Submitted At</th>
                         <th class="col-actions">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="approvalsTableBody">
                     <tr>
-                        <td colspan="11" style="text-align:center; padding:20px;">Loading approvals...</td>
+                        <td colspan="9" style="text-align:center; padding:20px;">Loading approvals...</td>
                     </tr>
                 </tbody>
             </table>
@@ -633,6 +843,7 @@ include '../includes/sidebar.php';
             </div>
             <div class="pagination" id="paginationContainer"></div>
         </div>
+        </section>
     </main>
 </div>
 
@@ -1027,6 +1238,13 @@ include '../includes/sidebar.php';
         return date.toLocaleString();
     }
 
+    function formatDateOnly(value) {
+        if (!value) return 'N/A';
+        const date = new Date(String(value).replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleDateString();
+    }
+
     function formatType(value) {
         const text = String(value || '').toLowerCase();
         if (!text) return 'N/A';
@@ -1045,6 +1263,21 @@ include '../includes/sidebar.php';
         if (normalized === 'declined') return 'approval-status-declined';
         if (normalized === 'resubmit') return 'approval-status-resubmit';
         return 'approval-status-pending';
+    }
+
+    function classificationBadgeClass(value) {
+        const normalized = String(value || '').toLowerCase();
+        if (normalized === 'client') return 'approval-pill-client';
+        if (normalized === 'agent') return 'approval-pill-agent';
+        return 'approval-pill-muted';
+    }
+
+    function typeBadgeClass(value) {
+        const normalized = String(value || '').toLowerCase();
+        if (normalized === 'individual') return 'approval-pill-individual';
+        if (normalized === 'corporate') return 'approval-pill-corporate';
+        if (normalized === 'obligee') return 'approval-pill-obligee';
+        return 'approval-pill-muted';
     }
 
     function resolveClientName(row) {
@@ -1169,7 +1402,7 @@ include '../includes/sidebar.php';
         if (!tbody) return;
 
         if (!Array.isArray(rows) || rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 22px;">No approval records found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 22px;">No approval records found</td></tr>';
             return;
         }
 
@@ -1177,21 +1410,13 @@ include '../includes/sidebar.php';
 
         rows.forEach(row => {
             const tr = document.createElement('tr');
-            const contact = row.mobile_phone || row.office_phone || 'N/A';
-            const notes = row.review_notes || '';
             const clientName = resolveClientName(row);
             const status = String(row.approval_status || 'pending').toLowerCase();
             const approvalId = Number(row.approval_id || 0);
             const officerUpdated = hasOfficerUpdates(row);
             const officerResubmittedJustNow = officerUpdated && isOfficerResubmittedJustNow(row.officer_resubmitted_at);
-            const officerUpdatedAt = officerUpdated ? formatDateTime(row.officer_resubmitted_at) : '';
-            const notesHtml = officerUpdated
-                ? `
-                    <div class="officer-update-badge"><i class="bi bi-bell-fill"></i>Updated by Officer</div>
-                    <div class="notes-text">${escapeHtml(notes || 'Changes were submitted and sent back for review.')}</div>
-                    <div class="officer-update-meta">Resubmitted: ${escapeHtml(officerUpdatedAt || 'N/A')}</div>
-                `
-                : `<div class="notes-text">${escapeHtml(notes || '—')}</div>`;
+            const classificationValue = formatClassification(row.client_classification);
+            const typeValue = formatType(row.client_type);
             const statusHtml = `
                 <span class="status-stack">
                     <span class="approval-status-badge ${statusBadgeClass(status)}">${escapeHtml(status)}</span>
@@ -1207,20 +1432,15 @@ include '../includes/sidebar.php';
 
             tr.innerHTML = `
                 <td class="col-ref">
-                    <div class="ref-with-name">
-                        <span class="ref-badge">${escapeHtml(row.reference_code || 'N/A')}</span>
-                        <span class="ref-name">${escapeHtml(clientName)}</span>
-                    </div>
+                    <span class="ref-badge">${escapeHtml(row.reference_code || 'N/A')}</span>
                 </td>
-                <td class="col-type">${escapeHtml(formatClassification(row.client_classification))}</td>
-                <td class="col-type">${escapeHtml(formatType(row.client_type))}</td>
-                <td class="col-contact">${escapeHtml(contact)}</td>
-                <td class="col-email">${escapeHtml(row.email || 'N/A')}</td>
-                <td class="col-owner">${escapeHtml(row.submitted_by_name || 'N/A')}</td>
-                <td class="col-owner">${escapeHtml(row.submitted_by_branch || 'N/A')}</td>
-                <td class="col-owner">${escapeHtml(formatDateTime(row.submitted_at))}</td>
+                <td class="col-name">${escapeHtml(clientName)}</td>
+                <td class="col-type"><span class="approval-pill ${classificationBadgeClass(row.client_classification)}">${escapeHtml(classificationValue)}</span></td>
+                <td class="col-type"><span class="approval-pill ${typeBadgeClass(row.client_type)}">${escapeHtml(typeValue)}</span></td>
+                <td class="col-branch">${escapeHtml(row.submitted_by_branch || 'N/A')}</td>
+                <td class="col-submitted-by">${escapeHtml(row.submitted_by_name || 'N/A')}</td>
                 <td class="col-status">${statusHtml}</td>
-                <td class="notes-cell">${notesHtml}</td>
+                <td class="col-submitted-at">${escapeHtml(formatDateOnly(row.submitted_at))}</td>
                 <td class="col-actions">
                     <div class="action-stack">
                         <button class="action-icon action-approve" data-action="approve" data-id="${approvalId}"><i class="bi bi-check2-circle"></i>Approve</button>

@@ -5,9 +5,31 @@
  */
 
 header('Content-Type: application/json');
+require_once '../config/session.php';
 require_once '../config/db.php';
 
 $response = ['success' => false, 'message' => ''];
+
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    $response['message'] = 'Unauthorized access';
+    echo json_encode($response);
+    exit;
+}
+
+$currentUserRole = strtolower(trim((string)($_SESSION['role'] ?? '')));
+$currentUserDepartment = strtoupper(trim((string)($_SESSION['department'] ?? '')));
+$currentUserBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
+$isHeadOfficeUser = $currentUserRole === 'admin'
+    || $currentUserDepartment === 'HEAD OFFICE'
+    || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+
+if (!$isHeadOfficeUser) {
+    http_response_code(403);
+    $response['message'] = 'Access denied';
+    echo json_encode($response);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fullname = trim($_POST['fullname'] ?? '');
@@ -17,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirmPassword = trim($_POST['confirm_password'] ?? '');
     $department = trim($_POST['department'] ?? 'KYC');
     $maxCredentialLength = 32;
+    $maxEmailLength = 120;
+    $allowedEmailDomain = '@sterling-insurance.com.ph';
     $allowedBranches = [
         'ALABANG BRANCH',
         'MANILA BRANCH I',
@@ -46,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'OZAMIZ BRANCH',
         'PAGADIAN BRANCH',
         'SAN FERNANDO, PAMPANGA BRANCH',
+        'HEAD OFFICE',
         'HEAD OFFICE BRANCH',
         'SMRO BRANCH',
         'TACLOBAN BRANCH',
@@ -85,8 +110,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if (strlen($email) > $maxCredentialLength || strlen($password) > $maxCredentialLength || strlen($confirmPassword) > $maxCredentialLength) {
-        $response['message'] = 'Email and password must not exceed 32 characters';
+    $normalizedEmail = strtolower($email);
+    if (substr($normalizedEmail, -strlen($allowedEmailDomain)) !== $allowedEmailDomain) {
+        $response['message'] = 'Email must use the @sterling-insurance.com.ph domain';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (strlen($email) > $maxEmailLength) {
+        $response['message'] = 'Email must not exceed 120 characters';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (strlen($password) > $maxCredentialLength || strlen($confirmPassword) > $maxCredentialLength) {
+        $response['message'] = 'Password must not exceed 32 characters';
         echo json_encode($response);
         exit;
     }
@@ -134,8 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     $response['success'] = true;
-    $response['message'] = 'Registration successful. Please log in.';
-    $response['redirect'] = 'login.php';
+    $response['message'] = 'Account added successfully.';
 }
 
 echo json_encode($response);

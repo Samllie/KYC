@@ -134,12 +134,10 @@ if (!function_exists('clientActivityFormatDuration')) {
 }
 
 if (!function_exists('clientActivityCalculateState')) {
-    function clientActivityCalculateState(?string $lastTransactionDate, ?DateTimeInterface $now = null): array
+    function clientActivityCalculateState(?string $activityStatus, ?DateTimeInterface $now = null): array
     {
-        $referenceDate = clientActivityParseDate($lastTransactionDate);
-        $nowDate = $now ? DateTimeImmutable::createFromInterface($now) : new DateTimeImmutable('now');
-
-        if (!$referenceDate) {
+        $normalizedStatus = strtolower(trim((string)$activityStatus));
+        if ($normalizedStatus !== 'inactive' && $normalizedStatus !== 'deactivated') {
             return [
                 'activity_status' => 'active',
                 'activity_status_label' => 'Active',
@@ -147,45 +145,30 @@ if (!function_exists('clientActivityCalculateState')) {
                 'inactive_at' => null,
                 'deactivated_at' => null,
                 'next_change_at' => null,
-                'countdown_display' => 'Set last transaction date',
+                'countdown_display' => '',
             ];
         }
 
-        $inactiveAt = $referenceDate->add(new DateInterval('P18M'));
-        $deactivatedAt = $referenceDate->add(new DateInterval('P2Y'));
-
-        if ($nowDate >= $deactivatedAt) {
+        if ($normalizedStatus === 'deactivated') {
             return [
                 'activity_status' => 'deactivated',
                 'activity_status_label' => 'Deactivated',
                 'activity_status_class' => 'deactivated',
-                'inactive_at' => $inactiveAt,
-                'deactivated_at' => $deactivatedAt,
+                'inactive_at' => null,
+                'deactivated_at' => null,
                 'next_change_at' => null,
-                'countdown_display' => 'Deactivated',
-            ];
-        }
-
-        if ($nowDate >= $inactiveAt) {
-            return [
-                'activity_status' => 'inactive',
-                'activity_status_label' => 'Inactive',
-                'activity_status_class' => 'inactive',
-                'inactive_at' => $inactiveAt,
-                'deactivated_at' => $deactivatedAt,
-                'next_change_at' => $deactivatedAt,
-                'countdown_display' => 'Deactivated in ' . clientActivityFormatDuration($nowDate, $deactivatedAt),
+                'countdown_display' => '',
             ];
         }
 
         return [
-            'activity_status' => 'active',
-            'activity_status_label' => 'Active',
-            'activity_status_class' => 'active',
-            'inactive_at' => $inactiveAt,
-            'deactivated_at' => $deactivatedAt,
-            'next_change_at' => $inactiveAt,
-            'countdown_display' => 'Inactive in ' . clientActivityFormatDuration($nowDate, $inactiveAt),
+            'activity_status' => 'inactive',
+            'activity_status_label' => 'Inactive',
+            'activity_status_class' => 'inactive',
+            'inactive_at' => null,
+            'deactivated_at' => null,
+            'next_change_at' => null,
+            'countdown_display' => '',
         ];
     }
 }
@@ -193,20 +176,17 @@ if (!function_exists('clientActivityCalculateState')) {
 if (!function_exists('clientActivityBuildSnapshot')) {
     function clientActivityBuildSnapshot(array $row, ?DateTimeInterface $now = null): array
     {
-        $state = clientActivityCalculateState($row['last_transaction_date'] ?? null, $now);
-        $lastTransaction = clientActivityParseDate($row['last_transaction_date'] ?? null);
+        $state = clientActivityCalculateState($row['activity_status'] ?? null, $now);
         $updatedAt = trim((string)($row['activity_status_updated_at'] ?? ''));
 
         return [
-            'last_transaction_date_display' => $lastTransaction ? $lastTransaction->format('M j, Y') : 'Not set',
-            'last_transaction_date_value' => $lastTransaction ? $lastTransaction->format('Y-m-d') : '',
             'activity_status_display' => $state['activity_status_label'],
             'activity_status_class' => $state['activity_status_class'],
-            'activity_countdown_display' => $state['countdown_display'],
-            'activity_inactive_date_display' => $state['inactive_at'] instanceof DateTimeInterface ? $state['inactive_at']->format('M j, Y') : 'N/A',
-            'activity_deactivated_date_display' => $state['deactivated_at'] instanceof DateTimeInterface ? $state['deactivated_at']->format('M j, Y') : 'N/A',
-            'activity_next_change_display' => $state['next_change_at'] instanceof DateTimeInterface ? $state['next_change_at']->format('M j, Y') : 'N/A',
-            'activity_status_updated_display' => $updatedAt !== '' ? date('M j, Y g:i A', strtotime($updatedAt)) : 'N/A',
+            'activity_countdown_display' => '',
+            'activity_inactive_date_display' => 'N/A',
+            'activity_deactivated_date_display' => 'N/A',
+            'activity_next_change_display' => 'N/A',
+            'activity_status_updated_display' => clientActivityFormatDate($updatedAt),
         ];
     }
 }
@@ -222,14 +202,13 @@ if (!function_exists('clientActivityRefreshRow')) {
         }
 
         if (!clientActivityTableExists($db, $tableSafe)
-            || !clientActivityHasColumn($db, $tableSafe, 'last_transaction_date')
             || !clientActivityHasColumn($db, $tableSafe, 'activity_status')
             || !clientActivityHasColumn($db, $tableSafe, 'activity_status_updated_at')
         ) {
             return;
         }
 
-        $selectSql = "SELECT `$idColumnSafe` AS record_id, last_transaction_date, activity_status, activity_status_updated_at FROM `$tableSafe` WHERE `$idColumnSafe` = ? LIMIT 1";
+        $selectSql = "SELECT `$idColumnSafe` AS record_id, activity_status, activity_status_updated_at FROM `$tableSafe` WHERE `$idColumnSafe` = ? LIMIT 1";
         $stmt = $db->prepare($selectSql);
         if (!$stmt) {
             return;
@@ -250,33 +229,13 @@ if (!function_exists('clientActivityRefreshRow')) {
             return;
         }
 
-        $lastTransaction = clientActivityParseDate($row['last_transaction_date'] ?? null);
-        $existingStatus = strtolower(trim((string)($row['activity_status'] ?? '')));
+        $storedStatus = strtolower(trim((string)($row['activity_status'] ?? '')));
+        $normalizedStatus = $storedStatus === 'inactive' || $storedStatus === 'deactivated'
+            ? $storedStatus
+            : 'active';
         $existingUpdatedAt = trim((string)($row['activity_status_updated_at'] ?? ''));
+        $shouldUpdate = $forceTimestamp || $storedStatus !== $normalizedStatus || $existingUpdatedAt === '';
 
-        if (!$lastTransaction) {
-            if ($existingStatus !== 'active' || $existingUpdatedAt === '') {
-                $activeSql = "UPDATE `$tableSafe` SET activity_status = 'active', activity_status_updated_at = ? WHERE `$idColumnSafe` = ?";
-                $activeStmt = $db->prepare($activeSql);
-                if ($activeStmt) {
-                    $updatedAt = date('Y-m-d H:i:s');
-                    $activeStmt->bind_param('si', $updatedAt, $recordIdValue);
-                    $activeStmt->execute();
-                    $activeStmt->close();
-                }
-            }
-
-            return;
-        }
-
-        $calculated = clientActivityCalculateState($row['last_transaction_date'] ?? null);
-        $calculatedStatus = $calculated['activity_status'] ?? null;
-
-        if ($calculatedStatus === null) {
-            return;
-        }
-
-        $shouldUpdate = $forceTimestamp || $existingStatus !== $calculatedStatus || $existingUpdatedAt === '';
         if (!$shouldUpdate) {
             return;
         }
@@ -288,7 +247,7 @@ if (!function_exists('clientActivityRefreshRow')) {
             return;
         }
 
-        $updateStmt->bind_param('ssi', $calculatedStatus, $updatedAt, $recordIdValue);
+        $updateStmt->bind_param('ssi', $normalizedStatus, $updatedAt, $recordIdValue);
         $updateStmt->execute();
         $updateStmt->close();
     }
@@ -305,23 +264,20 @@ if (!function_exists('clientActivityRefreshTable')) {
         }
 
         if (!clientActivityTableExists($db, $tableSafe)
-            || !clientActivityHasColumn($db, $tableSafe, 'last_transaction_date')
             || !clientActivityHasColumn($db, $tableSafe, 'activity_status')
             || !clientActivityHasColumn($db, $tableSafe, 'activity_status_updated_at')
         ) {
             return;
         }
 
-        $selectSql = "SELECT `$idColumnSafe` AS record_id, last_transaction_date, activity_status, activity_status_updated_at FROM `$tableSafe`";
+        $selectSql = "SELECT `$idColumnSafe` AS record_id, activity_status, activity_status_updated_at FROM `$tableSafe`";
         $result = $db->query($selectSql);
         if (!$result instanceof mysqli_result) {
             return;
         }
 
         $updateSql = "UPDATE `$tableSafe` SET activity_status = ?, activity_status_updated_at = ? WHERE `$idColumnSafe` = ?";
-        $clearSql = "UPDATE `$tableSafe` SET activity_status = NULL, activity_status_updated_at = NULL WHERE `$idColumnSafe` = ?";
         $updateStmt = $db->prepare($updateSql);
-        $clearStmt = $db->prepare($clearSql);
 
         while ($row = $result->fetch_assoc()) {
             $recordIdValue = intval($row['record_id'] ?? 0);
@@ -329,35 +285,19 @@ if (!function_exists('clientActivityRefreshTable')) {
                 continue;
             }
 
-            $lastTransaction = clientActivityParseDate($row['last_transaction_date'] ?? null);
-            $existingStatus = strtolower(trim((string)($row['activity_status'] ?? '')));
+            $storedStatus = strtolower(trim((string)($row['activity_status'] ?? '')));
+            $normalizedStatus = $storedStatus === 'inactive' || $storedStatus === 'deactivated'
+                ? $storedStatus
+                : 'active';
             $existingUpdatedAt = trim((string)($row['activity_status_updated_at'] ?? ''));
+            $shouldUpdate = $storedStatus !== $normalizedStatus || $existingUpdatedAt === '';
 
-            if (!$lastTransaction) {
-                if ($existingStatus !== 'active' || $existingUpdatedAt === '') {
-                    if ($updateStmt) {
-                        $updatedAt = date('Y-m-d H:i:s');
-                        $activeStatus = 'active';
-                        $updateStmt->bind_param('ssi', $activeStatus, $updatedAt, $recordIdValue);
-                        $updateStmt->execute();
-                    }
-                }
-                continue;
-            }
-
-            $calculated = clientActivityCalculateState($row['last_transaction_date'] ?? null);
-            $calculatedStatus = $calculated['activity_status'] ?? null;
-            if ($calculatedStatus === null) {
-                continue;
-            }
-
-            $shouldUpdate = $existingStatus !== $calculatedStatus || $existingUpdatedAt === '';
             if (!$shouldUpdate || !$updateStmt) {
                 continue;
             }
 
             $updatedAt = date('Y-m-d H:i:s');
-            $updateStmt->bind_param('ssi', $calculatedStatus, $updatedAt, $recordIdValue);
+            $updateStmt->bind_param('ssi', $normalizedStatus, $updatedAt, $recordIdValue);
             $updateStmt->execute();
         }
 
@@ -365,9 +305,6 @@ if (!function_exists('clientActivityRefreshTable')) {
 
         if ($updateStmt) {
             $updateStmt->close();
-        }
-        if ($clearStmt) {
-            $clearStmt->close();
         }
     }
 }
@@ -383,15 +320,6 @@ if (!function_exists('clientActivityFormatDate')) {
 if (!function_exists('clientActivityFormatDateTime')) {
     function clientActivityFormatDateTime(?string $value): string
     {
-        $dateValue = trim((string)$value);
-        if ($dateValue === '') {
-            return 'N/A';
-        }
-
-        try {
-            return (new DateTimeImmutable($dateValue))->format('M j, Y g:i A');
-        } catch (Throwable $e) {
-            return 'N/A';
-        }
+        return clientActivityFormatDate($value);
     }
 }

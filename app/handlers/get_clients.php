@@ -149,10 +149,28 @@ try {
     $search = trim((string)($_GET['search'] ?? ''));
     $status = trim((string)($_GET['status'] ?? ''));
     $type = trim((string)($_GET['type'] ?? ''));
+    $activity = strtolower(trim((string)($_GET['activity'] ?? '')));
+    $sort = strtolower(trim((string)($_GET['sort'] ?? 'created_desc')));
     $branch = trim((string)($_GET['branch'] ?? ''));
     $classification = strtolower(trim((string)($_GET['classification'] ?? 'client')));
     if (!in_array($classification, ['client', 'agent'], true)) {
         $classification = 'client';
+    }
+
+    $allowedActivityFilters = ['', 'active', 'inactive', 'deactivated'];
+    if (!in_array($activity, $allowedActivityFilters, true)) {
+        $activity = '';
+    }
+
+    $allowedSorts = [
+        'created_desc',
+        'alphabetical_asc',
+        'alphabetical_desc',
+        'updated_asc',
+        'updated_desc'
+    ];
+    if (!in_array($sort, $allowedSorts, true)) {
+        $sort = 'created_desc';
     }
 
     $currentUserId = intval($_SESSION['user_id'] ?? 0);
@@ -168,8 +186,7 @@ try {
     $usingAgentsTable = $classification === 'agent' && tableExists($db, 'agents');
     $usingApprovalQueue = tableExists($db, 'client_approvals');
     $activityTable = $usingAgentsTable ? 'agents' : 'clients';
-    $activityColumnsAvailable = clientActivityHasColumn($db, $activityTable, 'last_transaction_date')
-        && clientActivityHasColumn($db, $activityTable, 'activity_status')
+    $activityColumnsAvailable = clientActivityHasColumn($db, $activityTable, 'activity_status')
         && clientActivityHasColumn($db, $activityTable, 'activity_status_updated_at');
 
     if ($activityColumnsAvailable) {
@@ -257,6 +274,15 @@ try {
         $filterTypes .= 's';
     }
 
+    if ($activity !== '') {
+        $activityFilterExpr = $activityColumnsAvailable
+            ? "COALESCE(NULLIF(LOWER(TRIM({$tableAlias}.activity_status)), ''), 'active')"
+            : "'active'";
+        $whereClauses[] = $activityFilterExpr . ' = ?';
+        $filterParams[] = $activity;
+        $filterTypes .= 's';
+    }
+
     if ($usersHasBranch) {
         if ($isHeadOfficeUser) {
             if ($branch !== '') {
@@ -298,8 +324,27 @@ try {
     $submittedBranchSelect = $usersHasBranch ? $branchSelectExpr : "''";
     $contactPersonSelect = $usingAgentsTable ? 'NULL AS contact_person' : 'c.contact_person';
     $activitySelectSql = $activityColumnsAvailable
-        ? "{$tableAlias}.last_transaction_date, {$tableAlias}.activity_status, {$tableAlias}.activity_status_updated_at"
-        : "NULL AS last_transaction_date, NULL AS activity_status, NULL AS activity_status_updated_at";
+        ? "{$tableAlias}.activity_status, {$tableAlias}.activity_status_updated_at"
+        : "NULL AS activity_status, NULL AS activity_status_updated_at";
+
+    $displayNameExpr = $usingAgentsTable
+        ? "COALESCE(NULLIF(TRIM(a.client_name), ''), NULLIF(TRIM(CONCAT(COALESCE(a.first_name, ''), ' ', COALESCE(a.last_name, ''))), ''), a.reference_code)"
+        : "COALESCE(NULLIF(TRIM(c.client_name), ''), NULLIF(TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, ''))), ''), c.reference_code)";
+
+    $activityUpdatedSortExpr = $activityColumnsAvailable
+        ? "COALESCE(NULLIF(TRIM({$tableAlias}.activity_status_updated_at), ''), {$tableAlias}.created_at)"
+        : "{$tableAlias}.created_at";
+
+    $orderBySql = "{$tableAlias}.created_at DESC";
+    if ($sort === 'alphabetical_asc') {
+        $orderBySql = "LOWER({$displayNameExpr}) ASC, {$tableAlias}.created_at DESC";
+    } elseif ($sort === 'alphabetical_desc') {
+        $orderBySql = "LOWER({$displayNameExpr}) DESC, {$tableAlias}.created_at DESC";
+    } elseif ($sort === 'updated_asc') {
+        $orderBySql = "{$activityUpdatedSortExpr} ASC, LOWER({$displayNameExpr}) ASC";
+    } elseif ($sort === 'updated_desc') {
+        $orderBySql = "{$activityUpdatedSortExpr} DESC, LOWER({$displayNameExpr}) ASC";
+    }
 
     $listSql = "
         SELECT
@@ -327,7 +372,7 @@ try {
         LEFT JOIN users vu ON {$tableAlias}.verified_by = vu.user_id
         {$approvalJoinSql}
         {$whereSql}
-        ORDER BY {$tableAlias}.created_at DESC
+        ORDER BY {$orderBySql}
     ";
 
     $listParams = $filterParams;
@@ -438,6 +483,8 @@ try {
         'search' => $search,
         'status' => $status,
         'type' => $type,
+        'activity' => $activity,
+        'sort' => $sort,
         'branch' => $branch,
         'classification' => $classification,
         'exportAll' => $exportAll

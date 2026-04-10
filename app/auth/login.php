@@ -134,16 +134,6 @@ $isRememberChecked = $rememberedEmail !== '';
                     </button>
                 </form>
 
-                <!-- Divider -->
-                <div class="form-divider">
-                    <span>Don't have an account?</span>
-                </div>
-
-                <!-- Register Link -->
-                <a href="register.php" class="btn btn-outline btn-block">
-                    <i class="bi bi-person-plus"></i> Create Account
-                </a>
-
                 <!-- Footer -->
                 <div class="auth-footer">
                     <p>&copy; 2026 Sterling Insurance Company, Inc. All rights reserved.</p>

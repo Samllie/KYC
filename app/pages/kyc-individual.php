@@ -467,8 +467,8 @@ $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedCl
         }
 
         body.kyc-compact #kycForm .row.g-3 {
-            --bs-gutter-x: 0.8rem;
-            --bs-gutter-y: 0.6rem;
+            --bs-gutter-x: 0.35rem;
+            --bs-gutter-y: 0.3rem;
         }
 
         body.kyc-compact .card {

@@ -82,6 +82,22 @@ include '../includes/sidebar.php';
                         <option value="obligee">Obligee</option>
                     </select>
                 </div>
+                <div class="filter-group">
+                    <select id="filterActivity" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <select id="sortOrder" class="filter-select">
+                        <option value="created_desc">Latest Added</option>
+                        <option value="alphabetical_asc">Alphabetical A-Z</option>
+                        <option value="alphabetical_desc">Alphabetical Z-A</option>
+                        <option value="updated_asc">Time Updated: Oldest First</option>
+                        <option value="updated_desc">Time Updated: Newest First</option>
+                    </select>
+                </div>
                 <?php if ($isHeadOfficeView): ?>
                 <div class="filter-group">
                     <select id="filterBranch" class="filter-select">
@@ -114,7 +130,6 @@ include '../includes/sidebar.php';
                             <th class="col-contact">Contact</th>
                             <th class="col-email">Email</th>
                             <th class="col-verified">Submitted By</th>
-                            <th class="col-last-transaction">Last Transaction</th>
                             <th class="col-activity">Activity Status</th>
                             <th class="col-activity-updated">Status Updated</th>
                             <th class="col-actions">Actions</th>
@@ -129,7 +144,7 @@ include '../includes/sidebar.php';
             <!-- Pagination -->
             <div class="table-footer">
                 <div class="pagination-info">
-                    Showing <span class="info-start">1</span> to <span class="info-end">10</span> of <span class="info-total">0</span> <?php echo htmlspecialchars($recordLabelPlural); ?>
+                    Showing <span class="info-start">0</span> to <span class="info-end">0</span> of <span class="info-total">0</span> <?php echo htmlspecialchars($recordLabelPlural); ?>
                 </div>
                 <div class="pagination" id="paginationContainer">
                     <!-- Pagination buttons will be generated dynamically -->
@@ -250,29 +265,18 @@ include '../includes/sidebar.php';
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Last Transaction Date</label>
-                        <div class="date-input-group">
-                            <input type="date" id="editLastTransactionDate" class="form-control date-input">
-                            <button type="button" class="date-picker-btn" id="editLastTransactionDatePickerBtn" aria-label="Open calendar" title="Open calendar">
-                                <i class="bi bi-calendar3"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-group">
+                    <div class="form-group full">
                         <label class="form-label">Activity Status</label>
-                        <input type="text" id="editActivityStatus" class="form-control" readonly>
+                        <input type="hidden" id="editActivityStatus" value="active">
+                        <div class="activity-status-toggle-group" id="editActivityStatusToggleGroup" role="group" aria-label="Activity Status">
+                            <button type="button" class="activity-status-toggle is-selected active" data-status="active">Active</button>
+                            <button type="button" class="activity-status-toggle inactive" data-status="inactive">Inactive</button>
+                        </div>
+                        <div class="activity-status-summary">Selected: <strong id="editActivityStatusLabel">Active</strong></div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Status Updated At</label>
                         <input type="text" id="editActivityStatusUpdatedAt" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Countdown</label>
-                        <input type="text" id="editActivityCountdown" class="form-control" readonly>
                     </div>
                 </div>
 
@@ -404,10 +408,6 @@ include '../includes/sidebar.php';
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Last Transaction Date</label>
-                        <input type="date" id="viewLastTransactionDate" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
                         <label class="form-label">Activity Status</label>
                         <input type="text" id="viewActivityStatus" class="form-control" readonly>
                     </div>
@@ -415,12 +415,9 @@ include '../includes/sidebar.php';
                         <label class="form-label">Status Updated At</label>
                         <input type="text" id="viewActivityStatusUpdatedAt" class="form-control" readonly>
                     </div>
-                </div>
-
-                <div class="form-row">
                     <div class="form-group full">
-                        <label class="form-label">Countdown</label>
-                        <input type="text" id="viewActivityCountdown" class="form-control" readonly>
+                        <label class="form-label">Activity Note</label>
+                        <input type="text" id="viewActivityNote" class="form-control" readonly>
                     </div>
                 </div>
             </form>
@@ -507,7 +504,7 @@ include '../includes/sidebar.php';
     const recordLabelPlural = <?php echo json_encode($recordLabelPlural); ?>;
     const recordTitleCaseSingular = <?php echo json_encode($recordTitleCaseSingular); ?>;
     const recordTitleCasePlural = <?php echo json_encode($recordTitleCasePlural); ?>;
-    const clientTableColumnCount = 12;
+    const clientTableColumnCount = 11;
 
     function escapeHtml(value) {
         return String(value)
@@ -520,10 +517,37 @@ include '../includes/sidebar.php';
 
     function normalizeActivityStatusClass(status) {
         const normalized = String(status || '').toLowerCase();
-        if (normalized === 'active' || normalized === 'inactive' || normalized === 'deactivated') {
+        if (normalized === 'inactive' || normalized === 'deactivated') {
             return normalized;
         }
-        return 'none';
+        return 'active';
+    }
+
+    function normalizeEditableActivityStatus(status) {
+        const normalized = String(status || '').toLowerCase();
+        if (normalized === 'inactive' || normalized === 'deactivated') {
+            return 'inactive';
+        }
+        return 'active';
+    }
+
+    function setEditActivityStatus(status) {
+        const activityStatusInput = document.getElementById('editActivityStatus');
+        const activityStatusLabel = document.getElementById('editActivityStatusLabel');
+        const normalized = normalizeEditableActivityStatus(status);
+
+        if (activityStatusInput) {
+            activityStatusInput.value = normalized;
+        }
+
+        if (activityStatusLabel) {
+            activityStatusLabel.textContent = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+        }
+
+        document.querySelectorAll('.activity-status-toggle').forEach(button => {
+            const buttonStatus = normalizeEditableActivityStatus(button.dataset.status || 'active');
+            button.classList.toggle('is-selected', buttonStatus === normalized);
+        });
     }
 
     function updateBranchFilterOptions(branches) {
@@ -585,6 +609,8 @@ include '../includes/sidebar.php';
         return {
             search: document.getElementById('searchInput').value.trim(),
             type: document.getElementById('filterType').value,
+            activity: document.getElementById('filterActivity').value,
+            sort: document.getElementById('sortOrder').value,
             branch: isHeadOfficeUser && branchSelect ? branchSelect.value : ''
         };
     }
@@ -598,6 +624,8 @@ include '../includes/sidebar.php';
             pageSize: pageSize,
             search: filters.search,
             type: filters.type,
+            activity: filters.activity,
+            sort: filters.sort,
             branch: filters.branch,
             classification: listClassification
         });
@@ -684,17 +712,14 @@ include '../includes/sidebar.php';
             const contactNumber = isCorporateLike(client.client_type)
                 ? (client.office_phone || 'N/A')
                 : (client.mobile_phone || 'N/A');
-            const lastTransactionDate = client.last_transaction_date_display || 'Not set';
             const activityStatus = client.activity_status_display || 'Active';
             const activityStatusClass = normalizeActivityStatusClass(client.activity_status_class || 'active');
-            const activityCountdown = client.activity_countdown_display || 'Set last transaction date';
             const activityUpdatedAt = client.activity_status_updated_display || 'N/A';
 
             const row = document.createElement('tr');
             row.classList.add('row-enter');
             row.dataset.clientId = client.client_id;
             row.dataset.clientType = client.client_type || '';
-            row.dataset.clientNumber = client.client_number || 'N/A';
             row.style.animationDelay = `${Math.min(tbody.children.length * 35, 220)}ms`;
             row.innerHTML = `
                 <td class="col-checkbox"><input type="checkbox" class="row-select" data-client-id="${client.client_id}"></td>
@@ -705,19 +730,13 @@ include '../includes/sidebar.php';
                 <td class="col-contact">${escapeHtml(contactNumber)}</td>
                 <td class="col-email">${escapeHtml(client.email || 'N/A')}</td>
                 <td class="col-verified">${escapeHtml(submittedByName)}</td>
-                <td class="col-last-transaction">${escapeHtml(lastTransactionDate)}</td>
                 <td class="col-activity">
                     <div class="activity-cell">
-                        <div class="activity-indicator-row">
-                            <span class="activity-indicator ${activityStatusClass}" aria-hidden="true"></span>
-                            <span class="activity-badge ${activityStatusClass}">${escapeHtml(activityStatus)}</span>
-                        </div>
-                        <span class="activity-countdown ${activityStatusClass}">${escapeHtml(activityCountdown)}</span>
+                        <span class="activity-badge ${activityStatusClass}">${escapeHtml(activityStatus)}</span>
                     </div>
                 </td>
                 <td class="col-activity-updated">${escapeHtml(activityUpdatedAt)}</td>
                 <td class="col-actions">
-                    <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
                     <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
                     <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
                 </td>
@@ -789,6 +808,10 @@ include '../includes/sidebar.php';
         const container = document.getElementById('paginationContainer');
         container.innerHTML = '';
 
+        if (!data.totalPages || data.totalPages <= 0) {
+            return;
+        }
+
         const maxButtons = 5;
         let startPage = Math.max(1, data.page - 2);
         let endPage = Math.min(data.totalPages, startPage + maxButtons - 1);
@@ -836,16 +859,19 @@ include '../includes/sidebar.php';
     // Attach event listeners to dynamically loaded rows
     function attachClientEventListeners() {
         document.querySelectorAll('#clientsTableBody tr').forEach(row => {
-            const viewBtn = row.querySelector('.action-icon[title="View"]');
             const editBtn = row.querySelector('.action-icon[title="Edit"]');
             const deleteBtn = row.querySelector('.action-icon.delete');
 
-            if (viewBtn) {
-                viewBtn.addEventListener('click', function() {
-                    const data = getClientDataFromRow(row);
-                    viewClient(data);
-                });
-            }
+            row.addEventListener('click', function(event) {
+                if (event.target.closest('.row-select, .action-icon, button, a, input, label, select, textarea')) {
+                    return;
+                }
+
+                const clientId = row.dataset.clientId;
+                if (clientId) {
+                    viewClient({ clientId });
+                }
+            });
 
             if (editBtn) {
                 editBtn.addEventListener('click', function() {
@@ -888,8 +914,7 @@ include '../includes/sidebar.php';
             submittedBranch: cells[3].textContent.trim(),
             type: cells[4].textContent.trim(),
             contact: cells[5].textContent.trim(),
-            email: cells[6].textContent.trim(),
-            clientNumber: row.dataset.clientNumber || 'N/A'
+            email: cells[6].textContent.trim()
         };
     }
 
@@ -898,8 +923,7 @@ include '../includes/sidebar.php';
     const viewModal = document.getElementById('viewModal');
     const cancelBtn = document.getElementById('cancelBtn');
     const editModalCloseBtn = document.getElementById('editModalCloseBtn');
-    const editLastTransactionDate = document.getElementById('editLastTransactionDate');
-    const editLastTransactionDatePickerBtn = document.getElementById('editLastTransactionDatePickerBtn');
+    const editActivityStatusButtons = document.querySelectorAll('.activity-status-toggle');
     const deleteConfirmModal = document.getElementById('deleteConfirmModal');
     const deleteConfirmRefCode = document.getElementById('deleteConfirmRefCode');
     const deleteConfirmName = document.getElementById('deleteConfirmName');
@@ -914,20 +938,6 @@ include '../includes/sidebar.php';
 
         deleteConfirmModal.style.display = isOpen ? 'block' : 'none';
         deleteConfirmModal.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
-    }
-
-    function openNativeDatePicker(input) {
-        if (!input) {
-            return;
-        }
-
-        if (typeof input.showPicker === 'function') {
-            input.showPicker();
-            return;
-        }
-
-        input.focus();
-        input.click();
     }
 
     function closeDeleteClientModal() {
@@ -1004,10 +1014,9 @@ include '../includes/sidebar.php';
             document.getElementById('viewMobile').value = client.mobile_phone || client.office_phone || '';
             document.getElementById('viewTelephone').value = client.landline_phone || client.office_phone || '';
             document.getElementById('viewAddress').value = client.full_address || client.home_address || client.business_address || '';
-            document.getElementById('viewLastTransactionDate').value = client.last_transaction_date_value || '';
             document.getElementById('viewActivityStatus').value = client.activity_status_display || 'Active';
             document.getElementById('viewActivityStatusUpdatedAt').value = client.activity_status_updated_display || 'N/A';
-            document.getElementById('viewActivityCountdown').value = client.activity_countdown_display || 'Set last transaction date';
+            document.getElementById('viewActivityNote').value = 'Activity is managed manually from the edit modal.';
 
             viewModal.style.display = 'block';
         })
@@ -1056,10 +1065,8 @@ include '../includes/sidebar.php';
             document.getElementById('editMobile').value = client.mobile_phone || client.office_phone || '';
             document.getElementById('editTelephone').value = client.landline_phone || client.office_phone || '';
             document.getElementById('editAddress').value = client.full_address || client.home_address || client.business_address || '';
-            document.getElementById('editLastTransactionDate').value = client.last_transaction_date_value || '';
-            document.getElementById('editActivityStatus').value = client.activity_status_display || 'Active';
+            setEditActivityStatus(client.activity_status_class || client.activity_status_display || 'active');
             document.getElementById('editActivityStatusUpdatedAt').value = client.activity_status_updated_display || 'N/A';
-            document.getElementById('editActivityCountdown').value = client.activity_countdown_display || 'Set last transaction date';
 
             editModal.style.display = 'block';
         })
@@ -1089,7 +1096,7 @@ include '../includes/sidebar.php';
         formData.append('mobile', document.getElementById('editMobile').value.trim());
         formData.append('occupation', document.getElementById('editOccupation').value.trim());
         formData.append('address', document.getElementById('editAddress').value.trim());
-        formData.append('lastTransactionDate', document.getElementById('editLastTransactionDate').value.trim());
+        formData.append('activityStatus', document.getElementById('editActivityStatus').value.trim());
         formData.append('clientType', document.getElementById('editClientType').value);
 
         fetch('../handlers/client.php', {
@@ -1101,6 +1108,14 @@ include '../includes/sidebar.php';
             if (!result.success) {
                 createToast('error', 'Error', result.message || 'Failed to save changes.', 'toastContainer');
                 return;
+            }
+
+            const updatedStatusValue = result.activity_status_updated_display || result.activity_status_updated_at || '';
+            if (updatedStatusValue) {
+                const updatedAtField = document.getElementById('editActivityStatusUpdatedAt');
+                if (updatedAtField) {
+                    updatedAtField.value = updatedStatusValue;
+                }
             }
 
             editModal.style.display = 'none';
@@ -1207,11 +1222,11 @@ include '../includes/sidebar.php';
         });
     }
 
-    if (editLastTransactionDatePickerBtn && editLastTransactionDate) {
-        editLastTransactionDatePickerBtn.addEventListener('click', function() {
-            openNativeDatePicker(editLastTransactionDate);
+    editActivityStatusButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            setEditActivityStatus(this.dataset.status || 'active');
         });
-    }
+    });
 
     if (deleteCancelBtn) {
         deleteCancelBtn.addEventListener('click', closeDeleteClientModal);
@@ -1278,6 +1293,10 @@ include '../includes/sidebar.php';
 
     document.getElementById('filterType').addEventListener('change', applyServerFilters);
 
+    document.getElementById('filterActivity').addEventListener('change', applyServerFilters);
+
+    document.getElementById('sortOrder').addEventListener('change', applyServerFilters);
+
     const filterBranchEl = document.getElementById('filterBranch');
     if (filterBranchEl) {
         filterBranchEl.addEventListener('change', applyServerFilters);
@@ -1307,8 +1326,26 @@ include '../includes/sidebar.php';
         if (filters.type) {
             parts.push(`Type: ${formatClientType(filters.type)}`);
         }
+        if (filters.activity) {
+            const activityLabels = {
+                active: 'Active',
+                inactive: 'Inactive',
+                deactivated: 'Deactivated'
+            };
+            parts.push(`Activity: ${activityLabels[filters.activity] || filters.activity}`);
+        }
         if (filters.branch) {
             parts.push(`Branch: ${filters.branch}`);
+        }
+        if (filters.sort) {
+            const sortLabels = {
+                created_desc: 'Latest Added',
+                alphabetical_asc: 'Alphabetical A-Z',
+                alphabetical_desc: 'Alphabetical Z-A',
+                updated_asc: 'Time Updated: Oldest First',
+                updated_desc: 'Time Updated: Newest First'
+            };
+            parts.push(`Sort: ${sortLabels[filters.sort] || filters.sort}`);
         }
 
         return parts.length > 0 ? parts.join(' | ') : 'No filters applied';

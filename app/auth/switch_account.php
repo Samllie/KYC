@@ -156,14 +156,6 @@ try {
 					<i class="bi bi-box-arrow-in-right"></i> Sign In With Another Account
 				</a>
 
-				<div class="form-divider">
-					<span>Need a new account?</span>
-				</div>
-
-				<a href="register.php" class="btn btn-outline btn-block">
-					<i class="bi bi-person-plus"></i> Create Account
-				</a>
-
 				<?php if ($hasActiveSession): ?>
 					<a href="../pages/dashboard.php" class="btn btn-outline btn-block" style="margin-top: 10px;">
 						<i class="bi bi-arrow-left"></i> Back to Dashboard

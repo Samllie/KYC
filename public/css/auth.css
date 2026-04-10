@@ -184,14 +184,19 @@ body {
 
 .auth-container.register-layout .auth-wrapper {
     gap: 20px;
-    max-width: 1200px;
-    grid-template-columns: 1fr 1fr;
+    max-width: 700px;
+    grid-template-columns: 1fr;
+    justify-items: center;
+}
+
+.auth-container.register-layout .auth-brand {
+    display: none;
 }
 
 .auth-container.register-layout .auth-form-container {
     position: relative;
     width: 100%;
-    max-width: 500px;
+    max-width: 560px;
     justify-self: center;
     border-radius: var(--radius-lg);
     padding: 20px;
