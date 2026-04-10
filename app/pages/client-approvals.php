@@ -348,6 +348,85 @@ if (!$isHeadOfficeUser) {
             background-color: #eaf5ef;
         }
 
+        .table-wrapper {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        .clients-table {
+            width: max(100%, 1080px);
+            min-width: 1080px;
+        }
+
+        .clients-table th,
+        .clients-table td {
+            padding: 5px 8px;
+        }
+
+        .clients-table th.col-ref,
+        .clients-table td.col-ref {
+            width: 12%;
+            min-width: 120px;
+        }
+
+        .clients-table th.col-name,
+        .clients-table td.col-name {
+            width: 15%;
+            min-width: 150px;
+        }
+
+        .clients-table th.col-type,
+        .clients-table td.col-type {
+            width: 7%;
+            min-width: 72px;
+        }
+
+        .clients-table th.col-branch,
+        .clients-table td.col-branch {
+            width: 14%;
+            min-width: 128px;
+        }
+
+        .clients-table th.col-submitted-by,
+        .clients-table td.col-submitted-by {
+            width: 14%;
+            min-width: 128px;
+        }
+
+        .clients-table th.col-submitted-at,
+        .clients-table td.col-submitted-at {
+            width: 10%;
+            min-width: 108px;
+        }
+
+        .clients-table th.col-status,
+        .clients-table td.col-status {
+            width: 8%;
+            min-width: 88px;
+        }
+
+        .clients-table th.col-actions,
+        .clients-table td.col-actions {
+            width: 14%;
+            min-width: 150px;
+        }
+
+        .table-footer {
+            padding-top: 8px;
+            gap: 10px;
+        }
+
+        .pagination {
+            gap: 6px;
+        }
+
+        .pagination-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+        }
+
         .application-details-panel {
             position: fixed;
             inset: 0;
@@ -394,6 +473,13 @@ if (!$isHeadOfficeUser) {
             margin: 0;
             font-size: 1.1rem;
             color: #0f172a;
+        }
+
+        .filled-fields-hint {
+            margin: 0;
+            font-size: 0.72rem;
+            color: #6b7280;
+            line-height: 1.35;
         }
 
         .application-details-empty {
@@ -454,6 +540,195 @@ if (!$isHeadOfficeUser) {
             margin: 0;
             font-size: 0.9rem;
             color: #1f3e2f;
+        }
+
+        .detail-section-header-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .section-help {
+            margin: 0;
+            font-size: 0.72rem;
+            color: #6b7280;
+            line-height: 1.35;
+        }
+
+        .match-summary-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            background: #ecfdf5;
+            color: #16633f;
+            border: 1px solid #bbe6c9;
+        }
+
+        .credential-match-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+            padding: 12px;
+        }
+
+        .credential-match-card {
+            border: 1px solid #d9e4de;
+            border-radius: 12px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.03);
+        }
+
+        .credential-match-card.credential-match-empty {
+            grid-column: 1 / -1;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+            background: #f8fbf9;
+        }
+
+        .credential-match-empty-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            background: #edf6ef;
+            color: #1f3e2f;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            font-size: 1rem;
+        }
+
+        .credential-match-empty-title {
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .credential-match-empty-text {
+            color: #6b7280;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        .credential-match-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .credential-match-name {
+            margin: 0;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #111827;
+            word-break: break-word;
+        }
+
+        .credential-match-email {
+            margin-top: 3px;
+            font-size: 0.78rem;
+            color: #64748b;
+            word-break: break-word;
+        }
+
+        .credential-match-score {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            line-height: 1;
+        }
+
+        .credential-match-score.exact {
+            background: #e7f8ee;
+            color: #0d6b37;
+            border-color: #b7e6ca;
+        }
+
+        .credential-match-score.strong {
+            background: #e8f1ff;
+            color: #245ea8;
+            border-color: #c6daf8;
+        }
+
+        .credential-match-score.medium {
+            background: #fff7e0;
+            color: #8d6400;
+            border-color: #f1d187;
+        }
+
+        .credential-match-score.low {
+            background: #f3f4f6;
+            color: #4b5563;
+            border-color: #d1d5db;
+        }
+
+        .credential-match-meta,
+        .credential-match-comparison {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px 10px;
+        }
+
+        .credential-match-meta-item {
+            border: 1px solid #e6eeea;
+            border-radius: 10px;
+            padding: 8px 9px;
+            background: #fbfdfc;
+            min-height: 54px;
+        }
+
+        .credential-match-meta-item .label {
+            display: block;
+            font-size: 0.66rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #728091;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .credential-match-meta-item .value {
+            font-size: 0.8rem;
+            color: #1f2937;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .credential-match-note {
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: #f8fbf9;
+            border: 1px solid #d8e7dd;
+            color: #4b5563;
+            font-size: 0.78rem;
+            line-height: 1.35;
+        }
+
+        @media (max-width: 640px) {
+            .credential-match-meta,
+            .credential-match-comparison {
+                grid-template-columns: 1fr;
+            }
         }
 
         .detail-grid {
@@ -784,17 +1059,28 @@ include '../includes/sidebar.php';
         <div class="application-details-header">
             <div>
                 <h2 id="applicationModalTitle">Application Details</h2>
-                <p id="applicationModalSubtitle" class="application-modal-subtitle">Select a row to view full credentials and submitted KYC fields.</p>
+                <p id="applicationModalSubtitle" class="application-modal-subtitle">Select a row to compare closest client matches and review filled fields only.</p>
             </div>
             <button type="button" class="btn-cancel" id="applicationDetailsClearBtn">Close</button>
         </div>
 
         <div class="application-details-scroll">
             <div id="applicationDetailsEmpty" class="application-details-empty">
-                Choose an approval row from the table to load all submitted credentials and documents.
+                Choose an approval row from the table to compare submitted names against client records, review only the populated fields, and inspect documents.
             </div>
 
             <div id="applicationDetailsContent" class="application-modal-body" hidden>
+                <section class="detail-section">
+                    <div class="detail-section-header">
+                        <div class="detail-section-header-copy">
+                            <h3>Closest Client Matches</h3>
+                            <p class="section-help">Top name-based matches from the clients table appear first so the reviewer can compare possible duplicates.</p>
+                        </div>
+                        <span id="matchingCredentialsSummary" class="match-summary-badge">Searching...</span>
+                    </div>
+                    <div id="matchingCredentialsGrid" class="credential-match-grid"></div>
+                </section>
+
                 <section class="detail-section">
                     <div class="detail-section-header">
                         <h3>Approval Summary</h3>
@@ -804,21 +1090,10 @@ include '../includes/sidebar.php';
 
                 <section class="detail-section">
                     <div class="detail-section-header">
-                        <h3>Client Information</h3>
-                    </div>
-                    <div id="clientDetailsGrid" class="detail-grid"></div>
-                </section>
-
-                <section class="detail-section">
-                    <div class="detail-section-header">
-                        <h3>KYC Verification</h3>
-                    </div>
-                    <div id="kycDetailsGrid" class="detail-grid"></div>
-                </section>
-
-                <section class="detail-section">
-                    <div class="detail-section-header">
-                        <h3>Submitted Credentials (All Fields)</h3>
+                        <div class="detail-section-header-copy">
+                            <h3>Filled Submission Fields</h3>
+                            <p class="filled-fields-hint">Only fields with values are shown here from the approval, client, and KYC records.</p>
+                        </div>
                     </div>
                     <div id="allSubmittedDetailsGrid" class="detail-grid"></div>
                 </section>
@@ -857,8 +1132,8 @@ include '../includes/sidebar.php';
     const applicationModalTitle = document.getElementById('applicationModalTitle');
     const applicationModalSubtitle = document.getElementById('applicationModalSubtitle');
     const approvalDetailsGrid = document.getElementById('approvalDetailsGrid');
-    const clientDetailsGrid = document.getElementById('clientDetailsGrid');
-    const kycDetailsGrid = document.getElementById('kycDetailsGrid');
+    const matchingCredentialsSummary = document.getElementById('matchingCredentialsSummary');
+    const matchingCredentialsGrid = document.getElementById('matchingCredentialsGrid');
     const allSubmittedDetailsGrid = document.getElementById('allSubmittedDetailsGrid');
     const applicationDocumentGrid = document.getElementById('applicationDocumentGrid');
     const decisionReviewNotes = document.getElementById('decisionReviewNotes');
@@ -884,7 +1159,18 @@ include '../includes/sidebar.php';
     function humanizeKey(key) {
         const text = String(key || '').replace(/_/g, ' ').trim();
         if (!text) return 'Field';
-        return text.replace(/\b\w/g, char => char.toUpperCase());
+
+        const parts = text.split(/\s+/).filter(Boolean);
+        if (parts.length > 1 && parts[0].toLowerCase() === parts[1].toLowerCase()) {
+            parts.shift();
+        }
+
+        const titleCased = parts.join(' ').replace(/\b\w/g, char => char.toUpperCase());
+
+        return titleCased
+            .replace(/\bKyc\b/g, 'KYC')
+            .replace(/\bTin\b/g, 'TIN')
+            .replace(/\bId\b/g, 'ID');
     }
 
     function orderedRecordEntries(record, priorityKeys = []) {
@@ -924,15 +1210,15 @@ include '../includes/sidebar.php';
         if (!container) return;
 
         if (!record || typeof record !== 'object') {
-            renderFallbackGrid(container, 'No data available');
+            renderFallbackGrid(container, 'No filled fields available');
             return;
         }
 
         const entries = orderedRecordEntries(record, priorityKeys)
-            .filter(([key]) => String(key || '').toLowerCase() !== 'password');
+            .filter(([key, rawValue]) => String(key || '').toLowerCase() !== 'password' && !isBlank(rawValue));
 
         if (entries.length === 0) {
-            renderFallbackGrid(container, 'No data available');
+            renderFallbackGrid(container, 'No filled fields available');
             return;
         }
 
@@ -1070,6 +1356,160 @@ include '../includes/sidebar.php';
                         <div class="doc-info">Uploader: ${escapeHtml(doc.uploaded_by_name || 'N/A')}</div>
                         ${previewUrl ? `<a class="doc-link" href="${escapeHtml(previewUrl)}" target="_blank" rel="noopener">Open full document</a>` : ''}
                     </div>
+                </article>
+            `;
+        }).join('');
+    }
+
+    function credentialMatchScoreClass(score) {
+        const numericScore = Number(score || 0);
+
+        if (numericScore >= 100) {
+            return 'exact';
+        }
+
+        if (numericScore >= 85) {
+            return 'strong';
+        }
+
+        if (numericScore >= 60) {
+            return 'medium';
+        }
+
+        return 'low';
+    }
+
+    function credentialMatchMethodLabel(method) {
+        switch (String(method || '').toLowerCase()) {
+            case 'exact_name':
+                return 'Exact name';
+            case 'contains_name':
+                return 'Name overlap';
+            case 'exact_email':
+                return 'Exact email';
+            case 'similar_name':
+                return 'Name similarity';
+            default:
+                return 'Potential match';
+        }
+    }
+
+    function renderCredentialMatches(container, matches, options = {}) {
+        if (!container) return;
+
+        const config = typeof options === 'string' ? { emptyMessage: options } : (options || {});
+        const items = Array.isArray(matches) ? matches : [];
+        if (items.length === 0) {
+            const isLoading = Boolean(config.loading);
+            const isError = Boolean(config.error);
+            const emptyMessage = config.emptyMessage || 'No registered client records match the submitted names.';
+            const emptyTitle = isLoading
+                ? 'Searching client records'
+                : (isError ? 'Unable to load client matches' : 'No close matches found');
+            const emptyIcon = isLoading
+                ? 'bi-hourglass-split'
+                : (isError ? 'bi-exclamation-circle' : 'bi-person-badge');
+
+            container.innerHTML = `
+                <article class="credential-match-card credential-match-empty">
+                    <div class="credential-match-empty-icon">
+                        <i class="bi ${emptyIcon}"></i>
+                    </div>
+                    <div>
+                        <div class="credential-match-empty-title">${escapeHtml(emptyTitle)}</div>
+                        <div class="credential-match-empty-text">${escapeHtml(emptyMessage)}</div>
+                    </div>
+                </article>
+            `;
+            return;
+        }
+
+        container.innerHTML = items.map(match => {
+            const score = Number(match.match_score || 0);
+            const scoreClass = credentialMatchScoreClass(score);
+            const displayName = isBlank(match.display_name) ? 'Unnamed client' : String(match.display_name);
+            const email = isBlank(match.email) ? 'N/A' : String(match.email);
+            const clientId = isBlank(match.client_id) ? 'N/A' : String(match.client_id);
+            const clientNumber = isBlank(match.client_number) ? 'N/A' : String(match.client_number);
+            const referenceCode = isBlank(match.reference_code) ? 'N/A' : String(match.reference_code);
+            const clientType = isBlank(match.client_type) ? 'N/A' : String(match.client_type);
+            const clientClassification = isBlank(match.client_classification) ? 'N/A' : String(match.client_classification);
+            const verificationStatus = isBlank(match.verification_status) ? 'N/A' : String(match.verification_status);
+            const mobilePhone = isBlank(match.mobile_phone) ? 'N/A' : String(match.mobile_phone);
+            const officePhone = isBlank(match.office_phone) ? 'N/A' : String(match.office_phone);
+            const contactPerson = isBlank(match.contact_person) ? 'N/A' : String(match.contact_person);
+            const companyName = isBlank(match.company_name) ? 'N/A' : String(match.company_name);
+            const matchedSourceLabel = isBlank(match.matched_source_label) ? 'Submitted name' : String(match.matched_source_label);
+            const matchedSourceValue = isBlank(match.matched_source_value) ? 'N/A' : String(match.matched_source_value);
+            const matchReason = isBlank(match.match_reason)
+                ? credentialMatchMethodLabel(match.match_method)
+                : String(match.match_reason);
+
+            return `
+                <article class="credential-match-card">
+                    <div class="credential-match-head">
+                        <div>
+                            <div class="credential-match-name">${escapeHtml(displayName)}</div>
+                            <div class="credential-match-email">${escapeHtml(email)}</div>
+                        </div>
+                        <span class="credential-match-score ${scoreClass}">${escapeHtml(String(Math.round(score)))}%</span>
+                    </div>
+
+                    <div class="credential-match-meta">
+                        <div class="credential-match-meta-item">
+                            <span class="label">Client ID</span>
+                            <div class="value">${escapeHtml(clientId)}</div>
+                        </div>
+                        <div class="credential-match-meta-item">
+                            <span class="label">Client Number</span>
+                            <div class="value">${escapeHtml(clientNumber)}</div>
+                        </div>
+                        <div class="credential-match-meta-item">
+                            <span class="label">Reference Code</span>
+                            <div class="value">${escapeHtml(referenceCode)}</div>
+                        </div>
+                        <div class="credential-match-meta-item">
+                            <span class="label">Client Type</span>
+                            <div class="value">${escapeHtml(clientType)}</div>
+                        </div>
+                        <div class="credential-match-meta-item">
+                            <span class="label">Classification</span>
+                            <div class="value">${escapeHtml(clientClassification)}</div>
+                        </div>
+                        <div class="credential-match-meta-item">
+                            <span class="label">Verification Status</span>
+                            <div class="value">${escapeHtml(verificationStatus)}</div>
+                        </div>
+                        <div class="credential-match-meta-item">
+                            <span class="label">Mobile Phone</span>
+                            <div class="value">${escapeHtml(mobilePhone)}</div>
+                        </div>
+                        <div class="credential-match-meta-item">
+                            <span class="label">Office Phone</span>
+                            <div class="value">${escapeHtml(officePhone)}</div>
+                        </div>
+                        <div class="credential-match-meta-item">
+                            <span class="label">Contact Person</span>
+                            <div class="value">${escapeHtml(contactPerson)}</div>
+                        </div>
+                        <div class="credential-match-meta-item">
+                            <span class="label">Company Name</span>
+                            <div class="value">${escapeHtml(companyName)}</div>
+                        </div>
+                    </div>
+
+                    <div class="credential-match-comparison">
+                        <div class="credential-match-meta-item">
+                            <span class="label">Compared against</span>
+                            <div class="value">${escapeHtml(matchedSourceLabel)}</div>
+                        </div>
+                        <div class="credential-match-meta-item">
+                            <span class="label">Matched value</span>
+                            <div class="value">${escapeHtml(matchedSourceValue)}</div>
+                        </div>
+                    </div>
+
+                    <div class="credential-match-note">${escapeHtml(matchReason)}</div>
                 </article>
             `;
         }).join('');
@@ -1468,13 +1908,20 @@ include '../includes/sidebar.php';
         }
 
         if (applicationModalSubtitle) {
-            applicationModalSubtitle.textContent = 'Loading application details...';
+            applicationModalSubtitle.textContent = 'Loading application details, closest client matches, and filled fields...';
         }
 
+        if (matchingCredentialsSummary) {
+            matchingCredentialsSummary.textContent = 'Searching client records...';
+        }
+
+        renderCredentialMatches(matchingCredentialsGrid, null, {
+            loading: true,
+            emptyMessage: 'Searching client records for the closest name match...'
+        });
+
         renderFallbackGrid(approvalDetailsGrid, 'Loading approval summary...');
-        renderFallbackGrid(clientDetailsGrid, 'Loading client details...');
-        renderFallbackGrid(kycDetailsGrid, 'Loading KYC details...');
-        renderFallbackGrid(allSubmittedDetailsGrid, 'Loading submitted KYC data...');
+        renderFallbackGrid(allSubmittedDetailsGrid, 'Loading filled fields...');
 
         if (applicationDocumentGrid) {
             applicationDocumentGrid.innerHTML = `
@@ -1512,11 +1959,15 @@ include '../includes/sidebar.php';
         }
 
         if (applicationModalSubtitle) {
-            applicationModalSubtitle.textContent = 'Select a row to view full credentials and submitted KYC fields.';
+            applicationModalSubtitle.textContent = 'Select a row to compare closest client matches and review filled fields only.';
         }
 
         if (applicationDetailsEmpty) {
-            applicationDetailsEmpty.textContent = 'Choose an approval row from the table to load all submitted credentials and documents.';
+            applicationDetailsEmpty.textContent = 'Choose an approval row from the table to compare submitted names against client records, review only the populated fields, and inspect documents.';
+        }
+
+        if (matchingCredentialsSummary) {
+            matchingCredentialsSummary.textContent = 'No application loaded';
         }
     }
 
@@ -1526,6 +1977,10 @@ include '../includes/sidebar.php';
         const kyc = payload.kyc || null;
         const allSubmittedData = payload.all_submitted_data || null;
         const documents = Array.isArray(payload.documents) ? payload.documents : [];
+        const matchingCredentialsPayload = payload.matching_credentials || {};
+        const matchingCredentials = Array.isArray(matchingCredentialsPayload.items)
+            ? matchingCredentialsPayload.items
+            : [];
 
         const referenceCode = approval && approval.reference_code ? approval.reference_code : 'N/A';
         const status = approval && approval.approval_status ? String(approval.approval_status).toUpperCase() : 'N/A';
@@ -1535,6 +1990,19 @@ include '../includes/sidebar.php';
         setDetailsPanelVisibility(true);
         highlightSelectedApprovalRow();
         setModalActionsBusy(false);
+
+        renderCredentialMatches(
+            matchingCredentialsGrid,
+            matchingCredentials,
+            'No registered client records closely match the submitted names for this application.'
+        );
+
+        if (matchingCredentialsSummary) {
+            const topMatch = matchingCredentials[0] || null;
+            matchingCredentialsSummary.textContent = topMatch
+                ? `Top client match: ${String(topMatch.display_name || 'Unknown')} (${Math.round(Number(topMatch.match_score || 0))}%)`
+                : 'No matching client records found';
+        }
 
         if (applicationModalTitle) {
             applicationModalTitle.textContent = `Application ${referenceCode}`;
@@ -1568,44 +2036,6 @@ include '../includes/sidebar.php';
             'approved_at',
             'review_notes',
             'client_id'
-        ]);
-
-        renderRecordGrid(clientDetailsGrid, client, [
-            'client_id',
-            'reference_code',
-            'client_number',
-            'client_classification',
-            'client_type',
-            'client_name',
-            'first_name',
-            'middle_name',
-            'last_name',
-            'contact_person',
-            'mobile_phone',
-            'office_phone',
-            'email',
-            'address',
-            'city',
-            'province',
-            'birth_date',
-            'verification_status',
-            'created_at',
-            'updated_at'
-        ]);
-
-        renderRecordGrid(kycDetailsGrid, kyc, [
-            'kyc_id',
-            'client_id',
-            'id_type',
-            'id_number',
-            'tin',
-            'nationality',
-            'civil_status',
-            'occupation',
-            'status',
-            'submitted_at',
-            'created_at',
-            'updated_at'
         ]);
 
         renderRecordGrid(allSubmittedDetailsGrid, allSubmittedData, [
@@ -1687,9 +2117,7 @@ include '../includes/sidebar.php';
                 setModalActionsBusy(false);
 
                 renderFallbackGrid(approvalDetailsGrid, error.message || 'Unable to load application details.');
-                renderFallbackGrid(clientDetailsGrid, 'Client information is unavailable.');
-                renderFallbackGrid(kycDetailsGrid, 'KYC information is unavailable.');
-                renderFallbackGrid(allSubmittedDetailsGrid, 'Submitted KYC data is unavailable.');
+                renderFallbackGrid(allSubmittedDetailsGrid, 'Filled fields are unavailable.');
 
                 if (applicationDocumentGrid) {
                     applicationDocumentGrid.innerHTML = `
@@ -1702,6 +2130,19 @@ include '../includes/sidebar.php';
                             </div>
                         </article>
                     `;
+                }
+
+                renderCredentialMatches(
+                    matchingCredentialsGrid,
+                    null,
+                    {
+                        error: true,
+                        emptyMessage: 'Unable to load client matches for this application.'
+                    }
+                );
+
+                if (matchingCredentialsSummary) {
+                    matchingCredentialsSummary.textContent = 'Unavailable';
                 }
 
                 if (applicationModalSubtitle) {
