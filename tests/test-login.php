@@ -4,7 +4,7 @@
  * Check if database is set up correctly and test login
  */
 
-require_once 'config/db.php';
+require_once __DIR__ . '/../app/config/db.php';
 
 echo "<h2>KYC System - Diagnostic Report</h2>";
 
@@ -79,8 +79,5 @@ if ($row['count'] > 0 && $user && strtolower($phpHash) === strtolower($user['pas
 } else {
     echo "<p style='color: red;'>✗ There's an issue. Check details above.</p>";
 }
-
-// Close connection
-$db->close();
 
 ?>

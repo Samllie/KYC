@@ -5,6 +5,7 @@
  * Clears current session and lets user choose an account or sign in with another one.
  */
 require_once '../config/session.php';
+require_once '../config/device_accounts.php';
 
 // Keep current session alive on this page so users can still go back to dashboard.
 $hasActiveSession = isset($_SESSION['user_id']);
@@ -12,10 +13,29 @@ $hasActiveSession = isset($_SESSION['user_id']);
 require_once '../config/db.php';
 
 $accounts = [];
+$knownEmails = deviceAccountsGetKnownEmails();
+
+if ($hasActiveSession) {
+	$currentEmail = strtolower(trim((string)($_SESSION['email'] ?? '')));
+	if ($currentEmail !== '' && filter_var($currentEmail, FILTER_VALIDATE_EMAIL)) {
+		deviceAccountsRememberEmail($currentEmail);
+		$knownEmails = deviceAccountsGetKnownEmails();
+	}
+}
+
 try {
-	$accounts = fetchAll(
-		"SELECT full_name, email, department, branch, role FROM users WHERE status = 'active' ORDER BY full_name ASC LIMIT 30"
-	);
+	if (!empty($knownEmails)) {
+		$placeholders = implode(',', array_fill(0, count($knownEmails), '?'));
+		$accounts = fetchAll(
+			"SELECT full_name, email, department, branch, role
+			 FROM users
+			 WHERE status = 'active'
+			   AND LOWER(email) IN ($placeholders)
+			 ORDER BY full_name ASC
+			 LIMIT 30",
+			$knownEmails
+		);
+	}
 } catch (Exception $e) {
 	$accounts = [];
 }
@@ -129,19 +149,11 @@ try {
 						<?php endforeach; ?>
 					</div>
 				<?php else: ?>
-					<div class="switch-empty">No active accounts found. Use another account sign in below.</div>
+					<div class="switch-empty">No previously used accounts were found on this device. Use another account sign in below.</div>
 				<?php endif; ?>
 
 				<a href="login.php?switch=1" class="btn btn-primary btn-block">
 					<i class="bi bi-box-arrow-in-right"></i> Sign In With Another Account
-				</a>
-
-				<div class="form-divider">
-					<span>Need a new account?</span>
-				</div>
-
-				<a href="register.php" class="btn btn-outline btn-block">
-					<i class="bi bi-person-plus"></i> Create Account
 				</a>
 
 				<?php if ($hasActiveSession): ?>

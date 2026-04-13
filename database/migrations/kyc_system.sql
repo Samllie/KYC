@@ -275,6 +275,7 @@ CREATE TABLE `kyc_verifications` (
   `nationality` varchar(50) DEFAULT NULL,
   `id_type` varchar(50) DEFAULT NULL,
   `id_number` varchar(50) DEFAULT NULL,
+  `tin_number` varchar(50) DEFAULT NULL,
   `occupation` varchar(100) DEFAULT NULL,
   `company` varchar(100) DEFAULT NULL,
   `mobile` varchar(20) DEFAULT NULL,

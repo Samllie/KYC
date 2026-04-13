@@ -210,11 +210,11 @@ $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedC
             bottom: 0;
             left: 0;
             width: 4px;
-            background: linear-gradient(180deg, #1e8a5c 0%, #2ea371 100%);
+            background: linear-gradient(180deg, var(--wizard-accent-deep, #16633f) 0%, var(--wizard-accent, #2ea371) 100%);
         }
 
         #kycForm > .card[data-wizard-step="3"]:not(#draftsCard)::before {
-            background: linear-gradient(180deg, #2f7fd6 0%, #4b95e6 100%);
+            background: linear-gradient(180deg, var(--wizard-accent-deep, #16633f) 0%, var(--wizard-accent, #2ea371) 100%);
         }
 
         #kycForm > .card .card-header {
@@ -236,14 +236,14 @@ $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedC
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #e8f4ee;
-            color: #16633f;
+            background: var(--wizard-accent-soft, #e8f4ee);
+            color: var(--wizard-accent-deep, #16633f);
             font-size: 0.86rem;
         }
 
         #kycForm > .card[data-wizard-step="3"] .card-title i {
-            background: #e8f0fb;
-            color: #1f5ea9;
+            background: var(--wizard-accent-soft, #e8f4ee);
+            color: var(--wizard-accent-deep, #16633f);
         }
 
         #kycForm > .card .card-body {
@@ -699,7 +699,7 @@ $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedC
         }
     </style>
 </head>
-<body class="kyc-compact">
+<body class="kyc-compact" style="--wizard-accent:#2ea371;--wizard-accent-soft:#e8f4ee;--wizard-accent-deep:#16633f;">
 
 <?php
 $activePage = 'kyc-verification';
@@ -769,7 +769,7 @@ include '../includes/sidebar.php';
             <!-- Client Type Display -->
             <div class="client-type-inline" data-wizard-step="2">
                 <div class="client-type-inline-left">
-                    <span class="client-type-inline-label">KYC Type</span>
+                    <span class="client-type-inline-label">Client Type</span>
                     <div class="client-type-display <?php echo htmlspecialchars($selectedClientType); ?>">
                         <i class="bi <?php echo htmlspecialchars($clientTypeIcon); ?>"></i>
                         <span><?php echo htmlspecialchars($clientTypeLabel); ?></span>
@@ -1020,6 +1020,12 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
+                                <label for="nationality" class="form-label">Nationality</label>
+                                <input type="text" id="nationality" name="nationality" class="form-control" placeholder="e.g. Filipino">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
                                 <label class="form-label">Client Classification</label>
                                 <input type="hidden" name="clientClassification" value="client">
                                 <input type="text" class="form-control" value="Client" readonly>
@@ -1066,7 +1072,6 @@ include '../includes/sidebar.php';
                         <div class="col-md-7">
                             <div class="form-group">
                                 <label for="idNumber" class="form-label">ID Number <span class="req">*</span></label>
-                                <input type="text" id="idNumber" name="idNumber" class="form-control" placeholder="Enter ID number" required>
                                 <input type="text" id="idNumber" name="idNumber" class="form-control" placeholder="Enter ID number" required>
                                 <div class="form-error">ID number is required</div>
                             </div>
@@ -1766,7 +1771,6 @@ if (governmentIdZone) {
 
 if (governmentIdTypeSelect) {
     governmentIdTypeSelect.addEventListener('change', () => {
-    governmentIdTypeSelect.addEventListener('change', () => {
         validateGovernmentIdSection();
     });
 }
@@ -2463,7 +2467,7 @@ function submitForm() {
     
     // Collect form data
     const formData = new FormData();
-    formData.append('action', 'add_client');
+    formData.append('action', 'submit_kyc');
     
     // Add all form fields
     const form = document.getElementById('kycForm');
@@ -2473,9 +2477,13 @@ function submitForm() {
             formData.append(el.name, el.value);
         }
     });
+
+    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
+    formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
+    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
     
     // Submit to handler
-    fetch('../handlers/client.php', {
+    fetch('../handlers/kyc.php', {
         method: 'POST',
         body: formData
     })

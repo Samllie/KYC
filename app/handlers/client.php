@@ -7,6 +7,7 @@
 header('Content-Type: application/json');
 require_once '../config/db.php';
 require_once __DIR__ . '/upload_utils.php';
+require_once __DIR__ . '/client_activity_utils.php';
 session_start();
 
 $response = ['success' => false, 'message' => ''];
@@ -40,6 +41,15 @@ if (!function_exists('syncAgentRowFromClient')) {
             return;
         }
 
+        $includeActivityColumns = clientActivityHasColumn($db, 'clients', 'activity_status')
+            && clientActivityHasColumn($db, 'clients', 'activity_status_updated_at')
+            && clientActivityHasColumn($db, 'agents', 'activity_status')
+            && clientActivityHasColumn($db, 'agents', 'activity_status_updated_at');
+
+        $activityInsertColumns = $includeActivityColumns ? ",\n                activity_status,\n                activity_status_updated_at" : '';
+        $activitySelectColumns = $includeActivityColumns ? ",\n                c.activity_status,\n                c.activity_status_updated_at" : '';
+        $activityUpdateColumns = $includeActivityColumns ? ",\n                activity_status = VALUES(activity_status),\n                activity_status_updated_at = VALUES(activity_status_updated_at)" : '';
+
         $sql = "
             INSERT INTO agents (
                 client_id,
@@ -57,7 +67,7 @@ if (!function_exists('syncAgentRowFromClient')) {
                 submitted_by,
                 submitted_at,
                 verified_by,
-                created_at
+                created_at{$activityInsertColumns}
             )
             SELECT
                 c.client_id,
@@ -75,7 +85,7 @@ if (!function_exists('syncAgentRowFromClient')) {
                 c.submitted_by,
                 c.submitted_at,
                 c.verified_by,
-                c.created_at
+                c.created_at{$activitySelectColumns}
             FROM clients c
             WHERE c.client_id = ?
             LIMIT 1
@@ -93,7 +103,7 @@ if (!function_exists('syncAgentRowFromClient')) {
                 verification_status = VALUES(verification_status),
                 submitted_by = VALUES(submitted_by),
                 submitted_at = VALUES(submitted_at),
-                verified_by = VALUES(verified_by),
+                verified_by = VALUES(verified_by){$activityUpdateColumns},
                 updated_at = CURRENT_TIMESTAMP
         ";
 
@@ -145,6 +155,103 @@ if (!function_exists('clientApprovalsTableExists')) {
         }
 
         return $exists;
+    }
+}
+
+if (!function_exists('currentUserHasHeadOfficeAccess')) {
+    function currentUserHasHeadOfficeAccess(): bool {
+        $currentUserRole = strtolower(trim((string)($_SESSION['role'] ?? '')));
+        $currentUserDepartment = strtoupper(trim((string)($_SESSION['department'] ?? '')));
+        $currentUserBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
+
+        return $currentUserRole === 'admin'
+            || $currentUserDepartment === 'HEAD OFFICE'
+            || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+    }
+}
+
+if (!function_exists('clientRecordBranchSqlParts')) {
+    function clientRecordBranchSqlParts(): array {
+        global $db;
+
+        $usersHasBranch = clientActivityHasColumn($db, 'users', 'branch');
+        $usingApprovalQueue = clientApprovalsTableExists();
+
+        $branchJoinSql = ' LEFT JOIN users su ON c.submitted_by = su.user_id';
+        $branchExpr = "NULLIF(TRIM(su.branch), '')";
+
+        if ($usersHasBranch && $usingApprovalQueue) {
+            $branchJoinSql .= ' LEFT JOIN client_approvals ca ON ca.reference_code = c.reference_code';
+            $branchExpr = "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))";
+        }
+
+        return [$branchJoinSql, $branchExpr, $usersHasBranch];
+    }
+}
+
+if (!function_exists('fetchAccessibleClientRecord')) {
+    function fetchAccessibleClientRecord(int $clientId): ?array {
+        $clientId = intval($clientId);
+        if ($clientId <= 0) {
+            return null;
+        }
+
+        [$branchJoinSql, $branchExpr, $usersHasBranch] = clientRecordBranchSqlParts();
+
+        $client = fetchOne(
+            "SELECT c.*, {$branchExpr} AS submitted_by_branch
+             FROM clients c
+             {$branchJoinSql}
+             WHERE c.client_id = ?
+             LIMIT 1",
+            [$clientId]
+        );
+
+        if (!$client) {
+            return null;
+        }
+
+        if (currentUserHasHeadOfficeAccess()) {
+            return $client;
+        }
+
+        $currentUserBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
+        if ($currentUserBranch !== '') {
+            $recordBranch = strtoupper(trim((string)($client['submitted_by_branch'] ?? '')));
+            if ($recordBranch === '' || $recordBranch !== $currentUserBranch) {
+                return null;
+            }
+
+            return $client;
+        }
+
+        if ($usersHasBranch) {
+            return null;
+        }
+
+        $currentUserId = intval($_SESSION['user_id'] ?? 0);
+        if (intval($client['submitted_by'] ?? 0) !== $currentUserId) {
+            return null;
+        }
+
+        return $client;
+    }
+}
+
+if (!function_exists('clientRecordAccessibleByCurrentUser')) {
+    function clientRecordAccessibleByCurrentUser(array $client): bool {
+        if (currentUserHasHeadOfficeAccess()) {
+            return true;
+        }
+
+        $currentUserBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
+        if ($currentUserBranch !== '') {
+            $recordBranch = strtoupper(trim((string)($client['submitted_by_branch'] ?? '')));
+            return $recordBranch !== '' && $recordBranch === $currentUserBranch;
+        }
+
+        $currentUserId = intval($_SESSION['user_id'] ?? 0);
+        return intval($client['submitted_by'] ?? 0) === $currentUserId;
     }
 }
 
@@ -251,6 +358,18 @@ if (!function_exists('queueClientForApproval')) {
     }
 }
 
+if (!function_exists('generateClientNumber')) {
+    function generateClientNumber() {
+        try {
+            $suffix = strtoupper(bin2hex(random_bytes(3)));
+        } catch (Exception $e) {
+            $suffix = strtoupper(substr(md5(uniqid((string)mt_rand(), true)), 0, 6));
+        }
+
+        return 'CN-' . date('YmdHis') . '-' . $suffix;
+    }
+}
+
 // Check user session
 if (!isset($_SESSION['user_id'])) {
     $response['message'] = 'Unauthorized access';
@@ -278,7 +397,7 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $refCode = generateUniqueReferenceCode();
     
     // Generate client number
-    $clientNumber = 'CN-' . time();
+    $clientNumber = generateClientNumber();
     
     // Build insert data based on client type
     $insertData = [
@@ -508,6 +627,9 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $occupation = trim($_POST['occupation'] ?? '');
     $address = trim($_POST['address'] ?? '');
     $clientType = trim($_POST['clientType'] ?? '');
+    $activityStatusInput = strtolower(trim($_POST['activityStatus'] ?? 'active'));
+    $allowedActivityStatuses = ['active', 'inactive'];
+    $activityStatus = in_array($activityStatusInput, $allowedActivityStatuses, true) ? $activityStatusInput : 'active';
     
     if ($clientId === 0) {
         $response['message'] = 'Invalid client ID';
@@ -516,15 +638,16 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Check if client exists
-    $client = fetchOne("SELECT * FROM clients WHERE client_id = ?", [$clientId]);
+    $client = fetchAccessibleClientRecord($clientId);
     if (!$client) {
-        $response['message'] = 'Client not found';
+        $response['message'] = 'Client not found or access denied';
         echo json_encode($response);
         exit;
     }
+    $activityUpdatedAt = date('Y-m-d H:i:s');
     
     // Update client
-    $result = update('clients', [
+    $updateData = [
         'first_name' => $firstName,
         'last_name' => $lastName,
         'middle_name' => $middleName,
@@ -533,7 +656,25 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'occupation' => $occupation,
         'full_address' => $address,
         'client_type' => $clientType
-    ], 'client_id = ?', [$clientId]);
+    ];
+
+    if (clientActivityHasColumn($db, 'clients', 'activity_status')) {
+        $updateData['activity_status'] = $activityStatus;
+        $updateData['activity_status_updated_at'] = $activityUpdatedAt;
+    }
+
+    $result = update('clients', $updateData, 'client_id = ?', [$clientId]);
+    if (!($result['success'] ?? false)) {
+        $response['message'] = $result['error'] ?? 'Failed to update client';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (clientActivityHasColumn($db, 'clients', 'activity_status')
+        && clientActivityHasColumn($db, 'clients', 'activity_status_updated_at')
+    ) {
+        clientActivityRefreshRow($db, 'clients', $clientId, 'client_id', true);
+    }
 
     $effectiveClassification = strtolower(trim($client['client_classification'] ?? 'client'));
     if ($effectiveClassification === 'agent') {
@@ -544,6 +685,8 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $response['success'] = true;
     $response['message'] = 'Client updated successfully';
+    $response['activity_status_updated_at'] = $activityUpdatedAt;
+    $response['activity_status_updated_display'] = clientActivityFormatDateTime($activityUpdatedAt);
 }
 
 // ============================================
@@ -559,9 +702,9 @@ else if ($action === 'delete_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Check if client exists
-    $client = fetchOne("SELECT * FROM clients WHERE client_id = ?", [$clientId]);
+    $client = fetchAccessibleClientRecord($clientId);
     if (!$client) {
-        $response['message'] = 'Client not found';
+        $response['message'] = 'Client not found or access denied';
         echo json_encode($response);
         exit;
     }
@@ -587,16 +730,23 @@ else if ($action === 'get_client' && $_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
     
-    $client = fetchOne("SELECT * FROM clients WHERE client_id = ?", [$clientId]);
+    $client = fetchAccessibleClientRecord($clientId);
     
     if (!$client) {
-        $response['message'] = 'Client not found';
+        $response['message'] = 'Client not found or access denied';
         echo json_encode($response);
         exit;
     }
+
+    if (clientActivityHasColumn($db, 'clients', 'activity_status')
+        && clientActivityHasColumn($db, 'clients', 'activity_status_updated_at')
+    ) {
+        clientActivityRefreshRow($db, 'clients', $clientId);
+        $client = fetchAccessibleClientRecord($clientId) ?: $client;
+    }
     
     $response['success'] = true;
-    $response['data'] = $client;
+    $response['data'] = array_merge($client, clientActivityBuildSnapshot($client));
 }
 
 // ============================================
@@ -605,23 +755,59 @@ else if ($action === 'get_client' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 else if ($action === 'get_all_clients' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $status = $_GET['status'] ?? '';
     $type = $_GET['type'] ?? '';
-    
-    $query = "SELECT * FROM clients WHERE 1=1";
+    $currentUserId = intval($_SESSION['user_id'] ?? 0);
+    $currentUserBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
+    $usersHasBranch = clientActivityHasColumn($db, 'users', 'branch');
+    $usingApprovalQueue = clientApprovalsTableExists();
+
+    $query = "SELECT c.* FROM clients c";
+    $branchJoinSql = '';
+    $branchExpr = "NULLIF(TRIM(su.branch), '')";
+    if ($usersHasBranch) {
+        $branchJoinSql = ' LEFT JOIN users su ON c.submitted_by = su.user_id';
+        if ($usingApprovalQueue) {
+            $branchJoinSql .= ' LEFT JOIN client_approvals ca ON ca.reference_code = c.reference_code';
+            $branchExpr = "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))";
+        }
+    }
+
+    $query .= $branchJoinSql . " WHERE 1=1";
     $params = [];
     
     if (!empty($status)) {
-        $query .= " AND verification_status = ?";
+        $query .= " AND c.verification_status = ?";
         $params[] = $status;
     }
     
     if (!empty($type)) {
-        $query .= " AND client_type = ?";
+        $query .= " AND c.client_type = ?";
         $params[] = $type;
     }
+
+    if (!currentUserHasHeadOfficeAccess()) {
+        if ($usersHasBranch) {
+            if ($currentUserBranch === '') {
+                $query .= ' AND 1 = 0';
+            } else {
+                $query .= ' AND UPPER(COALESCE(' . $branchExpr . ", '')) = ?";
+                $params[] = $currentUserBranch;
+            }
+        } else {
+            if ($currentUserId <= 0) {
+                $query .= ' AND 1 = 0';
+            } else {
+                $query .= ' AND c.submitted_by = ?';
+                $params[] = $currentUserId;
+            }
+        }
+    }
     
-    $query .= " ORDER BY created_at DESC";
+    $query .= " ORDER BY c.created_at DESC";
     
     $clients = fetchAll($query, $params);
+    $clients = array_map(static function (array $client): array {
+        return array_merge($client, clientActivityBuildSnapshot($client));
+    }, $clients);
     
     $response['success'] = true;
     $response['data'] = $clients;
@@ -643,9 +829,9 @@ else if ($action === 'update_status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Get current status for history
-    $client = fetchOne("SELECT verification_status, client_classification FROM clients WHERE client_id = ?", [$clientId]);
+    $client = fetchAccessibleClientRecord($clientId);
     if (!$client) {
-        $response['message'] = 'Client not found';
+        $response['message'] = 'Client not found or access denied';
         echo json_encode($response);
         exit;
     }

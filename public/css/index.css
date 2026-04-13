@@ -25,6 +25,9 @@
     --danger:   #EF4444;
     --warning:  #F59E0B;
     --info:     #3B82F6;
+    --wizard-accent: var(--green-500);
+    --wizard-accent-soft: var(--green-100);
+    --wizard-accent-deep: var(--green-700);
 
     --sidebar-w: 228px;
     --sidebar-toggle-top: 330px;
@@ -84,14 +87,20 @@ body.sidebar-collapsed {
 }
 
 .sidebar-text {
+    display: block;
+    max-width: 240px;
+    overflow: hidden;
     opacity: 1;
-    transition: opacity var(--transition), visibility var(--transition);
+    transform: translateX(0);
+    transition: opacity 0.14s ease, transform 0.18s ease, max-width 0.24s cubic-bezier(.22,1,.36,1);
+    will-change: opacity, transform, max-width;
 }
 
 body.sidebar-collapsed .sidebar-text {
     opacity: 0;
-    visibility: hidden;
-    display: none;
+    transform: translateX(-8px);
+    max-width: 0;
+    pointer-events: none;
 }
 
 /* ─── Sidebar ────────────────────────────────────── */
@@ -104,7 +113,8 @@ body.sidebar-collapsed .sidebar-text {
     position: fixed;
     top: 0; left: 0;
     z-index: 100;
-    transition: width var(--transition);
+    transition: width 0.24s cubic-bezier(.22,1,.36,1);
+    will-change: width;
 }
 
 .sidebar-brand {
@@ -112,6 +122,7 @@ body.sidebar-collapsed .sidebar-text {
     border-bottom: 1px solid rgba(255,255,255,.08);
     display: flex;
     align-items: center;
+    transition: padding 0.24s cubic-bezier(.22,1,.36,1);
 }
 
 .brand-logo {
@@ -168,13 +179,22 @@ body.sidebar-collapsed .sidebar-text {
     overflow-x: hidden;
 }
 
+.sidebar-toggle-row {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 12px 4px;
+    transition: padding 0.24s cubic-bezier(.22,1,.36,1);
+}
+
 .nav-label {
-    font-size: .62rem;
-    font-weight: 600;
-    letter-spacing: .1em;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .08em;
     text-transform: uppercase;
     color: rgba(255,255,255,.28);
     padding: 14px 12px 6px;
+    text-align: center;
+    transform: translateX(-10px);
 }
 
 .nav-item {
@@ -239,6 +259,11 @@ body.sidebar-collapsed .sidebar-text {
     font-weight: 700;
     padding: 2px 7px;
     border-radius: 99px;
+    overflow: hidden;
+    max-width: 96px;
+    white-space: nowrap;
+    transition: opacity 0.14s ease, transform 0.18s ease, max-width 0.24s cubic-bezier(.22,1,.36,1), padding 0.24s cubic-bezier(.22,1,.36,1);
+    will-change: opacity, transform, max-width;
 }
 
 .nav-badge.nav-badge-pending {
@@ -254,6 +279,7 @@ body.sidebar-collapsed .sidebar-text {
 .sidebar-footer {
     padding: 12px 10px;
     border-top: 1px solid rgba(255,255,255,.08);
+    transition: padding 0.24s cubic-bezier(.22,1,.36,1);
 }
 
 .user-card {
@@ -420,24 +446,20 @@ body.sidebar-collapsed .sidebar-text {
     width: 42px;
     height: 42px;
     border: none;
-    border-radius: 50%;
+    border-radius: 12px;
     background: var(--green-500);
     color: var(--white);
     display: grid;
     place-items: center;
     cursor: pointer;
-    transition: left var(--transition), transform var(--transition), background var(--transition), box-shadow var(--transition);
+    transition: transform var(--transition), background var(--transition), box-shadow var(--transition), opacity var(--transition);
     flex-shrink: 0;
-    position: fixed;
-    top: calc(var(--sidebar-toggle-top) + var(--sidebar-toggle-shift-y));
-    left: calc(var(--sidebar-w) + var(--sidebar-toggle-left-offset) + var(--sidebar-toggle-shift-x));
-    z-index: 120;
     box-shadow: 0 10px 22px rgba(12, 67, 24, 0.34);
 }
 
 .sidebar-toggle:hover {
     background: var(--green-600);
-    transform: scale(1.05);
+    transform: translateY(-1px);
     box-shadow: 0 12px 26px rgba(12, 67, 24, 0.4);
 }
 
@@ -481,20 +503,15 @@ body.sidebar-collapsed .sidebar-text {
 }
 
 .sidebar-toggle i {
-    font-size: 1rem;
+    font-size: 1.05rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: -2px;
+    margin-bottom: 0;
     line-height: 1;
     width: 100%;
     height: 100%;
-    transition: transform var(--transition);
-}
-
-body.sidebar-collapsed .sidebar-toggle i {
-    margin-bottom: 1px;
-    transform: rotate(180deg);
+    transition: opacity var(--transition), transform var(--transition);
 }
 
 .user-avatar {
@@ -523,7 +540,11 @@ body.sidebar-collapsed .sidebar-toggle i {
 
 body.sidebar-collapsed .nav-badge {
     opacity: 0;
-    transition: opacity var(--transition);
+    transform: translateX(-4px) scale(0.96);
+    max-width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    pointer-events: none;
 }
 
 body.sidebar-collapsed .brand-logo {
@@ -547,18 +568,36 @@ body.sidebar-collapsed .brand-icon img {
 }
 
 body.sidebar-collapsed .nav-item {
-    grid-template-columns: 20px;
-    justify-content: center;
-    justify-items: center;
+    display: flex;
     align-items: center;
-    place-items: center;
+    justify-content: center;
+    gap: 0;
     width: 44px;
     min-width: 44px;
     height: 44px;
     margin: 0 auto 6px;
     padding: 0;
     border-radius: 12px;
-    column-gap: 0;
+    overflow: hidden;
+}
+
+body.sidebar-collapsed .nav-item .nav-text.sidebar-text {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+body.sidebar-collapsed .sidebar-toggle-row {
+    justify-content: center;
+    padding: 0 0 4px;
+}
+
+body.sidebar-collapsed .sidebar-toggle {
+    width: 42px;
+    height: 42px;
 }
 
 body.sidebar-collapsed .nav-item.active::before {
@@ -566,7 +605,13 @@ body.sidebar-collapsed .nav-item.active::before {
 }
 
 body.sidebar-collapsed .nav-item .nav-badge {
-    display: none;
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    transform: translateX(-4px) scale(0.96);
+    overflow: hidden;
+    pointer-events: none;
 }
 
 body.sidebar-collapsed .user-card {
@@ -595,7 +640,7 @@ body.sidebar-collapsed .sidebar-footer {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    transition: margin-left var(--transition), width var(--transition);
+    transition: margin-left 0.24s cubic-bezier(.22,1,.36,1), width 0.24s cubic-bezier(.22,1,.36,1);
     min-width: 0;
 }
 
@@ -761,14 +806,15 @@ body.sidebar-collapsed .steps-bar.sticky {
 }
 .step-info strong { font-size: .8rem; font-weight: 600; color: var(--gray-500); }
 
-.step.active .step-num { background: var(--green-500); border-color: var(--green-500); color: var(--white); }
-.step.active .step-info strong { color: var(--green-700); }
-.step.active .step-info span:first-child { color: var(--green-500); }
 
-.step.done .step-num { background: var(--green-100); border-color: var(--green-400); color: var(--green-700); }
+.step.active .step-num { background: var(--wizard-accent); border-color: var(--wizard-accent); color: var(--white); }
+.step.active .step-info strong { color: var(--wizard-accent-deep); }
+.step.active .step-info span:first-child { color: var(--wizard-accent); }
+
+.step.done .step-num { background: var(--wizard-accent-soft); border-color: var(--wizard-accent); color: var(--wizard-accent-deep); }
 
 .step-line { height: 2px; flex: 1; background: var(--gray-300); margin: 0 12px; border-radius: 2px; }
-.step-line.done { background: var(--green-400); }
+.step-line.done { background: var(--wizard-accent); }
 
 /* ─── Card ───────────────────────────────────────── */
 .card {

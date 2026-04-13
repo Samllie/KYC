@@ -1,3 +1,19 @@
+<?php
+require_once '../config/session.php';
+requireLogin();
+
+$currentUserRole = strtolower(trim((string)($_SESSION['role'] ?? '')));
+$currentUserDepartment = strtoupper(trim((string)($_SESSION['department'] ?? '')));
+$currentUserBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
+$isHeadOfficeUser = $currentUserRole === 'admin'
+    || $currentUserDepartment === 'HEAD OFFICE'
+    || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+
+if (!$isHeadOfficeUser) {
+    header('Location: ../pages/dashboard.php');
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,8 +50,8 @@
         <div class="auth-form-container">
             <div class="auth-form">
                 <div class="form-header register-form-header">
-                    <h2>Create Account</h2>
-                    <p>Fill in the details below to create your account.</p>
+                    <h2>Add Account</h2>
+                    <p>Fill in the details below to add a head office account.</p>
                 </div>
 
                 <form id="registerForm" class="register-form-grid" method="POST">
@@ -70,10 +86,11 @@
                                 id="email" 
                                 name="email" 
                                 class="form-control" 
-                                placeholder="your@email.com" 
-                                maxlength="32"
+                                placeholder="name@sterling-insurance.com.ph" 
+                                maxlength="120"
                                 required>
                         </div>
+                        <div class="form-hint">Only @sterling-insurance.com.ph email addresses are allowed.</div>
                         <div class="form-error"></div>
                     </div>
 
@@ -85,6 +102,7 @@
                         <div class="select-wrap">
                             <select id="branch" name="branch" class="form-select" required>
                                 <option value="" selected disabled>Select branch</option>
+                                <option value="HEAD OFFICE">HEAD OFFICE</option>
                                 <option value="ALABANG BRANCH">ALABANG BRANCH</option>
                                 <option value="MANILA BRANCH I">MANILA BRANCH I</option>
                                 <option value="MANILA BRANCH II">MANILA BRANCH II</option>
@@ -121,6 +139,7 @@
                                 <option value="ILOILO BRANCH">ILOILO BRANCH</option>
                             </select>
                         </div>
+                        <div class="form-hint">Choose HEAD OFFICE for head office-level accounts.</div>
                         <div class="form-error"></div>
                     </div>
 
@@ -170,21 +189,21 @@
                         <div class="form-error"></div>
                     </div>
 
+                    <div class="form-group register-col-12">
+                        <button type="button" id="generatePasswordBtn" class="btn btn-outline btn-block">
+                            <i class="bi bi-shuffle"></i> Generate 10-Character Password
+                        </button>
+                    </div>
+
                     <!-- Register Button -->
                     <button type="submit" class="btn btn-primary btn-block register-col-12">
-                        <i class="bi bi-person-plus"></i> Create Account
+                        <i class="bi bi-person-plus"></i> Add Account
                     </button>
+
+                    <a href="../pages/dashboard.php" class="btn btn-outline btn-block register-col-12">
+                        <i class="bi bi-arrow-left"></i> Back to Head Office Dashboard
+                    </a>
                 </form>
-
-                <!-- Divider -->
-                <div class="form-divider">
-                    <span>Already have an account?</span>
-                </div>
-
-                <!-- Login Link -->
-                <a href="login.php" class="btn btn-outline btn-block">
-                    <i class="bi bi-box-arrow-right"></i> Sign In
-                </a>
 
                 <!-- Footer -->
                 <div class="auth-footer">
@@ -233,7 +252,10 @@ const emailInput = document.getElementById('email');
 const branchInput = document.getElementById('branch');
 const passwordInput = document.getElementById('password');
 const confirmPasswordInput = document.getElementById('confirm_password');
+const generatePasswordBtn = document.getElementById('generatePasswordBtn');
 const MAX_CREDENTIAL_LENGTH = 32;
+const MAX_EMAIL_LENGTH = 120;
+const ALLOWED_EMAIL_DOMAIN = '@sterling-insurance.com.ph';
 const VALID_BRANCHES = [
     'ALABANG BRANCH',
     'MANILA BRANCH I',
@@ -263,6 +285,7 @@ const VALID_BRANCHES = [
     'OZAMIZ BRANCH',
     'PAGADIAN BRANCH',
     'SAN FERNANDO, PAMPANGA BRANCH',
+    'HEAD OFFICE',
     'HEAD OFFICE BRANCH',
     'SMRO BRANCH',
     'TACLOBAN BRANCH',
@@ -270,6 +293,76 @@ const VALID_BRANCHES = [
     'VIGAN BRANCH',
     'ILOILO BRANCH'
 ];
+
+function getSecureRandomIndex(max) {
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+        const values = new Uint32Array(1);
+        window.crypto.getRandomValues(values);
+        return values[0] % max;
+    }
+
+    return Math.floor(Math.random() * max);
+}
+
+function shuffleCharacters(characters) {
+    for (let index = characters.length - 1; index > 0; index -= 1) {
+        const swapIndex = getSecureRandomIndex(index + 1);
+        const temp = characters[index];
+        characters[index] = characters[swapIndex];
+        characters[swapIndex] = temp;
+    }
+
+    return characters;
+}
+
+function generateSuggestedPassword(length = 10) {
+    const characterSets = [
+        'ABCDEFGHJKLMNPQRSTUVWXYZ',
+        'abcdefghijkmnopqrstuvwxyz',
+        '23456789',
+        '!@#$%&*?'
+    ];
+    const allCharacters = characterSets.join('');
+    const characters = characterSets.map(set => set[getSecureRandomIndex(set.length)]);
+
+    while (characters.length < length) {
+        characters.push(allCharacters[getSecureRandomIndex(allCharacters.length)]);
+    }
+
+    return shuffleCharacters(characters).slice(0, length).join('');
+}
+
+function applySuggestedPassword() {
+    const suggestedPassword = generateSuggestedPassword(10);
+
+    passwordInput.value = suggestedPassword;
+    confirmPasswordInput.value = suggestedPassword;
+    validateField(passwordInput);
+    validateField(confirmPasswordInput);
+}
+
+function resetRegisterFormState() {
+    form.reset();
+
+    [fullnameInput, emailInput, branchInput, passwordInput, confirmPasswordInput].forEach(field => {
+        if (field) {
+            field.classList.remove('is-valid', 'is-invalid');
+        }
+    });
+
+    document.querySelectorAll('.password-toggle').forEach(toggleBtn => {
+        const icon = toggleBtn.querySelector('i');
+        if (icon) {
+            icon.className = 'bi bi-eye';
+        }
+        toggleBtn.setAttribute('aria-label', 'Show password');
+    });
+
+    passwordInput.type = 'password';
+    confirmPasswordInput.type = 'password';
+
+    applySuggestedPassword();
+}
 
 // ── Password Visibility Toggle ─────────────────────────────
 document.querySelectorAll('.password-toggle').forEach(toggleBtn => {
@@ -289,7 +382,7 @@ document.querySelectorAll('.password-toggle').forEach(toggleBtn => {
 
 function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
+    return re.test(email) && email.toLowerCase().endsWith(ALLOWED_EMAIL_DOMAIN);
 }
 
 function validateField(field) {
@@ -299,7 +392,7 @@ function validateField(field) {
     if (field.id === 'fullname') {
         isValid = value.length >= 3 && value.length <= MAX_CREDENTIAL_LENGTH;
     } else if (field.id === 'email') {
-        isValid = value.length <= MAX_CREDENTIAL_LENGTH && validateEmail(value);
+        isValid = value.length <= MAX_EMAIL_LENGTH && validateEmail(value);
     } else if (field.id === 'branch') {
         isValid = VALID_BRANCHES.includes(value);
     } else if (field.id === 'password') {
@@ -331,6 +424,14 @@ branchInput.addEventListener('change', () => {
     if (branchInput.classList.contains('is-invalid')) validateField(branchInput);
 });
 
+if (generatePasswordBtn) {
+    generatePasswordBtn.addEventListener('click', function() {
+        applySuggestedPassword();
+        passwordInput.focus();
+        passwordInput.select();
+    });
+}
+
 passwordInput.addEventListener('input', () => {
     if (passwordInput.classList.contains('is-invalid')) validateField(passwordInput);
     if (confirmPasswordInput.classList.contains('is-invalid')) validateField(confirmPasswordInput);
@@ -339,6 +440,8 @@ passwordInput.addEventListener('input', () => {
 confirmPasswordInput.addEventListener('input', () => {
     if (confirmPasswordInput.classList.contains('is-invalid')) validateField(confirmPasswordInput);
 });
+
+applySuggestedPassword();
 
 form.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -349,7 +452,7 @@ form.addEventListener('submit', function(e) {
     const branchValue = branchInput.value.trim();
     const passwordValue = passwordInput.value;
     const confirmPasswordValue = confirmPasswordInput.value;
-    const emailValid = emailValue.length <= MAX_CREDENTIAL_LENGTH && validateEmail(emailValue);
+    const emailValid = emailValue.length <= MAX_EMAIL_LENGTH && validateEmail(emailValue);
     const branchValid = VALID_BRANCHES.includes(branchValue);
     const passwordValid = passwordValue.length >= 8 && passwordValue.length <= MAX_CREDENTIAL_LENGTH;
     const confirmPasswordValid = confirmPasswordValue === passwordValue && confirmPasswordValue.length >= 8 && confirmPasswordValue.length <= MAX_CREDENTIAL_LENGTH;
@@ -380,10 +483,8 @@ form.addEventListener('submit', function(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showToast('success', 'Account Created!', 'Redirecting to login...');
-            setTimeout(() => {
-                window.location.href = data.redirect || 'login.php';
-            }, 1500);
+            showToast('success', 'Account Added!', data.message || 'The account was created successfully.');
+            resetRegisterFormState();
         } else {
             showToast('error', 'Registration Failed', data.message || 'Please try again.');
         }

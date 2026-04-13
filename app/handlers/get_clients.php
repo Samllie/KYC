@@ -8,33 +8,53 @@ header('Content-Type: application/json');
 ini_set('display_errors', '0');
 
 require_once '../config/db.php';
+require_once __DIR__ . '/client_activity_utils.php';
 session_start();
 
 $response = ['success' => false, 'data' => []];
 
 function hasColumn(mysqli $db, string $table, string $column): bool
 {
+    static $cache = [];
+
+    $cacheKey = $table . '::' . $column;
+    if (array_key_exists($cacheKey, $cache)) {
+        return $cache[$cacheKey];
+    }
+
     try {
         $tableSafe = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
         $columnSafe = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
 
         if ($tableSafe === '' || $columnSafe === '') {
+            $cache[$cacheKey] = false;
             return false;
         }
 
-        $stmt = $db->prepare("SHOW COLUMNS FROM `$tableSafe` LIKE ?");
+        $stmt = $db->prepare(
+            "SELECT 1
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND table_name = ?
+               AND column_name = ?
+             LIMIT 1"
+        );
         if (!$stmt) {
+            $cache[$cacheKey] = false;
             return false;
         }
 
-        $stmt->bind_param('s', $columnSafe);
+        $stmt->bind_param('ss', $tableSafe, $columnSafe);
         $stmt->execute();
         $result = $stmt->get_result();
         $exists = $result instanceof mysqli_result && $result->num_rows > 0;
         $stmt->close();
 
+        $cache[$cacheKey] = $exists;
+
         return $exists;
     } catch (Throwable $e) {
+        $cache[$cacheKey] = false;
         return false;
     }
 }
@@ -129,10 +149,28 @@ try {
     $search = trim((string)($_GET['search'] ?? ''));
     $status = trim((string)($_GET['status'] ?? ''));
     $type = trim((string)($_GET['type'] ?? ''));
+    $activity = strtolower(trim((string)($_GET['activity'] ?? '')));
+    $sort = strtolower(trim((string)($_GET['sort'] ?? 'created_desc')));
     $branch = trim((string)($_GET['branch'] ?? ''));
     $classification = strtolower(trim((string)($_GET['classification'] ?? 'client')));
     if (!in_array($classification, ['client', 'agent'], true)) {
         $classification = 'client';
+    }
+
+    $allowedActivityFilters = ['', 'active', 'inactive', 'deactivated'];
+    if (!in_array($activity, $allowedActivityFilters, true)) {
+        $activity = '';
+    }
+
+    $allowedSorts = [
+        'created_desc',
+        'alphabetical_asc',
+        'alphabetical_desc',
+        'updated_asc',
+        'updated_desc'
+    ];
+    if (!in_array($sort, $allowedSorts, true)) {
+        $sort = 'created_desc';
     }
 
     $currentUserId = intval($_SESSION['user_id'] ?? 0);
@@ -147,6 +185,21 @@ try {
     $clientsHasClassification = hasColumn($db, 'clients', 'client_classification');
     $usingAgentsTable = $classification === 'agent' && tableExists($db, 'agents');
     $usingApprovalQueue = tableExists($db, 'client_approvals');
+    $activityTable = $usingAgentsTable ? 'agents' : 'clients';
+    $activityColumnsAvailable = clientActivityHasColumn($db, $activityTable, 'activity_status')
+        && clientActivityHasColumn($db, $activityTable, 'activity_status_updated_at');
+
+    if ($activityColumnsAvailable) {
+        clientActivityRefreshTable($db, $activityTable);
+    }
+
+    $branchSqlExpr = "NULLIF(TRIM(su.branch), '')";
+    if ($usersHasBranch && $usingApprovalQueue) {
+        $branchSqlExpr = "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))";
+    }
+
+    $branchFilterExpr = "UPPER(COALESCE($branchSqlExpr, ''))";
+    $branchSelectExpr = "COALESCE($branchSqlExpr, 'UNASSIGNED')";
 
     $tableAlias = $usingAgentsTable ? 'a' : 'c';
     $baseTableSql = $usingAgentsTable ? 'agents a' : 'clients c';
@@ -221,19 +274,28 @@ try {
         $filterTypes .= 's';
     }
 
+    if ($activity !== '') {
+        $activityFilterExpr = $activityColumnsAvailable
+            ? "COALESCE(NULLIF(LOWER(TRIM({$tableAlias}.activity_status)), ''), 'active')"
+            : "'active'";
+        $whereClauses[] = $activityFilterExpr . ' = ?';
+        $filterParams[] = $activity;
+        $filterTypes .= 's';
+    }
+
     if ($usersHasBranch) {
         if ($isHeadOfficeUser) {
             if ($branch !== '') {
-                $whereClauses[] = 'su.branch = ?';
-                $filterParams[] = $branch;
+                $whereClauses[] = $branchFilterExpr . ' = ?';
+                $filterParams[] = strtoupper($branch);
                 $filterTypes .= 's';
             }
         } else {
             if ($currentUserBranch === '') {
                 $whereClauses[] = '1 = 0';
             } else {
-                $whereClauses[] = 'su.branch = ?';
-                $filterParams[] = $currentUserBranch;
+                $whereClauses[] = $branchFilterExpr . ' = ?';
+                $filterParams[] = strtoupper($currentUserBranch);
                 $filterTypes .= 's';
             }
         }
@@ -259,8 +321,30 @@ try {
     $countRow = fetchSingle($db, $countSql, $filterTypes, $filterParams);
     $totalClients = intval($countRow['total'] ?? 0);
 
-    $submittedBranchSelect = $usersHasBranch ? 'su.branch' : "''";
+    $submittedBranchSelect = $usersHasBranch ? $branchSelectExpr : "''";
     $contactPersonSelect = $usingAgentsTable ? 'NULL AS contact_person' : 'c.contact_person';
+    $activitySelectSql = $activityColumnsAvailable
+        ? "{$tableAlias}.activity_status, {$tableAlias}.activity_status_updated_at"
+        : "NULL AS activity_status, NULL AS activity_status_updated_at";
+
+    $displayNameExpr = $usingAgentsTable
+        ? "COALESCE(NULLIF(TRIM(a.client_name), ''), NULLIF(TRIM(CONCAT(COALESCE(a.first_name, ''), ' ', COALESCE(a.last_name, ''))), ''), a.reference_code)"
+        : "COALESCE(NULLIF(TRIM(c.client_name), ''), NULLIF(TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, ''))), ''), c.reference_code)";
+
+    $activityUpdatedSortExpr = $activityColumnsAvailable
+        ? "COALESCE(NULLIF(TRIM({$tableAlias}.activity_status_updated_at), ''), {$tableAlias}.created_at)"
+        : "{$tableAlias}.created_at";
+
+    $orderBySql = "{$tableAlias}.created_at DESC";
+    if ($sort === 'alphabetical_asc') {
+        $orderBySql = "LOWER({$displayNameExpr}) ASC, {$tableAlias}.created_at DESC";
+    } elseif ($sort === 'alphabetical_desc') {
+        $orderBySql = "LOWER({$displayNameExpr}) DESC, {$tableAlias}.created_at DESC";
+    } elseif ($sort === 'updated_asc') {
+        $orderBySql = "{$activityUpdatedSortExpr} ASC, LOWER({$displayNameExpr}) ASC";
+    } elseif ($sort === 'updated_desc') {
+        $orderBySql = "{$activityUpdatedSortExpr} DESC, LOWER({$displayNameExpr}) ASC";
+    }
 
     $listSql = "
         SELECT
@@ -275,6 +359,7 @@ try {
             {$tableAlias}.mobile_phone,
             {$tableAlias}.office_phone,
             {$tableAlias}.email,
+            {$activitySelectSql},
             {$tableAlias}.verification_status,
             {$tableAlias}.submitted_by,
             {$tableAlias}.verified_by,
@@ -287,7 +372,7 @@ try {
         LEFT JOIN users vu ON {$tableAlias}.verified_by = vu.user_id
         {$approvalJoinSql}
         {$whereSql}
-        ORDER BY {$tableAlias}.created_at DESC
+        ORDER BY {$orderBySql}
     ";
 
     $listParams = $filterParams;
@@ -302,6 +387,9 @@ try {
     }
 
     $clients = fetchRows($db, $listSql, $listTypes, $listParams);
+    $clients = array_map(static function (array $client): array {
+        return array_merge($client, clientActivityBuildSnapshot($client));
+    }, $clients);
 
     $availableBranches = [];
     if ($isHeadOfficeUser && $usersHasBranch) {
@@ -310,9 +398,12 @@ try {
                 ? ' LEFT JOIN client_approvals ca ON ca.reference_code = a.reference_code'
                 : '';
 
+            $branchExpr = $usingApprovalQueue
+                ? "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))"
+                : "NULLIF(TRIM(su.branch), '')";
+
             $branchWhereClauses = [
-                'su.branch IS NOT NULL',
-                "TRIM(su.branch) <> ''"
+                $branchExpr . ' IS NOT NULL'
             ];
 
             if ($usingApprovalQueue) {
@@ -320,12 +411,12 @@ try {
             }
 
             $branchSql = "
-                SELECT DISTINCT su.branch
+                SELECT DISTINCT $branchExpr AS branch
                 FROM agents a
                 LEFT JOIN users su ON a.submitted_by = su.user_id
                 {$branchJoinSql}
                 WHERE " . implode(' AND ', $branchWhereClauses) . "
-                ORDER BY su.branch ASC
+                ORDER BY branch ASC
             ";
 
             $branchRows = fetchRows($db, $branchSql);
@@ -334,9 +425,12 @@ try {
                 ? ' LEFT JOIN client_approvals ca ON ca.reference_code = c.reference_code'
                 : '';
 
+            $branchExpr = $usingApprovalQueue
+                ? "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))"
+                : "NULLIF(TRIM(su.branch), '')";
+
             $branchWhereClauses = [
-                'su.branch IS NOT NULL',
-                "TRIM(su.branch) <> ''"
+                $branchExpr . ' IS NOT NULL'
             ];
             $branchParams = [];
             $branchTypes = '';
@@ -354,12 +448,12 @@ try {
             }
 
             $branchSql = "
-                SELECT DISTINCT su.branch
+                SELECT DISTINCT $branchExpr AS branch
                 FROM clients c
                 LEFT JOIN users su ON c.submitted_by = su.user_id
                 {$branchJoinSql}
                 WHERE " . implode(' AND ', $branchWhereClauses) . "
-                ORDER BY su.branch ASC
+                ORDER BY branch ASC
             ";
 
             $branchRows = fetchRows($db, $branchSql, $branchTypes, $branchParams);
@@ -389,6 +483,8 @@ try {
         'search' => $search,
         'status' => $status,
         'type' => $type,
+        'activity' => $activity,
+        'sort' => $sort,
         'branch' => $branch,
         'classification' => $classification,
         'exportAll' => $exportAll

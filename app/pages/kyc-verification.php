@@ -41,6 +41,16 @@ $isAgentDefault = $defaultClassification === 'agent';
             box-shadow: 0 10px 24px rgba(20, 58, 41, 0.08);
         }
 
+        .selection-group.client-group.preferred {
+            border-color: #9dcdb4;
+            box-shadow: 0 10px 24px rgba(20, 58, 41, 0.08);
+        }
+
+        .selection-group.agent-group.preferred {
+            border-color: #d9c2ff;
+            box-shadow: 0 10px 24px rgba(91, 33, 182, 0.08);
+        }
+
         .selection-group-header {
             display: flex;
             align-items: center;
@@ -59,10 +69,19 @@ $isAgentDefault = $defaultClassification === 'agent';
             color: #0f5a35;
         }
 
+        .selection-group.agent-group .selection-group-header i {
+            background: #f3e8ff;
+            color: #5b21b6;
+        }
+
         .selection-group-title {
             font-size: 1rem;
             font-weight: 700;
             color: #173427;
+        }
+
+        .selection-group.agent-group .selection-group-title {
+            color: #4c1d95;
         }
 
         .selection-group-subtitle {
@@ -137,8 +156,104 @@ $isAgentDefault = $defaultClassification === 'agent';
             background: #9b550d;
         }
 
+        .type-card.individual {
+            border-color: #c8ddf6;
+        }
+
+        .type-card.corporate {
+            border-color: #bbe6c9;
+        }
+
+        .type-card.obligee {
+            border-color: #e3c39c;
+        }
+
+        .type-card.agent {
+            border-color: #d9c2ff;
+        }
+
+        .type-card.individual:hover {
+            background: #f3f9ff;
+        }
+
+        .type-card.corporate:hover {
+            background: #f1fdf4;
+        }
+
+        .type-card.obligee:hover {
+            background: #fbf3eb;
+        }
+
+        .type-card.agent:hover {
+            background: #faf5ff;
+        }
+
+        .type-card.individual .type-card-btn {
+            background: #2f7fd6;
+        }
+
+        .type-card.corporate .type-card-btn {
+            background: #2ea371;
+        }
+
+        .type-card.obligee .type-card-btn {
+            background: #8b5a2b;
+        }
+
+        .type-card.agent .type-card-btn {
+            background: #7c3aed;
+        }
+
+        .type-card.individual:hover .type-card-btn {
+            background: #1f5ea9;
+        }
+
+        .type-card.corporate:hover .type-card-btn {
+            background: #16633f;
+        }
+
+        .type-card.obligee:hover .type-card-btn {
+            background: #6b4320;
+        }
+
+        .type-card.agent:hover .type-card-btn {
+            background: #6d28d9;
+        }
+
+        .type-card.individual .type-card-icon {
+            color: #2f7fd6;
+        }
+
+        .type-card.corporate .type-card-icon {
+            color: #2ea371;
+        }
+
+        .type-card.obligee .type-card-icon {
+            color: #8b5a2b;
+        }
+
+        .type-card.agent .type-card-icon {
+            color: #7c3aed;
+        }
+
         .type-card:nth-child(3) .type-card-icon {
             color: #b55e09;
+        }
+
+        .type-card.individual .type-card-icon {
+            color: #2f7fd6;
+        }
+
+        .type-card.corporate .type-card-icon {
+            color: #2ea371;
+        }
+
+        .type-card.obligee .type-card-icon {
+            color: #8b5a2b;
+        }
+
+        .type-card.agent .type-card-icon {
+            color: #7c3aed;
         }
         
         .type-card-icon {
@@ -365,7 +480,7 @@ include '../includes/sidebar.php';
                 <div class="step-num">1</div>
                 <div class="step-info">
                     <span>Step 1</span>
-                    <strong>KYC Type</strong>
+                    <strong>Client Type</strong>
                 </div>
             </div>
             <div class="step-line"></div>
@@ -399,12 +514,12 @@ include '../includes/sidebar.php';
             <div class="card-header">
                 <div>
                     <div class="card-title">Select Registration Type</div>
-                    <div class="card-subtitle">Choose whether you're registering a client or an agent, then select the KYC type.</div>
+                    <div class="card-subtitle">Choose whether you're registering a client or an agent, then select the client type.</div>
                 </div>
             </div>
 
             <div class="card-body">
-                <section class="selection-group <?php echo $isAgentDefault ? '' : 'preferred'; ?>">
+                <section class="selection-group client-group <?php echo $isAgentDefault ? '' : 'preferred'; ?>">
                     <div class="selection-group-header">
                         <i class="bi bi-people"></i>
                         <div class="selection-group-title">Client Registrations</div>
@@ -412,7 +527,7 @@ include '../includes/sidebar.php';
                     <p class="selection-group-subtitle">Use this when registering policyholders and obligees as clients.</p>
 
                     <div class="type-selector">
-                        <a href="kyc-individual.php?classification=client" class="type-card">
+                        <a href="kyc-individual.php?classification=client" class="type-card individual">
                             <div class="type-card-icon">
                                 <i class="bi bi-person-fill"></i>
                             </div>
@@ -423,7 +538,7 @@ include '../includes/sidebar.php';
                             <div class="type-card-btn">Select Individual Client</div>
                         </a>
 
-                        <a href="kyc-corporate.php?type=corporate&amp;classification=client" class="type-card">
+                        <a href="kyc-corporate.php?type=corporate&amp;classification=client" class="type-card corporate">
                             <div class="type-card-icon">
                                 <i class="bi bi-building"></i>
                             </div>
@@ -434,7 +549,7 @@ include '../includes/sidebar.php';
                             <div class="type-card-btn">Select Corporate Client</div>
                         </a>
 
-                        <a href="kyc-obligee.php?classification=client" class="type-card">
+                        <a href="kyc-obligee.php?classification=client" class="type-card obligee">
                             <div class="type-card-icon">
                                 <i class="bi bi-shield-check"></i>
                             </div>
@@ -447,7 +562,7 @@ include '../includes/sidebar.php';
                     </div>
                 </section>
 
-                <section class="selection-group <?php echo $isAgentDefault ? 'preferred' : ''; ?>">
+                <section class="selection-group agent-group <?php echo $isAgentDefault ? 'preferred' : ''; ?>">
                     <div class="selection-group-header">
                         <i class="bi bi-person-badge"></i>
                         <div class="selection-group-title">Agent Registrations</div>
@@ -455,7 +570,7 @@ include '../includes/sidebar.php';
                     <p class="selection-group-subtitle">Use this when the account being onboarded is an individual agent.</p>
 
                     <div class="type-selector">
-                        <a href="kyc-individual.php?classification=agent" class="type-card">
+                        <a href="kyc-individual.php?classification=agent" class="type-card agent">
                             <div class="type-card-icon">
                                 <i class="bi bi-person-fill"></i>
                             </div>

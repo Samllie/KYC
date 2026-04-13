@@ -19,7 +19,9 @@ $recordLabelPlural = $isAgentsMode ? 'agents' : 'clients';
 $recordTitleCaseSingular = ucfirst($recordLabelSingular);
 $recordTitleCasePlural = ucfirst($recordLabelPlural);
 $newRecordLabel = $isAgentsMode ? 'New Agent' : 'New Client';
-$kycEntryUrl = 'kyc-verification.php?classification=' . urlencode($listClassification);
+$kycEntryUrl = $isAgentsMode
+    ? 'kyc-individual.php?classification=agent'
+    : ('kyc-verification.php?classification=' . urlencode($listClassification));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -38,7 +40,7 @@ $kycEntryUrl = 'kyc-verification.php?classification=' . urlencode($listClassific
     <link rel="stylesheet" href="../../public/css/global.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body class="clients-page">
+<body class="clients-page clients-management-page <?php echo $isAgentsMode ? 'agents-mode' : ''; ?>">
 
 <?php
 $activePage = $isAgentsMode ? 'agents' : 'clients';
@@ -64,42 +66,59 @@ include '../includes/sidebar.php';
 
     <!-- Content -->
     <main class="content">
-
-        <!-- Table Controls -->
-        <div class="table-controls">
-            <div class="controls-left">
-                <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input type="text" id="searchInput" placeholder="Search <?php echo htmlspecialchars($recordLabelPlural); ?>..." class="search-input">
+        <section class="clients-table-shell">
+            <div class="controls-container">
+                <!-- Table Controls -->
+                <div class="table-controls">
+                    <div class="controls-left">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search <?php echo htmlspecialchars($recordLabelPlural); ?>..." class="search-input">
+                        </div>
+                        <div class="filter-group">
+                            <select id="filterType" class="filter-select">
+                                <option value="">All Types</option>
+                                <option value="individual">Individual</option>
+                                <option value="corporate">Corporate</option>
+                                <option value="obligee">Obligee</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select id="filterActivity" class="filter-select">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select id="sortOrder" class="filter-select">
+                                <option value="created_desc">Latest Added</option>
+                                <option value="alphabetical_asc">Alphabetical A-Z</option>
+                                <option value="alphabetical_desc">Alphabetical Z-A</option>
+                                <option value="updated_asc">Time Updated: Oldest First</option>
+                                <option value="updated_desc">Time Updated: Newest First</option>
+                            </select>
+                        </div>
+                        <?php if ($isHeadOfficeView): ?>
+                        <div class="filter-group">
+                            <select id="filterBranch" class="filter-select">
+                                <option value="">All Branches</option>
+                            </select>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="controls-right">
+                        <button class="btn-export" title="Export" onclick="showExportPreview()">
+                            <i class="bi bi-download"></i> Export
+                        </button>
+                        <button class="btn-add-client" title="Add New <?php echo htmlspecialchars($recordTitleCaseSingular); ?>" onclick="window.location.href='<?php echo htmlspecialchars($kycEntryUrl); ?>'">
+                            <i class="bi bi-plus-circle"></i> <?php echo htmlspecialchars($newRecordLabel); ?>
+                        </button>
+                    </div>
                 </div>
-                <div class="filter-group">
-                    <select id="filterType" class="filter-select">
-                        <option value="">All Types</option>
-                        <option value="individual">Individual</option>
-                        <option value="corporate">Corporate</option>
-                        <option value="obligee">Obligee</option>
-                    </select>
-                </div>
-                <?php if ($isHeadOfficeView): ?>
-                <div class="filter-group">
-                    <select id="filterBranch" class="filter-select">
-                        <option value="">All Branches</option>
-                    </select>
-                </div>
-                <?php endif; ?>
             </div>
-            <div class="controls-right">
-                <button class="btn-export" title="Export" onclick="showExportPreview()">
-                    <i class="bi bi-download"></i> Export
-                </button>
-                <button class="btn-add-client" title="Add New <?php echo htmlspecialchars($recordTitleCaseSingular); ?>" onclick="window.location.href='<?php echo htmlspecialchars($kycEntryUrl); ?>'">
-                    <i class="bi bi-plus-circle"></i> <?php echo htmlspecialchars($newRecordLabel); ?>
-                </button>
-            </div>
-        </div>
 
-        <!-- Clients Table -->
-        <div class="card">
+            <!-- Clients Table -->
             <div class="table-wrapper">
                 <table class="clients-table">
                     <thead>
@@ -111,8 +130,9 @@ include '../includes/sidebar.php';
                             <th class="col-type">Type</th>
                             <th class="col-contact">Contact</th>
                             <th class="col-email">Email</th>
-                            <th class="col-status">Client Number</th>
                             <th class="col-verified">Submitted By</th>
+                            <th class="col-activity">Activity Status</th>
+                            <th class="col-activity-updated">Status Updated</th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
@@ -125,13 +145,13 @@ include '../includes/sidebar.php';
             <!-- Pagination -->
             <div class="table-footer">
                 <div class="pagination-info">
-                    Showing <span class="info-start">1</span> to <span class="info-end">10</span> of <span class="info-total">0</span> <?php echo htmlspecialchars($recordLabelPlural); ?>
+                    Showing <span class="info-start">0</span> to <span class="info-end">0</span> of <span class="info-total">0</span> <?php echo htmlspecialchars($recordLabelPlural); ?>
                 </div>
                 <div class="pagination" id="paginationContainer">
                     <!-- Pagination buttons will be generated dynamically -->
                 </div>
             </div>
-        </div>
+        </section>
 
     </main>
 
@@ -242,6 +262,22 @@ include '../includes/sidebar.php';
                     <div class="form-group full">
                         <label class="form-label">Present Address</label>
                         <input type="text" id="editAddress" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label class="form-label">Activity Status</label>
+                        <input type="hidden" id="editActivityStatus" value="active">
+                        <div class="activity-status-toggle-group" id="editActivityStatusToggleGroup" role="group" aria-label="Activity Status">
+                            <button type="button" class="activity-status-toggle is-selected active" data-status="active">Active</button>
+                            <button type="button" class="activity-status-toggle inactive" data-status="inactive">Inactive</button>
+                        </div>
+                        <div class="activity-status-summary">Selected: <strong id="editActivityStatusLabel">Active</strong></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status Updated At</label>
+                        <input type="text" id="editActivityStatusUpdatedAt" class="form-control" readonly>
                     </div>
                 </div>
 
@@ -370,6 +406,21 @@ include '../includes/sidebar.php';
                         <input type="text" id="viewAddress" class="form-control" readonly>
                     </div>
                 </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Activity Status</label>
+                        <input type="text" id="viewActivityStatus" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status Updated At</label>
+                        <input type="text" id="viewActivityStatusUpdatedAt" class="form-control" readonly>
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Activity Note</label>
+                        <input type="text" id="viewActivityNote" class="form-control" readonly>
+                    </div>
+                </div>
             </form>
         </div>
         <div class="modal-footer">
@@ -454,6 +505,7 @@ include '../includes/sidebar.php';
     const recordLabelPlural = <?php echo json_encode($recordLabelPlural); ?>;
     const recordTitleCaseSingular = <?php echo json_encode($recordTitleCaseSingular); ?>;
     const recordTitleCasePlural = <?php echo json_encode($recordTitleCasePlural); ?>;
+    const clientTableColumnCount = 11;
 
     function escapeHtml(value) {
         return String(value)
@@ -462,6 +514,41 @@ include '../includes/sidebar.php';
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+    }
+
+    function normalizeActivityStatusClass(status) {
+        const normalized = String(status || '').toLowerCase();
+        if (normalized === 'inactive' || normalized === 'deactivated') {
+            return normalized;
+        }
+        return 'active';
+    }
+
+    function normalizeEditableActivityStatus(status) {
+        const normalized = String(status || '').toLowerCase();
+        if (normalized === 'inactive' || normalized === 'deactivated') {
+            return 'inactive';
+        }
+        return 'active';
+    }
+
+    function setEditActivityStatus(status) {
+        const activityStatusInput = document.getElementById('editActivityStatus');
+        const activityStatusLabel = document.getElementById('editActivityStatusLabel');
+        const normalized = normalizeEditableActivityStatus(status);
+
+        if (activityStatusInput) {
+            activityStatusInput.value = normalized;
+        }
+
+        if (activityStatusLabel) {
+            activityStatusLabel.textContent = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+        }
+
+        document.querySelectorAll('.activity-status-toggle').forEach(button => {
+            const buttonStatus = normalizeEditableActivityStatus(button.dataset.status || 'active');
+            button.classList.toggle('is-selected', buttonStatus === normalized);
+        });
     }
 
     function updateBranchFilterOptions(branches) {
@@ -523,6 +610,8 @@ include '../includes/sidebar.php';
         return {
             search: document.getElementById('searchInput').value.trim(),
             type: document.getElementById('filterType').value,
+            activity: document.getElementById('filterActivity').value,
+            sort: document.getElementById('sortOrder').value,
             branch: isHeadOfficeUser && branchSelect ? branchSelect.value : ''
         };
     }
@@ -536,6 +625,8 @@ include '../includes/sidebar.php';
             pageSize: pageSize,
             search: filters.search,
             type: filters.type,
+            activity: filters.activity,
+            sort: filters.sort,
             branch: filters.branch,
             classification: listClassification
         });
@@ -569,7 +660,7 @@ include '../includes/sidebar.php';
                         attachClientEventListeners();
                         syncSelectAllCheckbox();
                     } else {
-                        document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px;">No ${recordLabelPlural} found</td></tr>`;
+                        document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="${clientTableColumnCount}" style="text-align: center; padding: 20px;">No ${recordLabelPlural} found</td></tr>`;
                         syncSelectAllCheckbox();
                     }
 
@@ -578,7 +669,7 @@ include '../includes/sidebar.php';
                 } else {
                     currentPageClients = [];
                     console.log(`No ${recordLabelPlural} found or fetch failed`);
-                    document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px;">No ${recordLabelPlural} found</td></tr>`;
+                    document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="${clientTableColumnCount}" style="text-align: center; padding: 20px;">No ${recordLabelPlural} found</td></tr>`;
                     updatePaginationInfo({ page: 1, total: 0, pageSize: pageSize, totalPages: 0 });
                     generatePaginationButtons({ page: 1, totalPages: 0 });
                 }
@@ -586,7 +677,7 @@ include '../includes/sidebar.php';
             .catch(error => {
                 currentPageClients = [];
                 console.error('Error loading records:', error);
-                document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: red;">Error loading ${recordLabelPlural}: ${error.message}</td></tr>`;
+                document.getElementById('clientsTableBody').innerHTML = `<tr><td colspan="${clientTableColumnCount}" style="text-align: center; padding: 20px; color: red;">Error loading ${recordLabelPlural}: ${error.message}</td></tr>`;
                 syncSelectAllCheckbox();
             })
             .finally(() => {
@@ -619,10 +710,12 @@ include '../includes/sidebar.php';
             const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
             const submittedBranch = client.submitted_by_branch || 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
-            const clientNumber = client.client_number || 'N/A';
             const contactNumber = isCorporateLike(client.client_type)
                 ? (client.office_phone || 'N/A')
                 : (client.mobile_phone || 'N/A');
+            const activityStatus = client.activity_status_display || 'Active';
+            const activityStatusClass = normalizeActivityStatusClass(client.activity_status_class || 'active');
+            const activityUpdatedAt = client.activity_status_updated_display || 'N/A';
 
             const row = document.createElement('tr');
             row.classList.add('row-enter');
@@ -631,18 +724,24 @@ include '../includes/sidebar.php';
             row.style.animationDelay = `${Math.min(tbody.children.length * 35, 220)}ms`;
             row.innerHTML = `
                 <td class="col-checkbox"><input type="checkbox" class="row-select" data-client-id="${client.client_id}"></td>
-                <td class="col-ref"><span class="ref-badge">${client.reference_code}</span></td>
-                <td class="col-name">${displayName}</td>
-                <td class="col-owner">${submittedBranch}</td>
-                <td class="col-type"><span class="type-badge ${typeClass}">${typeText}</span></td>
-                <td class="col-contact">${contactNumber}</td>
-                <td class="col-email">${client.email}</td>
-                <td class="col-status">${clientNumber}</td>
-                <td class="col-verified">${submittedByName}</td>
+                <td class="col-ref"><span class="ref-badge">${escapeHtml(client.reference_code || 'N/A')}</span></td>
+                <td class="col-name">${escapeHtml(displayName)}</td>
+                <td class="col-owner">${escapeHtml(submittedBranch)}</td>
+                <td class="col-type"><span class="type-badge ${typeClass}">${escapeHtml(typeText)}</span></td>
+                <td class="col-contact">${escapeHtml(contactNumber)}</td>
+                <td class="col-email">${escapeHtml(client.email || 'N/A')}</td>
+                <td class="col-verified">${escapeHtml(submittedByName)}</td>
+                <td class="col-activity">
+                    <div class="activity-cell">
+                        <span class="activity-badge ${activityStatusClass}">${escapeHtml(activityStatus)}</span>
+                    </div>
+                </td>
+                <td class="col-activity-updated">${escapeHtml(activityUpdatedAt)}</td>
                 <td class="col-actions">
-                    <button class="action-icon" title="View"><i class="bi bi-eye"></i></button>
-                    <button class="action-icon" title="Edit"><i class="bi bi-pencil"></i></button>
-                    <button class="action-icon delete" title="Delete"><i class="bi bi-trash"></i></button>
+                    <div class="action-stack">
+                        <button type="button" class="action-icon action-edit" title="Edit"><i class="bi bi-pencil"></i><span>Edit</span></button>
+                        <button type="button" class="action-icon delete" title="Delete"><i class="bi bi-trash"></i><span>Delete</span></button>
+                    </div>
                 </td>
             `;
 
@@ -712,6 +811,10 @@ include '../includes/sidebar.php';
         const container = document.getElementById('paginationContainer');
         container.innerHTML = '';
 
+        if (!data.totalPages || data.totalPages <= 0) {
+            return;
+        }
+
         const maxButtons = 5;
         let startPage = Math.max(1, data.page - 2);
         let endPage = Math.min(data.totalPages, startPage + maxButtons - 1);
@@ -759,16 +862,19 @@ include '../includes/sidebar.php';
     // Attach event listeners to dynamically loaded rows
     function attachClientEventListeners() {
         document.querySelectorAll('#clientsTableBody tr').forEach(row => {
-            const viewBtn = row.querySelector('.action-icon[title="View"]');
             const editBtn = row.querySelector('.action-icon[title="Edit"]');
             const deleteBtn = row.querySelector('.action-icon.delete');
 
-            if (viewBtn) {
-                viewBtn.addEventListener('click', function() {
-                    const data = getClientDataFromRow(row);
-                    viewClient(data);
-                });
-            }
+            row.addEventListener('click', function(event) {
+                if (event.target.closest('.row-select, .action-icon, button, a, input, label, select, textarea')) {
+                    return;
+                }
+
+                const clientId = row.dataset.clientId;
+                if (clientId) {
+                    viewClient({ clientId });
+                }
+            });
 
             if (editBtn) {
                 editBtn.addEventListener('click', function() {
@@ -811,8 +917,7 @@ include '../includes/sidebar.php';
             submittedBranch: cells[3].textContent.trim(),
             type: cells[4].textContent.trim(),
             contact: cells[5].textContent.trim(),
-            email: cells[6].textContent.trim(),
-            clientNumber: cells[7].textContent.trim()
+            email: cells[6].textContent.trim()
         };
     }
 
@@ -821,6 +926,7 @@ include '../includes/sidebar.php';
     const viewModal = document.getElementById('viewModal');
     const cancelBtn = document.getElementById('cancelBtn');
     const editModalCloseBtn = document.getElementById('editModalCloseBtn');
+    const editActivityStatusButtons = document.querySelectorAll('.activity-status-toggle');
     const deleteConfirmModal = document.getElementById('deleteConfirmModal');
     const deleteConfirmRefCode = document.getElementById('deleteConfirmRefCode');
     const deleteConfirmName = document.getElementById('deleteConfirmName');
@@ -911,6 +1017,9 @@ include '../includes/sidebar.php';
             document.getElementById('viewMobile').value = client.mobile_phone || client.office_phone || '';
             document.getElementById('viewTelephone').value = client.landline_phone || client.office_phone || '';
             document.getElementById('viewAddress').value = client.full_address || client.home_address || client.business_address || '';
+            document.getElementById('viewActivityStatus').value = client.activity_status_display || 'Active';
+            document.getElementById('viewActivityStatusUpdatedAt').value = client.activity_status_updated_display || 'N/A';
+            document.getElementById('viewActivityNote').value = 'Activity is managed manually from the edit modal.';
 
             viewModal.style.display = 'block';
         })
@@ -959,6 +1068,8 @@ include '../includes/sidebar.php';
             document.getElementById('editMobile').value = client.mobile_phone || client.office_phone || '';
             document.getElementById('editTelephone').value = client.landline_phone || client.office_phone || '';
             document.getElementById('editAddress').value = client.full_address || client.home_address || client.business_address || '';
+            setEditActivityStatus(client.activity_status_class || client.activity_status_display || 'active');
+            document.getElementById('editActivityStatusUpdatedAt').value = client.activity_status_updated_display || 'N/A';
 
             editModal.style.display = 'block';
         })
@@ -988,6 +1099,7 @@ include '../includes/sidebar.php';
         formData.append('mobile', document.getElementById('editMobile').value.trim());
         formData.append('occupation', document.getElementById('editOccupation').value.trim());
         formData.append('address', document.getElementById('editAddress').value.trim());
+        formData.append('activityStatus', document.getElementById('editActivityStatus').value.trim());
         formData.append('clientType', document.getElementById('editClientType').value);
 
         fetch('../handlers/client.php', {
@@ -999,6 +1111,14 @@ include '../includes/sidebar.php';
             if (!result.success) {
                 createToast('error', 'Error', result.message || 'Failed to save changes.', 'toastContainer');
                 return;
+            }
+
+            const updatedStatusValue = result.activity_status_updated_display || result.activity_status_updated_at || '';
+            if (updatedStatusValue) {
+                const updatedAtField = document.getElementById('editActivityStatusUpdatedAt');
+                if (updatedAtField) {
+                    updatedAtField.value = updatedStatusValue;
+                }
             }
 
             editModal.style.display = 'none';
@@ -1105,6 +1225,12 @@ include '../includes/sidebar.php';
         });
     }
 
+    editActivityStatusButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            setEditActivityStatus(this.dataset.status || 'active');
+        });
+    });
+
     if (deleteCancelBtn) {
         deleteCancelBtn.addEventListener('click', closeDeleteClientModal);
     }
@@ -1170,6 +1296,10 @@ include '../includes/sidebar.php';
 
     document.getElementById('filterType').addEventListener('change', applyServerFilters);
 
+    document.getElementById('filterActivity').addEventListener('change', applyServerFilters);
+
+    document.getElementById('sortOrder').addEventListener('change', applyServerFilters);
+
     const filterBranchEl = document.getElementById('filterBranch');
     if (filterBranchEl) {
         filterBranchEl.addEventListener('change', applyServerFilters);
@@ -1199,8 +1329,26 @@ include '../includes/sidebar.php';
         if (filters.type) {
             parts.push(`Type: ${formatClientType(filters.type)}`);
         }
+        if (filters.activity) {
+            const activityLabels = {
+                active: 'Active',
+                inactive: 'Inactive',
+                deactivated: 'Deactivated'
+            };
+            parts.push(`Activity: ${activityLabels[filters.activity] || filters.activity}`);
+        }
         if (filters.branch) {
             parts.push(`Branch: ${filters.branch}`);
+        }
+        if (filters.sort) {
+            const sortLabels = {
+                created_desc: 'Latest Added',
+                alphabetical_asc: 'Alphabetical A-Z',
+                alphabetical_desc: 'Alphabetical Z-A',
+                updated_asc: 'Time Updated: Oldest First',
+                updated_desc: 'Time Updated: Newest First'
+            };
+            parts.push(`Sort: ${sortLabels[filters.sort] || filters.sort}`);
         }
 
         return parts.length > 0 ? parts.join(' | ') : 'No filters applied';

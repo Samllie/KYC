@@ -29,6 +29,7 @@ $backToEditUrl = 'kyc-corporate.php?type=' . urlencode($selectedClientType) . '&
             margin-bottom: 20px;
             padding: 16px;
             border: 1px solid #d8e5dd;
+            border-left: 4px solid var(--wizard-accent, #2ea371);
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.92);
             opacity: 0;
@@ -38,7 +39,7 @@ $backToEditUrl = 'kyc-corporate.php?type=' . urlencode($selectedClientType) . '&
 
         .review-title {
             font-weight: 700;
-            color: var(--primary);
+            color: var(--wizard-accent, var(--primary));
             margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 1px solid #d7e5dc;
@@ -99,7 +100,7 @@ $backToEditUrl = 'kyc-corporate.php?type=' . urlencode($selectedClientType) . '&
         }
     </style>
 </head>
-<body>
+<body style="--wizard-accent:<?php echo $isObligee ? '#8b5a2b' : '#2ea371'; ?>;--wizard-accent-soft:<?php echo $isObligee ? '#f4e8de' : '#e8f4ee'; ?>;--wizard-accent-deep:<?php echo $isObligee ? '#6b4320' : '#16633f'; ?>;">
 
 <?php
 $activePage = 'kyc-verification';
@@ -287,6 +288,7 @@ function displayReview() {
             title: 'Contact Person Details',
             fields: [
                 { label: 'Gender', key: 'corporateGender' },
+                { label: 'Nationality', key: 'nationality' },
                 { label: 'Client Classification', key: 'clientClassification' }
             ]
         },
@@ -364,7 +366,7 @@ function submitForm() {
     submitBtn.innerHTML = '<span class="spinner"></span> Submitting...';
     
     const formDataObj = new FormData();
-    formDataObj.append('action', 'add_client');
+    formDataObj.append('action', 'submit_kyc');
     formDataObj.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
     formDataObj.append('uploadedIdFiles', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]')));
     
@@ -372,7 +374,7 @@ function submitForm() {
         formDataObj.append(key, formData[key]);
     });
     
-    fetch('../handlers/client.php', {
+    fetch('../handlers/kyc.php', {
         method: 'POST',
         body: formDataObj
     })

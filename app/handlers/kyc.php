@@ -7,7 +7,9 @@
 header('Content-Type: application/json');
 require_once '../config/db.php';
 require_once __DIR__ . '/upload_utils.php';
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 
 if (!function_exists('kyc_finalize_temp_uploads')) {
     function kyc_finalize_temp_uploads($userId, $uploadedFiles, $clientId, $kycId) {
@@ -267,6 +269,18 @@ if (!function_exists('queueClientForApproval')) {
     }
 }
 
+if (!function_exists('generateClientNumber')) {
+    function generateClientNumber() {
+        try {
+            $suffix = strtoupper(bin2hex(random_bytes(3)));
+        } catch (Exception $e) {
+            $suffix = strtoupper(substr(md5(uniqid((string)mt_rand(), true)), 0, 6));
+        }
+
+        return 'CN-' . date('YmdHis') . '-' . $suffix;
+    }
+}
+
 $response = ['success' => false, 'message' => ''];
 
 // Check user session
@@ -284,39 +298,77 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Collect all form data
     $userProvidedRefCode = trim($_POST['refCode'] ?? '');
-    $clientType = trim($_POST['clientType'] ?? '');
+    $clientTypeRaw = strtolower(trim($_POST['clientType'] ?? ''));
+    $allowedClientTypes = ['individual', 'corporate', 'obligee'];
+    if (!in_array($clientTypeRaw, $allowedClientTypes, true)) {
+        $response['message'] = 'Invalid client type';
+        echo json_encode($response);
+        exit;
+    }
+
+    $clientType = $clientTypeRaw;
+    $isCorporateLike = in_array($clientType, ['corporate', 'obligee'], true);
+
     $classificationRaw = strtolower(trim($_POST['clientClassification'] ?? 'client'));
-    $clientClassification = $classificationRaw === 'agent' ? 'agent' : 'client';
+    // Product rule: only individual can be classified as agent.
+    $clientClassification = ($classificationRaw === 'agent' && $clientType === 'individual')
+        ? 'agent'
+        : 'client';
     
     // Map form field names to database field names (handling form field mismatches)
     $formData = [
         'ref_code' => $userProvidedRefCode,
         'client_type' => $clientType,
-        'last_name' => trim($_POST['lastName'] ?? ''),
-        'first_name' => trim($_POST['firstName'] ?? ''),
-        'middle_name' => trim($_POST['middleName'] ?? ''),
-        'suffix' => trim($_POST['suffixName'] ?? ''),
-        'birthdate' => trim($_POST['birthdate'] ?? ''),
-        'gender' => trim($_POST['gender'] ?? ''),
+        'last_name' => $isCorporateLike ? '' : trim($_POST['lastName'] ?? ''),
+        'first_name' => $isCorporateLike ? '' : trim($_POST['firstName'] ?? ''),
+        'middle_name' => $isCorporateLike ? '' : trim($_POST['middleName'] ?? ''),
+        'suffix' => $isCorporateLike ? '' : trim($_POST['suffixName'] ?? ''),
+        'birthdate' => $isCorporateLike ? null : trim($_POST['birthdate'] ?? ''),
+        'gender' => trim($_POST['gender'] ?? $_POST['corporateGender'] ?? ''),
         'nationality' => trim($_POST['nationality'] ?? ''),
         'id_type' => trim($_POST['idType'] ?? ''),
         'id_number' => trim($_POST['idNumber'] ?? ''),
-        'occupation' => trim($_POST['occupation'] ?? ''),
-        'company' => trim($_POST['employer'] ?? $_POST['company'] ?? ''),
-        'mobile' => trim($_POST['mobile'] ?? ''),
-        'phone' => trim($_POST['telephone'] ?? $_POST['phone'] ?? ''),
-        'email' => trim($_POST['email'] ?? ''),
-        'address' => trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
+        'tin_number' => trim($_POST['tinNumber'] ?? ''),
+        'occupation' => $isCorporateLike
+            ? trim($_POST['corporateContactPerson'] ?? '')
+            : trim($_POST['occupation'] ?? ''),
+        'company' => $isCorporateLike
+            ? trim($_POST['corporateClientName'] ?? '')
+            : trim($_POST['employer'] ?? $_POST['company'] ?? ''),
+        'mobile' => $isCorporateLike
+            ? trim($_POST['corporatePhone'] ?? '')
+            : trim($_POST['mobile'] ?? ''),
+        'phone' => $isCorporateLike
+            ? trim($_POST['corporatePhone'] ?? '')
+            : trim($_POST['telephone'] ?? $_POST['phone'] ?? ''),
+        'email' => $isCorporateLike
+            ? trim($_POST['corporateEmail'] ?? '')
+            : trim($_POST['email'] ?? ''),
+        'address' => $isCorporateLike
+            ? trim($_POST['corporateBusinessAddress'] ?? $_POST['address'] ?? '')
+            : trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
     ];
     
     // Validation of required fields (excluding ref_code since it will be auto-generated)
-    $required = ['client_type', 'last_name', 'first_name', 'birthdate', 'occupation', 'email', 'mobile', 'address'];
+    $required = ['client_type', 'id_type', 'id_number', 'email', 'address'];
+    if ($isCorporateLike) {
+        $required = array_merge($required, ['company', 'occupation', 'mobile']);
+    } else {
+        $required = array_merge($required, ['last_name', 'first_name', 'birthdate', 'occupation', 'mobile']);
+    }
+
     foreach ($required as $field) {
-        if (empty($formData[$field])) {
+        if (trim((string)($formData[$field] ?? '')) === '') {
             $response['message'] = 'All required fields must be filled';
             echo json_encode($response);
             exit;
         }
+    }
+
+    if ($isCorporateLike && trim((string)($_POST['businessType'] ?? '')) === '') {
+        $response['message'] = 'Business type is required';
+        echo json_encode($response);
+        exit;
     }
     
     // If no reference code provided, generate a unique one
@@ -341,6 +393,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'nationality' => $formData['nationality'],
             'id_type' => $formData['id_type'],
             'id_number' => $formData['id_number'],
+            'tin_number' => $formData['tin_number'] ?: null,
             'salutation' => trim($_POST['salutation'] ?? ''),
             'client_since' => trim($_POST['clientSince'] ?? ''),
             'ap_sl_code' => trim($_POST['apSlCode'] ?? ''),
@@ -365,18 +418,30 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'verification_status' => 'pending'
         ];
     } else {
-        // Corporate client
+        $corporateName = trim($_POST['corporateClientName'] ?? $formData['company']);
+
         $clientUpdateData = [
             'client_type' => $formData['client_type'],
             'client_classification' => $clientClassification,
-            'company_name' => $formData['corporate_client_name'],
-            'business_type' => $formData['business_type'],
-            'id_type' => trim($_POST['idType'] ?? ''),
-            'id_number' => trim($_POST['idNumber'] ?? ''),
-            'business_address' => $formData['corporate_business_address'],
-            'office_phone' => $formData['corporate_phone'],
-            'email' => $formData['corporate_email'],
-            'contact_person' => $formData['corporate_contact_person'],
+            'client_name' => $corporateName,
+            'company_name' => $corporateName,
+            'business_type' => trim($_POST['businessType'] ?? ''),
+            'id_type' => $formData['id_type'],
+            'id_number' => $formData['id_number'],
+            'client_since' => trim($_POST['corporateClientSince'] ?? ''),
+            'tin_number' => trim($_POST['tinNumber'] ?? ''),
+            'ap_sl_code' => trim($_POST['corporateApSlCode'] ?? ''),
+            'ar_sl_code' => trim($_POST['corporateArSlCode'] ?? ''),
+            'designation' => trim($_POST['designation'] ?? ''),
+            'business_address' => $formData['address'],
+            'business_ctm' => trim($_POST['corporateBusinessCtm'] ?? ''),
+            'business_province' => trim($_POST['corporateBusinessProvince'] ?? ''),
+            'region' => trim($_POST['region'] ?? ''),
+            'office_phone' => $formData['mobile'],
+            'email' => $formData['email'],
+            'contact_person' => $formData['occupation'],
+            'gender' => $formData['gender'],
+            'nationality' => $formData['nationality'],
             'verification_status' => 'pending'
         ];
     }
@@ -395,13 +460,19 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         // Create new client
         $clientInsertData = array_merge([
             'reference_code' => $formData['ref_code'],
-            'client_number' => 'CN-' . time(),
+            'client_number' => generateClientNumber(),
             'submitted_by' => intval($_SESSION['user_id']),
             'submitted_at' => date('Y-m-d H:i:s'),
         ], $clientUpdateData);
         
         $result = insert('clients', $clientInsertData);
-        $clientId = $result['id'] ?? 0;
+        $clientId = intval($result['id'] ?? 0);
+    }
+
+    if ($clientId <= 0) {
+        $response['message'] = 'Failed to save client record';
+        echo json_encode($response);
+        exit;
     }
 
     if ($clientId > 0) {
@@ -526,11 +597,17 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ============================================
 else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $userProvidedRefCode = trim($_POST['refCode'] ?? '');
-    $clientType = trim($_POST['clientType'] ?? '');
-    $classificationRaw = strtolower(trim($_POST['clientClassification'] ?? 'client'));
-    $clientClassification = $classificationRaw === 'agent' ? 'agent' : 'client';
+    $clientTypeRaw = strtolower(trim($_POST['clientType'] ?? ''));
+    $allowedClientTypes = ['individual', 'corporate', 'obligee'];
+    $clientType = in_array($clientTypeRaw, $allowedClientTypes, true) ? $clientTypeRaw : 'individual';
 
     $isCorporateLike = in_array($clientType, ['corporate', 'obligee'], true);
+
+    $classificationRaw = strtolower(trim($_POST['clientClassification'] ?? 'client'));
+    // Product rule: only individual can be classified as agent.
+    $clientClassification = ($classificationRaw === 'agent' && $clientType === 'individual')
+        ? 'agent'
+        : 'client';
 
     // Keep kyc_verifications values in a unified shape so get_kyc/load draft works for both client types.
     $formData = [
@@ -542,9 +619,10 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'suffix' => $isCorporateLike ? '' : trim($_POST['suffixName'] ?? ''),
         'birthdate' => $isCorporateLike ? null : trim($_POST['birthdate'] ?? ''),
         'gender' => trim($_POST['gender'] ?? $_POST['corporateGender'] ?? ''),
-        'nationality' => $isCorporateLike ? '' : trim($_POST['nationality'] ?? ''),
+        'nationality' => trim($_POST['nationality'] ?? ''),
         'id_type' => trim($_POST['idType'] ?? ''),
         'id_number' => trim($_POST['idNumber'] ?? ''),
+        'tin_number' => trim($_POST['tinNumber'] ?? ''),
         'occupation' => $isCorporateLike
             ? trim($_POST['corporateContactPerson'] ?? '')
             : trim($_POST['occupation'] ?? ''),
@@ -576,8 +654,9 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($isCorporateLike) {
         $clientUpdateData = [
-            'client_type' => $clientType ?: 'corporate',
+            'client_type' => $clientType,
             'client_classification' => $clientClassification,
+            'client_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
             'company_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
             'business_type' => trim($_POST['businessType'] ?? '') ?: null,
             'id_type' => trim($_POST['idType'] ?? '') ?: null,
@@ -590,10 +669,12 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'business_address' => trim($_POST['corporateBusinessAddress'] ?? '') ?: null,
             'business_ctm' => trim($_POST['corporateBusinessCtm'] ?? '') ?: null,
             'business_province' => trim($_POST['corporateBusinessProvince'] ?? '') ?: null,
+            'region' => trim($_POST['region'] ?? '') ?: null,
             'office_phone' => trim($_POST['corporatePhone'] ?? '') ?: null,
             'email' => trim($_POST['corporateEmail'] ?? '') ?: null,
             'contact_person' => trim($_POST['corporateContactPerson'] ?? '') ?: null,
             'gender' => trim($_POST['corporateGender'] ?? '') ?: null,
+            'nationality' => trim($_POST['nationality'] ?? '') ?: null,
             'verification_status' => 'draft'
         ];
     } else {
@@ -614,6 +695,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'spouse_occupation' => trim($_POST['spouseOccupation'] ?? '') ?: null,
             'id_type' => $formData['id_type'] ?: null,
             'id_number' => $formData['id_number'] ?: null,
+            'tin_number' => $formData['tin_number'] ?: null,
             'occupation' => $formData['occupation'] ?: null,
             'company_name' => $formData['company'] ?: null,
             'ap_sl_code' => trim($_POST['apSlCode'] ?? '') ?: null,
@@ -649,7 +731,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $clientInsert = insert('clients', array_merge([
             'reference_code' => $formData['ref_code'],
-            'client_number' => 'CN-' . time(),
+            'client_number' => generateClientNumber(),
             'submitted_by' => intval($_SESSION['user_id']),
             'submitted_at' => date('Y-m-d H:i:s')
         ], $clientUpdateData));

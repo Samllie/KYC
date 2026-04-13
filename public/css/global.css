@@ -349,7 +349,7 @@
 
 .client-type-display.individual {
     background: linear-gradient(135deg, #eaf2ff 0%, #ffffff 100%);
-    color: #1e40af;
+    color: #1f5ea9;
     border-color: #bfdbfe;
 }
 
@@ -360,8 +360,14 @@
 }
 
 .client-type-display.obligee {
-    background: linear-gradient(135deg, #f8ede2 0%, #ffffff 100%);
-    color: #7c4a21;
-    border-color: #e7c7a8;
+    background: linear-gradient(135deg, #f4e8de 0%, #ffffff 100%);
+    color: #6b4320;
+    border-color: #e3c39c;
+}
+
+.client-type-display.agent {
+    background: linear-gradient(135deg, #f3e8ff 0%, #ffffff 100%);
+    color: #5b21b6;
+    border-color: #d9c2ff;
 }
 

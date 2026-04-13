@@ -27,6 +27,7 @@ $backToEditUrl = 'kyc-individual.php?classification=' . urlencode($selectedClass
             margin-bottom: 20px;
             padding: 16px;
             border: 1px solid #d8e5dd;
+            border-left: 4px solid var(--wizard-accent, #2f7fd6);
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.92);
             opacity: 0;
@@ -36,7 +37,7 @@ $backToEditUrl = 'kyc-individual.php?classification=' . urlencode($selectedClass
 
         .review-title {
             font-weight: 700;
-            color: var(--primary);
+            color: var(--wizard-accent, var(--primary));
             margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 1px solid #d7e5dc;
@@ -97,7 +98,7 @@ $backToEditUrl = 'kyc-individual.php?classification=' . urlencode($selectedClass
         }
     </style>
 </head>
-<body>
+<body style="--wizard-accent:<?php echo $selectedClassification === 'agent' ? '#7c3aed' : '#2f7fd6'; ?>;--wizard-accent-soft:<?php echo $selectedClassification === 'agent' ? '#f3e8ff' : '#e8f0fb'; ?>;--wizard-accent-deep:<?php echo $selectedClassification === 'agent' ? '#5b21b6' : '#1f5ea9'; ?>;">
 
 <?php
 $activePage = 'kyc-verification';
@@ -237,7 +238,7 @@ function displayReview() {
     
     const sections = [
         {
-            title: 'KYC Type',
+            title: 'Client Type',
             fields: [
                 { label: 'Client Type', key: 'clientType', format: 'individual' },
                 { label: 'Classification', key: 'clientClassification' }
@@ -259,9 +260,11 @@ function displayReview() {
                 { label: 'Salutations', key: 'salutation' },
                 { label: 'Date of Birth', key: 'birthdate' },
                 { label: 'Gender', key: 'gender' },
+                { label: 'Nationality', key: 'nationality' },
                 { label: 'AP SL Code', key: 'apSlCode' },
                 { label: 'AR SL Code', key: 'arSlCode' },
-                { label: 'Client Since', key: 'clientSince' }
+                { label: 'Client Since', key: 'clientSince' },
+                { label: 'TIN Number', key: 'tinNumber' }
             ]
         },
         {

@@ -11,6 +11,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 header('Content-Type: application/json');
 require_once '../config/db.php';
+require_once '../config/device_accounts.php';
 
 $response = ['success' => false, 'message' => ''];
 
@@ -77,6 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['department'] = $user['department'];
     $_SESSION['branch'] = $user['branch'];
     $_SESSION['role'] = $user['role'];
+
+    // Remember this account as trusted on this device for Switch Account suggestions.
+    deviceAccountsRememberEmail($user['email']);
 
     // Remember email for future logins (including after logout)
     if ($rememberMe) {

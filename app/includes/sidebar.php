@@ -83,6 +83,13 @@ $menuItems = [
         'badge' => null
     ],
     [
+        'label' => 'KYC Verification',
+        'icon' => 'bi-person-check',
+        'href' => 'kyc-verification.php',
+        'page' => 'kyc-verification',
+        'badge' => null
+    ],
+    [
         'label' => 'Clients',
         'icon' => 'bi-people',
         'href' => 'clients.php',
@@ -94,13 +101,6 @@ $menuItems = [
         'icon' => 'bi-person-badge',
         'href' => 'clients.php?classification=agent',
         'page' => 'agents',
-        'badge' => null
-    ],
-    [
-        'label' => 'KYC Verification',
-        'icon' => 'bi-person-check',
-        'href' => 'kyc-verification.php',
-        'page' => 'kyc-verification',
         'badge' => null
     ],
 ];
@@ -124,15 +124,61 @@ if ($isHeadOfficeUser) {
         'page' => 'client-approvals',
         'badge' => null
     ];
+
+    $menuItems[] = [
+        'label' => 'Accounts Management',
+        'icon' => 'bi-person-gear',
+        'href' => 'accounts-management.php',
+        'page' => 'accounts-management',
+        'badge' => null
+    ];
+
+    $menuItems[] = [
+        'label' => 'Add Account',
+        'icon' => 'bi-person-plus',
+        'href' => '../auth/register.php',
+        'page' => 'register',
+        'badge' => null
+    ];
 }
 
 // Default active page if not set
 $activePage = isset($activePage) ? $activePage : 'dashboard';
 
 $displayName = $_SESSION['full_name'] ?? 'User';
-$displayRole = $_SESSION['role'] ?? 'KYC Officer';
+$displayRole = $_SESSION['role'] ?? 'kyc_officer';
+$displayRoleNormalized = str_replace('-', '_', strtolower(trim((string)$displayRole)));
+
+$accountTitle = 'User';
+if ($isHeadOfficeUser) {
+    $accountTitle = 'Head Office Reviewer';
+} elseif ($displayRoleNormalized === 'kyc_officer') {
+    $accountTitle = 'KYC Officer';
+} elseif ($displayRoleNormalized === 'manager') {
+    $accountTitle = 'Branch Manager';
+} elseif ($displayRoleNormalized === 'compliance') {
+    $accountTitle = 'Compliance Officer';
+} elseif ($displayRoleNormalized !== '') {
+    $accountTitle = ucwords(str_replace('_', ' ', $displayRoleNormalized));
+}
+
 $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($displayName) : 'US';
 ?>
+
+<script>
+(function () {
+    try {
+        if (window.matchMedia('(max-width: 768px)').matches) {
+            return;
+        }
+
+        if (localStorage.getItem('kyc.sidebar.collapsed') === '1') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    } catch (error) {
+    }
+})();
+</script>
 
 <!-- ═══════════════════════════════════════════════ SIDEBAR -->
 <aside class="sidebar" id="sidebar">
@@ -146,12 +192,14 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
                 <strong>KYC System</strong>
             </div>
         </a>
-        <button type="button" id="sidebarToggleBtn" class="sidebar-toggle" aria-label="Toggle sidebar" title="Toggle sidebar">
-            <i class="bi bi-arrow-left"></i>
-        </button>
     </div>
 
     <nav class="sidebar-nav">
+        <div class="sidebar-toggle-row">
+            <button type="button" id="sidebarToggleBtn" class="sidebar-toggle" aria-label="Hide sidebar" title="Hide sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
         <div class="nav-label sidebar-text">Main Menu</div>
 
         <?php foreach ($menuItems as $item): ?>
@@ -176,7 +224,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
             <div class="user-avatar"><?php echo htmlspecialchars($avatarInitials); ?></div>
             <div class="user-info sidebar-text">
                 <span><?php echo htmlspecialchars($displayName); ?></span>
-                <span><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $displayRole))); ?></span>
+                <span><?php echo htmlspecialchars($accountTitle); ?></span>
             </div>
             <button type="button" id="userMenuBtn" class="user-menu-btn" aria-expanded="false" aria-label="Open user menu">
                 <i class="bi bi-three-dots-vertical"></i>
@@ -219,12 +267,80 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
     const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
     const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const sidebarElement = document.getElementById('sidebar');
     const brandLogoLink = document.getElementById('brandDashboardLink');
     const sidebarNavLinks = document.querySelectorAll('.sidebar .nav-item');
     const COLLAPSE_KEY = 'kyc.sidebar.collapsed';
+    const NAVIGATION_TRANSITION_MS = 240;
+    let pendingSidebarNavigation = null;
     const isMobile = function () {
         return window.matchMedia('(max-width: 768px)').matches;
     };
+
+    function isPrimaryNavigationClick(event) {
+        return (typeof event.button === 'undefined' || event.button === 0)
+            && !event.metaKey
+            && !event.ctrlKey
+            && !event.shiftKey
+            && !event.altKey;
+    }
+
+    function clearPendingSidebarNavigation() {
+        if (!pendingSidebarNavigation) {
+            return;
+        }
+
+        if (pendingSidebarNavigation.timeoutId) {
+            window.clearTimeout(pendingSidebarNavigation.timeoutId);
+        }
+
+        if (pendingSidebarNavigation.transitionTarget && pendingSidebarNavigation.transitionHandler) {
+            pendingSidebarNavigation.transitionTarget.removeEventListener('transitionend', pendingSidebarNavigation.transitionHandler);
+        }
+
+        pendingSidebarNavigation = null;
+    }
+
+    function navigateAfterSidebarTransition(href, transitionTarget) {
+        clearPendingSidebarNavigation();
+
+        if (!transitionTarget) {
+            window.location.href = href;
+            return;
+        }
+
+        let finished = false;
+
+        function finishNavigation() {
+            if (finished) {
+                return;
+            }
+
+            finished = true;
+            clearPendingSidebarNavigation();
+            window.location.href = href;
+        }
+
+        function handleTransitionEnd(event) {
+            if (event.target !== transitionTarget) {
+                return;
+            }
+
+            if (event.propertyName !== 'width' && event.propertyName !== 'transform') {
+                return;
+            }
+
+            finishNavigation();
+        }
+
+        pendingSidebarNavigation = {
+            transitionTarget: transitionTarget,
+            transitionHandler: handleTransitionEnd,
+            timeoutId: window.setTimeout(finishNavigation, NAVIGATION_TRANSITION_MS)
+        };
+
+        transitionTarget.addEventListener('transitionend', handleTransitionEnd);
+    }
 
     function isDashboardPage() {
         const normalizedPath = (window.location.pathname || '').replace(/\\/g, '/').toLowerCase();
@@ -253,23 +369,72 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
         }
 
         sidebarToggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        sidebarToggleBtn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
-        sidebarToggleBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        sidebarToggleBtn.setAttribute('title', collapsed ? 'Show sidebar' : 'Hide sidebar');
+        sidebarToggleBtn.setAttribute('aria-label', collapsed ? 'Show sidebar' : 'Hide sidebar');
+    }
+
+    function syncToggleIcon(collapsed) {
+        if (!sidebarToggleBtn) {
+            return;
+        }
+
+        const icon = sidebarToggleBtn.querySelector('i');
+        if (!icon) {
+            return;
+        }
+
+        icon.className = 'bi bi-list';
     }
 
     function applyCollapsedState(collapsed) {
         if (isMobile()) {
             document.body.classList.remove('sidebar-collapsed');
             syncToggleA11y(false);
+            syncToggleIcon(false);
             return;
         }
 
         document.body.classList.toggle('sidebar-collapsed', collapsed);
         syncToggleA11y(collapsed);
+        syncToggleIcon(collapsed);
     }
 
     function initSidebarState() {
         applyCollapsedState(readCollapsedState());
+    }
+
+    function handleSidebarNavLinkClick(event) {
+        const link = event.currentTarget;
+
+        if (!link || !isPrimaryNavigationClick(event) || (link.target && link.target !== '_self') || link.hasAttribute('download')) {
+            return;
+        }
+
+        const isMobileSidebarOpen = isMobile() && document.body.classList.contains('sidebar-mobile-open');
+        const shouldCollapseDesktopSidebar = !isMobile() && !document.body.classList.contains('sidebar-collapsed');
+
+        if (!isMobileSidebarOpen && !shouldCollapseDesktopSidebar) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (isMobileSidebarOpen) {
+            closeMobileSidebar();
+        }
+
+        if (shouldCollapseDesktopSidebar) {
+            applyCollapsedState(true);
+            persistCollapsedState(true);
+        }
+
+        navigateAfterSidebarTransition(link.href, sidebarElement);
+    }
+
+    function handleSidebarNavigationClick() {
+        if (isMobile()) {
+            closeMobileSidebar();
+        }
     }
 
     function syncMobileToggleState(isOpen) {
@@ -320,7 +485,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 
     if (brandLogoLink) {
         brandLogoLink.addEventListener('click', function (event) {
-            closeMobileSidebar();
+            handleSidebarNavigationClick();
 
             if (isDashboardPage()) {
                 event.preventDefault();
@@ -330,7 +495,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     }
 
     sidebarNavLinks.forEach(function (link) {
-        link.addEventListener('click', closeMobileSidebar);
+        link.addEventListener('click', handleSidebarNavLinkClick);
     });
 
     window.addEventListener('resize', function () {
