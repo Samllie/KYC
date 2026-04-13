@@ -385,38 +385,38 @@ include '../includes/sidebar.php';
 
         <!-- Stats Row -->
         <div class="stats-row">
-            <div class="stat-card total">
+            <a class="stat-card stat-card-link" href="clients.php" aria-label="View all clients">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($totalClients)); ?></div>
                     <div class="stat-label">Total Clients</div>
                     <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> +<?php echo e($newThisWeek); ?> this week</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-            </div>
-            <div class="stat-card obligee">
+            </a>
+            <a class="stat-card stat-card-link" href="clients.php?type=obligee" aria-label="View obligee clients">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($obligeeCount)); ?></div>
                     <div class="stat-label">Obligee Clients</div>
                     <div class="stat-change up"><i class="bi bi-shield-check"></i> <?php echo e($obligeeToday); ?> obligee added today</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
-            </div>
-            <div class="stat-card individual">
+            </a>
+            <a class="stat-card stat-card-link" href="clients.php?type=individual" aria-label="View individual clients">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($individualCount)); ?></div>
                     <div class="stat-label">Individual Clients</div>
                     <div class="stat-change up"><i class="bi bi-person"></i> <?php echo e($individualPct); ?>% of total clients</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-person-fill"></i></div>
-            </div>
-            <div class="stat-card corporate">
+            </a>
+            <a class="stat-card stat-card-link" href="clients.php?type=corporate" aria-label="View corporate clients">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($corporateCount)); ?></div>
                     <div class="stat-label">Corporate Clients</div>
                     <div class="stat-change up"><i class="bi bi-building"></i> <?php echo e($corporatePct); ?>% of total clients</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-building-fill"></i></div>
-            </div>
+            </a>
         </div>
 
         <section class="dashboard-grid">

@@ -43,7 +43,7 @@
 .content > .card {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 0 0 auto;
     min-height: 0;
     margin-top: 16px;
 }
@@ -192,12 +192,8 @@ body.clients-page.agents-mode .table-wrapper.is-loading::before {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
+    max-height: none;
     flex: 0 0 auto;
-    scrollbar-gutter: stable both-edges;
-    border: 1px solid #d8e5dd;
-    border-radius: 14px;
-    background: #ffffff;
-    overscroll-behavior: contain;
 }
 
 body.clients-page {
@@ -625,20 +621,17 @@ body.clients-page.agents-mode .type-badge.individual {
     flex-wrap: wrap;
     gap: 10px;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    padding: 16px;
+    border-top: 1px solid #dce9e1;
+    background: #f4fbf6;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    margin-top: 0;
 }
 
-.clients-table tbody tr[data-client-id] {
-    cursor: pointer;
-}
-
-.action-icon {
-    width: auto;
-    min-height: 28px;
-    height: auto;
-    border: 1px solid #d2e0d8;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.94);
+.pagination-info {
+    font-size: 0.85rem;
     color: var(--gray-600);
     display: inline-flex;
     align-items: center;
