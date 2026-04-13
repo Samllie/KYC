@@ -72,7 +72,7 @@ CREATE TABLE `clients` (
   `tin_number` varchar(50) DEFAULT NULL,
   `occupation` varchar(100) DEFAULT NULL,
   `company_name` varchar(100) DEFAULT NULL,
-  `designation` varchar(100) DEFAULT NULL,
+  `designation` varchar(100) DEFAULT NULL,  
   `business_type` enum('private','government') DEFAULT NULL,
   `business_address` varchar(255) DEFAULT NULL,
   `business_ctm` varchar(50) DEFAULT NULL,
