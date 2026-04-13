@@ -524,7 +524,7 @@ include '../includes/sidebar.php';
                         <i class="bi bi-people"></i>
                         <div class="selection-group-title">Client Registrations</div>
                     </div>
-                    <p class="selection-group-subtitle">Use this when registering policyholders and obligees as clients.</p>
+                    <p class="selection-group-subtitle">Use this when registering policyholders and Philippine government bodies as obligees.</p>
 
                     <div class="type-selector">
                         <a href="kyc-individual.php?classification=client" class="type-card individual">
@@ -555,7 +555,7 @@ include '../includes/sidebar.php';
                             </div>
                             <div class="type-card-title">Obligee Client</div>
                             <div class="type-card-desc">
-                                Register an obligee client using a dedicated obligee workflow.
+                                Register a Philippine government body using the dedicated obligee workflow.
                             </div>
                             <div class="type-card-btn">Select Obligee Client</div>
                         </a>

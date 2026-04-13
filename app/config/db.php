@@ -92,33 +92,49 @@ function fetchOne($query, $params = []) {
 
 /**
  * Generate unique reference code
- * Format: REF-YYYYMMDD-XXXXX (e.g., REF-20260317-00001)
+ * Format: Ref - 00001
  */
 function generateUniqueReferenceCode() {
     global $db;
     
-    $date = date('Ymd');
-    $counter = 1;
-    
-    while ($counter <= 99999) {
-        $refCode = 'REF-' . $date . '-' . str_pad($counter, 5, '0', STR_PAD_LEFT);
-        
-        // Check if reference code already exists
-        $query = "SELECT reference_code FROM clients WHERE reference_code = ?";
-        $stmt = $db->prepare($query);
-        $stmt->bind_param('s', $refCode);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows === 0) {
-            return $refCode;
-        }
-        
-        $counter++;
+    $query = "
+        SELECT COALESCE(MAX(ref_number), 0) AS max_ref_number
+        FROM (
+            SELECT CAST(SUBSTRING(TRIM(reference_code), 7) AS UNSIGNED) AS ref_number
+            FROM clients
+            WHERE TRIM(reference_code) LIKE 'Ref - %'
+
+            UNION ALL
+
+            SELECT CAST(SUBSTRING(TRIM(reference_code), 7) AS UNSIGNED) AS ref_number
+            FROM client_approvals
+            WHERE TRIM(reference_code) LIKE 'Ref - %'
+
+            UNION ALL
+
+            SELECT CAST(SUBSTRING(
+                COALESCE(NULLIF(TRIM(ref_code), ''), NULLIF(TRIM(reference_code), '')),
+                7
+            ) AS UNSIGNED) AS ref_number
+            FROM kyc_verifications
+            WHERE COALESCE(NULLIF(TRIM(ref_code), ''), NULLIF(TRIM(reference_code), '')) LIKE 'Ref - %'
+        ) AS reference_numbers
+    ";
+
+    $result = $db->query($query);
+    $nextNumber = 1;
+
+    if ($result instanceof mysqli_result) {
+        $row = $result->fetch_assoc();
+        $nextNumber = intval($row['max_ref_number'] ?? 0) + 1;
+        $result->free();
     }
-    
-    // Fallback to unique timestamp if counter exceeds limit
-    return 'REF-' . time();
+
+    if ($nextNumber > 99999) {
+        throw new RuntimeException('Reference code limit reached.');
+    }
+
+    return 'Ref - ' . str_pad((string)$nextNumber, 5, '0', STR_PAD_LEFT);
 }
 
 /**

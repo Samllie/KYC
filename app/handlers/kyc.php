@@ -357,6 +357,8 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $required = array_merge($required, ['last_name', 'first_name', 'birthdate', 'occupation', 'mobile']);
     }
 
+    $postedBusinessType = trim($_POST['businessType'] ?? '');
+
     foreach ($required as $field) {
         if (trim((string)($formData[$field] ?? '')) === '') {
             $response['message'] = 'All required fields must be filled';
@@ -365,8 +367,14 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if ($isCorporateLike && trim((string)($_POST['businessType'] ?? '')) === '') {
+    if ($isCorporateLike && $postedBusinessType === '') {
         $response['message'] = 'Business type is required';
+        echo json_encode($response);
+        exit;
+    }
+
+    if ($clientType === 'obligee' && $postedBusinessType !== 'government') {
+        $response['message'] = 'Obligee clients must be registered as Philippine government bodies';
         echo json_encode($response);
         exit;
     }
@@ -425,7 +433,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'client_classification' => $clientClassification,
             'client_name' => $corporateName,
             'company_name' => $corporateName,
-            'business_type' => trim($_POST['businessType'] ?? ''),
+            'business_type' => $clientType === 'obligee' ? 'government' : $postedBusinessType,
             'id_type' => $formData['id_type'],
             'id_number' => $formData['id_number'],
             'client_since' => trim($_POST['corporateClientSince'] ?? ''),
@@ -602,6 +610,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $clientType = in_array($clientTypeRaw, $allowedClientTypes, true) ? $clientTypeRaw : 'individual';
 
     $isCorporateLike = in_array($clientType, ['corporate', 'obligee'], true);
+    $postedBusinessType = trim($_POST['businessType'] ?? '');
 
     $classificationRaw = strtolower(trim($_POST['clientClassification'] ?? 'client'));
     // Product rule: only individual can be classified as agent.
@@ -658,7 +667,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'client_classification' => $clientClassification,
             'client_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
             'company_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
-            'business_type' => trim($_POST['businessType'] ?? '') ?: null,
+            'business_type' => $clientType === 'obligee' ? 'government' : ($postedBusinessType ?: null),
             'id_type' => trim($_POST['idType'] ?? '') ?: null,
             'id_number' => trim($_POST['idNumber'] ?? '') ?: null,
             'client_since' => trim($_POST['corporateClientSince'] ?? '') ?: null,

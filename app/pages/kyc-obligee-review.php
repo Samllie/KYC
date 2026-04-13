@@ -5,9 +5,9 @@ requireLogin();
 $selectedClientType = 'obligee';
 $selectedClassification = 'client';
 
-$clientTypeLabel = 'Obligee Client';
+$clientTypeLabel = 'Government Obligee Client';
 $breadcrumbParentLabel = 'Clients';
-$savedEntityLabel = 'Client';
+$savedEntityLabel = 'Government Body';
 $backToEditUrl = 'kyc-obligee.php?classification=' . urlencode($selectedClassification);
 ?>
 <!DOCTYPE html>
@@ -196,6 +196,7 @@ include '../includes/sidebar.php';
 const currentClientType = <?php echo json_encode($selectedClientType); ?>;
 const backToEditUrl = <?php echo json_encode($backToEditUrl); ?>;
 const savedEntityLabel = <?php echo json_encode($savedEntityLabel); ?>;
+const isObligeeClient = currentClientType === 'obligee';
 
 // ── Toast ──────────────────────────────────────────────────
 function showToast(type, title, msg) {
@@ -227,6 +228,29 @@ function escapeHtml(value) {
         .replaceAll("'", '&#039;');
 }
 
+function formatReviewValue(key, value) {
+    const text = String(value || '').trim();
+    if (!text) return '';
+
+    if (key === 'businessType') {
+        return text.toLowerCase() === 'government'
+            ? 'Government'
+            : text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    if (key === 'clientType') {
+        return text.toLowerCase() === 'obligee'
+            ? 'Obligee'
+            : text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    if (key === 'clientClassification') {
+        return text.toLowerCase() === 'agent' ? 'Agent' : 'Client';
+    }
+
+    return text;
+}
+
 // ── Display Review Information ─────────────────────────
 function displayReview() {
     const formData = JSON.parse(sessionStorage.getItem('kycFormData') || '{}');
@@ -236,7 +260,71 @@ function displayReview() {
         return;
     }
     
-    const sections = [
+    const sections = isObligeeClient ? [
+        {
+            title: 'Client Type',
+            fields: [
+                { label: 'Client Type', key: 'clientType' }
+            ]
+        },
+        {
+            title: 'Reference',
+            fields: [
+                { label: 'Reference Code', key: 'refCode' },
+                { label: 'Client Number', key: 'clientNumber' }
+            ]
+        },
+        {
+            title: 'Government Agency Information',
+            fields: [
+                { label: 'Government Agency / Office Name', key: 'corporateClientName' },
+                { label: 'Government Body Type', key: 'businessType' },
+                { label: 'Date of Registration / Establishment', key: 'corporateClientSince' }
+            ]
+        },
+        {
+            title: 'Agency Details',
+            fields: [
+                { label: 'TIN Number', key: 'tinNumber' },
+                { label: 'AP SL Code', key: 'corporateApSlCode' },
+                { label: 'AR SL Code', key: 'corporateArSlCode' },
+                { label: 'Authorized Contact Position', key: 'designation' }
+            ]
+        },
+        {
+            title: 'Government Office Address',
+            fields: [
+                { label: 'Region / Jurisdiction', key: 'region' },
+                { label: 'Province / Area', key: 'corporateBusinessProvince' },
+                { label: 'City / Municipality', key: 'corporateBusinessCtm' },
+                { label: 'District / Regional Branch', key: 'corporateStreet' },
+                { label: 'Full Address', key: 'corporateBusinessAddress' }
+            ]
+        },
+        {
+            title: 'Contact Information',
+            fields: [
+                { label: 'Agency Phone Number', key: 'corporatePhone' },
+                { label: 'Authorized Contact Person', key: 'corporateContactPerson' },
+                { label: 'Official Email Address', key: 'corporateEmail' }
+            ]
+        },
+        {
+            title: 'Contact Person Details',
+            fields: [
+                { label: 'Gender', key: 'corporateGender' },
+                { label: 'Nationality', key: 'nationality' },
+                { label: 'Client Classification', key: 'clientClassification' }
+            ]
+        },
+        {
+            title: 'Government ID',
+            fields: [
+                { label: 'Government ID Type', key: 'idType' },
+                { label: 'ID Number', key: 'idNumber' }
+            ]
+        }
+    ] : [
         {
             title: 'Client Type',
             fields: [
@@ -309,7 +397,7 @@ function displayReview() {
         `;
         
         section.fields.forEach(field => {
-            const value = formData[field.key] || '';
+            const value = formatReviewValue(field.key, formData[field.key]);
             if (value) {
                 html += `
                     <div>

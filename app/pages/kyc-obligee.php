@@ -3,14 +3,40 @@ require_once '../config/session.php';
 requireLogin();
 
 $selectedClientType = 'obligee';
+$isObligee = true;
 $selectedClassification = 'client';
 
-$clientTypeLabel = 'Obligee Client';
-$newClientLabel = 'New Obligee Client';
+$clientTypeLabel = 'Government Obligee Client';
+$newClientLabel = 'New Government Obligee Client';
 $breadcrumbParentLabel = 'Clients';
 $clientTypeIcon = 'bi-shield-check';
 $reviewUrl = 'kyc-obligee-review.php?classification=' . urlencode($selectedClassification);
 $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedClassification);
+$companyCardTitle = $isObligee ? 'Government Agency Information' : 'Company Information';
+$companyNameLabel = $isObligee ? 'Government Agency / Office Name' : 'Business / Company Name';
+$companyNamePlaceholder = $isObligee ? 'e.g. Department of Education - Region IV-A' : 'Registered Business/Company Name';
+$companyNameError = $isObligee ? 'Government agency/office name is required' : 'Business/Company name is required';
+$businessTypeLabel = $isObligee ? 'Government Body Type' : 'Business Type';
+$businessTypeHelper = $isObligee ? 'Obligee registrations are limited to Philippine government bodies. Government is fixed for this workflow.' : '';
+$clientSinceLabel = $isObligee ? 'Date of Registration / Establishment' : 'Client Since';
+$businessDetailsTitle = $isObligee ? 'Agency Details' : 'Business Details';
+$designationLabel = $isObligee ? 'Authorized Contact Position' : 'Contact Person Designation';
+$designationPlaceholder = $isObligee ? 'e.g. Regional Director, Branch Chief' : 'e.g. Manager, Director';
+$addressCardTitle = $isObligee ? 'Government Office Address' : 'Business Address';
+$regionLabel = $isObligee ? 'Region / Jurisdiction' : 'Region';
+$provinceLabel = $isObligee ? 'Province / Area' : 'Province';
+$cityLabel = $isObligee ? 'City / Municipality' : 'City / Municipality';
+$barangayLabel = 'Barangay';
+$streetLabel = $isObligee ? 'District / Regional Branch' : 'Street / Unit / Building';
+$streetPlaceholder = $isObligee ? 'Choose a regional or district office, or type the official branch name' : 'House/Unit No., Street, Building';
+$streetHelpText = $isObligee ? 'Use the combobox to pick a Philippine government regional or district branch. You can type the official branch name if it is not listed.' : '';
+$contactPhoneLabel = $isObligee ? 'Agency Phone Number' : 'Phone Number';
+$contactPersonLabel = $isObligee ? 'Authorized Contact Person' : 'Company Owner';
+$contactEmailLabel = $isObligee ? 'Official Email Address' : 'Email Address';
+$supportingDocsTitle = $isObligee ? 'Government Requirements' : 'Supporting Documents';
+$supportingDocsHint = $isObligee ? 'Upload authority letters, appointment orders, agency IDs, and other Philippine government requirements.' : 'PDF, JPG, PNG (Max 5MB each)';
+$idCardTitle = $isObligee ? 'Authorized Signatory ID Verification' : 'Government ID Verification';
+$idUploadHint = $isObligee ? 'Upload the authorized signatory\'s ID photo, then enter the ID number manually.' : 'Upload your ID photo, then enter the ID number manually.';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -836,33 +862,39 @@ include '../includes/sidebar.php';
             <!-- Company Information Card -->
             <div class="card" data-wizard-step="2">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-building"></i> Company Information</div>
+                    <div class="card-title"><i class="bi bi-building"></i> <?php echo htmlspecialchars($companyCardTitle); ?></div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label for="corporateClientName" class="form-label">Business / Company Name <span class="req">*</span></label>
-                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Registered Business/Company Name" required>
-                                <div class="form-error">Business/Company name is required</div>
+                                <label for="corporateClientName" class="form-label"><?php echo htmlspecialchars($companyNameLabel); ?> <span class="req">*</span></label>
+                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="<?php echo htmlspecialchars($companyNamePlaceholder); ?>" required>
+                                <div class="form-error"><?php echo htmlspecialchars($companyNameError); ?></div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="form-label">Business Type <span class="req">*</span></label>
-                                <div style="display:flex;gap:20px;margin-top:8px;">
-                                    <label style="display:flex;align-items:center;gap:8px;">
-                                        <input type="radio" id="businessPrivate" name="businessType" value="private" required> Private
-                                    </label>
-                                    <label style="display:flex;align-items:center;gap:8px;">
-                                        <input type="radio" id="businessGov" name="businessType" value="government" required> Government
-                                    </label>
-                                </div>
+                                <label class="form-label"><?php echo htmlspecialchars($businessTypeLabel); ?> <span class="req">*</span></label>
+                                <?php if ($isObligee): ?>
+                                    <input type="hidden" name="businessType" value="government" data-locked="true">
+                                    <input type="text" class="form-control" value="Government" readonly>
+                                    <div class="form-hint" style="margin-top:8px;color:var(--gray-500);font-size:.78rem;"><?php echo htmlspecialchars($businessTypeHelper); ?></div>
+                                <?php else: ?>
+                                    <div style="display:flex;gap:20px;margin-top:8px;">
+                                        <label style="display:flex;align-items:center;gap:8px;">
+                                            <input type="radio" id="businessPrivate" name="businessType" value="private" required> Private
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:8px;">
+                                            <input type="radio" id="businessGov" name="businessType" value="government" required> Government
+                                        </label>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="corporateClientSince" class="form-label">Client Since</label>
+                                <label for="corporateClientSince" class="form-label"><?php echo htmlspecialchars($clientSinceLabel); ?></label>
                                 <input type="date" id="corporateClientSince" name="corporateClientSince" class="form-control">
                             </div>
                         </div>
@@ -879,7 +911,7 @@ include '../includes/sidebar.php';
             <!-- Business Details Card -->
             <div class="card" data-wizard-step="2">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-info-circle"></i> Business Details</div>
+                    <div class="card-title"><i class="bi bi-info-circle"></i> <?php echo htmlspecialchars($businessDetailsTitle); ?></div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
@@ -903,8 +935,8 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="designation" class="form-label">Contact Person Designation</label>
-                                <input type="text" id="designation" name="designation" class="form-control" placeholder="e.g., Manager, Director">
+                                <label for="designation" class="form-label"><?php echo htmlspecialchars($designationLabel); ?></label>
+                                <input type="text" id="designation" name="designation" class="form-control" placeholder="<?php echo htmlspecialchars($designationPlaceholder); ?>">
                             </div>
                         </div>
                     </div>
@@ -914,13 +946,13 @@ include '../includes/sidebar.php';
             <!-- Business Address Card -->
             <div class="card" data-wizard-step="2">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-shop"></i> Business Address</div>
+                    <div class="card-title"><i class="bi bi-shop"></i> <?php echo htmlspecialchars($addressCardTitle); ?></div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="region" class="form-label">Region</label>
+                                <label for="region" class="form-label"><?php echo htmlspecialchars($regionLabel); ?></label>
                                 <div class="select-wrap">
                                     <select id="region" name="region" class="form-select">
                                         <option value="">Select region...</option>
@@ -930,7 +962,7 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="corporateBusinessProvince" class="form-label">Province</label>
+                                <label for="corporateBusinessProvince" class="form-label"><?php echo htmlspecialchars($provinceLabel); ?></label>
                                 <div class="select-wrap">
                                     <select id="corporateBusinessProvince" name="corporateBusinessProvince" class="form-select">
                                         <option value="">Select province...</option>
@@ -940,7 +972,7 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="corporateBusinessCtm" class="form-label">City / Municipality</label>
+                                <label for="corporateBusinessCtm" class="form-label"><?php echo htmlspecialchars($cityLabel); ?></label>
                                 <div class="select-wrap">
                                     <select id="corporateBusinessCtm" name="corporateBusinessCtm" class="form-select">
                                         <option value="">Select city/municipality...</option>
@@ -948,9 +980,10 @@ include '../includes/sidebar.php';
                                 </div>
                             </div>
                         </div>
+                        <?php if (!$isObligee): ?>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="corporateBusinessBarangay" class="form-label">Barangay</label>
+                                <label for="corporateBusinessBarangay" class="form-label"><?php echo htmlspecialchars($barangayLabel); ?></label>
                                 <div class="select-wrap">
                                     <select id="corporateBusinessBarangay" name="corporateBusinessBarangay" class="form-select">
                                         <option value="">Select barangay...</option>
@@ -958,12 +991,41 @@ include '../includes/sidebar.php';
                                 </div>
                             </div>
                         </div>
+                        <?php endif; ?>
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label for="corporateStreet" class="form-label">Street / Unit / Building <span class="req">*</span></label>
-                                <input type="text" id="corporateStreet" name="corporateStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
+                                <label for="corporateStreet" class="form-label"><?php echo htmlspecialchars($streetLabel); ?> <span class="req">*</span></label>
+                                <input type="text" id="corporateStreet" name="corporateStreet" class="form-control" placeholder="<?php echo htmlspecialchars($streetPlaceholder); ?>" <?php echo $isObligee ? 'list="obligeeBranchOptions"' : ''; ?> required>
                                 <input type="hidden" id="corporateBusinessAddress" name="corporateBusinessAddress">
+                                <?php if ($isObligee): ?>
+                                    <datalist id="obligeeBranchOptions">
+                                        <option value="Department of Education - Central Office"></option>
+                                        <option value="Department of Education - NCR Regional Office"></option>
+                                        <option value="Department of Health - Central Office"></option>
+                                        <option value="Department of Health - NCR Regional Office"></option>
+                                        <option value="Department of the Interior and Local Government - NCR Regional Office"></option>
+                                        <option value="Civil Service Commission - Central Office"></option>
+                                        <option value="Civil Service Commission - NCR Regional Office"></option>
+                                        <option value="Commission on Audit - Central Office"></option>
+                                        <option value="Commission on Elections - Central Office"></option>
+                                        <option value="Bureau of Internal Revenue - Revenue District Office No. 38 (South Quezon City)"></option>
+                                        <option value="Bureau of Internal Revenue - Revenue District Office No. 39 (South Quezon City)"></option>
+                                        <option value="Department of Public Works and Highways - Regional Office III"></option>
+                                        <option value="Department of Public Works and Highways - Regional Office IV-A"></option>
+                                        <option value="Department of Social Welfare and Development - Regional Office VI"></option>
+                                        <option value="Department of Social Welfare and Development - Regional Office VII"></option>
+                                        <option value="Philippine Health Insurance Corporation - Regional Office IV-A"></option>
+                                        <option value="Philippine Statistics Authority - Regional Statistical Services Office"></option>
+                                        <option value="Land Transportation Office - NCR Regional Office"></option>
+                                        <option value="Land Transportation Office - Regional Office VII"></option>
+                                        <option value="TESDA - Regional Office VIII"></option>
+                                        <option value="Department of Labor and Employment - Regional Office VII"></option>
+                                    </datalist>
+                                <?php endif; ?>
                                 <div class="form-error">Business address is required</div>
+                                <?php if ($isObligee && $streetHelpText): ?>
+                                    <div style="margin-top:8px;color:var(--gray-500);font-size:.78rem;line-height:1.4;"><?php echo htmlspecialchars($streetHelpText); ?></div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -979,21 +1041,21 @@ include '../includes/sidebar.php';
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporatePhone" class="form-label">Phone Number <span class="req">*</span></label>
+                                <label for="corporatePhone" class="form-label"><?php echo htmlspecialchars($contactPhoneLabel); ?> <span class="req">*</span></label>
                                 <input type="tel" id="corporatePhone" name="corporatePhone" class="form-control" placeholder="(02) 8000 0000" required>
                                 <div class="form-error">Phone number is required</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporateContactPerson" class="form-label">Company Owner <span class="req">*</span></label>
-                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Owner Full Name" required>
-                                <div class="form-error">Company owner is required</div>
+                                <label for="corporateContactPerson" class="form-label"><?php echo htmlspecialchars($contactPersonLabel); ?> <span class="req">*</span></label>
+                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="<?php echo $isObligee ? 'Authorized officer full name' : 'Owner Full Name'; ?>" required>
+                                <div class="form-error"><?php echo $isObligee ? 'Authorized contact person is required' : 'Company owner is required'; ?></div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporateEmail" class="form-label">Email Address <span class="req">*</span></label>
+                                <label for="corporateEmail" class="form-label"><?php echo htmlspecialchars($contactEmailLabel); ?> <span class="req">*</span></label>
                                 <input type="email" id="corporateEmail" name="corporateEmail" class="form-control" placeholder="user@example.com" required>
                                 <div class="form-error">Valid email is required</div>
                             </div>
@@ -1035,7 +1097,7 @@ include '../includes/sidebar.php';
             <!-- Government ID Verification Card -->
             <div class="card" data-wizard-step="3">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-person-vcard"></i> Government ID Verification</div>
+                    <div class="card-title"><i class="bi bi-person-vcard"></i> <?php echo htmlspecialchars($idCardTitle); ?></div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
@@ -1082,7 +1144,7 @@ include '../includes/sidebar.php';
                                     <small>JPG, PNG, PDF (Max 5MB)</small>
                                 </div>
                                 <input type="file" id="governmentIdInput" accept=".jpg,.jpeg,.png" style="display:none;">
-                                <div class="id-upload-hint">Upload your ID photo, then enter the ID number manually.</div>
+                                <div class="id-upload-hint"><?php echo htmlspecialchars($idUploadHint); ?></div>
                                 <div class="file-list" id="governmentIdFileList" style="margin-top:12px;"></div>
                                 <div class="id-upload-status" id="governmentIdStatus">No ID photo uploaded yet.</div>
                             </div>
@@ -1094,13 +1156,13 @@ include '../includes/sidebar.php';
             <!-- Documents Card -->
             <div class="card card-span-2" data-wizard-step="3">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-file-earmark"></i> Supporting Documents</div>
+                    <div class="card-title"><i class="bi bi-file-earmark"></i> <?php echo htmlspecialchars($supportingDocsTitle); ?></div>
                 </div>
                 <div class="card-body">
                     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
                         <i class="bi bi-cloud-arrow-up upload-icon"></i>
                         <p><strong>Click to upload</strong> or drag and drop</p>
-                        <small>PDF, JPG, PNG (Max 5MB each)</small>
+                        <small><?php echo htmlspecialchars($supportingDocsHint); ?></small>
                     </div>
                     <input type="file" id="fileInput" name="documents[]" multiple accept=".jpg,.jpeg,.png,.pdf" style="display:none;">
                     <div class="file-list" id="fileList"></div>
@@ -1150,6 +1212,7 @@ include '../includes/sidebar.php';
 const currentClientType = <?php echo json_encode($selectedClientType); ?>;
 const currentReviewUrl = <?php echo json_encode($reviewUrl); ?>;
 const currentVerificationUrl = <?php echo json_encode($verificationUrl); ?>;
+const isObligeeClient = currentClientType === 'obligee';
 
 // ── Toast ──────────────────────────────────────────────────
 function showToast(type, title, msg) {
@@ -1239,7 +1302,9 @@ function validateRadioGroup(name) {
 }
 
 function validateAllRequired() {
-    const requiredFields = ['corporateClientName', 'region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateBusinessBarangay', 'corporateStreet', 'corporatePhone', 'corporateContactPerson', 'corporateEmail', 'governmentIdType', 'idNumber'];
+    const requiredFields = isObligeeClient
+        ? ['corporateClientName', 'region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateStreet', 'corporatePhone', 'corporateContactPerson', 'corporateEmail', 'governmentIdType', 'idNumber']
+        : ['corporateClientName', 'region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateBusinessBarangay', 'corporateStreet', 'corporatePhone', 'corporateContactPerson', 'corporateEmail', 'governmentIdType', 'idNumber'];
     let allValid = true;
     let failedFields = [];
     
@@ -1254,8 +1319,14 @@ function validateAllRequired() {
         }
     });
     
-    // Validate businessType radio
-    if (!validateRadioGroup('businessType')) allValid = false;
+    if (isObligeeClient) {
+        const businessTypeField = document.querySelector('input[name="businessType"]');
+        if (!businessTypeField || businessTypeField.value !== 'government') {
+            allValid = false;
+        }
+    } else if (!validateRadioGroup('businessType')) {
+        allValid = false;
+    }
     if (!validateGovernmentIdSection()) allValid = false;
     
     if (!allValid && failedFields.length > 0) {
@@ -1320,12 +1391,14 @@ async function initCorporateAddressSelectors() {
     const cityEl = document.getElementById('corporateBusinessCtm');
     const barangayEl = document.getElementById('corporateBusinessBarangay');
 
-    if (!regionEl || !provinceEl || !cityEl || !barangayEl) return;
+    if (!regionEl || !provinceEl || !cityEl) return;
 
     setSelectLoading(regionEl, 'Loading regions...');
     setSelectLoading(provinceEl, 'Select region first...');
     setSelectLoading(cityEl, 'Select province first...');
-    setSelectLoading(barangayEl, 'Select city first...');
+    if (barangayEl) {
+        setSelectLoading(barangayEl, 'Select city first...');
+    }
 
     try {
         const regions = await psgcFetch('/regions/');
@@ -1341,18 +1414,24 @@ async function initCorporateAddressSelectors() {
         const selectedRegionCode = this.options[this.selectedIndex]?.dataset?.code || '';
         fillSelectOptions(provinceEl, [], 'name', 'name', 'Select province...');
         fillSelectOptions(cityEl, [], 'name', 'name', 'Select city/municipality...');
-        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        if (barangayEl) {
+            fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        }
 
         if (!selectedRegionCode) {
             provinceEl.disabled = true;
             cityEl.disabled = true;
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
             return;
         }
 
         setSelectLoading(provinceEl, 'Loading provinces...');
         cityEl.disabled = true;
-        barangayEl.disabled = true;
+        if (barangayEl) {
+            barangayEl.disabled = true;
+        }
 
         try {
             const provinces = await psgcFetch(`/regions/${selectedRegionCode}/provinces/`);
@@ -1365,20 +1444,26 @@ async function initCorporateAddressSelectors() {
                 const citiesInRegion = await psgcFetch(`/regions/${selectedRegionCode}/cities-municipalities/`);
                 fillSelectOptions(cityEl, citiesInRegion, 'name', 'name', 'Select city/municipality...');
                 cityEl.disabled = false;
-                fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
-                barangayEl.disabled = true;
+                if (barangayEl) {
+                    fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
+                    barangayEl.disabled = true;
+                }
                 return;
             }
 
             fillSelectOptions(provinceEl, provinces, 'name', 'name', 'Select province...');
             provinceEl.disabled = false;
             cityEl.disabled = true;
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
         } catch (error) {
             console.error(error);
             setSelectLoading(provinceEl, 'Unable to load provinces');
             cityEl.disabled = true;
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
         }
     });
 
@@ -1387,16 +1472,22 @@ async function initCorporateAddressSelectors() {
         const selectedRegionCode = regionEl.options[regionEl.selectedIndex]?.dataset?.code || '';
 
         fillSelectOptions(cityEl, [], 'name', 'name', 'Select city/municipality...');
-        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        if (barangayEl) {
+            fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        }
 
         if (!selectedProvinceCode && this.value !== 'NCR') {
             cityEl.disabled = true;
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
             return;
         }
 
         setSelectLoading(cityEl, 'Loading cities/municipalities...');
-        barangayEl.disabled = true;
+        if (barangayEl) {
+            barangayEl.disabled = true;
+        }
         try {
             const cities = this.value === 'NCR'
                 ? await psgcFetch(`/regions/${selectedRegionCode}/cities-municipalities/`)
@@ -1404,21 +1495,29 @@ async function initCorporateAddressSelectors() {
 
             fillSelectOptions(cityEl, cities, 'name', 'name', 'Select city/municipality...');
             cityEl.disabled = false;
-            fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
+                barangayEl.disabled = true;
+            }
         } catch (error) {
             console.error(error);
             setSelectLoading(cityEl, 'Unable to load cities/municipalities');
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
         }
     });
 
     cityEl.addEventListener('change', async function () {
         const selectedCityCode = this.options[this.selectedIndex]?.dataset?.code || '';
-        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        if (barangayEl) {
+            fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        }
 
-        if (!selectedCityCode) {
-            barangayEl.disabled = true;
+        if (!selectedCityCode || !barangayEl) {
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
             return;
         }
 
@@ -1435,12 +1534,16 @@ async function initCorporateAddressSelectors() {
 }
 
 function buildAddress(street, barangay, city, province, region) {
+    if (isObligeeClient) {
+        return [street, city, province, region].filter(part => part && part.trim() !== '').join(', ');
+    }
+
     return [street, barangay, city, province, region].filter(part => part && part.trim() !== '').join(', ');
 }
 
 function syncCorporateAddressField() {
     const street = document.getElementById('corporateStreet')?.value || '';
-    const barangay = document.getElementById('corporateBusinessBarangay')?.value || '';
+    const barangay = isObligeeClient ? '' : (document.getElementById('corporateBusinessBarangay')?.value || '');
     const city = document.getElementById('corporateBusinessCtm')?.value || '';
     const province = document.getElementById('corporateBusinessProvince')?.value || '';
     const region = document.getElementById('region')?.value || '';
@@ -1786,16 +1889,29 @@ function escapeHtml(str) {
 }
 
 function parseComposedAddress(addressStr) {
-    // Expected format from buildAddress(): "street, barangay, city, province, region"
+    // Expected format from buildAddress(): either "street, barangay, city, province, region" or the obligee variant without barangay.
     if (!addressStr) return null;
     const parts = String(addressStr).split(',').map(p => p.trim()).filter(Boolean);
-    if (parts.length < 5) return null;
+    if (parts.length < 4) return null;
+
+    if (parts.length === 4) {
+        const street = parts.slice(0, 1).join(', ');
+        return {
+            street,
+            barangay: '',
+            city: parts[1],
+            province: parts[2],
+            region: parts[3]
+        };
+    }
+
+    const street = parts.slice(0, parts.length - 4).join(', ');
     return {
-        street: parts[0],
-        barangay: parts[1],
-        city: parts[2],
-        province: parts[3],
-        region: parts.slice(4).join(', ')
+        street,
+        barangay: parts[parts.length - 4],
+        city: parts[parts.length - 3],
+        province: parts[parts.length - 2],
+        region: parts[parts.length - 1]
     };
 }
 
@@ -1827,7 +1943,7 @@ async function restoreCorporateAddressFromDraftAddress(addressStr) {
     const barangayEl = document.getElementById('corporateBusinessBarangay');
     const streetEl = document.getElementById('corporateStreet');
 
-    if (!regionEl || !provinceEl || !cityEl || !barangayEl || !streetEl) return;
+    if (!regionEl || !provinceEl || !cityEl || !streetEl) return;
 
     const regionReady = await waitForSelectReady(regionEl, 2);
     if (!regionReady) return;
@@ -1845,9 +1961,12 @@ async function restoreCorporateAddressFromDraftAddress(addressStr) {
     cityEl.value = parsed.city;
     cityEl.dispatchEvent(new Event('change'));
 
-    const barangayReady = await waitForSelectReady(barangayEl, 2);
-    if (!barangayReady) return;
-    barangayEl.value = parsed.barangay;
+    if (barangayEl) {
+        const barangayReady = await waitForSelectReady(barangayEl, 2);
+        if (barangayReady && parsed.barangay) {
+            barangayEl.value = parsed.barangay;
+        }
+    }
 
     streetEl.value = parsed.street;
     syncCorporateAddressField();
@@ -2413,45 +2532,57 @@ document.addEventListener('DOMContentLoaded', () => {
 function proceedToReview() {
     const proceedBtn = document.getElementById('proceedBtn');
     if (proceedBtn?.disabled) return;
+    let isNavigating = false;
 
-    syncCorporateAddressField();
+    try {
+        syncCorporateAddressField();
 
-    if (!validateAllRequired()) {
-        showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
-        return;
-    }
-
-    setButtonBusy(proceedBtn, true, 'Preparing...');
-    
-    // Collect form data
-    const formData = {};
-    const form = document.getElementById('kycForm');
-    const elements = form.querySelectorAll('input, select, textarea');
-    elements.forEach(el => {
-        if (el.name && el.value) {
-            formData[el.name] = el.value;
+        if (!validateAllRequired()) {
+            showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
+            return;
         }
-    });
-    
-    // Store in sessionStorage
-    sessionStorage.setItem('kycFormData', JSON.stringify(formData));
-    
-    // Also store address components separately for reliable restoration
-    const addressData = {
-        region: document.getElementById('region').value,
-        province: document.getElementById('corporateBusinessProvince').value,
-        city: document.getElementById('corporateBusinessCtm').value,
-        barangay: document.getElementById('corporateBusinessBarangay').value,
-        street: document.getElementById('corporateStreet').value,
-        composed: document.getElementById('corporateBusinessAddress').value
-    };
-    sessionStorage.setItem('corporateAddressData', JSON.stringify(addressData));
-    sessionStorage.setItem('kycGovernmentIdFiles', JSON.stringify(getStoredGovernmentIdUploads()));
-    
-    // Navigate to review page
-    const reviewUrl = new URL(currentReviewUrl, window.location.href);
-    reviewUrl.searchParams.set('classification', 'client');
-    window.location.href = `${reviewUrl.pathname}${reviewUrl.search}`;
+
+        setButtonBusy(proceedBtn, true, 'Preparing...');
+        
+        // Collect form data
+        const formData = {};
+        const form = document.getElementById('kycForm');
+        const elements = form.querySelectorAll('input, select, textarea');
+        elements.forEach(el => {
+            if (el.name && el.value) {
+                formData[el.name] = el.value;
+            }
+        });
+        
+        // Store in sessionStorage
+        sessionStorage.setItem('kycFormData', JSON.stringify(formData));
+        
+        // Also store address components separately for reliable restoration
+        const barangayEl = document.getElementById('corporateBusinessBarangay');
+        const addressData = {
+            region: document.getElementById('region')?.value || '',
+            province: document.getElementById('corporateBusinessProvince')?.value || '',
+            city: document.getElementById('corporateBusinessCtm')?.value || '',
+            barangay: isObligeeClient ? '' : (barangayEl?.value || ''),
+            street: document.getElementById('corporateStreet')?.value || '',
+            composed: document.getElementById('corporateBusinessAddress')?.value || ''
+        };
+        sessionStorage.setItem('corporateAddressData', JSON.stringify(addressData));
+        sessionStorage.setItem('kycGovernmentIdFiles', JSON.stringify(getStoredGovernmentIdUploads()));
+        
+        // Navigate to review page
+        const reviewUrl = new URL(currentReviewUrl, window.location.href);
+        reviewUrl.searchParams.set('classification', 'client');
+        isNavigating = true;
+        window.location.href = `${reviewUrl.pathname}${reviewUrl.search}`;
+    } catch (error) {
+        console.error('Error preparing obligee preview:', error);
+        showToast('error', 'Preview Failed', 'Unable to prepare the review page. Please try again.');
+    } finally {
+        if (!isNavigating) {
+            setButtonBusy(proceedBtn, false);
+        }
+    }
 }
 
 function submitForm() {
@@ -2565,10 +2696,17 @@ async function clearForm() {
     setButtonBusy(clearBtn, true, 'Clearing...');
 
     document.getElementById('kycForm').querySelectorAll('input, select').forEach(el => {
-        if (el.readOnly) return;
+        if (el.readOnly || el.dataset.locked === 'true') return;
         el.value = '';
         el.classList.remove('is-invalid','is-valid');
     });
+
+    if (isObligeeClient) {
+        const businessTypeField = document.querySelector('input[name="businessType"]');
+        if (businessTypeField) {
+            businessTypeField.value = 'government';
+        }
+    }
 
     const draftSelect = document.getElementById('draftSelect');
     if (draftSelect) draftSelect.value = '';
