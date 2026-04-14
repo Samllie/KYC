@@ -126,6 +126,14 @@ if ($isHeadOfficeUser) {
     ];
 
     $menuItems[] = [
+        'label' => 'Agents Approval',
+        'icon' => 'bi-person-badge',
+        'href' => 'client-approvals.php?queue=agent',
+        'page' => 'agents-approval',
+        'badge' => null
+    ];
+
+    $menuItems[] = [
         'label' => 'Accounts Management',
         'icon' => 'bi-person-gear',
         'href' => 'accounts-management.php',

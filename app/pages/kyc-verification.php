@@ -576,7 +576,7 @@ include '../includes/sidebar.php';
                             </div>
                             <div class="type-card-title">Individual Agent</div>
                             <div class="type-card-desc">
-                                Register an individual as an agent with identity and contact verification.
+                                Register an individual as an insurance agent with profile, ID, and contact verification.
                             </div>
                             <div class="type-card-btn">Select Individual Agent</div>
                         </a>

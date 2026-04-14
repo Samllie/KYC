@@ -10,6 +10,7 @@ $clientTypeLabel = $isAgentFlow ? 'Individual Agent' : 'Individual Client';
 $breadcrumbParentLabel = $isAgentFlow ? 'Agents' : 'Clients';
 $recordLabelTitle = $isAgentFlow ? 'Agent' : 'Client';
 $backToEditUrl = 'kyc-individual.php?classification=' . urlencode($selectedClassification);
+$recordNumberLabel = $isAgentFlow ? 'Agent Number' : 'Client Number';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -196,6 +197,8 @@ include '../includes/sidebar.php';
 <script>
 const backToEditUrl = <?php echo json_encode($backToEditUrl); ?>;
 const savedEntityLabel = <?php echo json_encode($recordLabelTitle); ?>;
+const isAgentFlow = <?php echo $isAgentFlow ? 'true' : 'false'; ?>;
+const recordNumberLabel = <?php echo json_encode($recordNumberLabel); ?>;
 
 // ── Toast ──────────────────────────────────────────────────
 function showToast(type, title, msg) {
@@ -236,7 +239,58 @@ function displayReview() {
         return;
     }
     
-    const sections = [
+    const sections = isAgentFlow ? [
+        {
+            title: 'Agent Details',
+            fields: [
+                { label: 'Client Type', key: 'clientType', format: 'individual' },
+                { label: 'Classification', key: 'clientClassification' },
+                { label: 'Agent Type', key: 'agentType' },
+                { label: 'Branch', key: 'agentBranch' }
+            ]
+        },
+        {
+            title: 'Reference',
+            fields: [
+                { label: 'Reference Code', key: 'refCode' },
+                { label: recordNumberLabel, key: 'clientNumber' }
+            ]
+        },
+        {
+            title: 'Personal Information',
+            fields: [
+                { label: 'Last Name', key: 'lastName' },
+                { label: 'First Name', key: 'firstName' },
+                { label: 'Middle Name', key: 'middleName' },
+                { label: 'Salutations', key: 'salutation' },
+                { label: 'Date of Birth', key: 'birthdate' },
+                { label: 'Gender', key: 'gender' },
+                { label: 'Nationality', key: 'nationality' },
+                { label: 'Occupation', key: 'occupation' }
+            ]
+        },
+        {
+            title: 'Agent Identification',
+            fields: [
+                { label: 'Head Agent Name', key: 'headAgentName' },
+                { label: 'Existing ID Number', key: 'idNumber' }
+            ]
+        },
+        {
+            title: 'Home Address',
+            fields: [
+                { label: 'Home Address', key: 'homeAddress' }
+            ]
+        },
+        {
+            title: 'Contact Information',
+            fields: [
+                { label: 'Mobile Number', key: 'mobile' },
+                { label: 'Telephone', key: 'telephone' },
+                { label: 'Email Address', key: 'email' }
+            ]
+        }
+    ] : [
         {
             title: 'Client Type',
             fields: [
@@ -248,7 +302,7 @@ function displayReview() {
             title: 'Reference',
             fields: [
                 { label: 'Reference Code', key: 'refCode' },
-                { label: 'Client Number', key: 'clientNumber' }
+                { label: recordNumberLabel, key: 'clientNumber' }
             ]
         },
         {
@@ -346,7 +400,7 @@ function displayReview() {
         html += '</div></section>';
     });
 
-    if (governmentIdUploads.length) {
+    if (!isAgentFlow && governmentIdUploads.length) {
         const uploadedNames = governmentIdUploads.map(file => escapeHtml(file.original_name || file.file_name || 'ID file')).join(', ');
         html += `
             <section class="review-section" style="animation-delay:${Math.min(sections.length * 70, 350)}ms;">
@@ -374,7 +428,7 @@ function submitForm() {
     if (submitBtn.disabled) return;
 
     const formData = JSON.parse(sessionStorage.getItem('kycFormData') || '{}');
-    const uploadedFiles = JSON.parse(sessionStorage.getItem('kycUploadedFiles') || '[]');
+    const uploadedFiles = isAgentFlow ? [] : JSON.parse(sessionStorage.getItem('kycUploadedFiles') || '[]');
     
     if (Object.keys(formData).length === 0) {
         showToast('error', 'No Data', 'Form data not found. Please fill the form first.');
@@ -388,7 +442,7 @@ function submitForm() {
     const formDataObj = new FormData();
     formDataObj.append('action', 'submit_kyc');
     formDataObj.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
-    formDataObj.append('uploadedIdFiles', JSON.stringify(JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]')));
+    formDataObj.append('uploadedIdFiles', JSON.stringify(isAgentFlow ? [] : JSON.parse(sessionStorage.getItem('kycGovernmentIdFiles') || '[]')));
     
     Object.keys(formData).forEach(key => {
         formDataObj.append(key, formData[key]);

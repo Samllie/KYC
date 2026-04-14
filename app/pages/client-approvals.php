@@ -8,6 +8,14 @@ $currentUserBranch = strtoupper(trim($_SESSION['branch'] ?? ''));
 $isHeadOfficeUser = $currentUserRole === 'admin'
     || $currentUserDepartment === 'HEAD OFFICE'
     || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+$approvalQueue = strtolower(trim($_GET['queue'] ?? 'client'));
+if (!in_array($approvalQueue, ['client', 'agent'], true)) {
+    $approvalQueue = 'client';
+}
+$approvalPageTitle = $approvalQueue === 'agent' ? 'Agents Approval' : 'Client Approvals';
+$approvalBreadcrumbTitle = $approvalQueue === 'agent' ? 'Agents Approval' : 'Client Approvals';
+$approvalAccessLabel = $approvalQueue === 'agent' ? 'Agent approvals' : 'Client approvals';
+$approvalDefaultClassification = $approvalQueue === 'agent' ? 'agent' : '';
 
 if (!$isHeadOfficeUser) {
     http_response_code(403);
@@ -953,24 +961,24 @@ if (!$isHeadOfficeUser) {
         <section class="denied-card">
             <i class="bi bi-shield-lock"></i>
             <h1>Access Restricted</h1>
-            <p>Client approvals are visible only to Head Office and equivalent accounts.</p>
+            <p><?php echo htmlspecialchars($approvalAccessLabel); ?> are visible only to Head Office and equivalent accounts.</p>
             <a href="dashboard.php">Return to Dashboard</a>
         </section>
     </main>
 <?php else: ?>
 
 <?php
-$activePage = 'client-approvals';
+$activePage = $approvalQueue === 'agent' ? 'agents-approval' : 'client-approvals';
 include '../includes/sidebar.php';
 ?>
 
 <div class="main">
     <header class="topbar">
         <div class="topbar-left">
-            <h1>Client Approvals</h1>
+            <h1><?php echo htmlspecialchars($approvalPageTitle); ?></h1>
             <div class="breadcrumb-trail">
                 <i class="bi bi-house" style="font-size:.65rem;"></i>
-                Dashboard &rsaquo; <span>Client Approvals</span>
+                Dashboard &rsaquo; <span><?php echo htmlspecialchars($approvalBreadcrumbTitle); ?></span>
             </div>
         </div>
         <div class="topbar-right"></div>
@@ -1110,6 +1118,8 @@ include '../includes/sidebar.php';
 </section>
 
 <script>
+    const approvalQueue = <?php echo json_encode($approvalQueue); ?>;
+    const approvalDefaultClassification = <?php echo json_encode($approvalDefaultClassification); ?>;
     let currentPage = 1;
     let totalPages = 1;
     const pageSize = 8;
@@ -2025,6 +2035,9 @@ include '../includes/sidebar.php';
             'reference_code',
             'client_classification',
             'client_type',
+            'agent_type',
+            'head_agent_name',
+            'agent_branch',
             'approval_status',
             'display_name',
             'client_name',
@@ -2042,6 +2055,9 @@ include '../includes/sidebar.php';
             'approval_reference_code',
             'approval_client_type',
             'approval_client_classification',
+            'approval_agent_type',
+            'approval_head_agent_name',
+            'approval_agent_branch',
             'approval_approval_status',
             'approval_submitted_by_name',
             'approval_submitted_by_branch',
@@ -2049,6 +2065,9 @@ include '../includes/sidebar.php';
             'client_reference_code',
             'client_client_type',
             'client_client_classification',
+            'client_agent_type',
+            'client_head_agent_name',
+            'client_agent_branch',
             'client_client_name',
             'client_first_name',
             'client_middle_name',
@@ -2068,6 +2087,9 @@ include '../includes/sidebar.php';
             'kyc_birthdate',
             'kyc_gender',
             'kyc_nationality',
+            'kyc_agent_type',
+            'kyc_head_agent_name',
+            'kyc_agent_branch',
             'kyc_id_type',
             'kyc_id_number',
             'kyc_occupation',
@@ -2093,7 +2115,8 @@ include '../includes/sidebar.php';
 
         const query = new URLSearchParams({
             action: 'get_application',
-            approval_id: String(parsedApprovalId)
+            approval_id: String(parsedApprovalId),
+            queue: approvalQueue
         });
 
         fetch(`../handlers/client_approvals.php?${query.toString()}`, {
@@ -2188,6 +2211,7 @@ include '../includes/sidebar.php';
             action: 'list',
             page: String(page),
             pageSize: String(pageSize),
+            queue: approvalQueue,
             search: filters.search,
             status: filters.status,
             classification: filters.classification,
@@ -2292,6 +2316,7 @@ include '../includes/sidebar.php';
         formData.append('action', action);
         formData.append('approval_id', String(approvalId));
         formData.append('review_notes', reviewNote);
+        formData.append('queue', approvalQueue);
 
         fetch('../handlers/client_approvals.php', {
             method: 'POST',
@@ -2382,6 +2407,10 @@ include '../includes/sidebar.php';
     document.getElementById('filterBranch').addEventListener('change', applyFilters);
 
     document.addEventListener('DOMContentLoaded', () => {
+        const classificationFilter = document.getElementById('filterClassification');
+        if (classificationFilter) {
+            classificationFilter.value = approvalDefaultClassification;
+        }
         initializeApplicationModalEvents();
         loadApprovals(1);
         startApprovalsAutoRefresh();

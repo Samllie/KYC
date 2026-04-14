@@ -9,6 +9,50 @@ $isAgentFlow = $selectedClassification === 'agent';
 $clientTypeLabel = $isAgentFlow ? 'Individual Agent' : 'Individual Client';
 $newClientLabel = $isAgentFlow ? 'New Individual Agent' : 'New Individual Client';
 $breadcrumbParentLabel = $isAgentFlow ? 'Agents' : 'Clients';
+$recordNumberLabel = $isAgentFlow ? 'Agent Number' : 'Client Number';
+$recordNumberPlaceholder = $isAgentFlow ? 'Auto-generated agent number' : 'Auto-generated';
+$agentOccupationOptions = ['Insurance Agent', 'Senior Insurance Agent', 'Unit Manager'];
+$agentTypeOptions = [
+    'agent' => 'Agent',
+    'sub_agent' => 'Sub agent',
+];
+$branchOptions = [
+    'HEAD OFFICE',
+    'ALABANG BRANCH',
+    'MANILA BRANCH I',
+    'MANILA BRANCH II',
+    'WEST AVENUE BRANCH',
+    'CUBAO BRANCH',
+    'ANGELES BRANCH',
+    'BATANGAS BRANCH',
+    'BACOLOD BRANCH',
+    'CABANATUAN BRANCH',
+    'BUTUAN BRANCH',
+    'CAGAYAN DE ORO BRANCH',
+    'CEBU BRANCH',
+    'CEBU REGIONAL OFFICE BRANCH',
+    'DAGUPAN BRANCH',
+    'DAVAO I BRANCH',
+    'DAVAO II BRANCH',
+    'GENSAN BRANCH',
+    'ISABELA BRANCH',
+    'LA UNION BRANCH',
+    'LAOAG BRANCH',
+    'LEGAZPI I BRANCH',
+    'LEGAZPI II BRANCH',
+    'MINDORO BRANCH',
+    'NAGA BRANCH',
+    'ORMOC BRANCH',
+    'OZAMIZ BRANCH',
+    'PAGADIAN BRANCH',
+    'SAN FERNANDO, PAMPANGA BRANCH',
+    'HEAD OFFICE BRANCH',
+    'SMRO BRANCH',
+    'TACLOBAN BRANCH',
+    'TUGUEGARAO BRANCH',
+    'VIGAN BRANCH',
+    'ILOILO BRANCH',
+];
 $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedClassification);
 $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedClassification);
 ?>
@@ -796,8 +840,8 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="clientNumber" class="form-label">Client Number</label>
-                                <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="Auto-generated" readonly>
+                                <label for="clientNumber" class="form-label"><?php echo htmlspecialchars($recordNumberLabel); ?></label>
+                                <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="<?php echo htmlspecialchars($recordNumberPlaceholder); ?>" readonly>
                             </div>
                         </div>
                     </div>
@@ -886,6 +930,7 @@ include '../includes/sidebar.php';
                                 </div>
                             </div>
                         </div>
+                        <?php if (!$isAgentFlow): ?>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="apSlCode" class="form-label">AP SL Code</label>
@@ -910,16 +955,34 @@ include '../includes/sidebar.php';
                                 <input type="text" id="tinNumber" name="tinNumber" class="form-control" placeholder="TIN #">
                             </div>
                         </div>
+                        <?php endif; ?>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="nationality" class="form-label">Nationality</label>
                                 <input type="text" id="nationality" name="nationality" class="form-control" placeholder="e.g. Filipino">
                             </div>
                         </div>
+                        <?php if ($isAgentFlow): ?>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="occupation" class="form-label">Occupation <span class="req">*</span></label>
+                                <div class="select-wrap">
+                                    <select id="occupation" name="occupation" class="form-select" required>
+                                        <option value="">Select occupation...</option>
+                                        <?php foreach ($agentOccupationOptions as $agentOccupationOption): ?>
+                                            <option value="<?php echo htmlspecialchars($agentOccupationOption); ?>"><?php echo htmlspecialchars($agentOccupationOption); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-error">Occupation is required</div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
 
+            <?php if (!$isAgentFlow): ?>
             <!-- Spouse Information Card -->
             <div class="card" data-wizard-step="2">
                 <div class="card-header">
@@ -948,7 +1011,60 @@ include '../includes/sidebar.php';
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
+            <?php if ($isAgentFlow): ?>
+            <!-- Agent Identification Card -->
+            <div class="card" data-wizard-step="2">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-person-badge"></i> Agent Identification</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="agentType" class="form-label">Agent Type <span class="req">*</span></label>
+                                <div class="select-wrap">
+                                    <select id="agentType" name="agentType" class="form-select" required>
+                                        <?php foreach ($agentTypeOptions as $agentTypeValue => $agentTypeLabel): ?>
+                                            <option value="<?php echo htmlspecialchars($agentTypeValue); ?>"<?php echo $agentTypeValue === 'agent' ? ' selected' : ''; ?>><?php echo htmlspecialchars($agentTypeLabel); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-error">Agent type is required</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="agentBranch" class="form-label">Branch <span class="req">*</span></label>
+                                <div class="select-wrap">
+                                    <select id="agentBranch" name="agentBranch" class="form-select" required>
+                                        <option value="">Select branch...</option>
+                                        <?php foreach ($branchOptions as $branchOption): ?>
+                                            <option value="<?php echo htmlspecialchars($branchOption); ?>"><?php echo htmlspecialchars($branchOption); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-error">Branch is required</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12" id="headAgentNameGroup" style="display:none;">
+                            <div class="form-group">
+                                <label for="headAgentName" class="form-label">Head Agent Name <span style="font-size:0.85rem;color:#999;">(Required for Sub agent)</span></label>
+                                <input type="text" id="headAgentName" name="headAgentName" class="form-control" placeholder="Enter head agent name">
+                                <div class="form-error">Head Agent Name is required for Sub agent</div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="idNumber" class="form-label">Existing ID Number <span style="font-size:0.85rem;color:#999;">(Optional)</span></label>
+                                <input type="text" id="idNumber" name="idNumber" class="form-control" placeholder="Enter existing ID number">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php else: ?>
             <!-- Government ID Verification Card -->
             <div class="card" data-wizard-step="2">
                 <div class="card-header">
@@ -1007,7 +1123,9 @@ include '../includes/sidebar.php';
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
+            <?php if (!$isAgentFlow): ?>
             <!-- Occupation Card -->
             <div class="card" data-wizard-step="3">
                 <div class="card-header">
@@ -1037,6 +1155,9 @@ include '../includes/sidebar.php';
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
+
+            <?php if (!$isAgentFlow): ?>
             <!-- Address Information Card -->
             <div class="card" data-wizard-step="3">
                 <div class="card-header">
@@ -1094,6 +1215,8 @@ include '../includes/sidebar.php';
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
+
             <!-- Home Address Card -->
             <div class="card" data-wizard-step="3">
                 <div class="card-header">
@@ -1187,6 +1310,7 @@ include '../includes/sidebar.php';
                 </div>
             </div>
 
+            <?php if (!$isAgentFlow): ?>
             <!-- Mailing Address Preference Card -->
             <div class="card" data-wizard-step="3">
                 <div class="card-header">
@@ -1226,6 +1350,7 @@ include '../includes/sidebar.php';
                     <div class="file-list" id="fileList"></div>
                 </div>
             </div>
+            <?php endif; ?>
 
         </form>
 
@@ -1269,6 +1394,7 @@ include '../includes/sidebar.php';
 <script>
 const currentReviewUrl = <?php echo json_encode($reviewUrl); ?>;
 const currentVerificationUrl = <?php echo json_encode($verificationUrl); ?>;
+const isAgentFlow = <?php echo $isAgentFlow ? 'true' : 'false'; ?>;
 
 // ── Toast ──────────────────────────────────────────────────
 function showToast(type, title, msg) {
@@ -1306,6 +1432,55 @@ function setButtonBusy(button, isBusy, label = 'Working...') {
     }
 }
 
+function generateRecordNumber(prefix, includeDate = true) {
+    if (!includeDate) {
+        const numericPart = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+        return `${prefix}-${numericPart}`;
+    }
+
+    const now = new Date();
+    const datePart = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0'),
+        String(now.getHours()).padStart(2, '0'),
+        String(now.getMinutes()).padStart(2, '0'),
+        String(now.getSeconds()).padStart(2, '0')
+    ].join('');
+    const suffix = Array.from({ length: 6 }, () => Math.floor(Math.random() * 16).toString(16)).join('').toUpperCase();
+    return `${prefix}-${datePart}-${suffix}`;
+}
+
+function ensureRecordNumber() {
+    const field = document.getElementById('clientNumber');
+    if (!field || field.value.trim()) return;
+    field.value = generateRecordNumber(isAgentFlow ? 'AG' : 'CN', !isAgentFlow);
+}
+
+function syncAgentTypeFields() {
+    if (!isAgentFlow) {
+        return;
+    }
+
+    const agentTypeField = document.getElementById('agentType');
+    const headAgentGroup = document.getElementById('headAgentNameGroup');
+    const headAgentField = document.getElementById('headAgentName');
+
+    if (!agentTypeField || !headAgentGroup || !headAgentField) {
+        return;
+    }
+
+    const isSubAgent = agentTypeField.value === 'sub_agent';
+    headAgentGroup.style.display = isSubAgent ? '' : 'none';
+    headAgentField.required = isSubAgent;
+    headAgentField.dataset.required = isSubAgent ? 'true' : 'false';
+
+    if (!isSubAgent) {
+        headAgentField.value = '';
+        headAgentField.classList.remove('is-invalid', 'is-valid');
+    }
+}
+
 function revealFlowCards() {
     const cards = document.querySelectorAll('main.content .card');
     cards.forEach((card, idx) => {
@@ -1328,6 +1503,14 @@ function validateField(id) {
     if (el.offsetParent === null) return true;
     
     const value = el.value.trim();
+    const isRequired = el.required || el.dataset.required === 'true';
+
+    if (!isRequired && value === '') {
+        el.classList.remove('is-invalid');
+        el.classList.remove('is-valid');
+        return true;
+    }
+
     let ok = value !== '';
     
     // Additional validation for specific field types
@@ -1362,7 +1545,11 @@ function validateRadioGroup(name) {
 }
 
 function validateAllRequired() {
-    const requiredFields = ['lastName', 'firstName', 'birthdate', 'occupation', 'mobile', 'email', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet', 'governmentIdType', 'idNumber'];
+    syncAgentTypeFields();
+
+    const requiredFields = isAgentFlow
+        ? ['lastName', 'firstName', 'birthdate', 'occupation', 'agentType', 'agentBranch', 'mobile', 'email', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet']
+        : ['lastName', 'firstName', 'birthdate', 'occupation', 'mobile', 'email', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet', 'governmentIdType', 'idNumber'];
     let allValid = true;
     let failedFields = [];
     
@@ -1380,11 +1567,28 @@ function validateAllRequired() {
     // Validate mailingAddressType radio
     if (!validateRadioGroup('mailingAddressType')) allValid = false;
     if (!validateGovernmentIdSection()) allValid = false;
+    if (isAgentFlow && !validateAgentAssignmentSection()) allValid = false;
     if (!allValid && failedFields.length > 0) {
         console.log('Failed fields:', failedFields);
     }
     
     return allValid;
+}
+
+function validateAgentAssignmentSection() {
+    if (!isAgentFlow) {
+        return true;
+    }
+
+    syncAgentTypeFields();
+
+    const agentTypeOk = validateField('agentType');
+    const agentBranchOk = validateField('agentBranch');
+    const headAgentField = document.getElementById('headAgentName');
+    const needsHeadAgent = Boolean(headAgentField && headAgentField.required);
+    const headAgentOk = !needsHeadAgent || validateField('headAgentName');
+
+    return agentTypeOk && agentBranchOk && headAgentOk;
 }
 
 // Add event listeners to all form fields
@@ -1564,14 +1768,20 @@ function syncComposedAddressFields() {
     const businessCity = document.getElementById('businessCtm')?.value || '';
     const businessProvince = document.getElementById('businessProvince')?.value || '';
     const businessRegion = document.getElementById('businessRegion')?.value || '';
-    document.getElementById('businessAddress').value = buildAddress(businessStreet, businessBarangay, businessCity, businessProvince, businessRegion);
+    const businessAddressField = document.getElementById('businessAddress');
+    if (businessAddressField) {
+        businessAddressField.value = buildAddress(businessStreet, businessBarangay, businessCity, businessProvince, businessRegion);
+    }
 
     const homeStreet = document.getElementById('homeStreet')?.value || '';
     const homeBarangay = document.getElementById('homeBarangay')?.value || '';
     const homeCity = document.getElementById('homeCtm')?.value || '';
     const homeProvince = document.getElementById('homeProvince')?.value || '';
     const homeRegion = document.getElementById('homeRegion')?.value || '';
-    document.getElementById('homeAddress').value = buildAddress(homeStreet, homeBarangay, homeCity, homeProvince, homeRegion);
+    const homeAddressField = document.getElementById('homeAddress');
+    if (homeAddressField) {
+        homeAddressField.value = buildAddress(homeStreet, homeBarangay, homeCity, homeProvince, homeRegion);
+    }
 }
 
 initAddressChain('businessRegion', 'businessProvince', 'businessCtm', 'businessBarangay');
@@ -1608,6 +1818,8 @@ function restoreFormData() {
                 }
             }
         });
+
+        syncAgentTypeFields();
         
         // Restore address data after API populates options
         // This requires waiting for PSGC API calls in the correct cascade order
@@ -1736,6 +1948,10 @@ if (KYC_NAVIGATION_TYPE === 'reload') {
 document.addEventListener('DOMContentLoaded', restoreFormData);
 
 function validateGovernmentIdSection() {
+    if (isAgentFlow) {
+        return true;
+    }
+
     const typeOk = validateField('governmentIdType');
     const numberOk = validateField('idNumber');
     const uploadsOk = getStoredGovernmentIdUploads().length > 0;
@@ -2067,11 +2283,16 @@ async function loadSelectedDraft() {
         setIfEl('middleName', draft.middle_name);
         setIfEl('birthdate', draft.birthdate);
         setIfEl('gender', draft.gender);
+        setIfEl('agentType', draft.agent_type || draft.agentType || 'agent');
+        setIfEl('headAgentName', draft.head_agent_name || draft.headAgentName);
+        setIfEl('agentBranch', draft.agent_branch || draft.agentBranch);
         setIfEl('occupation', draft.occupation);
         setIfEl('employer', draft.company);
         setIfEl('mobile', draft.mobile);
         setIfEl('telephone', draft.phone);
         setIfEl('email', draft.email);
+
+        syncAgentTypeFields();
 
         // Address restore (stored as composed homeAddress string).
         await restoreHomeAddressFromDraftAddress(draft.address);
@@ -2550,6 +2771,13 @@ function goToWizardStep(step) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const agentTypeField = document.getElementById('agentType');
+    if (agentTypeField) {
+        agentTypeField.addEventListener('change', syncAgentTypeFields);
+    }
+
+    syncAgentTypeFields();
+
     const prevBtn = document.getElementById('wizardPrevBtn');
     const nextBtn = document.getElementById('wizardNextBtn');
 
@@ -2617,6 +2845,7 @@ function proceedToReview() {
     if (proceedBtn?.disabled) return;
 
     syncComposedAddressFields();
+    syncAgentTypeFields();
 
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
@@ -2639,29 +2868,33 @@ function proceedToReview() {
     sessionStorage.setItem('kycFormData', JSON.stringify(formData));
     
     // Also store address components separately for reliable restoration
+    const getValue = (fieldId) => document.getElementById(fieldId)?.value || '';
     const addressData = {
-        businessRegion: document.getElementById('businessRegion').value,
-        businessProvince: document.getElementById('businessProvince').value,
-        businessCity: document.getElementById('businessCtm').value,
-        businessBarangay: document.getElementById('businessBarangay').value,
-        businessStreet: document.getElementById('businessStreet').value,
-        businessAddress: document.getElementById('businessAddress').value,
-        homeRegion: document.getElementById('homeRegion').value,
-        homeProvince: document.getElementById('homeProvince').value,
-        homeCity: document.getElementById('homeCtm').value,
-        homeBarangay: document.getElementById('homeBarangay').value,
-        homeStreet: document.getElementById('homeStreet').value,
-        homeAddress: document.getElementById('homeAddress').value
+        businessRegion: getValue('businessRegion'),
+        businessProvince: getValue('businessProvince'),
+        businessCity: getValue('businessCtm'),
+        businessBarangay: getValue('businessBarangay'),
+        businessStreet: getValue('businessStreet'),
+        businessAddress: getValue('businessAddress'),
+        homeRegion: getValue('homeRegion'),
+        homeProvince: getValue('homeProvince'),
+        homeCity: getValue('homeCtm'),
+        homeBarangay: getValue('homeBarangay'),
+        homeStreet: getValue('homeStreet'),
+        homeAddress: getValue('homeAddress')
     };
     sessionStorage.setItem('individualAddressData', JSON.stringify(addressData));
     sessionStorage.setItem('kycGovernmentIdFiles', JSON.stringify(getStoredGovernmentIdUploads()));
     
     // Navigate to review page
-    window.location.href = currentReviewUrl;
+    const reviewUrl = new URL(currentReviewUrl, window.location.href);
+    reviewUrl.searchParams.set('classification', isAgentFlow ? 'agent' : 'client');
+    window.location.href = `${reviewUrl.pathname}${reviewUrl.search}`;
 }
 
 function submitForm() {
     syncComposedAddressFields();
+    syncAgentTypeFields();
 
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
@@ -2681,9 +2914,9 @@ function submitForm() {
         }
     });
 
-    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
+    const uploadedFiles = isAgentFlow ? [] : (getStoredUploads ? getStoredUploads() : []);
     formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
-    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
+    formData.append('uploadedIdFiles', JSON.stringify(isAgentFlow ? [] : (getStoredGovernmentIdUploads() || [])));
     
     // Submit to handler
     fetch('../handlers/kyc.php', {
@@ -2693,11 +2926,12 @@ function submitForm() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            const entityLabel = isAgentFlow ? 'Agent' : 'Client';
             if (data.reference_code && !document.getElementById('refCode').value) {
                 document.getElementById('refCode').value = data.reference_code;
                 document.getElementById('refCode').readOnly = true;
             }
-            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Client registered successfully.');
+            showToast('success', `${entityLabel} Saved!`, data.reference_code ? `Reference Code: ${data.reference_code}` : `${entityLabel} registered successfully.`);
             // Increment stat
             const tv = document.getElementById('stat-total');
             if (tv) tv.textContent = parseInt(tv.textContent) + 1;
@@ -2720,6 +2954,7 @@ function saveDraft() {
     if (saveDraftBtn?.disabled) return;
 
     syncComposedAddressFields();
+    syncAgentTypeFields();
     setButtonBusy(saveDraftBtn, true, 'Saving...');
 
     // Collect form data
@@ -2736,9 +2971,9 @@ function saveDraft() {
     });
 
     // Persist attachments into `documents` for this draft.
-    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
+    const uploadedFiles = isAgentFlow ? [] : (getStoredUploads ? getStoredUploads() : []);
     formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
-    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
+    formData.append('uploadedIdFiles', JSON.stringify(isAgentFlow ? [] : (getStoredGovernmentIdUploads() || [])));
     
     // Submit to handler
     fetch('../handlers/kyc.php', {
@@ -2971,12 +3206,7 @@ if (zone) {
 // Render any existing temp uploads (e.g., returning from review)
 document.addEventListener('DOMContentLoaded', renderStoredUploads);
 document.addEventListener('DOMContentLoaded', revealFlowCards);
-
-// ── Auto-gen Client Number ─────────────────────────────────
-document.getElementById('refCode').addEventListener('input', function() {
-    const cn = this.value ? 'CN-' + Date.now().toString().slice(-6) : '';
-    document.getElementById('clientNumber').value = cn;
-});
+document.addEventListener('DOMContentLoaded', ensureRecordNumber);
 
 // ── Collapse Steps to Tiny Progress on Scroll ───────────────
 const stepsBar = document.querySelector('.steps-bar');

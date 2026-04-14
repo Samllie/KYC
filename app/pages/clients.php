@@ -12,6 +12,9 @@ $isHeadOfficeView = $currentUserRole === 'admin'
 $requestedClassification = strtolower(trim($_GET['classification'] ?? 'client'));
 $listClassification = $requestedClassification === 'agent' ? 'agent' : 'client';
 $isAgentsMode = $listClassification === 'agent';
+$requestedType = strtolower(trim($_GET['type'] ?? ''));
+$allowedInitialTypes = $isAgentsMode ? ['agent', 'sub_agent'] : ['individual', 'corporate', 'obligee'];
+$initialTypeFilter = in_array($requestedType, $allowedInitialTypes, true) ? $requestedType : '';
 
 $pageHeading = $isAgentsMode ? 'Agents Management' : 'Clients Management';
 $recordLabelSingular = $isAgentsMode ? 'agent' : 'client';
@@ -77,10 +80,16 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="filter-group">
                             <select id="filterType" class="filter-select">
-                                <option value="">All Types</option>
-                                <option value="individual">Individual</option>
-                                <option value="corporate">Corporate</option>
-                                <option value="obligee">Obligee</option>
+                                <?php if ($isAgentsMode): ?>
+                                    <option value="">All Agent Types</option>
+                                    <option value="agent">Agent</option>
+                                    <option value="sub_agent">Sub agent</option>
+                                <?php else: ?>
+                                    <option value="">All Types</option>
+                                    <option value="individual">Individual</option>
+                                    <option value="corporate">Corporate</option>
+                                    <option value="obligee">Obligee</option>
+                                <?php endif; ?>
                             </select>
                         </div>
                         <div class="filter-group">
@@ -127,9 +136,14 @@ include '../includes/sidebar.php';
                             <th class="col-ref">Ref Code</th>
                             <th class="col-name">Business/<?php echo htmlspecialchars($recordTitleCaseSingular); ?> Name</th>
                             <th class="col-owner">Branch</th>
-                            <th class="col-type">Type</th>
+                            <th class="col-type"><?php echo $isAgentsMode ? 'Agent Type' : 'Type'; ?></th>
+                            <?php if ($isAgentsMode): ?>
+                            <th class="col-main-agent">Main Agent</th>
+                            <?php endif; ?>
                             <th class="col-contact">Contact</th>
+                            <?php if (!$isAgentsMode): ?>
                             <th class="col-email">Email</th>
+                            <?php endif; ?>
                             <th class="col-verified">Submitted By</th>
                             <th class="col-activity">Activity Status</th>
                             <th class="col-activity-updated">Status Updated</th>
@@ -167,12 +181,24 @@ include '../includes/sidebar.php';
         <div class="modal-body">
             <form id="editForm">
                 <input type="hidden" id="editClientId">
+                <?php if ($isAgentsMode): ?>
+                <input type="hidden" id="editClientType" value="individual">
+                <?php endif; ?>
                 <!-- Row 1: Reference & Type -->
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Ref Code</label>
                         <input type="text" id="editRefCode" class="form-control" readonly>
                     </div>
+                    <?php if ($isAgentsMode): ?>
+                    <div class="form-group">
+                        <label class="form-label">Agent Type</label>
+                        <select id="editAgentType" class="form-select">
+                            <option value="agent">Agent</option>
+                            <option value="sub_agent">Sub agent</option>
+                        </select>
+                    </div>
+                    <?php else: ?>
                     <div class="form-group">
                         <label class="form-label">Client Type</label>
                         <select id="editClientType" class="form-select">
@@ -181,7 +207,17 @@ include '../includes/sidebar.php';
                             <option value="obligee">Obligee</option>
                         </select>
                     </div>
+                    <?php endif; ?>
                 </div>
+
+                <?php if ($isAgentsMode): ?>
+                <div class="form-row">
+                    <div class="form-group full" id="editHeadAgentGroup" style="display:none;">
+                        <label class="form-label">Head Agent Name</label>
+                        <input type="text" id="editHeadAgentName" class="form-control" placeholder="Enter the main agent name">
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Row 2: Name -->
                 <div class="form-row">
@@ -314,6 +350,18 @@ include '../includes/sidebar.php';
                 </div>
 
                 <!-- Row 2: Type -->
+                <?php if ($isAgentsMode): ?>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Agent Type</label>
+                        <input type="text" id="viewAgentType" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Head Agent Name</label>
+                        <input type="text" id="viewHeadAgentName" class="form-control" readonly>
+                    </div>
+                </div>
+                <?php else: ?>
                 <div class="form-row">
                     <div class="form-group full">
                         <label class="form-label">Client Type</label>
@@ -324,6 +372,7 @@ include '../includes/sidebar.php';
                         </select>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <!-- Row 3: Name -->
                 <div class="form-row">
@@ -501,6 +550,8 @@ include '../includes/sidebar.php';
     const selectedClientRows = new Map();
     const isHeadOfficeUser = <?php echo $isHeadOfficeView ? 'true' : 'false'; ?>;
     const listClassification = <?php echo json_encode($listClassification); ?>;
+    const initialTypeFilter = <?php echo json_encode($initialTypeFilter); ?>;
+    const isAgentsMode = <?php echo $isAgentsMode ? 'true' : 'false'; ?>;
     const recordLabelSingular = <?php echo json_encode($recordLabelSingular); ?>;
     const recordLabelPlural = <?php echo json_encode($recordLabelPlural); ?>;
     const recordTitleCaseSingular = <?php echo json_encode($recordTitleCaseSingular); ?>;
@@ -549,6 +600,28 @@ include '../includes/sidebar.php';
             const buttonStatus = normalizeEditableActivityStatus(button.dataset.status || 'active');
             button.classList.toggle('is-selected', buttonStatus === normalized);
         });
+    }
+
+    function syncEditAgentFields() {
+        if (!isAgentsMode) {
+            return;
+        }
+
+        const agentTypeField = document.getElementById('editAgentType');
+        const headAgentGroup = document.getElementById('editHeadAgentGroup');
+        const headAgentField = document.getElementById('editHeadAgentName');
+
+        if (!agentTypeField || !headAgentGroup || !headAgentField) {
+            return;
+        }
+
+        const isSubAgent = agentTypeField.value === 'sub_agent';
+        headAgentGroup.style.display = isSubAgent ? '' : 'none';
+        headAgentField.required = isSubAgent;
+
+        if (!isSubAgent) {
+            headAgentField.value = '';
+        }
     }
 
     function updateBranchFilterOptions(branches) {
@@ -698,6 +771,13 @@ include '../includes/sidebar.php';
             return normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : 'N/A';
         };
 
+        const formatAgentType = (rawType) => {
+            const normalizedType = (rawType || '').toLowerCase();
+            if (normalizedType === 'sub_agent') return 'Sub agent';
+            if (normalizedType === 'agent') return 'Agent';
+            return normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : 'Agent';
+        };
+
         const isCorporateLike = (rawType) => {
             const normalizedType = (rawType || '').toLowerCase();
             return normalizedType === 'corporate' || normalizedType === 'obligee';
@@ -706,7 +786,10 @@ include '../includes/sidebar.php';
         clients.forEach(client => {
             const normalizedType = (client.client_type || '').toLowerCase();
             const typeClass = normalizedType || 'corporate';
-            const typeText = formatClientType(client.client_type);
+            const agentType = (client.agent_type || 'agent').toLowerCase();
+            const typeText = isAgentsMode ? formatAgentType(client.agent_type) : formatClientType(client.client_type);
+            const agentTypeClass = agentType || 'agent';
+            const mainAgentName = (client.head_agent_name || '').trim();
             const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
             const submittedBranch = client.submitted_by_branch || 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
@@ -716,20 +799,34 @@ include '../includes/sidebar.php';
             const activityStatus = client.activity_status_display || 'Active';
             const activityStatusClass = normalizeActivityStatusClass(client.activity_status_class || 'active');
             const activityUpdatedAt = client.activity_status_updated_display || 'N/A';
+            const mainAgentText = isAgentsMode
+                ? (agentType === 'sub_agent' ? (mainAgentName !== '' ? mainAgentName : 'N/A') : 'None')
+                : '';
+            const typeCellHtml = isAgentsMode
+                ? `<span class="type-badge ${escapeHtml(agentTypeClass)}">${escapeHtml(typeText)}</span>`
+                : `<span class="type-badge ${typeClass}">${escapeHtml(typeText)}</span>`;
+            const mainAgentCellHtml = isAgentsMode
+                ? `<span class="agent-main-agent${mainAgentText === 'None' ? ' is-none' : ''}">${escapeHtml(mainAgentText)}</span>`
+                : '';
 
             const row = document.createElement('tr');
             row.classList.add('row-enter');
             row.dataset.clientId = client.client_id;
             row.dataset.clientType = client.client_type || '';
+            row.dataset.agentType = client.agent_type || '';
+            row.dataset.headAgentName = client.head_agent_name || '';
+            row.dataset.contactNumber = contactNumber;
+            row.dataset.email = client.email || '';
             row.style.animationDelay = `${Math.min(tbody.children.length * 35, 220)}ms`;
             row.innerHTML = `
                 <td class="col-checkbox"><input type="checkbox" class="row-select" data-client-id="${client.client_id}"></td>
                 <td class="col-ref"><span class="ref-badge">${escapeHtml(client.reference_code || 'N/A')}</span></td>
                 <td class="col-name">${escapeHtml(displayName)}</td>
                 <td class="col-owner">${escapeHtml(submittedBranch)}</td>
-                <td class="col-type"><span class="type-badge ${typeClass}">${escapeHtml(typeText)}</span></td>
+                <td class="col-type">${typeCellHtml}</td>
+                ${isAgentsMode ? `<td class="col-main-agent">${mainAgentCellHtml}</td>` : ''}
                 <td class="col-contact">${escapeHtml(contactNumber)}</td>
-                <td class="col-email">${escapeHtml(client.email || 'N/A')}</td>
+                ${isAgentsMode ? '' : `<td class="col-email">${escapeHtml(client.email || 'N/A')}</td>`}
                 <td class="col-verified">${escapeHtml(submittedByName)}</td>
                 <td class="col-activity">
                     <div class="activity-cell">
@@ -901,13 +998,22 @@ include '../includes/sidebar.php';
     }
 
     // Load clients on page load
-    document.addEventListener('DOMContentLoaded', () => loadClients(1));
+    document.addEventListener('DOMContentLoaded', () => {
+        const filterType = document.getElementById('filterType');
+        if (filterType && initialTypeFilter) {
+            filterType.value = initialTypeFilter;
+        }
+
+        loadClients(1);
+    });
 
     // Get client data from row
     function getClientDataFromRow(row) {
         const cells = row.querySelectorAll('td');
         const displayName = cells[2].textContent.trim();
         const nameParts = displayName.split(' ');
+        const agentType = (row.dataset.agentType || '').trim();
+        const headAgentName = (row.dataset.headAgentName || '').trim();
         return {
             clientId: row.dataset.clientId,
             refCode: cells[1].textContent.trim(),
@@ -915,9 +1021,11 @@ include '../includes/sidebar.php';
             lastName: nameParts.length > 1 ? nameParts[nameParts.length - 1] : '',
             displayName: displayName,
             submittedBranch: cells[3].textContent.trim(),
-            type: cells[4].textContent.trim(),
-            contact: cells[5].textContent.trim(),
-            email: cells[6].textContent.trim()
+            type: agentType || cells[4].textContent.trim(),
+            agentType: agentType,
+            headAgentName: headAgentName,
+            contact: (row.dataset.contactNumber || cells[5]?.textContent || '').trim(),
+            email: (row.dataset.email || (isAgentsMode ? '' : cells[6]?.textContent || '')).trim()
         };
     }
 
@@ -999,7 +1107,19 @@ include '../includes/sidebar.php';
             document.getElementById('viewClientId').value = client.client_id || '';
             document.getElementById('viewRefCode').value = client.reference_code || '';
             document.getElementById('viewClientNumber').value = client.client_number || '';
-            document.getElementById('viewClientType').value = client.client_type || 'individual';
+            if (isAgentsMode) {
+                const viewAgentTypeField = document.getElementById('viewAgentType');
+                const viewHeadAgentField = document.getElementById('viewHeadAgentName');
+                if (viewAgentTypeField) {
+                    const agentType = (client.agent_type || 'agent').toLowerCase();
+                    viewAgentTypeField.value = agentType === 'sub_agent' ? 'Sub agent' : 'Agent';
+                }
+                if (viewHeadAgentField) {
+                    viewHeadAgentField.value = client.head_agent_name || 'None';
+                }
+            } else {
+                document.getElementById('viewClientType').value = client.client_type || 'individual';
+            }
             const viewVerificationStatusEl = document.getElementById('viewVerificationStatus');
             if (viewVerificationStatusEl) {
                 viewVerificationStatusEl.value = client.verification_status || 'pending';
@@ -1054,7 +1174,26 @@ include '../includes/sidebar.php';
 
             document.getElementById('editClientId').value = client.client_id || '';
             document.getElementById('editRefCode').value = client.reference_code || '';
-            document.getElementById('editClientType').value = client.client_type || 'individual';
+            if (isAgentsMode) {
+                const clientTypeField = document.getElementById('editClientType');
+                if (clientTypeField) {
+                    clientTypeField.value = client.client_type || 'individual';
+                }
+
+                const agentTypeField = document.getElementById('editAgentType');
+                if (agentTypeField) {
+                    agentTypeField.value = (client.agent_type || 'agent').toLowerCase();
+                }
+
+                const headAgentField = document.getElementById('editHeadAgentName');
+                if (headAgentField) {
+                    headAgentField.value = client.head_agent_name || '';
+                }
+
+                syncEditAgentFields();
+            } else {
+                document.getElementById('editClientType').value = client.client_type || 'individual';
+            }
             document.getElementById('editFirstName').value = client.first_name || fallbackName;
             document.getElementById('editMiddleName').value = client.middle_name || '';
             document.getElementById('editLastName').value = client.last_name || '';
@@ -1101,6 +1240,21 @@ include '../includes/sidebar.php';
         formData.append('address', document.getElementById('editAddress').value.trim());
         formData.append('activityStatus', document.getElementById('editActivityStatus').value.trim());
         formData.append('clientType', document.getElementById('editClientType').value);
+        if (isAgentsMode) {
+            const agentTypeField = document.getElementById('editAgentType');
+            const headAgentField = document.getElementById('editHeadAgentName');
+            const agentType = agentTypeField ? agentTypeField.value : 'agent';
+            const headAgentName = headAgentField ? headAgentField.value.trim() : '';
+
+            if (agentType === 'sub_agent' && headAgentName === '') {
+                createToast('error', 'Validation Error', 'Head Agent Name is required for Sub agent.', 'toastContainer');
+                setButtonBusy(saveBtn, false);
+                return;
+            }
+
+            formData.append('agentType', agentType);
+            formData.append('headAgentName', headAgentName);
+        }
 
         fetch('../handlers/client.php', {
             method: 'POST',
@@ -1254,6 +1408,12 @@ include '../includes/sidebar.php';
     }
 
     document.getElementById('saveBtn').addEventListener('click', saveClientChanges);
+    if (isAgentsMode) {
+        const agentTypeField = document.getElementById('editAgentType');
+        if (agentTypeField) {
+            agentTypeField.addEventListener('change', syncEditAgentFields);
+        }
+    }
 
     window.addEventListener('click', function(event) {
         if (event.target === editModal) {
@@ -1309,7 +1469,9 @@ include '../includes/sidebar.php';
     let exportData = [];
     let exportScopeLabel = `Filtered ${recordLabelPlural}`;
 
-    const exportHeaders = ['Ref Code', `Business / ${recordTitleCaseSingular} Name`, 'Submitted Branch', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
+    const exportHeaders = isAgentsMode
+        ? ['Ref Code', `Business / ${recordTitleCaseSingular} Name`, 'Submitted Branch', 'Agent Type', 'Main Agent', 'Contact', 'Client Number', 'Submitted By']
+        : ['Ref Code', `Business / ${recordTitleCaseSingular} Name`, 'Submitted Branch', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
 
     function getFilterSummaryText() {
         const filters = getActiveFilters();
@@ -1323,11 +1485,18 @@ include '../includes/sidebar.php';
             return normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : 'N/A';
         };
 
+        const formatAgentType = (rawType) => {
+            const normalizedType = (rawType || '').toLowerCase();
+            if (normalizedType === 'sub_agent') return 'Sub agent';
+            if (normalizedType === 'agent') return 'Agent';
+            return normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : 'Agent';
+        };
+
         if (filters.search) {
             parts.push(`Search: ${filters.search}`);
         }
         if (filters.type) {
-            parts.push(`Type: ${formatClientType(filters.type)}`);
+            parts.push(`Type: ${isAgentsMode ? formatAgentType(filters.type) : formatClientType(filters.type)}`);
         }
         if (filters.activity) {
             const activityLabels = {
@@ -1357,13 +1526,24 @@ include '../includes/sidebar.php';
     function mapClientToExportRow(client) {
         const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
         const normalizedType = (client.client_type || '').toLowerCase();
+        const normalizedAgentType = (client.agent_type || '').toLowerCase();
+        const mainAgentName = (client.head_agent_name || '').trim();
         const isCorporateLike = normalizedType === 'corporate' || normalizedType === 'obligee';
         const submittedBranch = client.submitted_by_branch || 'N/A';
 
         let typeText = 'N/A';
-        if (normalizedType === 'individual') typeText = 'Individual';
-        if (normalizedType === 'corporate') typeText = 'Corporate';
-        if (normalizedType === 'obligee') typeText = 'Obligee';
+        if (isAgentsMode) {
+            if (normalizedAgentType === 'sub_agent') typeText = 'Sub agent';
+            else typeText = 'Agent';
+        } else {
+            if (normalizedType === 'individual') typeText = 'Individual';
+            if (normalizedType === 'corporate') typeText = 'Corporate';
+            if (normalizedType === 'obligee') typeText = 'Obligee';
+        }
+
+        const mainAgentText = isAgentsMode
+            ? (normalizedAgentType === 'sub_agent' && mainAgentName !== '' ? mainAgentName : 'None')
+            : 'N/A';
 
         const contactNumber = isCorporateLike
             ? (client.office_phone || 'N/A')
@@ -1374,11 +1554,30 @@ include '../includes/sidebar.php';
             displayName: displayName,
             submittedBranch: submittedBranch,
             type: typeText || 'N/A',
+            mainAgent: mainAgentText,
             contact: contactNumber,
             email: client.email || 'N/A',
             clientNumber: client.client_number || 'N/A',
             submittedBy: client.submitted_by_name || 'N/A'
         };
+    }
+
+    function getExportRowValues(row) {
+        const values = [
+            row.refCode,
+            row.displayName,
+            row.submittedBranch,
+            row.type
+        ];
+
+        if (isAgentsMode) {
+            values.push(row.mainAgent || 'N/A');
+            values.push(row.contact, row.clientNumber, row.submittedBy);
+            return values;
+        }
+
+        values.push(row.contact, row.email, row.clientNumber, row.submittedBy);
+        return values;
     }
 
     function getSelectedExportData() {
@@ -1458,14 +1657,9 @@ include '../includes/sidebar.php';
         
         data.forEach((row, index) => {
             html += `<tr class="${index % 2 === 0 ? 'is-even' : 'is-odd'}">`;
-            html += `<td>${row.refCode}</td>`;
-            html += `<td>${row.displayName}</td>`;
-            html += `<td>${row.submittedBranch}</td>`;
-            html += `<td>${row.type}</td>`;
-            html += `<td>${row.contact}</td>`;
-            html += `<td>${row.email}</td>`;
-            html += `<td>${row.clientNumber}</td>`;
-            html += `<td>${row.submittedBy}</td>`;
+            getExportRowValues(row).forEach(value => {
+                html += `<td>${value}</td>`;
+            });
             html += '</tr>';
         });
         
@@ -1506,16 +1700,7 @@ include '../includes/sidebar.php';
 
         // Add data rows
         exportData.forEach(row => {
-            const cells = [
-                row.refCode,
-                row.displayName,
-                row.submittedBranch,
-                row.type,
-                row.contact,
-                row.email,
-                row.clientNumber,
-                row.submittedBy
-            ].map(cell => {
+            const cells = getExportRowValues(row).map(cell => {
                 let content = cell.replace(/\s+/g, ' ').replace(/,/g, ';');
                 if (content.includes(',') || content.includes('"')) {
                     content = '"' + content.replace(/"/g, '""') + '"';

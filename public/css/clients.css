@@ -341,6 +341,18 @@ body.clients-page .content {
 .col-activity-updated { width: 9%; }
 .col-actions { width: 14%; min-width: 150px; text-align: center; }
 
+body.clients-page.agents-mode .col-ref { width: 8%; }
+body.clients-page.agents-mode .col-name { width: 13%; }
+body.clients-page.agents-mode .col-owner { width: 7%; }
+body.clients-page.agents-mode .col-type { width: 10%; }
+body.clients-page.agents-mode .col-main-agent { width: 13%; }
+body.clients-page.agents-mode .col-contact { width: 8%; }
+body.clients-page.agents-mode .col-email { width: 10%; }
+body.clients-page.agents-mode .col-verified { width: 9%; }
+body.clients-page.agents-mode .col-activity { width: 8%; }
+body.clients-page.agents-mode .col-activity-updated { width: 8%; }
+body.clients-page.agents-mode .col-actions { width: 13%; min-width: 130px; }
+
 .clients-table th.col-actions,
 .clients-table td.col-actions {
     white-space: nowrap;
@@ -559,6 +571,35 @@ body.clients-page.agents-mode .type-badge.individual {
     opacity: 1;
 }
 
+.type-badge.sub_agent {
+    background: #ede9fe;
+    color: #6d28d9;
+    opacity: 1;
+}
+
+body.clients-page.agents-mode .clients-table td.col-type {
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: clip;
+}
+
+body.clients-page.agents-mode .clients-table td.col-main-agent {
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: clip;
+    min-width: 0;
+}
+
+body.clients-page.agents-mode .agent-main-agent {
+    display: block;
+    color: var(--gray-500);
+    font-size: 0.7rem;
+    line-height: 1.2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .type-badge.muted {
     background: #f3f4f6;
     color: #4b5563;
@@ -775,6 +816,11 @@ body.clients-management-page .clients-table th.col-actions {
 body.clients-management-page .clients-table td {
     padding: 9px 10px;
     line-height: 1.22;
+}
+
+body.clients-management-page .clients-table th,
+body.clients-management-page .clients-table td {
+    text-align: center;
 }
 
 body.clients-management-page .clients-table td.col-owner,
@@ -1311,6 +1357,10 @@ body.clients-management-page .pagination-btn {
         display: none;
     }
 
+    .col-main-agent {
+        display: none;
+    }
+
     .col-owner {
         display: none;
     }
@@ -1403,6 +1453,7 @@ body.clients-management-page .pagination-btn {
     .clients-table td.col-owner,
     .clients-table td.col-contact,
     .clients-table td.col-email,
+    .clients-table td.col-main-agent,
     .clients-table td.col-verified,
     .clients-table td.col-type,
     .clients-table td.col-activity-updated {

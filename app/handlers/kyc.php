@@ -146,6 +146,37 @@ if (!function_exists('deleteAgentRowByClient')) {
     }
 }
 
+if (!function_exists('approvalQueueTableExists')) {
+    function approvalQueueTableExists($tableName) {
+        global $db;
+
+        static $exists = [];
+        $tableName = trim((string)$tableName);
+        if ($tableName === '') {
+            return false;
+        }
+
+        if (array_key_exists($tableName, $exists)) {
+            return $exists[$tableName];
+        }
+
+        $safeTable = preg_replace('/[^a-z0-9_]/i', '', $tableName);
+        if ($safeTable === '') {
+            $exists[$tableName] = false;
+            return false;
+        }
+
+        $result = $db->query("SHOW TABLES LIKE '" . $db->real_escape_string($safeTable) . "'");
+        $exists[$tableName] = $result && $result->num_rows > 0;
+
+        if ($result instanceof mysqli_result) {
+            $result->free();
+        }
+
+        return $exists[$tableName];
+    }
+}
+
 if (!function_exists('clientApprovalsTableExists')) {
     function clientApprovalsTableExists() {
         global $db;
@@ -155,33 +186,32 @@ if (!function_exists('clientApprovalsTableExists')) {
             return $exists;
         }
 
-        $result = $db->query("SHOW TABLES LIKE 'client_approvals'");
-        $exists = $result && $result->num_rows > 0;
-
-        if ($result instanceof mysqli_result) {
-            $result->free();
-        }
-
-        return $exists;
+        return approvalQueueTableExists('client_approvals');
     }
 }
 
 if (!function_exists('queueClientForApproval')) {
-    function queueClientForApproval($clientId) {
+    function queueClientForApproval($clientId, $clientClassification = 'client') {
         global $db;
 
         $clientId = intval($clientId);
-        if ($clientId <= 0 || !clientApprovalsTableExists()) {
+        $clientClassification = strtolower(trim((string)$clientClassification));
+        $queueTable = $clientClassification === 'agent' ? 'agent_approvals' : 'client_approvals';
+
+        if ($clientId <= 0 || !approvalQueueTableExists($queueTable)) {
             return;
         }
 
         $sql = "
-            INSERT INTO client_approvals (
+            INSERT INTO {$queueTable} (
                 client_id,
                 reference_code,
                 client_number,
                 client_classification,
                 client_type,
+                agent_type,
+                head_agent_name,
+                agent_branch,
                 display_name,
                 client_name,
                 first_name,
@@ -207,6 +237,9 @@ if (!function_exists('queueClientForApproval')) {
                 c.client_number,
                 COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client') AS client_classification,
                 c.client_type,
+                c.agent_type,
+                c.head_agent_name,
+                c.agent_branch,
                 COALESCE(
                     NULLIF(TRIM(c.client_name), ''),
                     NULLIF(TRIM(c.contact_person), ''),
@@ -238,6 +271,9 @@ if (!function_exists('queueClientForApproval')) {
                 client_number = VALUES(client_number),
                 client_classification = VALUES(client_classification),
                 client_type = VALUES(client_type),
+                agent_type = VALUES(agent_type),
+                head_agent_name = VALUES(head_agent_name),
+                agent_branch = VALUES(agent_branch),
                 display_name = VALUES(display_name),
                 client_name = VALUES(client_name),
                 first_name = VALUES(first_name),
@@ -269,15 +305,32 @@ if (!function_exists('queueClientForApproval')) {
     }
 }
 
-if (!function_exists('generateClientNumber')) {
-    function generateClientNumber() {
+if (!function_exists('generateRecordNumber')) {
+    function generateRecordNumber($prefix = 'CN', $includeDate = true) {
+        if (!$includeDate) {
+            $numericPart = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            return $prefix . '-' . $numericPart;
+        }
+
         try {
             $suffix = strtoupper(bin2hex(random_bytes(3)));
         } catch (Exception $e) {
             $suffix = strtoupper(substr(md5(uniqid((string)mt_rand(), true)), 0, 6));
         }
 
-        return 'CN-' . date('YmdHis') . '-' . $suffix;
+        return $prefix . '-' . date('YmdHis') . '-' . $suffix;
+    }
+}
+
+if (!function_exists('generateClientNumber')) {
+    function generateClientNumber() {
+        return generateRecordNumber('CN');
+    }
+}
+
+if (!function_exists('generateAgentNumber')) {
+    function generateAgentNumber() {
+        return generateRecordNumber('AG', false);
     }
 }
 
@@ -314,6 +367,27 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $clientClassification = ($classificationRaw === 'agent' && $clientType === 'individual')
         ? 'agent'
         : 'client';
+
+    $postedClientNumber = trim($_POST['clientNumber'] ?? '');
+    $resolvedClientNumber = $postedClientNumber !== ''
+        ? $postedClientNumber
+        : ($clientClassification === 'agent' ? generateAgentNumber() : generateClientNumber());
+
+    $individualOccupation = trim($_POST['occupation'] ?? '');
+    if ($clientClassification === 'agent' && $individualOccupation === '') {
+        $individualOccupation = 'Insurance Agent';
+    }
+
+    $agentTypeRaw = strtolower(trim($_POST['agentType'] ?? 'agent'));
+    $agentType = in_array($agentTypeRaw, ['agent', 'sub_agent'], true) ? $agentTypeRaw : 'agent';
+    $headAgentName = trim($_POST['headAgentName'] ?? '');
+    $agentBranch = trim($_POST['agentBranch'] ?? '');
+
+    if ($clientClassification !== 'agent') {
+        $agentType = null;
+        $headAgentName = null;
+        $agentBranch = null;
+    }
     
     // Map form field names to database field names (handling form field mismatches)
     $formData = [
@@ -331,7 +405,10 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'tin_number' => trim($_POST['tinNumber'] ?? ''),
         'occupation' => $isCorporateLike
             ? trim($_POST['corporateContactPerson'] ?? '')
-            : trim($_POST['occupation'] ?? ''),
+            : $individualOccupation,
+        'agent_type' => $clientClassification === 'agent' ? $agentType : null,
+        'head_agent_name' => $clientClassification === 'agent' && $agentType === 'sub_agent' ? $headAgentName : null,
+        'agent_branch' => $clientClassification === 'agent' ? $agentBranch : null,
         'company' => $isCorporateLike
             ? trim($_POST['corporateClientName'] ?? '')
             : trim($_POST['employer'] ?? $_POST['company'] ?? ''),
@@ -350,11 +427,16 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
     
     // Validation of required fields (excluding ref_code since it will be auto-generated)
-    $required = ['client_type', 'id_type', 'id_number', 'email', 'address'];
+    $required = ['client_type', 'email', 'address'];
     if ($isCorporateLike) {
         $required = array_merge($required, ['company', 'occupation', 'mobile']);
     } else {
-        $required = array_merge($required, ['last_name', 'first_name', 'birthdate', 'occupation', 'mobile']);
+        $required = array_merge($required, ['last_name', 'first_name', 'birthdate', 'mobile']);
+        if ($clientClassification === 'agent') {
+            $required = array_merge($required, ['occupation', 'agent_branch']);
+        } else {
+            $required = array_merge($required, ['occupation', 'id_type', 'id_number']);
+        }
     }
 
     $postedBusinessType = trim($_POST['businessType'] ?? '');
@@ -378,6 +460,20 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($response);
         exit;
     }
+
+    if ($clientClassification === 'agent') {
+        if ($agentBranch === '') {
+            $response['message'] = 'Branch is required for agents';
+            echo json_encode($response);
+            exit;
+        }
+
+        if ($agentType === 'sub_agent' && $headAgentName === '') {
+            $response['message'] = 'Head Agent Name is required for Sub agent';
+            echo json_encode($response);
+            exit;
+        }
+    }
     
     // If no reference code provided, generate a unique one
     if (empty($userProvidedRefCode)) {
@@ -385,7 +481,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Check if client already exists using provided/generated reference code
-    $existingClient = fetchOne("SELECT client_id, submitted_by FROM clients WHERE reference_code = ?", [$formData['ref_code']]);
+    $existingClient = fetchOne("SELECT client_id, submitted_by, client_number FROM clients WHERE reference_code = ?", [$formData['ref_code']]);
     
     // Prepare client data for insertion/update based on type
     if ($clientType === 'individual') {
@@ -399,14 +495,17 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'date_of_birth' => $formData['birthdate'],
             'gender' => $formData['gender'],
             'nationality' => $formData['nationality'],
-            'id_type' => $formData['id_type'],
-            'id_number' => $formData['id_number'],
+            'id_type' => $clientClassification === 'agent' ? ($formData['id_type'] ?: null) : $formData['id_type'],
+            'id_number' => $clientClassification === 'agent' ? ($formData['id_number'] ?: null) : $formData['id_number'],
             'tin_number' => $formData['tin_number'] ?: null,
             'salutation' => trim($_POST['salutation'] ?? ''),
             'client_since' => trim($_POST['clientSince'] ?? ''),
             'ap_sl_code' => trim($_POST['apSlCode'] ?? ''),
             'ar_sl_code' => trim($_POST['arSlCode'] ?? $_POST['apSlCode2'] ?? ''),
-            'occupation' => $formData['occupation'],
+            'occupation' => $clientClassification === 'agent' ? ($formData['occupation'] ?: 'Insurance Agent') : $formData['occupation'],
+            'agent_type' => $clientClassification === 'agent' ? $agentType : null,
+            'head_agent_name' => $clientClassification === 'agent' && $agentType === 'sub_agent' ? $headAgentName : null,
+            'agent_branch' => $clientClassification === 'agent' ? $agentBranch : null,
             'company_name' => $formData['company'],
             'office_phone' => trim($_POST['officePhone'] ?? ''),
             'spouse_name' => trim($_POST['spouseName'] ?? ''),
@@ -450,6 +549,9 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'contact_person' => $formData['occupation'],
             'gender' => $formData['gender'],
             'nationality' => $formData['nationality'],
+            'agent_type' => null,
+            'head_agent_name' => null,
+            'agent_branch' => null,
             'verification_status' => 'pending'
         ];
     }
@@ -463,12 +565,16 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $clientUpdateData['submitted_at'] = date('Y-m-d H:i:s');
         }
 
+        if (empty($existingClient['client_number']) && $resolvedClientNumber !== '') {
+            $clientUpdateData['client_number'] = $resolvedClientNumber;
+        }
+
         update('clients', $clientUpdateData, 'client_id = ?', [$clientId]);
     } else {
         // Create new client
         $clientInsertData = array_merge([
             'reference_code' => $formData['ref_code'],
-            'client_number' => generateClientNumber(),
+            'client_number' => $resolvedClientNumber,
             'submitted_by' => intval($_SESSION['user_id']),
             'submitted_at' => date('Y-m-d H:i:s'),
         ], $clientUpdateData);
@@ -490,7 +596,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             deleteAgentRowByClient($clientId);
         }
 
-        queueClientForApproval($clientId);
+        queueClientForApproval($clientId, $clientClassification);
     }
     
     // Create/Update KYC verification record
@@ -618,6 +724,27 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         ? 'agent'
         : 'client';
 
+    $postedClientNumber = trim($_POST['clientNumber'] ?? '');
+    $resolvedClientNumber = $postedClientNumber !== ''
+        ? $postedClientNumber
+        : ($clientClassification === 'agent' ? generateAgentNumber() : generateClientNumber());
+
+    $individualOccupation = trim($_POST['occupation'] ?? '');
+    if ($clientClassification === 'agent' && $individualOccupation === '') {
+        $individualOccupation = 'Insurance Agent';
+    }
+
+    $agentTypeRaw = strtolower(trim($_POST['agentType'] ?? 'agent'));
+    $agentType = in_array($agentTypeRaw, ['agent', 'sub_agent'], true) ? $agentTypeRaw : 'agent';
+    $headAgentName = trim($_POST['headAgentName'] ?? '');
+    $agentBranch = trim($_POST['agentBranch'] ?? '');
+
+    if ($clientClassification !== 'agent') {
+        $agentType = null;
+        $headAgentName = null;
+        $agentBranch = null;
+    }
+
     // Keep kyc_verifications values in a unified shape so get_kyc/load draft works for both client types.
     $formData = [
         'ref_code' => $userProvidedRefCode,
@@ -634,7 +761,10 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'tin_number' => trim($_POST['tinNumber'] ?? ''),
         'occupation' => $isCorporateLike
             ? trim($_POST['corporateContactPerson'] ?? '')
-            : trim($_POST['occupation'] ?? ''),
+            : $individualOccupation,
+        'agent_type' => $clientClassification === 'agent' ? $agentType : null,
+        'head_agent_name' => $clientClassification === 'agent' && $agentType === 'sub_agent' ? $headAgentName : null,
+        'agent_branch' => $clientClassification === 'agent' ? $agentBranch : null,
         'company' => $isCorporateLike
             ? trim($_POST['corporateClientName'] ?? '')
             : trim($_POST['employer'] ?? $_POST['company'] ?? ''),
@@ -684,6 +814,9 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'contact_person' => trim($_POST['corporateContactPerson'] ?? '') ?: null,
             'gender' => trim($_POST['corporateGender'] ?? '') ?: null,
             'nationality' => trim($_POST['nationality'] ?? '') ?: null,
+            'agent_type' => null,
+            'head_agent_name' => null,
+            'agent_branch' => null,
             'verification_status' => 'draft'
         ];
     } else {
@@ -706,6 +839,9 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'id_number' => $formData['id_number'] ?: null,
             'tin_number' => $formData['tin_number'] ?: null,
             'occupation' => $formData['occupation'] ?: null,
+            'agent_type' => $clientClassification === 'agent' ? $agentType : null,
+            'head_agent_name' => $clientClassification === 'agent' && $agentType === 'sub_agent' ? $headAgentName : null,
+            'agent_branch' => $clientClassification === 'agent' ? $agentBranch : null,
             'company_name' => $formData['company'] ?: null,
             'ap_sl_code' => trim($_POST['apSlCode'] ?? '') ?: null,
             'ar_sl_code' => trim($_POST['arSlCode'] ?? $_POST['apSlCode2'] ?? '') ?: null,
@@ -727,7 +863,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Ensure a client exists for this ref_code (kyc_verifications.client_id is NOT NULL)
     $clientId = 0;
-    $existingClient = fetchOne("SELECT client_id, submitted_by FROM clients WHERE reference_code = ?", [$formData['ref_code']]);
+    $existingClient = fetchOne("SELECT client_id, submitted_by, client_number FROM clients WHERE reference_code = ?", [$formData['ref_code']]);
     if ($existingClient) {
         $clientId = intval($existingClient['client_id']);
 
@@ -736,11 +872,15 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $clientUpdateData['submitted_at'] = date('Y-m-d H:i:s');
         }
 
+        if (empty($existingClient['client_number']) && $resolvedClientNumber !== '') {
+            $clientUpdateData['client_number'] = $resolvedClientNumber;
+        }
+
         update('clients', $clientUpdateData, 'client_id = ?', [$clientId]);
     } else {
         $clientInsert = insert('clients', array_merge([
             'reference_code' => $formData['ref_code'],
-            'client_number' => generateClientNumber(),
+            'client_number' => $resolvedClientNumber,
             'submitted_by' => intval($_SESSION['user_id']),
             'submitted_at' => date('Y-m-d H:i:s')
         ], $clientUpdateData));

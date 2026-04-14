@@ -43,6 +43,38 @@ function tableExists(string $tableName): bool {
     return $exists;
 }
 
+function columnExists(string $tableName, string $columnName): bool {
+    global $db;
+
+    if (!$db instanceof mysqli || trim($tableName) === '' || trim($columnName) === '') {
+        return false;
+    }
+
+    $stmt = $db->prepare(
+        'SELECT 1
+         FROM information_schema.columns
+         WHERE table_schema = DATABASE()
+           AND table_name = ?
+           AND column_name = ?
+         LIMIT 1'
+    );
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('ss', $tableName, $columnName);
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return false;
+    }
+
+    $result = $stmt->get_result();
+    $exists = $result instanceof mysqli_result && $result->num_rows > 0;
+    $stmt->close();
+
+    return $exists;
+}
+
 function e($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
@@ -130,6 +162,14 @@ $workflowQuickAction = [
     'label' => 'KYC Queue',
 ];
 
+$clientsManagementUrl = 'clients.php?classification=client';
+$clientDashboardLinks = [
+    'total' => $clientsManagementUrl,
+    'obligee' => $clientsManagementUrl . '&type=obligee',
+    'individual' => $clientsManagementUrl . '&type=individual',
+    'corporate' => $clientsManagementUrl . '&type=corporate',
+];
+
 if ($isHeadOfficeUser) {
     $workflowQuickAction = [
         'href' => 'client-approvals.php',
@@ -178,36 +218,60 @@ $newThisWeekRow = [];
 $clientTypeSplit = [];
 $pipeline = [];
 $recentActivity = [];
+$clientsHasClassification = columnExists('clients', 'client_classification');
+$liveClientsClassificationExpr = $clientsHasClassification
+    ? "COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client')"
+    : "'client'";
+$liveClientsApprovalJoinSql = $hasClientApprovalsTable ? ' LEFT JOIN client_approvals ca ON ca.reference_code = c.reference_code' : '';
+$liveClientsApprovalFilterSql = $hasClientApprovalsTable ? " AND (ca.approval_status IS NULL OR ca.approval_status = 'approved')" : '';
+$liveClientsWherePrefix = $clientsScopeWhere === '' ? 'WHERE' : ' AND';
 
 if ($hasClientApprovalsTable) {
     $stats = fetchOne("SELECT
-        COUNT(*) AS total_clients,
-        SUM(ca.client_type = 'obligee') AS obligee_count
-    FROM client_approvals ca
-    LEFT JOIN users su ON su.user_id = ca.submitted_by
-    {$approvalsScopeWhere}", $approvalsScopeParams) ?? [];
+        COUNT(DISTINCT c.client_id) AS total_clients,
+        SUM(c.client_type = 'obligee') AS obligee_count
+    FROM clients c
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$liveClientsApprovalJoinSql}
+    {$clientsScopeWhere}
+    {$liveClientsWherePrefix} 1=1
+    AND {$liveClientsClassificationExpr} = 'client'
+    {$liveClientsApprovalFilterSql}", $clientsScopeParams) ?? [];
 
     $obligeeTodayRow = fetchOne("SELECT
-        COUNT(*) AS obligee_today
-    FROM client_approvals ca
-    LEFT JOIN users su ON su.user_id = ca.submitted_by
-    {$approvalsScopeWhere}
-    " . ($approvalsScopeWhere === '' ? 'WHERE' : ' AND') . " ca.client_type = 'obligee' AND DATE(COALESCE(ca.submitted_at, ca.created_at)) = CURDATE()", $approvalsScopeParams) ?? [];
+        COUNT(DISTINCT c.client_id) AS obligee_today
+    FROM clients c
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$liveClientsApprovalJoinSql}
+    {$clientsScopeWhere}
+    {$liveClientsWherePrefix} 1=1
+    AND {$liveClientsClassificationExpr} = 'client'
+    AND c.client_type = 'obligee'
+    AND DATE(c.created_at) = CURDATE()
+    {$liveClientsApprovalFilterSql}", $clientsScopeParams) ?? [];
 
     $newThisWeekRow = fetchOne("SELECT
-        COUNT(*) AS new_this_week
-    FROM client_approvals ca
-    LEFT JOIN users su ON su.user_id = ca.submitted_by
-    {$approvalsScopeWhere}
-    " . ($approvalsScopeWhere === '' ? 'WHERE' : ' AND') . " COALESCE(ca.submitted_at, ca.created_at) >= DATE_SUB(NOW(), INTERVAL 7 DAY)", $approvalsScopeParams) ?? [];
+        COUNT(DISTINCT c.client_id) AS new_this_week
+    FROM clients c
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$liveClientsApprovalJoinSql}
+    {$clientsScopeWhere}
+    {$liveClientsWherePrefix} 1=1
+    AND {$liveClientsClassificationExpr} = 'client'
+    AND COALESCE(c.submitted_at, c.created_at) >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    {$liveClientsApprovalFilterSql}", $clientsScopeParams) ?? [];
 
     $clientTypeSplit = fetchOne("SELECT
-        SUM(ca.client_type = 'individual') AS individual_count,
-        SUM(ca.client_type = 'corporate') AS corporate_count,
-        SUM(ca.client_type = 'obligee') AS obligee_count
-    FROM client_approvals ca
-    LEFT JOIN users su ON su.user_id = ca.submitted_by
-    {$approvalsScopeWhere}", $approvalsScopeParams) ?? [];
+        SUM(c.client_type = 'individual') AS individual_count,
+        SUM(c.client_type = 'corporate') AS corporate_count,
+        SUM(c.client_type = 'obligee') AS obligee_count
+    FROM clients c
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$liveClientsApprovalJoinSql}
+    {$clientsScopeWhere}
+    {$liveClientsWherePrefix} 1=1
+    AND {$liveClientsClassificationExpr} = 'client'
+    {$liveClientsApprovalFilterSql}", $clientsScopeParams) ?? [];
 
     $pipeline = fetchOne("SELECT
         SUM(ca.approval_status = 'pending') AS pending_count,
@@ -218,26 +282,24 @@ if ($hasClientApprovalsTable) {
     {$approvalsScopeWhere}", $approvalsScopeParams) ?? [];
 
     $recentActivity = fetchAll("SELECT
-        ca.client_id,
-        ca.reference_code,
-        ca.client_type,
-        ca.client_classification,
-        ca.approval_status AS activity_status,
-        COALESCE(
-            NULLIF(ca.display_name, ''),
-            NULLIF(ca.client_name, ''),
-            NULLIF(TRIM(CONCAT(COALESCE(ca.first_name, ''), ' ', COALESCE(ca.last_name, ''))), ''),
-            ca.reference_code
-        ) AS display_name,
-        COALESCE(ca.submitted_at, c.submitted_at, c.created_at, ca.created_at) AS action_time,
+        c.client_id,
+        c.reference_code,
+        c.client_type,
+        c.client_classification,
+        c.verification_status AS activity_status,
+        COALESCE(NULLIF(c.client_name, ''), TRIM(CONCAT(c.first_name, ' ', c.last_name))) AS display_name,
+        COALESCE(c.submitted_at, c.created_at) AS action_time,
         COALESCE(su.full_name, 'System') AS submitted_by_name,
-        COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''), 'UNASSIGNED') AS submitted_by_branch
-    FROM client_approvals ca
-    LEFT JOIN clients c ON c.client_id = ca.client_id
-    LEFT JOIN users su ON su.user_id = ca.submitted_by
-    {$approvalsScopeWhere}
-    ORDER BY COALESCE(ca.submitted_at, c.submitted_at, c.created_at, ca.created_at) DESC
-    LIMIT 6", $approvalsScopeParams);
+        COALESCE(NULLIF(TRIM(su.branch), ''), 'UNASSIGNED') AS submitted_by_branch
+    FROM clients c
+    LEFT JOIN users su ON su.user_id = c.submitted_by
+    {$liveClientsApprovalJoinSql}
+    {$clientsScopeWhere}
+    {$liveClientsWherePrefix} 1=1
+    AND {$liveClientsClassificationExpr} = 'client'
+    {$liveClientsApprovalFilterSql}
+    ORDER BY COALESCE(c.submitted_at, c.created_at) DESC
+    LIMIT 6", $clientsScopeParams);
 } else {
     $stats = fetchOne("SELECT
         COUNT(*) AS total_clients,
@@ -312,9 +374,9 @@ $pipelinePending = intval($pipeline['pending_count'] ?? 0);
 $pipelineResubmit = intval($pipeline['resubmit_count'] ?? 0);
 $pipelineApproved = intval($pipeline['approved_count'] ?? 0);
 $pipelineTotal = max(1, $pipelinePending + $pipelineResubmit + $pipelineApproved);
-$dashboardDataSourceLabel = $hasClientApprovalsTable ? 'Approvals Queue' : 'Legacy Clients';
-$dashboardDataSourceClass = $hasClientApprovalsTable ? 'is-approvals' : 'is-legacy';
-$dashboardDataSourceIcon = $hasClientApprovalsTable ? 'bi-diagram-3' : 'bi-database';
+$dashboardDataSourceLabel = 'Live Clients';
+$dashboardDataSourceClass = 'is-live';
+$dashboardDataSourceIcon = 'bi-people-fill';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -385,38 +447,38 @@ include '../includes/sidebar.php';
 
         <!-- Stats Row -->
         <div class="stats-row">
-            <div class="stat-card total">
+            <a class="stat-card total" href="<?php echo e($clientDashboardLinks['total']); ?>" aria-label="View total clients">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($totalClients)); ?></div>
                     <div class="stat-label">Total Clients</div>
                     <div class="stat-change up"><i class="bi bi-arrow-up-short"></i> +<?php echo e($newThisWeek); ?> this week</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-            </div>
-            <div class="stat-card obligee">
+            </a>
+            <a class="stat-card obligee" href="<?php echo e($clientDashboardLinks['obligee']); ?>" aria-label="View obligee clients">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($obligeeCount)); ?></div>
                     <div class="stat-label">Obligee Clients</div>
                     <div class="stat-change up"><i class="bi bi-shield-check"></i> <?php echo e($obligeeToday); ?> obligee added today</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
-            </div>
-            <div class="stat-card individual">
+            </a>
+            <a class="stat-card individual" href="<?php echo e($clientDashboardLinks['individual']); ?>" aria-label="View individual clients">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($individualCount)); ?></div>
                     <div class="stat-label">Individual Clients</div>
                     <div class="stat-change up"><i class="bi bi-person"></i> <?php echo e($individualPct); ?>% of total clients</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-person-fill"></i></div>
-            </div>
-            <div class="stat-card corporate">
+            </a>
+            <a class="stat-card corporate" href="<?php echo e($clientDashboardLinks['corporate']); ?>" aria-label="View corporate clients">
                 <div class="stat-info">
                     <div class="stat-value"><?php echo e(number_format($corporateCount)); ?></div>
                     <div class="stat-label">Corporate Clients</div>
                     <div class="stat-change up"><i class="bi bi-building"></i> <?php echo e($corporatePct); ?>% of total clients</div>
                 </div>
                 <div class="stat-icon"><i class="bi bi-building-fill"></i></div>
-            </div>
+            </a>
         </div>
 
         <section class="dashboard-grid">

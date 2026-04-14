@@ -12,8 +12,28 @@ session_start();
 
 $response = ['success' => false, 'message' => ''];
 
-if (!function_exists('agentsTableExists')) {
-    function agentsTableExists() {
+if (!function_exists('approvedAgentsTableExists')) {
+    function approvedAgentsTableExists() {
+        global $db;
+
+        static $exists = null;
+        if ($exists !== null) {
+            return $exists;
+        }
+
+        $result = $db->query("SHOW TABLES LIKE 'approved_agents'");
+        $exists = $result && $result->num_rows > 0;
+
+        if ($result instanceof mysqli_result) {
+            $result->free();
+        }
+
+        return $exists;
+    }
+}
+
+if (!function_exists('legacyAgentsTableExists')) {
+    function legacyAgentsTableExists() {
         global $db;
 
         static $exists = null;
@@ -32,30 +52,92 @@ if (!function_exists('agentsTableExists')) {
     }
 }
 
-if (!function_exists('syncAgentRowFromClient')) {
-    function syncAgentRowFromClient($clientId) {
+if (!function_exists('agentStorageTableName')) {
+    function agentStorageTableName(): string {
+        if (approvedAgentsTableExists()) {
+            return 'approved_agents';
+        }
+
+        if (legacyAgentsTableExists()) {
+            return 'agents';
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('agentApprovalsTableExists')) {
+    function agentApprovalsTableExists() {
+        global $db;
+
+        static $exists = null;
+        if ($exists !== null) {
+            return $exists;
+        }
+
+        $result = $db->query("SHOW TABLES LIKE 'agent_approvals'");
+        $exists = $result && $result->num_rows > 0;
+
+        if ($result instanceof mysqli_result) {
+            $result->free();
+        }
+
+        return $exists;
+    }
+}
+
+if (!function_exists('approvalQueueTableForClassification')) {
+    function approvalQueueTableForClassification($clientClassification) {
+        $classification = strtolower(trim((string)$clientClassification));
+
+        if ($classification === 'agent') {
+            if (agentApprovalsTableExists()) {
+                return 'agent_approvals';
+            }
+
+            if (clientApprovalsTableExists()) {
+                return 'client_approvals';
+            }
+
+            return '';
+        }
+
+        if (clientApprovalsTableExists()) {
+            return 'client_approvals';
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('syncApprovedAgentRowFromClient')) {
+    function syncApprovedAgentRowFromClient($clientId) {
         global $db;
 
         $clientId = intval($clientId);
-        if ($clientId <= 0 || !agentsTableExists()) {
+        $agentTable = agentStorageTableName();
+        if ($clientId <= 0 || $agentTable === '') {
             return;
         }
 
         $includeActivityColumns = clientActivityHasColumn($db, 'clients', 'activity_status')
             && clientActivityHasColumn($db, 'clients', 'activity_status_updated_at')
-            && clientActivityHasColumn($db, 'agents', 'activity_status')
-            && clientActivityHasColumn($db, 'agents', 'activity_status_updated_at');
+            && clientActivityHasColumn($db, $agentTable, 'activity_status')
+            && clientActivityHasColumn($db, $agentTable, 'activity_status_updated_at');
 
         $activityInsertColumns = $includeActivityColumns ? ",\n                activity_status,\n                activity_status_updated_at" : '';
         $activitySelectColumns = $includeActivityColumns ? ",\n                c.activity_status,\n                c.activity_status_updated_at" : '';
         $activityUpdateColumns = $includeActivityColumns ? ",\n                activity_status = VALUES(activity_status),\n                activity_status_updated_at = VALUES(activity_status_updated_at)" : '';
 
         $sql = "
-            INSERT INTO agents (
+            INSERT INTO {$agentTable} (
                 client_id,
                 reference_code,
                 client_number,
                 client_type,
+                agent_type,
+                head_agent_name,
+                agent_branch,
                 client_name,
                 first_name,
                 middle_name,
@@ -74,6 +156,9 @@ if (!function_exists('syncAgentRowFromClient')) {
                 c.reference_code,
                 c.client_number,
                 c.client_type,
+                c.agent_type,
+                c.head_agent_name,
+                c.agent_branch,
                 c.client_name,
                 c.first_name,
                 c.middle_name,
@@ -93,6 +178,9 @@ if (!function_exists('syncAgentRowFromClient')) {
                 reference_code = VALUES(reference_code),
                 client_number = VALUES(client_number),
                 client_type = VALUES(client_type),
+                agent_type = VALUES(agent_type),
+                head_agent_name = VALUES(head_agent_name),
+                agent_branch = VALUES(agent_branch),
                 client_name = VALUES(client_name),
                 first_name = VALUES(first_name),
                 middle_name = VALUES(middle_name),
@@ -118,16 +206,17 @@ if (!function_exists('syncAgentRowFromClient')) {
     }
 }
 
-if (!function_exists('deleteAgentRowByClient')) {
-    function deleteAgentRowByClient($clientId) {
+if (!function_exists('deleteApprovedAgentRowByClient')) {
+    function deleteApprovedAgentRowByClient($clientId) {
         global $db;
 
         $clientId = intval($clientId);
-        if ($clientId <= 0 || !agentsTableExists()) {
+        $agentTable = agentStorageTableName();
+        if ($clientId <= 0 || $agentTable === '') {
             return;
         }
 
-        $stmt = $db->prepare("DELETE FROM agents WHERE client_id = ?");
+        $stmt = $db->prepare("DELETE FROM {$agentTable} WHERE client_id = ?");
         if (!$stmt) {
             return;
         }
@@ -175,13 +264,39 @@ if (!function_exists('clientRecordBranchSqlParts')) {
         global $db;
 
         $usersHasBranch = clientActivityHasColumn($db, 'users', 'branch');
-        $usingApprovalQueue = clientApprovalsTableExists();
+        $clientClassificationHasColumn = clientActivityHasColumn($db, 'clients', 'client_classification');
+        $clientQueueTable = approvalQueueTableForClassification('client');
+        $agentQueueTable = approvalQueueTableForClassification('agent');
 
         $branchJoinSql = ' LEFT JOIN users su ON c.submitted_by = su.user_id';
         $branchExpr = "NULLIF(TRIM(su.branch), '')";
 
-        if ($usersHasBranch && $usingApprovalQueue) {
-            $branchJoinSql .= ' LEFT JOIN client_approvals ca ON ca.reference_code = c.reference_code';
+        if ($usersHasBranch && $clientClassificationHasColumn) {
+            $clientQueueAlias = '';
+            $agentQueueAlias = '';
+
+            if ($clientQueueTable !== '') {
+                $branchJoinSql .= ' LEFT JOIN ' . $clientQueueTable . ' ca ON ca.reference_code = c.reference_code';
+                $clientQueueAlias = 'ca';
+                $agentQueueAlias = 'ca';
+            }
+
+            if ($agentQueueTable !== '' && $agentQueueTable !== $clientQueueTable) {
+                $branchJoinSql .= ' LEFT JOIN ' . $agentQueueTable . ' aa ON aa.reference_code = c.reference_code';
+                $agentQueueAlias = 'aa';
+            }
+
+            $classificationExpr = "COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client')";
+            $clientBranchExpr = $clientQueueAlias !== '' ? "NULLIF(TRIM({$clientQueueAlias}.submitted_by_branch), '')" : 'NULL';
+            $agentBranchExpr = $agentQueueAlias !== '' ? "NULLIF(TRIM({$agentQueueAlias}.submitted_by_branch), '')" : 'NULL';
+
+            $branchExpr = "COALESCE(
+                CASE WHEN {$classificationExpr} = 'agent' THEN {$agentBranchExpr} END,
+                CASE WHEN {$classificationExpr} <> 'agent' THEN {$clientBranchExpr} END,
+                NULLIF(TRIM(su.branch), '')
+            )";
+        } elseif ($usersHasBranch && $clientQueueTable !== '') {
+            $branchJoinSql .= ' LEFT JOIN ' . $clientQueueTable . ' ca ON ca.reference_code = c.reference_code';
             $branchExpr = "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))";
         }
 
@@ -256,21 +371,27 @@ if (!function_exists('clientRecordAccessibleByCurrentUser')) {
 }
 
 if (!function_exists('queueClientForApproval')) {
-    function queueClientForApproval($clientId) {
+    function queueClientForApproval($clientId, $clientClassification = 'client') {
         global $db;
 
         $clientId = intval($clientId);
-        if ($clientId <= 0 || !clientApprovalsTableExists()) {
+        $queueTable = approvalQueueTableForClassification($clientClassification);
+        if ($clientId <= 0 || $queueTable === '') {
             return;
         }
 
+        $classificationValue = strtolower(trim((string)$clientClassification)) === 'agent' ? 'agent' : 'client';
+
         $sql = "
-            INSERT INTO client_approvals (
+            INSERT INTO {$queueTable} (
                 client_id,
                 reference_code,
                 client_number,
                 client_classification,
                 client_type,
+                agent_type,
+                head_agent_name,
+                agent_branch,
                 display_name,
                 client_name,
                 first_name,
@@ -294,8 +415,11 @@ if (!function_exists('queueClientForApproval')) {
                 c.client_id,
                 c.reference_code,
                 c.client_number,
-                COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client') AS client_classification,
+                '{$classificationValue}' AS client_classification,
                 c.client_type,
+                c.agent_type,
+                c.head_agent_name,
+                c.agent_branch,
                 COALESCE(
                     NULLIF(TRIM(c.client_name), ''),
                     NULLIF(TRIM(c.contact_person), ''),
@@ -327,6 +451,9 @@ if (!function_exists('queueClientForApproval')) {
                 client_number = VALUES(client_number),
                 client_classification = VALUES(client_classification),
                 client_type = VALUES(client_type),
+                agent_type = VALUES(agent_type),
+                head_agent_name = VALUES(head_agent_name),
+                agent_branch = VALUES(agent_branch),
                 display_name = VALUES(display_name),
                 client_name = VALUES(client_name),
                 first_name = VALUES(first_name),
@@ -600,12 +727,12 @@ if ($action === 'add_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($clientId > 0) {
         if (($insertData['client_classification'] ?? 'client') === 'agent') {
-            syncAgentRowFromClient($clientId);
+            syncApprovedAgentRowFromClient($clientId);
         } else {
-            deleteAgentRowByClient($clientId);
+            deleteApprovedAgentRowByClient($clientId);
         }
 
-        queueClientForApproval($clientId);
+        queueClientForApproval($clientId, $insertData['client_classification'] ?? 'client');
     }
 
     $response['success'] = true;
@@ -644,6 +771,32 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($response);
         exit;
     }
+
+    $effectiveClassification = strtolower(trim($client['client_classification'] ?? 'client'));
+    $agentTypeInput = strtolower(trim($_POST['agentType'] ?? ''));
+    $headAgentName = trim($_POST['headAgentName'] ?? '');
+    $allowedAgentTypes = ['agent', 'sub_agent'];
+    $existingAgentType = strtolower(trim((string)($client['agent_type'] ?? 'agent')));
+
+    $agentType = null;
+    if ($effectiveClassification === 'agent') {
+        $agentType = in_array($agentTypeInput, $allowedAgentTypes, true)
+            ? $agentTypeInput
+            : ($existingAgentType !== '' ? $existingAgentType : 'agent');
+
+        if ($agentType === '') {
+            $agentType = 'agent';
+        }
+
+        if ($agentType === 'sub_agent' && $headAgentName === '') {
+            $response['message'] = 'Head Agent Name is required for Sub agent';
+            echo json_encode($response);
+            exit;
+        }
+
+        $clientType = 'individual';
+    }
+
     $activityUpdatedAt = date('Y-m-d H:i:s');
     
     // Update client
@@ -657,6 +810,12 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'full_address' => $address,
         'client_type' => $clientType
     ];
+
+    if ($effectiveClassification === 'agent') {
+        $updateData['client_type'] = 'individual';
+        $updateData['agent_type'] = $agentType;
+        $updateData['head_agent_name'] = $agentType === 'sub_agent' ? $headAgentName : null;
+    }
 
     if (clientActivityHasColumn($db, 'clients', 'activity_status')) {
         $updateData['activity_status'] = $activityStatus;
@@ -676,11 +835,10 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         clientActivityRefreshRow($db, 'clients', $clientId, 'client_id', true);
     }
 
-    $effectiveClassification = strtolower(trim($client['client_classification'] ?? 'client'));
     if ($effectiveClassification === 'agent') {
-        syncAgentRowFromClient($clientId);
+        syncApprovedAgentRowFromClient($clientId);
     } else {
-        deleteAgentRowByClient($clientId);
+        deleteApprovedAgentRowByClient($clientId);
     }
     
     $response['success'] = true;
@@ -709,7 +867,7 @@ else if ($action === 'delete_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    deleteAgentRowByClient($clientId);
+    deleteApprovedAgentRowByClient($clientId);
     
     // Delete client (will cascade delete related records)
     $db->query("DELETE FROM clients WHERE client_id = $clientId");
@@ -758,18 +916,14 @@ else if ($action === 'get_all_clients' && $_SERVER['REQUEST_METHOD'] === 'GET') 
     $currentUserId = intval($_SESSION['user_id'] ?? 0);
     $currentUserBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
     $usersHasBranch = clientActivityHasColumn($db, 'users', 'branch');
-    $usingApprovalQueue = clientApprovalsTableExists();
-
-    $query = "SELECT c.* FROM clients c";
     $branchJoinSql = '';
     $branchExpr = "NULLIF(TRIM(su.branch), '')";
+
     if ($usersHasBranch) {
-        $branchJoinSql = ' LEFT JOIN users su ON c.submitted_by = su.user_id';
-        if ($usingApprovalQueue) {
-            $branchJoinSql .= ' LEFT JOIN client_approvals ca ON ca.reference_code = c.reference_code';
-            $branchExpr = "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))";
-        }
+        [$branchJoinSql, $branchExpr] = clientRecordBranchSqlParts();
     }
+
+    $query = "SELECT c.* FROM clients c";
 
     $query .= $branchJoinSql . " WHERE 1=1";
     $params = [];
@@ -860,9 +1014,9 @@ else if ($action === 'update_status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $effectiveClassification = strtolower(trim($client['client_classification'] ?? 'client'));
     if ($effectiveClassification === 'agent') {
-        syncAgentRowFromClient($clientId);
+        syncApprovedAgentRowFromClient($clientId);
     } else {
-        deleteAgentRowByClient($clientId);
+        deleteApprovedAgentRowByClient($clientId);
     }
     
     $response['success'] = true;

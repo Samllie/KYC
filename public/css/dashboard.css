@@ -79,6 +79,12 @@
     color: #2e4c75;
 }
 
+.source-pill.is-live {
+    background: #eef7ff;
+    border-color: #c8ddff;
+    color: #245ea8;
+}
+
 .welcome-target {
     width: 210px;
     padding: 14px;
@@ -148,6 +154,17 @@
 
 .stat-card {
     border: 1px solid #dbe5df;
+}
+
+.stats-row .stat-card {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.stats-row .stat-card:focus-visible {
+    outline: 3px solid rgba(23, 99, 70, 0.28);
+    outline-offset: 3px;
 }
 
 .stat-card:nth-child(1) {

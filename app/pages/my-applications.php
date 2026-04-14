@@ -60,6 +60,37 @@ $isKycOfficerUser = $currentUserRoleNormalized === 'kyc_officer' && !$isHeadOffi
             color: #245ea8;
         }
 
+        .applications-table th.col-status,
+        .applications-table td.col-status {
+            width: 9%;
+            min-width: 96px;
+            text-align: center;
+        }
+
+        .applications-table th.col-actions,
+        .applications-table td.col-actions {
+            width: 8%;
+            min-width: 96px;
+            text-align: center;
+        }
+
+        .applications-table .status-badge {
+            padding: 3px 8px;
+            font-size: 0.68rem;
+        }
+
+        .applications-table .action-icon.action-resubmit {
+            padding: 4px 8px;
+            gap: 4px;
+            font-size: 0.72rem;
+            min-width: 0;
+        }
+
+        .applications-table th,
+        .applications-table td {
+            text-align: center;
+        }
+
         .remarks-cell {
             min-width: 340px;
             max-width: 560px;
@@ -336,7 +367,7 @@ $isKycOfficerUser = $currentUserRoleNormalized === 'kyc_officer' && !$isHeadOffi
         }
     </style>
 </head>
-<body class="clients-page">
+<body class="clients-page my-applications-page">
 <?php if (!$isKycOfficerUser): ?>
     <main class="denied-shell">
         <section class="denied-card">
@@ -395,7 +426,7 @@ include '../includes/sidebar.php';
         </div>
 
         <div class="table-wrapper">
-            <table class="clients-table">
+            <table class="clients-table applications-table">
                 <thead>
                     <tr>
                         <th class="col-ref">Ref Code</th>
@@ -582,6 +613,13 @@ include '../includes/sidebar.php';
         const date = new Date(String(value).replace(' ', 'T'));
         if (Number.isNaN(date.getTime())) return value;
         return date.toLocaleString();
+    }
+
+    function formatDateOnly(value) {
+        if (!value) return 'N/A';
+        const date = new Date(String(value).replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleDateString();
     }
 
     function formatType(value) {
@@ -883,7 +921,7 @@ include '../includes/sidebar.php';
                 <td class="col-name">${escapeHtml(row.display_name || row.client_name || 'N/A')}</td>
                 <td class="col-type"><span class="type-badge ${classificationBadgeClass(row.client_classification)}">${escapeHtml(formatClassification(row.client_classification))}</span></td>
                 <td class="col-type"><span class="type-badge ${typeBadgeClass(row.client_type)}">${escapeHtml(formatType(row.client_type))}</span></td>
-                <td class="col-owner">${escapeHtml(formatDateTime(row.submitted_at))}</td>
+                <td class="col-owner">${escapeHtml(formatDateOnly(row.submitted_at))}</td>
                 <td class="col-status"><span class="status-badge ${statusBadgeClass(statusAfter)}">${escapeHtml(statusAfter)}</span></td>
                 <td class="col-owner review-meta-cell">${escapeHtml(row.reviewed_by_name || 'N/A')}</td>
                 <td class="col-owner review-meta-cell">${escapeHtml(formatDateTime(row.reviewed_at || row.latest_reviewed_at))}</td>
