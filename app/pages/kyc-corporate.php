@@ -2771,7 +2771,7 @@ document.addEventListener('DOMContentLoaded', revealFlowCards);
 
 // ── Auto-gen Client Number ─────────────────────────────────
 document.getElementById('refCode').addEventListener('input', function() {
-    const cn = this.value ? 'CN-' + Date.now().toString().slice(-6) : '';
+    const cn = this.value ? 'CN - ' + String(Math.floor(Math.random() * 1000000)).padStart(6, '0') : '';
     document.getElementById('clientNumber').value = cn;
 });
 

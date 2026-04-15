@@ -117,6 +117,11 @@ include '../includes/sidebar.php';
                         <?php endif; ?>
                     </div>
                     <div class="controls-right">
+                        <?php if ($isAgentsMode): ?>
+                        <button type="button" class="btn-delete-selected" id="deleteSelectedBtn" disabled>
+                            <i class="bi bi-trash"></i> Delete Selected
+                        </button>
+                        <?php endif; ?>
                         <button class="btn-export" title="Export" onclick="showExportPreview()">
                             <i class="bi bi-download"></i> Export
                         </button>
@@ -536,6 +541,8 @@ include '../includes/sidebar.php';
     </div>
 </div>
 
+<script src="../../public/js/dialog-modal.js"></script>
+
 <script>
     // Pagination state
     let currentPage = 1;
@@ -548,6 +555,7 @@ include '../includes/sidebar.php';
     let pendingDeleteClient = null;
     const selectedClientIds = new Set();
     const selectedClientRows = new Map();
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
     const isHeadOfficeUser = <?php echo $isHeadOfficeView ? 'true' : 'false'; ?>;
     const listClassification = <?php echo json_encode($listClassification); ?>;
     const initialTypeFilter = <?php echo json_encode($initialTypeFilter); ?>;
@@ -675,6 +683,14 @@ include '../includes/sidebar.php';
                 delete button.dataset.originalText;
             }
         }
+    }
+
+    function updateBulkDeleteButtonState() {
+        if (!deleteSelectedBtn) {
+            return;
+        }
+
+        deleteSelectedBtn.disabled = selectedClientIds.size === 0;
     }
 
     function getActiveFilters() {
@@ -849,6 +865,9 @@ include '../includes/sidebar.php';
 
             tbody.appendChild(row);
         });
+
+        syncSelectAllCheckbox();
+        updateBulkDeleteButtonState();
     }
 
     function getCurrentPageClientById(clientId) {
@@ -869,6 +888,87 @@ include '../includes/sidebar.php';
             selectedClientIds.delete(id);
             selectedClientRows.delete(id);
         }
+
+        updateBulkDeleteButtonState();
+    }
+
+    function deleteClientRecord(clientId) {
+        const formData = new FormData();
+        formData.append('action', isAgentsMode ? 'delete_agent_record' : 'delete_client');
+        formData.append('client_id', clientId);
+
+        return fetch('../handlers/client.php', {
+            method: 'POST',
+            body: formData
+        }).then(response => response.json());
+    }
+
+    async function deleteSelectedClients() {
+        const selectedIds = Array.from(selectedClientIds);
+
+        if (selectedIds.length === 0) {
+            createToast('info', 'Nothing Selected', `Select one or more ${recordLabelPlural} first.`, 'toastContainer');
+            return;
+        }
+
+        const confirmMessage = isAgentsMode
+            ? `Delete ${selectedIds.length} selected ${recordLabelPlural}? This will remove the selected agent records from the agents table only.`
+            : `Delete ${selectedIds.length} selected ${recordLabelPlural}? This will permanently remove the records and related approval data.`;
+
+        const confirmed = await showConfirmModal({
+            title: 'Confirm Delete',
+            message: confirmMessage,
+            confirmText: 'Delete Selected',
+            cancelText: 'Cancel',
+            variant: 'danger'
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        setButtonBusy(deleteSelectedBtn, true, 'Deleting...');
+
+        let successCount = 0;
+        let failureCount = 0;
+
+        try {
+            for (const clientId of selectedIds) {
+                try {
+                    const payload = await deleteClientRecord(clientId);
+                    if (payload.success) {
+                        successCount += 1;
+                        selectedClientIds.delete(String(clientId));
+                        selectedClientRows.delete(String(clientId));
+                    } else {
+                        failureCount += 1;
+                    }
+                } catch (error) {
+                    failureCount += 1;
+                }
+            }
+
+            updateBulkDeleteButtonState();
+
+            if (successCount > 0) {
+                const remainingTotal = Math.max(0, totalClients - successCount);
+                const maxPageAfterDelete = Math.max(1, Math.ceil(remainingTotal / pageSize));
+                const targetPage = Math.min(currentPage, maxPageAfterDelete);
+
+                createToast('success', 'Deleted', `${successCount} selected ${recordLabelPlural} deleted.`, 'toastContainer');
+                loadClients(targetPage);
+            }
+
+            if (failureCount > 0) {
+                createToast('error', 'Delete Failed', `${failureCount} selected ${recordLabelPlural} could not be deleted.`, 'toastContainer');
+            }
+        } finally {
+            setButtonBusy(deleteSelectedBtn, false);
+        }
+    }
+
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', deleteSelectedClients);
     }
 
     function syncSelectAllCheckbox() {
@@ -1298,18 +1398,10 @@ include '../includes/sidebar.php';
         // Extract client name for reference
         const clientName = clientNameOverride || (row.querySelector('.col-name')?.textContent || 'Client').trim();
         
-        const formData = new FormData();
-        formData.append('action', 'delete_client');
-        formData.append('client_id', clientId);
-
         const deleteBtn = row.querySelector('.action-icon.delete');
         setButtonBusy(deleteBtn, true, '');
         
-        fetch('../handlers/client.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
+        deleteClientRecord(clientId)
         .then(data => {
             if (data.success) {
                 selectedClientIds.delete(String(clientId));
@@ -1319,6 +1411,7 @@ include '../includes/sidebar.php';
                 const targetPage = Math.min(currentPage, maxPageAfterDelete);
 
                 createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
+                updateBulkDeleteButtonState();
                 loadClients(targetPage);
             } else {
                 createToast('error', 'Error', data.message || `Failed to delete ${recordLabelSingular}.`, 'toastContainer');
@@ -1441,6 +1534,7 @@ include '../includes/sidebar.php';
         });
 
         this.indeterminate = false;
+        updateBulkDeleteButtonState();
     });
 
     function applyServerFilters() {

@@ -33,8 +33,8 @@ INSERT INTO clients (
     updated_at
 )
 SELECT
-    'REF-20260407-OBLIGEE-0001',
-    'CN-20260407-OBLIGEE-0001',
+    'Ref - 000004',
+    'CN - 000004',
     'obligee',
     'Sample Obligee Client',
     'Sample',

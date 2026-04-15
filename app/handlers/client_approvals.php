@@ -241,6 +241,27 @@ function deleteApprovedAgentRowByClient($db, $clientId) {
     $stmt->close();
 }
 
+function deleteApprovalRowById($db, $tableName, $approvalId) {
+    $approvalId = intval($approvalId);
+    $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$tableName);
+
+    if ($approvalId <= 0 || $safeTable === '' || !tableExistsByName($db, $safeTable)) {
+        return false;
+    }
+
+    $stmt = $db->prepare("DELETE FROM {$safeTable} WHERE approval_id = ?");
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('i', $approvalId);
+    $stmt->execute();
+    $deleted = $stmt->affected_rows > 0;
+    $stmt->close();
+
+    return $deleted;
+}
+
 function buildDocumentPreviewUrl($rawPath) {
     $path = trim((string)$rawPath);
     if ($path === '') {
@@ -1159,6 +1180,38 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
 
     $response['success'] = true;
     $response['message'] = 'Approval status updated successfully';
+    echo json_encode($response);
+    exit;
+}
+
+if ($action === 'delete_approval_record' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $approvalId = intval($_POST['approval_id'] ?? 0);
+
+    if ($approvalId <= 0) {
+        $response['message'] = 'Invalid approval ID';
+        echo json_encode($response);
+        exit;
+    }
+
+    $existing = fetchOne(
+        "SELECT approval_id, client_id, reference_code, approval_status, client_classification FROM {$queueTable} WHERE approval_id = ?",
+        [$approvalId]
+    );
+
+    if (!$existing) {
+        $response['message'] = 'Approval record not found';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (!deleteApprovalRowById($db, $queueTable, $approvalId)) {
+        $response['message'] = 'Approval record not found';
+        echo json_encode($response);
+        exit;
+    }
+
+    $response['success'] = true;
+    $response['message'] = 'Approval record deleted successfully';
     echo json_encode($response);
     exit;
 }

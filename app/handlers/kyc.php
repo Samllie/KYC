@@ -324,7 +324,7 @@ if (!function_exists('generateRecordNumber')) {
 
 if (!function_exists('generateClientNumber')) {
     function generateClientNumber() {
-        return generateRecordNumber('CN');
+        return sprintf('CN - %06d', random_int(0, 999999));
     }
 }
 

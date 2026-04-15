@@ -111,40 +111,40 @@ CREATE TABLE `clients` (
 --
 
 INSERT INTO `clients` (`client_id`, `reference_code`, `client_number`, `client_type`, `client_name`, `first_name`, `middle_name`, `last_name`, `salutation`, `suffix`, `last_name_first`, `comma_separated`, `middle_initial_only`, `date_of_birth`, `gender`, `nationality`, `client_since`, `spouse_name`, `spouse_birthdate`, `spouse_occupation`, `id_type`, `id_number`, `tin_number`, `occupation`, `company_name`, `designation`, `business_type`, `business_address`, `business_ctm`, `business_province`, `home_address`, `home_ctm`, `home_province`, `mailing_address_type`, `region`, `office_phone`, `home_phone`, `contact_person`, `ap_sl_code`, `ar_sl_code`, `client_classification`, `mobile_phone`, `landline_phone`, `email`, `full_address`, `submitted_by`, `submitted_at`, `verification_status`, `verification_date`, `verified_by`, `rejection_reason`, `total_clients_count`, `pending_kyc_count`, `verified_count`, `rejected_count`, `created_at`, `updated_at`) VALUES
-(1, 'KYC-2024-0001', 'CN-024001', 'individual', NULL, 'Juan', 'Santos', 'Dela Cruz', NULL, '', 0, 0, 0, '1985-05-15', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-123456789', NULL, 'Accountant', 'ABC Corporation', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 912 345 6789', '(02) 8123-4567', 'juan@example.com', '123 Main St, Barangay San Juan, Manila, NCR 1500', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(2, 'KYC-2024-0002', 'CN-024002', 'individual', NULL, 'Maria', 'Santos', 'Garcia', NULL, '', 0, 0, 0, '1990-03-22', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-0987654321', NULL, 'Manager', 'XYZ Company', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 921 654 3210', '(02) 8765-4321', 'maria@example.com', '456 Oak Ave, Barangay Makati, Manila, NCR 1200', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(3, 'KYC-2024-0003', 'CN-024003', 'corporate', NULL, 'Robert', '', 'Santos', NULL, 'Jr.', 0, 0, 0, '1982-07-10', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-111222333', NULL, 'Managing Director', 'Tech Solutions Inc.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 945 123 4567', '(02) 8123-4567', 'robert@company.com', '789 Business Plaza, Barangay Fort Bonifacio, Taguig, NCR 1634', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(4, 'KYC-2024-0004', 'CN-024004', 'individual', NULL, 'Angela', 'Marie', 'Torres', NULL, '', 0, 0, 0, '1992-11-08', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'tin', 'TIN-456789012', NULL, 'Consultant', 'Global Consulting', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 938 765 4321', '(02) 8987-6543', 'angela@example.com', '321 Green St, Barangay Pasay, Manila, NCR 1300', NULL, NULL, 'rejected', NULL, 2, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(5, 'KYC-2024-0005', 'CN-024005', 'individual', NULL, 'John', 'Michael', 'Reyes', NULL, '', 0, 0, 0, '1988-02-14', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-987654321', NULL, 'Engineer', 'Engineering Solutions Ltd', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 945 678 9012', '(02) 8654-3210', 'john@example.com', '654 Blue Ave, Barangay Himig, Quezon City, NCR 1100', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(6, 'KYC-2024-0006', 'CN-024006', 'individual', NULL, 'Luisa', 'Ana', 'Cruz', NULL, '', 0, 0, 0, '1995-09-20', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-5555666677', NULL, 'Analyst', 'Data Analytics Corp', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 956 234 5678', '(02) 8345-6789', 'luisa@example.com', '987 Purple Blvd, Barangay Libis, Quezon City, NCR 1100', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(7, 'KYC-2024-0007', 'CN-024007', 'individual', NULL, 'Carlos', 'Antonio', 'Reyes', NULL, '', 0, 0, 0, '1986-06-12', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-111222333', NULL, 'Architect', 'Design Studios', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 917 234 5678', '(02) 8234-5678', 'carlos@example.com', '111 Design Ave, Barangay Ermita, Manila, NCR 1000', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(8, 'KYC-2024-0008', 'CN-024008', 'corporate', NULL, 'Patricia', '', 'Lopez', NULL, '', 0, 0, 0, '1980-12-25', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-444555666', NULL, 'CEO', 'Innovation Tech Co.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 998 765 4321', '(02) 8765-4321', 'patricia@innovtech.com', '500 Corporate Center, Makati, NCR 1200', NULL, NULL, 'verified', NULL, 3, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(9, 'KYC-2024-0009', 'CN-024009', 'individual', NULL, 'Miguel', 'David', 'Fernandez', NULL, '', 0, 0, 0, '1993-04-18', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-7777888899', NULL, 'Developer', 'Software House', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 922 111 2222', '(02) 8111-2222', 'miguel@example.com', '222 Tech Park, BGY Shaw, Pasig, NCR 1600', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(10, 'KYC-2024-0010', 'CN-024010', 'individual', NULL, 'Rosa', 'Gabriela', 'Morales', NULL, 'Sr.', 0, 0, 0, '1975-08-30', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-555666777', NULL, 'Director', 'Education Board', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 909 333 4444', '(02) 8333-4444', 'rosa@example.com', '333 Public Admin, BGY Bagong Taguig, Taguig, NCR 1600', NULL, NULL, 'verified', NULL, 2, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(11, 'KYC-2024-0011', 'CN-024011', 'individual', NULL, 'Fernando', 'Luis', 'Guerrero', NULL, '', 0, 0, 0, '1987-10-05', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-888999000', NULL, 'Businessman', 'Import Export Ltd', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 925 555 6666', '(02) 8555-6666', 'fernando@example.com', '444 Commerce St, BGY Divisoria, Manila, NCR 1000', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(12, 'KYC-2024-0012', 'CN-024012', 'individual', NULL, 'Sandra', 'Elizabeth', 'Navarro', NULL, '', 0, 0, 0, '1991-07-22', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-3333444455', NULL, 'Nurse', 'Medical Center', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 933 777 8888', '(02) 8777-8888', 'sandra@example.com', '555 Hospital Way, BGY Tandang Sora, QC, NCR 1100', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(13, 'KYC-2024-0013', 'CN-024013', 'corporate', NULL, 'Vicente', '', 'Ramos', NULL, 'III', 0, 0, 0, '1978-01-14', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'tin', 'TIN-111222333', NULL, 'Board Chairman', 'Logistics Group Inc.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 916 999 0000', '(02) 8999-0000', 'vicente@logistics.com', '600 Logistics Hub, Port Area, Manila, NCR 1000', NULL, NULL, 'verified', NULL, 3, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(14, 'KYC-2024-0014', 'CN-024014', 'individual', NULL, 'Yvonne', 'Marie', 'Villanueva', NULL, '', 0, 0, 0, '1994-03-09', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-888999111', NULL, 'Lawyer', 'Law Firm Partners', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 942 111 2222', '(02) 8111-2222', 'yvonne@example.com', '700 Justice Bldg, BGY Intramuros, Manila, NCR 1000', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(15, 'KYC-2024-0015', 'CN-024015', 'individual', NULL, 'Xavier', 'Paolo', 'Gonzales', NULL, '', 0, 0, 0, '1989-11-17', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-6666777788', NULL, 'Photographer', 'Creative Studios', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 920 333 4444', '(02) 8333-4444', 'xavier@example.com', '800 Arts District, BGY Malate, Manila, NCR 1000', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(16, 'KYC-2024-0016', 'CN-024016', 'individual', NULL, 'Zita', 'Sofia', 'Montoya', NULL, '', 0, 0, 0, '1986-09-25', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-222333444', NULL, 'Writer', 'Publishing House', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 949 555 6666', '(02) 8555-6666', 'zita@example.com', '900 Literary Lane, BGY Sampaloc, Manila, NCR 1000', NULL, NULL, 'verified', NULL, 2, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(17, 'KYC-2024-0017', 'CN-024017', 'corporate', NULL, 'Andres', '', 'Santiago', NULL, 'Jr.', 0, 0, 0, '1983-05-30', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-333444555', NULL, 'President', 'Manufacturing Corp', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 917 777 8888', '(02) 8777-8888', 'andres@manufcorp.com', '1000 Industrial Park, BGY Kawit, Kawit, CAVITE 0000', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(18, 'KYC-2024-0018', 'CN-024018', 'individual', NULL, 'Bella', 'Rose', 'Aquino', NULL, '', 0, 0, 0, '1997-02-11', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-9999000011', NULL, 'Student', 'University', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 911 999 0000', '(02) 8999-0000', 'bella@example.com', '1100 Campus Ave, BGY Dansalan, QC, NCR 1100', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(19, 'KYC-2024-0019', 'CN-024019', 'individual', NULL, 'Crispin', 'Manuel', 'Bustamante', NULL, '', 0, 0, 0, '1979-08-06', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-555666777', NULL, 'Businessman', 'Real Estate Dev', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 923 111 2222', '(02) 8111-2222', 'crispin@example.com', '1200 Property Lane, BGY Forbes, QC, NCR 1100', NULL, NULL, 'verified', NULL, 3, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(20, 'KYC-2024-0020', 'CN-024020', 'individual', NULL, 'Dolores', 'Amelia', 'Castillo', NULL, '', 0, 0, 0, '1984-12-19', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-666777888', NULL, 'HR Manager', 'Recruitment Agency', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 936 333 4444', '(02) 8333-4444', 'dolores@example.com', '1300 People Plaza, BGY Alabang, Muntinlupa, NCR 1700', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(21, 'KYC-2024-0021', 'CN-024021', 'individual', NULL, 'Emilio', 'Gabriel', 'Delgado', NULL, '', 0, 0, 0, '1992-10-02', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-2222333344', NULL, 'Chef', 'Restaurant', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 946 555 6666', '(02) 8555-6666', 'emilio@example.com', '1400 Culinary St, BGY Greenbelt, Makati, NCR 1200', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(22, 'KYC-2024-0022', 'CN-024022', 'corporate', NULL, 'Fiona', '', 'Echevarria', NULL, '', 0, 0, 0, '1981-07-14', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-777888999', NULL, 'Director', 'Fashion House', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 953 777 8888', '(02) 8777-8888', 'fiona@fashionco.com', '1500 Fashion Hub, BGY BLVD, Makati, NCR 1200', NULL, NULL, 'verified', NULL, 2, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(23, 'KYC-2024-0023', 'CN-024023', 'individual', NULL, 'Gregorio', 'Antonio', 'Franco', NULL, 'Sr.', 0, 0, 0, '1975-04-28', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-999000111', NULL, 'Banker', 'Bank', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 927 999 0000', '(02) 8999-0000', 'gregorio@example.com', '1600 Financial Center, BGY BGC, Taguig, NCR 1600', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(24, 'KYC-2024-0024', 'CN-024024', 'individual', NULL, 'Helena', 'Jasmine', 'Guzman', NULL, '', 0, 0, 0, '1996-06-09', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-4444555566', NULL, 'Athlete', 'Sports Org', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 941 111 2222', '(02) 8111-2222', 'helena@example.com', '1700 Athletic Park, BGY Villamor, Pasay, NCR 1300', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
-(25, 'REF-20260317-00001', 'CN-1773728622', 'individual', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '', 0, 0, 0, '2002-12-27', 'male', 'Filipino', NULL, NULL, NULL, NULL, 'license', 'D22-8236487', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09075732796', '', 'ezekielcodillo56@gmail.com', 'City of Santo Tomas', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 06:23:42', '2026-03-17 06:23:42'),
-(26, 'REF-20260317-00002', 'CN-1773730174', 'corporate', NULL, 'Ansel', 'Cadag', 'Doton', NULL, '', 0, 0, 0, '2003-12-17', 'male', 'Filipino', NULL, NULL, NULL, NULL, 'tin', '1225-545-5455', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09917745489', '', 'ansel@gmail.com', 'sta maria, Santo Tomas, Batangas', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 06:49:34', '2026-03-17 06:49:34'),
-(27, 'REF-20260323-00001', 'CN-1774225373', 'individual', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '', 0, 0, 0, '2003-12-27', 'male', 'Filipino', NULL, NULL, NULL, NULL, '', '', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09075732796', '', 'ezekielcodillo56@gmail.com', 'Lumina', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-23 00:22:53', '2026-03-23 00:22:53'),
-(28, 'REF-20260323-00002', 'CN-1774227596', 'corporate', 'Kiel Courier Services', '', NULL, '', NULL, NULL, 0, 0, 0, NULL, 'male', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'government', 'Lumina, San vicente', 'City of Santo Tomas', 'Batangas', NULL, NULL, NULL, NULL, NULL, '09568439760', NULL, 'Ezekiel Robin Codillo', NULL, NULL, 'agent', NULL, NULL, 'ezekielcodillo56@gmail.com', NULL, 1, '2026-03-23 01:59:56', 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-23 00:59:56', '2026-03-23 00:59:56'),
-(29, 'REF-20260323-00003', 'CN-1774234364', 'individual', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '', 0, 0, 0, '2026-03-23', 'male', 'Filipino', NULL, NULL, NULL, NULL, '', '', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09917745489', '', 'ezekielcodillo56@gmail.com', 'Sambat', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-23 02:52:44', '2026-03-23 02:52:44'),
-(30, 'REF-20260326-00001', 'CN-1774490538', 'corporate', NULL, '', '', '', NULL, '', 0, 0, 0, NULL, '', '', NULL, NULL, NULL, NULL, '', '', NULL, '', '', NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', NULL, 1, '2026-03-26 03:02:18', 'draft', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-26 02:02:18', '2026-03-26 02:02:18'),
-(31, 'REF-20260326-00002', 'CN-1774492173', 'corporate', NULL, '', '', '', NULL, '', 0, 0, 0, NULL, '', '', NULL, NULL, NULL, NULL, '', '', NULL, '', '', NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', NULL, 1, '2026-03-26 03:29:33', 'draft', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-26 02:29:33', '2026-03-26 02:29:33'),
-(32, 'REF-20260326-00003', 'CN-1774493824', 'corporate', NULL, '', '', '', NULL, '', 0, 0, 0, NULL, '', '', NULL, NULL, NULL, NULL, '', '', NULL, '', 'waw', NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', NULL, 1, '2026-03-26 03:57:04', 'draft', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-26 02:57:04', '2026-03-26 02:57:04'),
-(33, 'REF-20260406-00001', 'CN-1775454582', 'individual', NULL, 'Submit', '', 'Test', 'Mr.', '', 0, 0, 0, '1990-01-01', '', '', '0000-00-00', '', '0000-00-00', '', 'passport', 'ABC123', NULL, 'Engineer', '', NULL, NULL, '', '', '', 'Test Street, Test Barangay, Test City', '', '', '', NULL, '', '1234567', NULL, '', '', NULL, '09123456789', '1234567', 'test.submit@example.com', NULL, 1, '2026-04-06 07:49:42', 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-04-06 05:49:42', '2026-04-06 05:49:42'),
-(34, 'REF-20260406-00002', 'CN-1775454641', 'individual', NULL, 'Paul', 'Kahulugan', 'Gonzales', '', '', 0, 0, 0, '2026-04-06', 'male', '', '0000-00-00', 'Shane Nicole Fernandez', '2002-11-04', 'Accounting', 'drivers_license', 'D22-8236487', NULL, 'Student', 'Self-employed', NULL, NULL, '733', '', '', '733, Sambat, City of Tanauan, Batangas, CALABARZON', 'City of Tanauan', 'Batangas', 'home', NULL, '09959735489', '09709659575', NULL, '', '', NULL, '09917745489', '09709659575', 'gonzalespaul528@gmail.com', NULL, 6, '2026-04-06 07:50:41', 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-04-06 05:50:41', '2026-04-06 05:50:41');
+(1, 'KYC-2024-0001', 'CN - 024001', 'individual', NULL, 'Juan', 'Santos', 'Dela Cruz', NULL, '', 0, 0, 0, '1985-05-15', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-123456789', NULL, 'Accountant', 'ABC Corporation', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 912 345 6789', '(02) 8123-4567', 'juan@example.com', '123 Main St, Barangay San Juan, Manila, NCR 1500', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(2, 'KYC-2024-0002', 'CN - 024002', 'individual', NULL, 'Maria', 'Santos', 'Garcia', NULL, '', 0, 0, 0, '1990-03-22', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-0987654321', NULL, 'Manager', 'XYZ Company', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 921 654 3210', '(02) 8765-4321', 'maria@example.com', '456 Oak Ave, Barangay Makati, Manila, NCR 1200', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(3, 'KYC-2024-0003', 'CN - 024003', 'corporate', NULL, 'Robert', '', 'Santos', NULL, 'Jr.', 0, 0, 0, '1982-07-10', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-111222333', NULL, 'Managing Director', 'Tech Solutions Inc.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 945 123 4567', '(02) 8123-4567', 'robert@company.com', '789 Business Plaza, Barangay Fort Bonifacio, Taguig, NCR 1634', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(4, 'KYC-2024-0004', 'CN - 024004', 'individual', NULL, 'Angela', 'Marie', 'Torres', NULL, '', 0, 0, 0, '1992-11-08', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'tin', 'TIN-456789012', NULL, 'Consultant', 'Global Consulting', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 938 765 4321', '(02) 8987-6543', 'angela@example.com', '321 Green St, Barangay Pasay, Manila, NCR 1300', NULL, NULL, 'rejected', NULL, 2, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(5, 'KYC-2024-0005', 'CN - 024005', 'individual', NULL, 'John', 'Michael', 'Reyes', NULL, '', 0, 0, 0, '1988-02-14', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-987654321', NULL, 'Engineer', 'Engineering Solutions Ltd', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 945 678 9012', '(02) 8654-3210', 'john@example.com', '654 Blue Ave, Barangay Himig, Quezon City, NCR 1100', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(6, 'KYC-2024-0006', 'CN - 024006', 'individual', NULL, 'Luisa', 'Ana', 'Cruz', NULL, '', 0, 0, 0, '1995-09-20', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-5555666677', NULL, 'Analyst', 'Data Analytics Corp', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 956 234 5678', '(02) 8345-6789', 'luisa@example.com', '987 Purple Blvd, Barangay Libis, Quezon City, NCR 1100', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(7, 'KYC-2024-0007', 'CN - 024007', 'individual', NULL, 'Carlos', 'Antonio', 'Reyes', NULL, '', 0, 0, 0, '1986-06-12', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-111222333', NULL, 'Architect', 'Design Studios', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 917 234 5678', '(02) 8234-5678', 'carlos@example.com', '111 Design Ave, Barangay Ermita, Manila, NCR 1000', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(8, 'KYC-2024-0008', 'CN - 024008', 'corporate', NULL, 'Patricia', '', 'Lopez', NULL, '', 0, 0, 0, '1980-12-25', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-444555666', NULL, 'CEO', 'Innovation Tech Co.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 998 765 4321', '(02) 8765-4321', 'patricia@innovtech.com', '500 Corporate Center, Makati, NCR 1200', NULL, NULL, 'verified', NULL, 3, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(9, 'KYC-2024-0009', 'CN - 024009', 'individual', NULL, 'Miguel', 'David', 'Fernandez', NULL, '', 0, 0, 0, '1993-04-18', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-7777888899', NULL, 'Developer', 'Software House', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 922 111 2222', '(02) 8111-2222', 'miguel@example.com', '222 Tech Park, BGY Shaw, Pasig, NCR 1600', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(10, 'KYC-2024-0010', 'CN - 024010', 'individual', NULL, 'Rosa', 'Gabriela', 'Morales', NULL, 'Sr.', 0, 0, 0, '1975-08-30', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-555666777', NULL, 'Director', 'Education Board', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 909 333 4444', '(02) 8333-4444', 'rosa@example.com', '333 Public Admin, BGY Bagong Taguig, Taguig, NCR 1600', NULL, NULL, 'verified', NULL, 2, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(11, 'KYC-2024-0011', 'CN - 024011', 'individual', NULL, 'Fernando', 'Luis', 'Guerrero', NULL, '', 0, 0, 0, '1987-10-05', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-888999000', NULL, 'Businessman', 'Import Export Ltd', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 925 555 6666', '(02) 8555-6666', 'fernando@example.com', '444 Commerce St, BGY Divisoria, Manila, NCR 1000', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(12, 'KYC-2024-0012', 'CN - 024012', 'individual', NULL, 'Sandra', 'Elizabeth', 'Navarro', NULL, '', 0, 0, 0, '1991-07-22', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-3333444455', NULL, 'Nurse', 'Medical Center', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 933 777 8888', '(02) 8777-8888', 'sandra@example.com', '555 Hospital Way, BGY Tandang Sora, QC, NCR 1100', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(13, 'KYC-2024-0013', 'CN - 024013', 'corporate', NULL, 'Vicente', '', 'Ramos', NULL, 'III', 0, 0, 0, '1978-01-14', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'tin', 'TIN-111222333', NULL, 'Board Chairman', 'Logistics Group Inc.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 916 999 0000', '(02) 8999-0000', 'vicente@logistics.com', '600 Logistics Hub, Port Area, Manila, NCR 1000', NULL, NULL, 'verified', NULL, 3, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(14, 'KYC-2024-0014', 'CN - 024014', 'individual', NULL, 'Yvonne', 'Marie', 'Villanueva', NULL, '', 0, 0, 0, '1994-03-09', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-888999111', NULL, 'Lawyer', 'Law Firm Partners', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 942 111 2222', '(02) 8111-2222', 'yvonne@example.com', '700 Justice Bldg, BGY Intramuros, Manila, NCR 1000', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(15, 'KYC-2024-0015', 'CN - 024015', 'individual', NULL, 'Xavier', 'Paolo', 'Gonzales', NULL, '', 0, 0, 0, '1989-11-17', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-6666777788', NULL, 'Photographer', 'Creative Studios', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 920 333 4444', '(02) 8333-4444', 'xavier@example.com', '800 Arts District, BGY Malate, Manila, NCR 1000', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(16, 'KYC-2024-0016', 'CN - 024016', 'individual', NULL, 'Zita', 'Sofia', 'Montoya', NULL, '', 0, 0, 0, '1986-09-25', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-222333444', NULL, 'Writer', 'Publishing House', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 949 555 6666', '(02) 8555-6666', 'zita@example.com', '900 Literary Lane, BGY Sampaloc, Manila, NCR 1000', NULL, NULL, 'verified', NULL, 2, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(17, 'KYC-2024-0017', 'CN - 024017', 'corporate', NULL, 'Andres', '', 'Santiago', NULL, 'Jr.', 0, 0, 0, '1983-05-30', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-333444555', NULL, 'President', 'Manufacturing Corp', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 917 777 8888', '(02) 8777-8888', 'andres@manufcorp.com', '1000 Industrial Park, BGY Kawit, Kawit, CAVITE 0000', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(18, 'KYC-2024-0018', 'CN - 024018', 'individual', NULL, 'Bella', 'Rose', 'Aquino', NULL, '', 0, 0, 0, '1997-02-11', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-9999000011', NULL, 'Student', 'University', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 911 999 0000', '(02) 8999-0000', 'bella@example.com', '1100 Campus Ave, BGY Dansalan, QC, NCR 1100', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(19, 'KYC-2024-0019', 'CN - 024019', 'individual', NULL, 'Crispin', 'Manuel', 'Bustamante', NULL, '', 0, 0, 0, '1979-08-06', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-555666777', NULL, 'Businessman', 'Real Estate Dev', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 923 111 2222', '(02) 8111-2222', 'crispin@example.com', '1200 Property Lane, BGY Forbes, QC, NCR 1100', NULL, NULL, 'verified', NULL, 3, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(20, 'KYC-2024-0020', 'CN - 024020', 'individual', NULL, 'Dolores', 'Amelia', 'Castillo', NULL, '', 0, 0, 0, '1984-12-19', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-666777888', NULL, 'HR Manager', 'Recruitment Agency', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 936 333 4444', '(02) 8333-4444', 'dolores@example.com', '1300 People Plaza, BGY Alabang, Muntinlupa, NCR 1700', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(21, 'KYC-2024-0021', 'CN - 024021', 'individual', NULL, 'Emilio', 'Gabriel', 'Delgado', NULL, '', 0, 0, 0, '1992-10-02', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-2222333344', NULL, 'Chef', 'Restaurant', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 946 555 6666', '(02) 8555-6666', 'emilio@example.com', '1400 Culinary St, BGY Greenbelt, Makati, NCR 1200', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(22, 'KYC-2024-0022', 'CN - 024022', 'corporate', NULL, 'Fiona', '', 'Echevarria', NULL, '', 0, 0, 0, '1981-07-14', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'nbi', 'NBI-777888999', NULL, 'Director', 'Fashion House', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 953 777 8888', '(02) 8777-8888', 'fiona@fashionco.com', '1500 Fashion Hub, BGY BLVD, Makati, NCR 1200', NULL, NULL, 'verified', NULL, 2, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(23, 'KYC-2024-0023', 'CN - 024023', 'individual', NULL, 'Gregorio', 'Antonio', 'Franco', NULL, 'Sr.', 0, 0, 0, '1975-04-28', 'male', 'Philippine', NULL, NULL, NULL, NULL, 'passport', 'PP-999000111', NULL, 'Banker', 'Bank', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 927 999 0000', '(02) 8999-0000', 'gregorio@example.com', '1600 Financial Center, BGY BGC, Taguig, NCR 1600', NULL, NULL, 'verified', NULL, 1, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(24, 'KYC-2024-0024', 'CN - 024024', 'individual', NULL, 'Helena', 'Jasmine', 'Guzman', NULL, '', 0, 0, 0, '1996-06-09', 'female', 'Philippine', NULL, NULL, NULL, NULL, 'drivers_license', 'DL-4444555566', NULL, 'Athlete', 'Sports Org', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '+63 941 111 2222', '(02) 8111-2222', 'helena@example.com', '1700 Athletic Park, BGY Villamor, Pasay, NCR 1300', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 03:27:01', '2026-03-17 03:27:01'),
+(25, 'REF-20260317-00001', 'CN - 000025', 'individual', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '', 0, 0, 0, '2002-12-27', 'male', 'Filipino', NULL, NULL, NULL, NULL, 'license', 'D22-8236487', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09075732796', '', 'ezekielcodillo56@gmail.com', 'City of Santo Tomas', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 06:23:42', '2026-03-17 06:23:42'),
+(26, 'REF-20260317-00002', 'CN - 000026', 'corporate', NULL, 'Ansel', 'Cadag', 'Doton', NULL, '', 0, 0, 0, '2003-12-17', 'male', 'Filipino', NULL, NULL, NULL, NULL, 'tin', '1225-545-5455', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09917745489', '', 'ansel@gmail.com', 'sta maria, Santo Tomas, Batangas', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-17 06:49:34', '2026-03-17 06:49:34'),
+(27, 'REF-20260323-00001', 'CN - 000027', 'individual', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '', 0, 0, 0, '2003-12-27', 'male', 'Filipino', NULL, NULL, NULL, NULL, '', '', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09075732796', '', 'ezekielcodillo56@gmail.com', 'Lumina', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-23 00:22:53', '2026-03-23 00:22:53'),
+(28, 'REF-20260323-00002', 'CN - 000028', 'corporate', 'Kiel Courier Services', '', NULL, '', NULL, NULL, 0, 0, 0, NULL, 'male', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'government', 'Lumina, San vicente', 'City of Santo Tomas', 'Batangas', NULL, NULL, NULL, NULL, NULL, '09568439760', NULL, 'Ezekiel Robin Codillo', NULL, NULL, 'agent', NULL, NULL, 'ezekielcodillo56@gmail.com', NULL, 1, '2026-03-23 01:59:56', 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-23 00:59:56', '2026-03-23 00:59:56'),
+(29, 'REF-20260323-00003', 'CN - 000029', 'individual', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '', 0, 0, 0, '2026-03-23', 'male', 'Filipino', NULL, NULL, NULL, NULL, '', '', NULL, 'Student', 'BSU', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '09917745489', '', 'ezekielcodillo56@gmail.com', 'Sambat', NULL, NULL, 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-23 02:52:44', '2026-03-23 02:52:44'),
+(30, 'REF-20260326-00001', 'CN - 000030', 'corporate', NULL, '', '', '', NULL, '', 0, 0, 0, NULL, '', '', NULL, NULL, NULL, NULL, '', '', NULL, '', '', NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', NULL, 1, '2026-03-26 03:02:18', 'draft', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-26 02:02:18', '2026-03-26 02:02:18'),
+(31, 'REF-20260326-00002', 'CN - 000031', 'corporate', NULL, '', '', '', NULL, '', 0, 0, 0, NULL, '', '', NULL, NULL, NULL, NULL, '', '', NULL, '', '', NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', NULL, 1, '2026-03-26 03:29:33', 'draft', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-26 02:29:33', '2026-03-26 02:29:33'),
+(32, 'REF-20260326-00003', 'CN - 000032', 'corporate', NULL, '', '', '', NULL, '', 0, 0, 0, NULL, '', '', NULL, NULL, NULL, NULL, '', '', NULL, '', 'waw', NULL, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '', '', '', NULL, 1, '2026-03-26 03:57:04', 'draft', NULL, NULL, NULL, 0, 0, 0, 0, '2026-03-26 02:57:04', '2026-03-26 02:57:04'),
+(33, 'REF-20260406-00001', 'CN - 000033', 'individual', NULL, 'Submit', '', 'Test', 'Mr.', '', 0, 0, 0, '1990-01-01', '', '', '0000-00-00', '', '0000-00-00', '', 'passport', 'ABC123', NULL, 'Engineer', '', NULL, NULL, '', '', '', 'Test Street, Test Barangay, Test City', '', '', '', NULL, '', '1234567', NULL, '', '', NULL, '09123456789', '1234567', 'test.submit@example.com', NULL, 1, '2026-04-06 07:49:42', 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-04-06 05:49:42', '2026-04-06 05:49:42'),
+(34, 'REF-20260406-00002', 'CN - 000034', 'individual', NULL, 'Paul', 'Kahulugan', 'Gonzales', '', '', 0, 0, 0, '2026-04-06', 'male', '', '0000-00-00', 'Shane Nicole Fernandez', '2002-11-04', 'Accounting', 'drivers_license', 'D22-8236487', NULL, 'Student', 'Self-employed', NULL, NULL, '733', '', '', '733, Sambat, City of Tanauan, Batangas, CALABARZON', 'City of Tanauan', 'Batangas', 'home', NULL, '09959735489', '09709659575', NULL, '', '', NULL, '09917745489', '09709659575', 'gonzalespaul528@gmail.com', NULL, 6, '2026-04-06 07:50:41', 'pending', NULL, NULL, NULL, 0, 0, 0, 0, '2026-04-06 05:50:41', '2026-04-06 05:50:41');
 
 -- --------------------------------------------------------
 
@@ -185,40 +185,40 @@ CREATE TABLE `client_approvals` (
 --
 
 INSERT INTO `client_approvals` (`approval_id`, `client_id`, `reference_code`, `client_number`, `client_classification`, `client_type`, `display_name`, `client_name`, `first_name`, `middle_name`, `last_name`, `contact_person`, `mobile_phone`, `office_phone`, `email`, `submitted_by`, `submitted_by_branch`, `submitted_at`, `approval_status`, `review_notes`, `reviewed_by`, `reviewed_at`, `approved_at`, `created_at`, `updated_at`) VALUES
-(1, 1, 'KYC-2024-0001', 'CN-024001', 'client', 'individual', 'Juan Dela Cruz', NULL, 'Juan', 'Santos', 'Dela Cruz', NULL, '+63 912 345 6789', NULL, 'juan@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(2, 2, 'KYC-2024-0002', 'CN-024002', 'client', 'individual', 'Maria Garcia', NULL, 'Maria', 'Santos', 'Garcia', NULL, '+63 921 654 3210', NULL, 'maria@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(3, 3, 'KYC-2024-0003', 'CN-024003', 'client', 'corporate', 'Robert Santos', NULL, 'Robert', '', 'Santos', NULL, '+63 945 123 4567', NULL, 'robert@company.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(4, 4, 'KYC-2024-0004', 'CN-024004', 'client', 'individual', 'Angela Torres', NULL, 'Angela', 'Marie', 'Torres', NULL, '+63 938 765 4321', NULL, 'angela@example.com', NULL, NULL, NULL, 'declined', NULL, 2, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(5, 5, 'KYC-2024-0005', 'CN-024005', 'client', 'individual', 'John Reyes', NULL, 'John', 'Michael', 'Reyes', NULL, '+63 945 678 9012', NULL, 'john@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(6, 6, 'KYC-2024-0006', 'CN-024006', 'client', 'individual', 'Luisa Cruz', NULL, 'Luisa', 'Ana', 'Cruz', NULL, '+63 956 234 5678', NULL, 'luisa@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(7, 7, 'KYC-2024-0007', 'CN-024007', 'client', 'individual', 'Carlos Reyes', NULL, 'Carlos', 'Antonio', 'Reyes', NULL, '+63 917 234 5678', NULL, 'carlos@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(8, 8, 'KYC-2024-0008', 'CN-024008', 'client', 'corporate', 'Patricia Lopez', NULL, 'Patricia', '', 'Lopez', NULL, '+63 998 765 4321', NULL, 'patricia@innovtech.com', NULL, NULL, NULL, 'approved', NULL, 3, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(9, 9, 'KYC-2024-0009', 'CN-024009', 'client', 'individual', 'Miguel Fernandez', NULL, 'Miguel', 'David', 'Fernandez', NULL, '+63 922 111 2222', NULL, 'miguel@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(10, 10, 'KYC-2024-0010', 'CN-024010', 'client', 'individual', 'Rosa Morales', NULL, 'Rosa', 'Gabriela', 'Morales', NULL, '+63 909 333 4444', NULL, 'rosa@example.com', NULL, NULL, NULL, 'approved', NULL, 2, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(11, 11, 'KYC-2024-0011', 'CN-024011', 'client', 'individual', 'Fernando Guerrero', NULL, 'Fernando', 'Luis', 'Guerrero', NULL, '+63 925 555 6666', NULL, 'fernando@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(12, 12, 'KYC-2024-0012', 'CN-024012', 'client', 'individual', 'Sandra Navarro', NULL, 'Sandra', 'Elizabeth', 'Navarro', NULL, '+63 933 777 8888', NULL, 'sandra@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(13, 13, 'KYC-2024-0013', 'CN-024013', 'client', 'corporate', 'Vicente Ramos', NULL, 'Vicente', '', 'Ramos', NULL, '+63 916 999 0000', NULL, 'vicente@logistics.com', NULL, NULL, NULL, 'approved', NULL, 3, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(14, 14, 'KYC-2024-0014', 'CN-024014', 'client', 'individual', 'Yvonne Villanueva', NULL, 'Yvonne', 'Marie', 'Villanueva', NULL, '+63 942 111 2222', NULL, 'yvonne@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(15, 15, 'KYC-2024-0015', 'CN-024015', 'client', 'individual', 'Xavier Gonzales', NULL, 'Xavier', 'Paolo', 'Gonzales', NULL, '+63 920 333 4444', NULL, 'xavier@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(16, 16, 'KYC-2024-0016', 'CN-024016', 'client', 'individual', 'Zita Montoya', NULL, 'Zita', 'Sofia', 'Montoya', NULL, '+63 949 555 6666', NULL, 'zita@example.com', NULL, NULL, NULL, 'approved', NULL, 2, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(17, 17, 'KYC-2024-0017', 'CN-024017', 'client', 'corporate', 'Andres Santiago', NULL, 'Andres', '', 'Santiago', NULL, '+63 917 777 8888', NULL, 'andres@manufcorp.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(18, 18, 'KYC-2024-0018', 'CN-024018', 'client', 'individual', 'Bella Aquino', NULL, 'Bella', 'Rose', 'Aquino', NULL, '+63 911 999 0000', NULL, 'bella@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(19, 19, 'KYC-2024-0019', 'CN-024019', 'client', 'individual', 'Crispin Bustamante', NULL, 'Crispin', 'Manuel', 'Bustamante', NULL, '+63 923 111 2222', NULL, 'crispin@example.com', NULL, NULL, NULL, 'approved', NULL, 3, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(20, 20, 'KYC-2024-0020', 'CN-024020', 'client', 'individual', 'Dolores Castillo', NULL, 'Dolores', 'Amelia', 'Castillo', NULL, '+63 936 333 4444', NULL, 'dolores@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(21, 21, 'KYC-2024-0021', 'CN-024021', 'client', 'individual', 'Emilio Delgado', NULL, 'Emilio', 'Gabriel', 'Delgado', NULL, '+63 946 555 6666', NULL, 'emilio@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(22, 22, 'KYC-2024-0022', 'CN-024022', 'client', 'corporate', 'Fiona Echevarria', NULL, 'Fiona', '', 'Echevarria', NULL, '+63 953 777 8888', NULL, 'fiona@fashionco.com', NULL, NULL, NULL, 'approved', NULL, 2, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(23, 23, 'KYC-2024-0023', 'CN-024023', 'client', 'individual', 'Gregorio Franco', NULL, 'Gregorio', 'Antonio', 'Franco', NULL, '+63 927 999 0000', NULL, 'gregorio@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(24, 24, 'KYC-2024-0024', 'CN-024024', 'client', 'individual', 'Helena Guzman', NULL, 'Helena', 'Jasmine', 'Guzman', NULL, '+63 941 111 2222', NULL, 'helena@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
-(25, 25, 'REF-20260317-00001', 'CN-1773728622', 'client', 'individual', 'Ezekiel Codillo', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '09075732796', NULL, 'ezekielcodillo56@gmail.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 06:23:42', '2026-04-06 08:08:33'),
-(26, 26, 'REF-20260317-00002', 'CN-1773730174', 'client', 'corporate', 'Ansel Doton', NULL, 'Ansel', 'Cadag', 'Doton', NULL, '09917745489', NULL, 'ansel@gmail.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 06:49:34', '2026-04-06 08:08:33'),
-(27, 27, 'REF-20260323-00001', 'CN-1774225373', 'client', 'individual', 'Ezekiel Codillo', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '09075732796', NULL, 'ezekielcodillo56@gmail.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-23 00:22:53', '2026-04-06 08:08:33'),
-(28, 28, 'REF-20260323-00002', 'CN-1774227596', 'agent', 'corporate', 'Kiel Courier Services', 'Kiel Courier Services', '', NULL, '', 'Ezekiel Robin Codillo', NULL, '09568439760', 'ezekielcodillo56@gmail.com', 1, 'ALABANG BRANCH', '2026-03-23 01:59:56', 'pending', NULL, NULL, NULL, NULL, '2026-03-23 00:59:56', '2026-04-06 08:08:33'),
-(29, 29, 'REF-20260323-00003', 'CN-1774234364', 'client', 'individual', 'Ezekiel Codillo', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '09917745489', NULL, 'ezekielcodillo56@gmail.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-23 02:52:44', '2026-04-06 08:08:33'),
-(30, 30, 'REF-20260326-00001', 'CN-1774490538', 'client', 'corporate', 'REF-20260326-00001', NULL, '', '', '', NULL, '', NULL, '', 1, 'ALABANG BRANCH', '2026-03-26 03:02:18', 'pending', NULL, NULL, NULL, NULL, '2026-03-26 02:02:18', '2026-04-06 08:08:33'),
-(31, 31, 'REF-20260326-00002', 'CN-1774492173', 'client', 'corporate', 'REF-20260326-00002', NULL, '', '', '', NULL, '', NULL, '', 1, 'ALABANG BRANCH', '2026-03-26 03:29:33', 'pending', NULL, NULL, NULL, NULL, '2026-03-26 02:29:33', '2026-04-06 08:08:33'),
-(32, 32, 'REF-20260326-00003', 'CN-1774493824', 'client', 'corporate', 'REF-20260326-00003', NULL, '', '', '', NULL, '', NULL, '', 1, 'ALABANG BRANCH', '2026-03-26 03:57:04', 'pending', NULL, NULL, NULL, NULL, '2026-03-26 02:57:04', '2026-04-06 08:08:33'),
-(33, 33, 'REF-20260406-00001', 'CN-1775454582', 'client', 'individual', 'Submit Test', NULL, 'Submit', '', 'Test', NULL, '09123456789', '', 'test.submit@example.com', 1, 'ALABANG BRANCH', '2026-04-06 07:49:42', 'pending', NULL, NULL, NULL, NULL, '2026-04-06 05:49:42', '2026-04-06 08:08:33'),
-(34, 34, 'REF-20260406-00002', 'CN-1775454641', 'client', 'individual', 'Paul Gonzales', NULL, 'Paul', 'Kahulugan', 'Gonzales', NULL, '09917745489', '09959735489', 'gonzalespaul528@gmail.com', 6, 'CEBU BRANCH', '2026-04-06 07:50:41', 'approved', 'noice', 9, '2026-04-07 02:04:35', '2026-04-07 02:04:35', '2026-04-06 05:50:41', '2026-04-07 00:04:35');
+(1, 1, 'KYC-2024-0001', 'CN - 024001', 'client', 'individual', 'Juan Dela Cruz', NULL, 'Juan', 'Santos', 'Dela Cruz', NULL, '+63 912 345 6789', NULL, 'juan@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(2, 2, 'KYC-2024-0002', 'CN - 024002', 'client', 'individual', 'Maria Garcia', NULL, 'Maria', 'Santos', 'Garcia', NULL, '+63 921 654 3210', NULL, 'maria@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(3, 3, 'KYC-2024-0003', 'CN - 024003', 'client', 'corporate', 'Robert Santos', NULL, 'Robert', '', 'Santos', NULL, '+63 945 123 4567', NULL, 'robert@company.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(4, 4, 'KYC-2024-0004', 'CN - 024004', 'client', 'individual', 'Angela Torres', NULL, 'Angela', 'Marie', 'Torres', NULL, '+63 938 765 4321', NULL, 'angela@example.com', NULL, NULL, NULL, 'declined', NULL, 2, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(5, 5, 'KYC-2024-0005', 'CN - 024005', 'client', 'individual', 'John Reyes', NULL, 'John', 'Michael', 'Reyes', NULL, '+63 945 678 9012', NULL, 'john@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(6, 6, 'KYC-2024-0006', 'CN - 024006', 'client', 'individual', 'Luisa Cruz', NULL, 'Luisa', 'Ana', 'Cruz', NULL, '+63 956 234 5678', NULL, 'luisa@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(7, 7, 'KYC-2024-0007', 'CN - 024007', 'client', 'individual', 'Carlos Reyes', NULL, 'Carlos', 'Antonio', 'Reyes', NULL, '+63 917 234 5678', NULL, 'carlos@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(8, 8, 'KYC-2024-0008', 'CN - 024008', 'client', 'corporate', 'Patricia Lopez', NULL, 'Patricia', '', 'Lopez', NULL, '+63 998 765 4321', NULL, 'patricia@innovtech.com', NULL, NULL, NULL, 'approved', NULL, 3, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(9, 9, 'KYC-2024-0009', 'CN - 024009', 'client', 'individual', 'Miguel Fernandez', NULL, 'Miguel', 'David', 'Fernandez', NULL, '+63 922 111 2222', NULL, 'miguel@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(10, 10, 'KYC-2024-0010', 'CN - 024010', 'client', 'individual', 'Rosa Morales', NULL, 'Rosa', 'Gabriela', 'Morales', NULL, '+63 909 333 4444', NULL, 'rosa@example.com', NULL, NULL, NULL, 'approved', NULL, 2, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(11, 11, 'KYC-2024-0011', 'CN - 024011', 'client', 'individual', 'Fernando Guerrero', NULL, 'Fernando', 'Luis', 'Guerrero', NULL, '+63 925 555 6666', NULL, 'fernando@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(12, 12, 'KYC-2024-0012', 'CN - 024012', 'client', 'individual', 'Sandra Navarro', NULL, 'Sandra', 'Elizabeth', 'Navarro', NULL, '+63 933 777 8888', NULL, 'sandra@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(13, 13, 'KYC-2024-0013', 'CN - 024013', 'client', 'corporate', 'Vicente Ramos', NULL, 'Vicente', '', 'Ramos', NULL, '+63 916 999 0000', NULL, 'vicente@logistics.com', NULL, NULL, NULL, 'approved', NULL, 3, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(14, 14, 'KYC-2024-0014', 'CN - 024014', 'client', 'individual', 'Yvonne Villanueva', NULL, 'Yvonne', 'Marie', 'Villanueva', NULL, '+63 942 111 2222', NULL, 'yvonne@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(15, 15, 'KYC-2024-0015', 'CN - 024015', 'client', 'individual', 'Xavier Gonzales', NULL, 'Xavier', 'Paolo', 'Gonzales', NULL, '+63 920 333 4444', NULL, 'xavier@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(16, 16, 'KYC-2024-0016', 'CN - 024016', 'client', 'individual', 'Zita Montoya', NULL, 'Zita', 'Sofia', 'Montoya', NULL, '+63 949 555 6666', NULL, 'zita@example.com', NULL, NULL, NULL, 'approved', NULL, 2, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(17, 17, 'KYC-2024-0017', 'CN - 024017', 'client', 'corporate', 'Andres Santiago', NULL, 'Andres', '', 'Santiago', NULL, '+63 917 777 8888', NULL, 'andres@manufcorp.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(18, 18, 'KYC-2024-0018', 'CN - 024018', 'client', 'individual', 'Bella Aquino', NULL, 'Bella', 'Rose', 'Aquino', NULL, '+63 911 999 0000', NULL, 'bella@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(19, 19, 'KYC-2024-0019', 'CN - 024019', 'client', 'individual', 'Crispin Bustamante', NULL, 'Crispin', 'Manuel', 'Bustamante', NULL, '+63 923 111 2222', NULL, 'crispin@example.com', NULL, NULL, NULL, 'approved', NULL, 3, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(20, 20, 'KYC-2024-0020', 'CN - 024020', 'client', 'individual', 'Dolores Castillo', NULL, 'Dolores', 'Amelia', 'Castillo', NULL, '+63 936 333 4444', NULL, 'dolores@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(21, 21, 'KYC-2024-0021', 'CN - 024021', 'client', 'individual', 'Emilio Delgado', NULL, 'Emilio', 'Gabriel', 'Delgado', NULL, '+63 946 555 6666', NULL, 'emilio@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(22, 22, 'KYC-2024-0022', 'CN - 024022', 'client', 'corporate', 'Fiona Echevarria', NULL, 'Fiona', '', 'Echevarria', NULL, '+63 953 777 8888', NULL, 'fiona@fashionco.com', NULL, NULL, NULL, 'approved', NULL, 2, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(23, 23, 'KYC-2024-0023', 'CN - 024023', 'client', 'individual', 'Gregorio Franco', NULL, 'Gregorio', 'Antonio', 'Franco', NULL, '+63 927 999 0000', NULL, 'gregorio@example.com', NULL, NULL, NULL, 'approved', NULL, 1, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(24, 24, 'KYC-2024-0024', 'CN - 024024', 'client', 'individual', 'Helena Guzman', NULL, 'Helena', 'Jasmine', 'Guzman', NULL, '+63 941 111 2222', NULL, 'helena@example.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 03:27:01', '2026-04-06 08:08:33'),
+(25, 25, 'REF-20260317-00001', 'CN - 000025', 'client', 'individual', 'Ezekiel Codillo', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '09075732796', NULL, 'ezekielcodillo56@gmail.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 06:23:42', '2026-04-06 08:08:33'),
+(26, 26, 'REF-20260317-00002', 'CN - 000026', 'client', 'corporate', 'Ansel Doton', NULL, 'Ansel', 'Cadag', 'Doton', NULL, '09917745489', NULL, 'ansel@gmail.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-17 06:49:34', '2026-04-06 08:08:33'),
+(27, 27, 'REF-20260323-00001', 'CN - 000027', 'client', 'individual', 'Ezekiel Codillo', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '09075732796', NULL, 'ezekielcodillo56@gmail.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-23 00:22:53', '2026-04-06 08:08:33'),
+(28, 28, 'REF-20260323-00002', 'CN - 000028', 'agent', 'corporate', 'Kiel Courier Services', 'Kiel Courier Services', '', NULL, '', 'Ezekiel Robin Codillo', NULL, '09568439760', 'ezekielcodillo56@gmail.com', 1, 'ALABANG BRANCH', '2026-03-23 01:59:56', 'pending', NULL, NULL, NULL, NULL, '2026-03-23 00:59:56', '2026-04-06 08:08:33'),
+(29, 29, 'REF-20260323-00003', 'CN - 000029', 'client', 'individual', 'Ezekiel Codillo', NULL, 'Ezekiel', 'Robin', 'Codillo', NULL, '09917745489', NULL, 'ezekielcodillo56@gmail.com', NULL, NULL, NULL, 'pending', NULL, NULL, NULL, NULL, '2026-03-23 02:52:44', '2026-04-06 08:08:33'),
+(30, 30, 'REF-20260326-00001', 'CN - 000030', 'client', 'corporate', 'REF-20260326-00001', NULL, '', '', '', NULL, '', NULL, '', 1, 'ALABANG BRANCH', '2026-03-26 03:02:18', 'pending', NULL, NULL, NULL, NULL, '2026-03-26 02:02:18', '2026-04-06 08:08:33'),
+(31, 31, 'REF-20260326-00002', 'CN - 000031', 'client', 'corporate', 'REF-20260326-00002', NULL, '', '', '', NULL, '', NULL, '', 1, 'ALABANG BRANCH', '2026-03-26 03:29:33', 'pending', NULL, NULL, NULL, NULL, '2026-03-26 02:29:33', '2026-04-06 08:08:33'),
+(32, 32, 'REF-20260326-00003', 'CN - 000032', 'client', 'corporate', 'REF-20260326-00003', NULL, '', '', '', NULL, '', NULL, '', 1, 'ALABANG BRANCH', '2026-03-26 03:57:04', 'pending', NULL, NULL, NULL, NULL, '2026-03-26 02:57:04', '2026-04-06 08:08:33'),
+(33, 33, 'REF-20260406-00001', 'CN - 000033', 'client', 'individual', 'Submit Test', NULL, 'Submit', '', 'Test', NULL, '09123456789', '', 'test.submit@example.com', 1, 'ALABANG BRANCH', '2026-04-06 07:49:42', 'pending', NULL, NULL, NULL, NULL, '2026-04-06 05:49:42', '2026-04-06 08:08:33'),
+(34, 34, 'REF-20260406-00002', 'CN - 000034', 'client', 'individual', 'Paul Gonzales', NULL, 'Paul', 'Kahulugan', 'Gonzales', NULL, '09917745489', '09959735489', 'gonzalespaul528@gmail.com', 6, 'CEBU BRANCH', '2026-04-06 07:50:41', 'approved', 'noice', 9, '2026-04-07 02:04:35', '2026-04-07 02:04:35', '2026-04-06 05:50:41', '2026-04-07 00:04:35');
 
 -- --------------------------------------------------------
 
@@ -545,6 +545,522 @@ ALTER TABLE `verification_history`
   ADD CONSTRAINT `verification_history_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `clients` (`client_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `verification_history_ibfk_2` FOREIGN KEY (`kyc_id`) REFERENCES `kyc_verifications` (`kyc_id`) ON DELETE SET NULL,
   ADD CONSTRAINT `verification_history_ibfk_3` FOREIGN KEY (`changed_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `agents`
+--
+
+CREATE TABLE IF NOT EXISTS `agents` (
+  `agent_id` int(11) NOT NULL AUTO_INCREMENT,
+  `client_id` int(11) NOT NULL,
+  `reference_code` varchar(50) NOT NULL,
+  `client_number` varchar(30) DEFAULT NULL,
+  `client_type` enum('individual','corporate','obligee') NOT NULL DEFAULT 'individual',
+  `client_name` varchar(200) DEFAULT NULL,
+  `first_name` varchar(50) DEFAULT NULL,
+  `middle_name` varchar(50) DEFAULT NULL,
+  `last_name` varchar(50) DEFAULT NULL,
+  `mobile_phone` varchar(20) DEFAULT NULL,
+  `office_phone` varchar(20) DEFAULT NULL,
+  `email` varchar(120) DEFAULT NULL,
+  `verification_status` enum('draft','pending','verified','rejected') DEFAULT 'draft',
+  `submitted_by` int(11) DEFAULT NULL,
+  `submitted_at` datetime DEFAULT NULL,
+  `verified_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`agent_id`),
+  UNIQUE KEY `uniq_agents_client_id` (`client_id`),
+  UNIQUE KEY `uniq_agents_reference_code` (`reference_code`),
+  KEY `idx_agents_client_type` (`client_type`),
+  KEY `idx_agents_status` (`verification_status`),
+  KEY `idx_agents_submitted_by` (`submitted_by`),
+  KEY `idx_agents_verified_by` (`verified_by`),
+  CONSTRAINT `agents_ibfk_client` FOREIGN KEY (`client_id`) REFERENCES `clients` (`client_id`) ON DELETE CASCADE,
+  CONSTRAINT `agents_ibfk_submitted_by` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `agents_ibfk_verified_by` FOREIGN KEY (`verified_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Backfill current agent-classified clients.
+INSERT INTO `agents` (
+  `client_id`,
+  `reference_code`,
+  `client_number`,
+  `client_type`,
+  `client_name`,
+  `first_name`,
+  `middle_name`,
+  `last_name`,
+  `mobile_phone`,
+  `office_phone`,
+  `email`,
+  `verification_status`,
+  `submitted_by`,
+  `submitted_at`,
+  `verified_by`,
+  `created_at`
+)
+SELECT
+  c.`client_id`,
+  c.`reference_code`,
+  c.`client_number`,
+  c.`client_type`,
+  c.`client_name`,
+  c.`first_name`,
+  c.`middle_name`,
+  c.`last_name`,
+  c.`mobile_phone`,
+  c.`office_phone`,
+  c.`email`,
+  c.`verification_status`,
+  c.`submitted_by`,
+  c.`submitted_at`,
+  c.`verified_by`,
+  c.`created_at`
+FROM `clients` c
+WHERE COALESCE(NULLIF(LOWER(TRIM(c.`client_classification`)), ''), 'client') = 'agent'
+ON DUPLICATE KEY UPDATE
+  `reference_code` = VALUES(`reference_code`),
+  `client_number` = VALUES(`client_number`),
+  `client_type` = VALUES(`client_type`),
+  `client_name` = VALUES(`client_name`),
+  `first_name` = VALUES(`first_name`),
+  `middle_name` = VALUES(`middle_name`),
+  `last_name` = VALUES(`last_name`),
+  `mobile_phone` = VALUES(`mobile_phone`),
+  `office_phone` = VALUES(`office_phone`),
+  `email` = VALUES(`email`),
+  `verification_status` = VALUES(`verification_status`),
+  `submitted_by` = VALUES(`submitted_by`),
+  `submitted_at` = VALUES(`submitted_at`),
+  `verified_by` = VALUES(`verified_by`),
+  `updated_at` = CURRENT_TIMESTAMP;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `approved_agents`
+--
+
+CREATE TABLE IF NOT EXISTS `approved_agents` (
+  `agent_id` int(11) NOT NULL AUTO_INCREMENT,
+  `client_id` int(11) NOT NULL,
+  `reference_code` varchar(50) NOT NULL,
+  `client_number` varchar(30) DEFAULT NULL,
+  `client_type` enum('individual','corporate','obligee') NOT NULL DEFAULT 'individual',
+  `client_name` varchar(200) DEFAULT NULL,
+  `first_name` varchar(50) DEFAULT NULL,
+  `middle_name` varchar(50) DEFAULT NULL,
+  `last_name` varchar(50) DEFAULT NULL,
+  `mobile_phone` varchar(20) DEFAULT NULL,
+  `office_phone` varchar(20) DEFAULT NULL,
+  `email` varchar(120) DEFAULT NULL,
+  `verification_status` enum('draft','pending','verified','rejected') DEFAULT 'draft',
+  `submitted_by` int(11) DEFAULT NULL,
+  `submitted_at` datetime DEFAULT NULL,
+  `verified_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `last_transaction_date` date DEFAULT NULL,
+  `activity_status` enum('active','inactive','deactivated') DEFAULT NULL,
+  `activity_status_updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`agent_id`),
+  UNIQUE KEY `uniq_approved_agents_client_id` (`client_id`),
+  UNIQUE KEY `uniq_approved_agents_reference_code` (`reference_code`),
+  KEY `idx_approved_agents_client_type` (`client_type`),
+  KEY `idx_approved_agents_status` (`verification_status`),
+  KEY `idx_approved_agents_submitted_by` (`submitted_by`),
+  KEY `idx_approved_agents_verified_by` (`verified_by`),
+  KEY `idx_approved_agents_last_transaction_date` (`last_transaction_date`),
+  KEY `idx_approved_agents_activity_status` (`activity_status`),
+  CONSTRAINT `approved_agents_ibfk_client` FOREIGN KEY (`client_id`) REFERENCES `clients` (`client_id`) ON DELETE CASCADE,
+  CONSTRAINT `approved_agents_ibfk_submitted_by` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `approved_agents_ibfk_verified_by` FOREIGN KEY (`verified_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Backfill verified agents into the approved agents table.
+INSERT INTO `approved_agents` (
+  `client_id`,
+  `reference_code`,
+  `client_number`,
+  `client_type`,
+  `client_name`,
+  `first_name`,
+  `middle_name`,
+  `last_name`,
+  `mobile_phone`,
+  `office_phone`,
+  `email`,
+  `verification_status`,
+  `submitted_by`,
+  `submitted_at`,
+  `verified_by`,
+  `created_at`,
+  `last_transaction_date`,
+  `activity_status`,
+  `activity_status_updated_at`
+)
+SELECT
+  a.`client_id`,
+  a.`reference_code`,
+  a.`client_number`,
+  a.`client_type`,
+  a.`client_name`,
+  a.`first_name`,
+  a.`middle_name`,
+  a.`last_name`,
+  a.`mobile_phone`,
+  a.`office_phone`,
+  a.`email`,
+  a.`verification_status`,
+  a.`submitted_by`,
+  a.`submitted_at`,
+  a.`verified_by`,
+  a.`created_at`,
+  a.`last_transaction_date`,
+  a.`activity_status`,
+  a.`activity_status_updated_at`
+FROM `agents` a
+WHERE a.`verification_status` = 'verified'
+ON DUPLICATE KEY UPDATE
+  `client_number` = VALUES(`client_number`),
+  `client_type` = VALUES(`client_type`),
+  `client_name` = VALUES(`client_name`),
+  `first_name` = VALUES(`first_name`),
+  `middle_name` = VALUES(`middle_name`),
+  `last_name` = VALUES(`last_name`),
+  `mobile_phone` = VALUES(`mobile_phone`),
+  `office_phone` = VALUES(`office_phone`),
+  `email` = VALUES(`email`),
+  `verification_status` = VALUES(`verification_status`),
+  `submitted_by` = VALUES(`submitted_by`),
+  `submitted_at` = VALUES(`submitted_at`),
+  `verified_by` = VALUES(`verified_by`),
+  `last_transaction_date` = VALUES(`last_transaction_date`),
+  `activity_status` = VALUES(`activity_status`),
+  `activity_status_updated_at` = VALUES(`activity_status_updated_at`),
+  `updated_at` = CURRENT_TIMESTAMP;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `client_approval_status_history`
+--
+
+CREATE TABLE IF NOT EXISTS `client_approval_status_history` (
+  `history_id` int(11) NOT NULL AUTO_INCREMENT,
+  `approval_id` int(11) NOT NULL,
+  `client_id` int(11) NOT NULL,
+  `reference_code` varchar(50) NOT NULL,
+  `previous_status` enum('pending','approved','declined','resubmit') DEFAULT NULL,
+  `new_status` enum('pending','approved','declined','resubmit') NOT NULL,
+  `review_notes` text DEFAULT NULL,
+  `reviewed_by` int(11) DEFAULT NULL,
+  `reviewed_at` datetime NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`history_id`),
+  KEY `idx_cash_approval_id` (`approval_id`),
+  KEY `idx_cash_client_id` (`client_id`),
+  KEY `idx_cash_reviewed_by` (`reviewed_by`),
+  KEY `idx_cash_reviewed_at` (`reviewed_at`),
+  CONSTRAINT `cash_ibfk_approval` FOREIGN KEY (`approval_id`) REFERENCES `client_approvals` (`approval_id`) ON DELETE CASCADE,
+  CONSTRAINT `cash_ibfk_client` FOREIGN KEY (`client_id`) REFERENCES `clients` (`client_id`) ON DELETE CASCADE,
+  CONSTRAINT `cash_ibfk_reviewed_by` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Backfill one history row for already-reviewed approvals.
+INSERT INTO `client_approval_status_history` (
+  `approval_id`,
+  `client_id`,
+  `reference_code`,
+  `previous_status`,
+  `new_status`,
+  `review_notes`,
+  `reviewed_by`,
+  `reviewed_at`
+)
+SELECT
+  ca.`approval_id`,
+  ca.`client_id`,
+  ca.`reference_code`,
+  'pending' AS `previous_status`,
+  ca.`approval_status` AS `new_status`,
+  ca.`review_notes`,
+  ca.`reviewed_by`,
+  COALESCE(ca.`reviewed_at`, ca.`updated_at`) AS `reviewed_at`
+FROM `client_approvals` ca
+WHERE ca.`reviewed_at` IS NOT NULL
+  AND ca.`approval_status` IN ('approved', 'declined', 'resubmit')
+  AND NOT EXISTS (
+    SELECT 1
+    FROM `client_approval_status_history` h
+    WHERE h.`approval_id` = ca.`approval_id`
+  );
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `agent_approvals`
+--
+
+CREATE TABLE IF NOT EXISTS `agent_approvals` (
+  `approval_id` int(11) NOT NULL AUTO_INCREMENT,
+  `client_id` int(11) NOT NULL,
+  `reference_code` varchar(50) NOT NULL,
+  `client_number` varchar(30) DEFAULT NULL,
+  `client_classification` enum('agent') NOT NULL DEFAULT 'agent',
+  `client_type` enum('individual','corporate','obligee') NOT NULL DEFAULT 'individual',
+  `display_name` varchar(200) DEFAULT NULL,
+  `client_name` varchar(200) DEFAULT NULL,
+  `first_name` varchar(50) DEFAULT NULL,
+  `middle_name` varchar(50) DEFAULT NULL,
+  `last_name` varchar(50) DEFAULT NULL,
+  `contact_person` varchar(100) DEFAULT NULL,
+  `mobile_phone` varchar(20) DEFAULT NULL,
+  `office_phone` varchar(20) DEFAULT NULL,
+  `email` varchar(120) DEFAULT NULL,
+  `submitted_by` int(11) DEFAULT NULL,
+  `submitted_by_branch` varchar(80) DEFAULT NULL,
+  `submitted_at` datetime DEFAULT NULL,
+  `approval_status` enum('pending','approved','declined','resubmit') NOT NULL DEFAULT 'pending',
+  `review_notes` text DEFAULT NULL,
+  `reviewed_by` int(11) DEFAULT NULL,
+  `reviewed_at` datetime DEFAULT NULL,
+  `approved_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`approval_id`),
+  UNIQUE KEY `uniq_agent_approvals_client_id` (`client_id`),
+  UNIQUE KEY `uniq_agent_approvals_reference_code` (`reference_code`),
+  KEY `idx_agent_approvals_status` (`approval_status`),
+  KEY `idx_agent_approvals_classification` (`client_classification`),
+  KEY `idx_agent_approvals_type` (`client_type`),
+  KEY `idx_agent_approvals_submitted_by` (`submitted_by`),
+  KEY `idx_agent_approvals_reviewed_by` (`reviewed_by`),
+  CONSTRAINT `agent_approvals_ibfk_client` FOREIGN KEY (`client_id`) REFERENCES `clients` (`client_id`) ON DELETE CASCADE,
+  CONSTRAINT `agent_approvals_ibfk_submitted_by` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `agent_approvals_ibfk_reviewed_by` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Backfill existing agent approvals that are not yet approved.
+INSERT INTO `agent_approvals` (
+  `client_id`,
+  `reference_code`,
+  `client_number`,
+  `client_classification`,
+  `client_type`,
+  `display_name`,
+  `client_name`,
+  `first_name`,
+  `middle_name`,
+  `last_name`,
+  `contact_person`,
+  `mobile_phone`,
+  `office_phone`,
+  `email`,
+  `submitted_by`,
+  `submitted_by_branch`,
+  `submitted_at`,
+  `approval_status`,
+  `review_notes`,
+  `reviewed_by`,
+  `reviewed_at`,
+  `approved_at`,
+  `created_at`
+)
+SELECT
+  ca.`client_id`,
+  ca.`reference_code`,
+  ca.`client_number`,
+  'agent' AS `client_classification`,
+  ca.`client_type`,
+  COALESCE(
+    NULLIF(TRIM(ca.`display_name`), ''),
+    NULLIF(TRIM(ca.`client_name`), ''),
+    NULLIF(TRIM(ca.`contact_person`), ''),
+    NULLIF(TRIM(CONCAT(COALESCE(ca.`first_name`, ''), ' ', COALESCE(ca.`last_name`, ''))), ''),
+    ca.`reference_code`
+  ) AS `display_name`,
+  ca.`client_name`,
+  ca.`first_name`,
+  ca.`middle_name`,
+  ca.`last_name`,
+  ca.`contact_person`,
+  ca.`mobile_phone`,
+  ca.`office_phone`,
+  ca.`email`,
+  ca.`submitted_by`,
+  ca.`submitted_by_branch`,
+  ca.`submitted_at`,
+  ca.`approval_status`,
+  ca.`review_notes`,
+  ca.`reviewed_by`,
+  ca.`reviewed_at`,
+  ca.`approved_at`,
+  ca.`created_at`
+FROM `client_approvals` ca
+WHERE COALESCE(NULLIF(LOWER(TRIM(ca.`client_classification`)), ''), 'client') = 'agent'
+  AND ca.`approval_status` IN ('pending', 'declined', 'resubmit')
+ON DUPLICATE KEY UPDATE
+  `client_number` = VALUES(`client_number`),
+  `client_type` = VALUES(`client_type`),
+  `display_name` = VALUES(`display_name`),
+  `client_name` = VALUES(`client_name`),
+  `first_name` = VALUES(`first_name`),
+  `middle_name` = VALUES(`middle_name`),
+  `last_name` = VALUES(`last_name`),
+  `contact_person` = VALUES(`contact_person`),
+  `mobile_phone` = VALUES(`mobile_phone`),
+  `office_phone` = VALUES(`office_phone`),
+  `email` = VALUES(`email`),
+  `submitted_by` = VALUES(`submitted_by`),
+  `submitted_by_branch` = VALUES(`submitted_by_branch`),
+  `submitted_at` = VALUES(`submitted_at`),
+  `approval_status` = VALUES(`approval_status`),
+  `review_notes` = VALUES(`review_notes`),
+  `reviewed_by` = VALUES(`reviewed_by`),
+  `reviewed_at` = VALUES(`reviewed_at`),
+  `approved_at` = VALUES(`approved_at`),
+  `updated_at` = CURRENT_TIMESTAMP;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `agent_approval_status_history`
+--
+
+CREATE TABLE IF NOT EXISTS `agent_approval_status_history` (
+  `history_id` int(11) NOT NULL AUTO_INCREMENT,
+  `approval_id` int(11) NOT NULL,
+  `client_id` int(11) NOT NULL,
+  `reference_code` varchar(50) NOT NULL,
+  `previous_status` enum('pending','approved','declined','resubmit') DEFAULT NULL,
+  `new_status` enum('pending','approved','declined','resubmit') NOT NULL,
+  `review_notes` text DEFAULT NULL,
+  `reviewed_by` int(11) DEFAULT NULL,
+  `reviewed_at` datetime NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`history_id`),
+  KEY `idx_agent_history_approval_id` (`approval_id`),
+  KEY `idx_agent_history_client_id` (`client_id`),
+  KEY `idx_agent_history_reviewed_by` (`reviewed_by`),
+  KEY `idx_agent_history_reviewed_at` (`reviewed_at`),
+  CONSTRAINT `agent_history_ibfk_approval` FOREIGN KEY (`approval_id`) REFERENCES `agent_approvals` (`approval_id`) ON DELETE CASCADE,
+  CONSTRAINT `agent_history_ibfk_client` FOREIGN KEY (`client_id`) REFERENCES `clients` (`client_id`) ON DELETE CASCADE,
+  CONSTRAINT `agent_history_ibfk_reviewed_by` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Backfill one history row for already-reviewed agent approvals.
+INSERT INTO `agent_approval_status_history` (
+  `approval_id`,
+  `client_id`,
+  `reference_code`,
+  `previous_status`,
+  `new_status`,
+  `review_notes`,
+  `reviewed_by`,
+  `reviewed_at`
+)
+SELECT
+  aa.`approval_id`,
+  aa.`client_id`,
+  aa.`reference_code`,
+  'pending' AS `previous_status`,
+  aa.`approval_status` AS `new_status`,
+  aa.`review_notes`,
+  aa.`reviewed_by`,
+  COALESCE(aa.`reviewed_at`, aa.`updated_at`) AS `reviewed_at`
+FROM `agent_approvals` aa
+WHERE aa.`reviewed_at` IS NOT NULL
+  AND aa.`approval_status` IN ('approved', 'declined', 'resubmit')
+  AND NOT EXISTS (
+    SELECT 1
+    FROM `agent_approval_status_history` h
+    WHERE h.`approval_id` = aa.`approval_id`
+  );
+
+-- --------------------------------------------------------
+
+-- Add agent assignment fields to the KYC submission flow and agent approval snapshots.
+ALTER TABLE `clients`
+  ADD COLUMN IF NOT EXISTS `agent_type` enum('agent','sub_agent') DEFAULT NULL AFTER `client_classification`,
+  ADD COLUMN IF NOT EXISTS `head_agent_name` varchar(150) DEFAULT NULL AFTER `agent_type`,
+  ADD COLUMN IF NOT EXISTS `agent_branch` varchar(80) DEFAULT NULL AFTER `head_agent_name`,
+  ADD INDEX IF NOT EXISTS `idx_clients_agent_type` (`agent_type`),
+  ADD INDEX IF NOT EXISTS `idx_clients_agent_branch` (`agent_branch`);
+
+ALTER TABLE `kyc_verifications`
+  ADD COLUMN IF NOT EXISTS `agent_type` enum('agent','sub_agent') DEFAULT NULL AFTER `client_type`,
+  ADD COLUMN IF NOT EXISTS `head_agent_name` varchar(150) DEFAULT NULL AFTER `agent_type`,
+  ADD COLUMN IF NOT EXISTS `agent_branch` varchar(80) DEFAULT NULL AFTER `head_agent_name`,
+  ADD INDEX IF NOT EXISTS `idx_kyc_verifications_agent_type` (`agent_type`),
+  ADD INDEX IF NOT EXISTS `idx_kyc_verifications_agent_branch` (`agent_branch`);
+
+ALTER TABLE `client_approvals`
+  ADD COLUMN IF NOT EXISTS `agent_type` enum('agent','sub_agent') DEFAULT NULL AFTER `client_classification`,
+  ADD COLUMN IF NOT EXISTS `head_agent_name` varchar(150) DEFAULT NULL AFTER `agent_type`,
+  ADD COLUMN IF NOT EXISTS `agent_branch` varchar(80) DEFAULT NULL AFTER `head_agent_name`,
+  ADD INDEX IF NOT EXISTS `idx_client_approvals_agent_type` (`agent_type`),
+  ADD INDEX IF NOT EXISTS `idx_client_approvals_agent_branch` (`agent_branch`);
+
+ALTER TABLE `agent_approvals`
+  ADD COLUMN IF NOT EXISTS `agent_type` enum('agent','sub_agent') DEFAULT NULL AFTER `client_classification`,
+  ADD COLUMN IF NOT EXISTS `head_agent_name` varchar(150) DEFAULT NULL AFTER `agent_type`,
+  ADD COLUMN IF NOT EXISTS `agent_branch` varchar(80) DEFAULT NULL AFTER `head_agent_name`,
+  ADD INDEX IF NOT EXISTS `idx_agent_approvals_agent_type` (`agent_type`),
+  ADD INDEX IF NOT EXISTS `idx_agent_approvals_agent_branch` (`agent_branch`);
+
+ALTER TABLE `approved_agents`
+  ADD COLUMN IF NOT EXISTS `agent_type` enum('agent','sub_agent') DEFAULT NULL AFTER `client_type`,
+  ADD COLUMN IF NOT EXISTS `head_agent_name` varchar(150) DEFAULT NULL AFTER `agent_type`,
+  ADD COLUMN IF NOT EXISTS `agent_branch` varchar(80) DEFAULT NULL AFTER `head_agent_name`,
+  ADD INDEX IF NOT EXISTS `idx_approved_agents_agent_type` (`agent_type`),
+  ADD INDEX IF NOT EXISTS `idx_approved_agents_agent_branch` (`agent_branch`);
+
+-- Legacy fallback table for installs that do not yet have the original agents table.
+ALTER TABLE `agents`
+  ADD COLUMN IF NOT EXISTS `agent_type` enum('agent','sub_agent') DEFAULT NULL AFTER `client_type`,
+  ADD COLUMN IF NOT EXISTS `head_agent_name` varchar(150) DEFAULT NULL AFTER `agent_type`,
+  ADD COLUMN IF NOT EXISTS `agent_branch` varchar(80) DEFAULT NULL AFTER `head_agent_name`,
+  ADD INDEX IF NOT EXISTS `idx_agents_agent_type` (`agent_type`),
+  ADD INDEX IF NOT EXISTS `idx_agents_agent_branch` (`agent_branch`);
+
+-- Backfill the default agent role for existing agent-classified records.
+UPDATE `clients` c
+SET c.`agent_type` = 'agent'
+WHERE COALESCE(NULLIF(LOWER(TRIM(c.`client_classification`)), ''), 'client') = 'agent'
+  AND (c.`agent_type` IS NULL OR TRIM(c.`agent_type`) = '');
+
+UPDATE `kyc_verifications` kv
+JOIN `clients` c ON c.`client_id` = kv.`client_id`
+SET kv.`agent_type` = 'agent'
+WHERE COALESCE(NULLIF(LOWER(TRIM(c.`client_classification`)), ''), 'client') = 'agent'
+  AND (kv.`agent_type` IS NULL OR TRIM(kv.`agent_type`) = '');
+
+UPDATE `client_approvals` ca
+JOIN `clients` c ON c.`client_id` = ca.`client_id`
+SET ca.`agent_type` = 'agent'
+WHERE COALESCE(NULLIF(LOWER(TRIM(c.`client_classification`)), ''), 'client') = 'agent'
+  AND (ca.`agent_type` IS NULL OR TRIM(ca.`agent_type`) = '');
+
+UPDATE `agent_approvals` aa
+SET aa.`agent_type` = 'agent'
+WHERE aa.`agent_type` IS NULL OR TRIM(aa.`agent_type`) = '';
+
+UPDATE `approved_agents` aa
+JOIN `clients` c ON c.`client_id` = aa.`client_id`
+SET aa.`agent_type` = 'agent'
+WHERE COALESCE(NULLIF(LOWER(TRIM(c.`client_classification`)), ''), 'client') = 'agent'
+  AND (aa.`agent_type` IS NULL OR TRIM(aa.`agent_type`) = '');
+
+UPDATE `agents` a
+JOIN `clients` c ON c.`client_id` = a.`client_id`
+SET a.`agent_type` = 'agent'
+WHERE COALESCE(NULLIF(LOWER(TRIM(c.`client_classification`)), ''), 'client') = 'agent'
+  AND (a.`agent_type` IS NULL OR TRIM(a.`agent_type`) = '');
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

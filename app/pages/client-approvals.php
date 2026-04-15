@@ -352,8 +352,19 @@ if (!$isHeadOfficeUser) {
             background-color: #f5fbf8;
         }
 
+        #approvalsTableBody tr.approval-row.is-checked td {
+            background-color: #f3faf5;
+        }
+
         #approvalsTableBody tr.approval-row.is-selected td {
             background-color: #eaf5ef;
+        }
+
+        .clients-table th.col-checkbox,
+        .clients-table td.col-checkbox {
+            width: 42px;
+            min-width: 42px;
+            text-align: center;
         }
 
         .table-wrapper {
@@ -981,7 +992,11 @@ include '../includes/sidebar.php';
                 Dashboard &rsaquo; <span><?php echo htmlspecialchars($approvalBreadcrumbTitle); ?></span>
             </div>
         </div>
-        <div class="topbar-right"></div>
+        <div class="topbar-right">
+            <button type="button" class="btn-delete-selected" id="deleteSelectedApprovalsBtn" disabled>
+                <i class="bi bi-trash"></i> Delete Selected
+            </button>
+        </div>
     </header>
 
     <main class="content">
@@ -1031,6 +1046,7 @@ include '../includes/sidebar.php';
             <table class="clients-table">
                 <thead>
                     <tr>
+                        <th class="col-checkbox"><input type="checkbox" id="selectAll"></th>
                         <th class="col-ref">Ref Code</th>
                         <th class="col-name">Name</th>
                         <th class="col-type">Class</th>
@@ -1044,7 +1060,7 @@ include '../includes/sidebar.php';
                 </thead>
                 <tbody id="approvalsTableBody">
                     <tr>
-                        <td colspan="9" style="text-align:center; padding:20px;">Loading approvals...</td>
+                        <td colspan="10" style="text-align:center; padding:20px;">Loading approvals...</td>
                     </tr>
                 </tbody>
             </table>
@@ -1117,6 +1133,8 @@ include '../includes/sidebar.php';
     </div>
 </section>
 
+<script src="../../public/js/dialog-modal.js"></script>
+
 <script>
     const approvalQueue = <?php echo json_encode($approvalQueue); ?>;
     const approvalDefaultClassification = <?php echo json_encode($approvalDefaultClassification); ?>;
@@ -1151,6 +1169,12 @@ include '../includes/sidebar.php';
     const modalDeclineBtn = document.getElementById('modalDeclineBtn');
     const modalResubmitBtn = document.getElementById('modalResubmitBtn');
     const modalActionButtons = [modalApproveBtn, modalDeclineBtn, modalResubmitBtn].filter(Boolean);
+    const hasApprovalCheckboxes = true;
+    const approvalTableColumnCount = 10;
+    const selectedApprovalIds = new Set();
+    const selectedApprovalRows = new Map();
+    const deleteSelectedApprovalsBtn = document.getElementById('deleteSelectedApprovalsBtn');
+    let totalApprovals = 0;
 
     function escapeHtml(value) {
         return String(value)
@@ -1784,12 +1808,188 @@ include '../includes/sidebar.php';
         });
     }
 
+    function setApprovalDeleteButtonBusy(button, isBusy, busyText = 'Working...') {
+        if (!button) return;
+
+        if (isBusy) {
+            button.dataset.originalHtml = button.innerHTML;
+            button.innerHTML = `<span class="spinner" style="width:14px;height:14px;"></span> ${busyText}`;
+            button.disabled = true;
+            return;
+        }
+
+        button.disabled = false;
+        if (button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+    }
+
+    function updateApprovalBulkDeleteButtonState() {
+        if (!deleteSelectedApprovalsBtn || !hasApprovalCheckboxes) {
+            return;
+        }
+
+        deleteSelectedApprovalsBtn.disabled = selectedApprovalIds.size === 0;
+    }
+
+    function syncApprovalSelectAllCheckbox() {
+        if (!hasApprovalCheckboxes) {
+            return;
+        }
+
+        const selectAll = document.getElementById('selectAll');
+        if (!selectAll) {
+            return;
+        }
+
+        const rowCheckboxes = document.querySelectorAll('#approvalsTableBody .row-select');
+        const totalVisible = rowCheckboxes.length;
+        const checkedVisible = Array.from(rowCheckboxes).filter(cb => cb.checked).length;
+
+        if (totalVisible === 0) {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+            return;
+        }
+
+        selectAll.checked = checkedVisible === totalVisible;
+        selectAll.indeterminate = checkedVisible > 0 && checkedVisible < totalVisible;
+    }
+
+    function updateApprovalSelection(approvalId, isSelected, rowData) {
+        if (!hasApprovalCheckboxes) {
+            return;
+        }
+
+        const id = String(approvalId || '');
+        if (!id) {
+            return;
+        }
+
+        if (isSelected) {
+            selectedApprovalIds.add(id);
+            if (rowData) {
+                selectedApprovalRows.set(id, rowData);
+            }
+        } else {
+            selectedApprovalIds.delete(id);
+        }
+
+        updateApprovalBulkDeleteButtonState();
+    }
+
+    function deleteApprovalRecord(approvalId) {
+        const formData = new FormData();
+        formData.append('action', 'delete_approval_record');
+        formData.append('approval_id', String(approvalId));
+        formData.append('queue', approvalQueue);
+
+        return fetch('../handlers/client_approvals.php', {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        }).then(response => response.json());
+    }
+
+    async function deleteSelectedApprovals() {
+        if (!hasApprovalCheckboxes) {
+            return;
+        }
+
+        const selectedIds = Array.from(selectedApprovalIds);
+        if (selectedIds.length === 0) {
+            createToast('info', 'Nothing Selected', approvalQueue === 'agent'
+                ? 'Select one or more agent approvals first.'
+                : 'Select one or more client approvals first.');
+            return;
+        }
+
+        const selectionLabel = approvalQueue === 'agent' ? 'agent approval' : 'client approval';
+        const confirmed = await showConfirmModal({
+            title: 'Confirm Delete',
+            message: `Delete ${selectedIds.length} selected ${selectionLabel}${selectedIds.length === 1 ? '' : 's'}? This will remove only the approval records from the queue.`,
+            confirmText: 'Delete Selected',
+            cancelText: 'Cancel',
+            variant: 'danger'
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        setApprovalDeleteButtonBusy(deleteSelectedApprovalsBtn, true, 'Deleting...');
+
+        let successCount = 0;
+        let failureCount = 0;
+        let currentOpenApprovalDeleted = false;
+
+        try {
+            for (const approvalId of selectedIds) {
+                try {
+                    const payload = await deleteApprovalRecord(approvalId);
+                    if (payload.success) {
+                        successCount += 1;
+                        selectedApprovalIds.delete(String(approvalId));
+                        selectedApprovalRows.delete(String(approvalId));
+                        if (Number(approvalId) === currentOpenApprovalId) {
+                            currentOpenApprovalDeleted = true;
+                        }
+                    } else {
+                        failureCount += 1;
+                    }
+                } catch (error) {
+                    failureCount += 1;
+                }
+            }
+
+            updateApprovalBulkDeleteButtonState();
+
+            if (currentOpenApprovalDeleted) {
+                closeApplicationModal();
+            }
+
+            if (successCount > 0) {
+                const remainingTotal = Math.max(0, totalApprovals - successCount);
+                const maxPageAfterDelete = Math.max(1, Math.ceil(remainingTotal / pageSize));
+                const targetPage = Math.min(currentPage, maxPageAfterDelete);
+                createToast('success', 'Deleted', `${successCount} selected ${selectionLabel}${successCount === 1 ? '' : 's'} deleted.`);
+                loadApprovals(targetPage);
+            }
+
+            if (failureCount > 0) {
+                createToast('error', 'Delete Failed', `${failureCount} selected approval${failureCount === 1 ? '' : 's'} could not be deleted.`);
+            }
+        } finally {
+            setApprovalDeleteButtonBusy(deleteSelectedApprovalsBtn, false);
+        }
+    }
+
+    if (deleteSelectedApprovalsBtn) {
+        deleteSelectedApprovalsBtn.addEventListener('click', deleteSelectedApprovals);
+    }
+
+    if (hasApprovalCheckboxes) {
+        const selectAll = document.getElementById('selectAll');
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                document.querySelectorAll('#approvalsTableBody .row-select').forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                    updateApprovalSelection(checkbox.dataset.approvalId, checkbox.checked, selectedApprovalRows.get(String(checkbox.dataset.approvalId)) || null);
+                });
+
+                this.indeterminate = false;
+                updateApprovalBulkDeleteButtonState();
+            });
+        }
+    }
+
     function renderTable(rows) {
         const tbody = document.getElementById('approvalsTableBody');
         if (!tbody) return;
 
         if (!Array.isArray(rows) || rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 22px;">No approval records found</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="${approvalTableColumnCount}" style="text-align:center; padding: 22px;">No approval records found</td></tr>`;
             return;
         }
 
@@ -1805,6 +2005,7 @@ include '../includes/sidebar.php';
             const officerResubmittedJustNow = officerUpdated && isOfficerResubmittedJustNow(row.officer_resubmitted_at);
             const classificationValue = formatClassification(row.client_classification);
             const typeValue = formatType(row.client_type);
+            const rowId = String(approvalId || '');
             const statusHtml = `
                 <span class="status-stack">
                     <span class="approval-status-badge ${statusBadgeClass(status)}">${escapeHtml(status)}</span>
@@ -1816,9 +2017,15 @@ include '../includes/sidebar.php';
             if (approvalId === currentOpenApprovalId) {
                 tr.classList.add('is-selected');
             }
+            if (hasApprovalCheckboxes && selectedApprovalIds.has(rowId)) {
+                tr.classList.add('is-checked');
+            }
             tr.dataset.approvalId = String(approvalId);
+            tr.dataset.clientId = String(row.client_id || 0);
+            selectedApprovalRows.set(rowId, row);
 
             tr.innerHTML = `
+                ${hasApprovalCheckboxes ? `<td class="col-checkbox"><input type="checkbox" class="row-select" data-approval-id="${approvalId}" data-client-id="${escapeHtml(String(row.client_id || 0))}"></td>` : ''}
                 <td class="col-ref">
                     <span class="ref-badge">${escapeHtml(row.reference_code || 'N/A')}</span>
                 </td>
@@ -1838,9 +2045,23 @@ include '../includes/sidebar.php';
                 </td>
             `;
 
+            if (hasApprovalCheckboxes) {
+                const rowCheckbox = tr.querySelector('.row-select');
+                if (rowCheckbox) {
+                    rowCheckbox.checked = selectedApprovalIds.has(rowId);
+                    rowCheckbox.addEventListener('click', event => event.stopPropagation());
+                    rowCheckbox.addEventListener('change', function () {
+                        updateApprovalSelection(this.dataset.approvalId, this.checked, row);
+                        syncApprovalSelectAllCheckbox();
+                    });
+                }
+            }
+
             tbody.appendChild(tr);
         });
 
+        syncApprovalSelectAllCheckbox();
+        updateApprovalBulkDeleteButtonState();
         attachActionHandlers();
         attachRowHandlers();
     }
@@ -2183,7 +2404,7 @@ include '../includes/sidebar.php';
 
         document.querySelectorAll('#approvalsTableBody tr.approval-row[data-approval-id]').forEach(row => {
             row.addEventListener('click', function (event) {
-                if (event.target.closest('.action-stack')) {
+                if (event.target.closest('.action-stack, .row-select, .col-checkbox')) {
                     return;
                 }
 
@@ -2231,6 +2452,7 @@ include '../includes/sidebar.php';
 
                 currentPage = Number(payload.page || 1);
                 totalPages = Number(payload.totalPages || 1);
+                totalApprovals = Number(payload.total || 0);
 
                 updateBranchFilterOptions(payload.availableBranches || []);
                 renderTable(payload.data || []);
@@ -2241,7 +2463,7 @@ include '../includes/sidebar.php';
             .catch(error => {
                 const tbody = document.getElementById('approvalsTableBody');
                 if (tbody) {
-                    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#b42318; padding: 22px;">${escapeHtml(error.message || 'Failed to load approvals')}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="${approvalTableColumnCount}" style="text-align:center; color:#b42318; padding: 22px;">${escapeHtml(error.message || 'Failed to load approvals')}</td></tr>`;
                 }
                 updatePaginationInfo({ total: 0, page: 1, pageSize, totalPages: 1 });
                 renderPagination({ page: 1, totalPages: 1 });
@@ -2278,7 +2500,7 @@ include '../includes/sidebar.php';
         return 'Resubmit';
     }
 
-    function runAction(approvalId, action, options = {}) {
+    async function runAction(approvalId, action, options = {}) {
         const source = String(options.source || 'table');
         const actionTitle = getActionTitle(action);
         let reviewNote = '';
@@ -2296,14 +2518,29 @@ include '../includes/sidebar.php';
             const notePrompt = action === 'approve'
                 ? 'Optional note for approval:'
                 : `Reason for ${actionTitle.toLowerCase()}:`;
-            const promptedNote = window.prompt(notePrompt, '');
+            const promptedNote = await showPromptModal({
+                title: `${actionTitle} Review Note`,
+                message: notePrompt,
+                promptLabel: 'Review note',
+                promptPlaceholder: 'Enter a note or reason',
+                defaultValue: '',
+                confirmText: 'Continue',
+                cancelText: 'Cancel',
+                variant: action === 'decline' ? 'danger' : 'success'
+            });
             if (promptedNote === null) {
                 return;
             }
             reviewNote = promptedNote;
         }
 
-        const confirmed = window.confirm(`Confirm ${actionTitle.toLowerCase()} for approval #${approvalId}?`);
+        const confirmed = await showConfirmModal({
+            title: `Confirm ${actionTitle}`,
+            message: `Confirm ${actionTitle.toLowerCase()} for approval #${approvalId}?`,
+            confirmText: actionTitle,
+            cancelText: 'Cancel',
+            variant: action === 'decline' ? 'danger' : 'success'
+        });
         if (!confirmed) {
             return;
         }
@@ -2354,7 +2591,7 @@ include '../includes/sidebar.php';
                 const approvalId = Number(this.dataset.id || 0);
                 const action = this.dataset.action || '';
                 if (!approvalId || !action) return;
-                runAction(approvalId, action);
+                void runAction(approvalId, action);
             });
         });
     }
@@ -2377,7 +2614,7 @@ include '../includes/sidebar.php';
                     return;
                 }
 
-                runAction(currentOpenApprovalId, action, { source: 'details' });
+                void runAction(currentOpenApprovalId, action, { source: 'details' });
             });
         });
 

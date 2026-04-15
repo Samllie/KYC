@@ -183,6 +183,35 @@ body.clients-page.agents-mode .table-wrapper.is-loading::before {
     box-shadow: var(--shadow-md);
 }
 
+.btn-delete-selected {
+    padding: 4px 9px;
+    border: 1px solid #f0c3c6;
+    border-radius: var(--radius-md);
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff0f0;
+    color: #a61d24;
+}
+
+.btn-delete-selected:hover {
+    background: #ffe3e3;
+    border-color: #ef4444;
+    color: #b91c1c;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-delete-selected:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
 /* Table Wrapper */
 .table-wrapper {
     position: relative;

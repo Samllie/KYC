@@ -92,7 +92,7 @@ function fetchOne($query, $params = []) {
 
 /**
  * Generate unique reference code
- * Format: Ref - 00001
+ * Format: Ref - 000000
  */
 function generateUniqueReferenceCode() {
     global $db;
@@ -130,11 +130,11 @@ function generateUniqueReferenceCode() {
         $result->free();
     }
 
-    if ($nextNumber > 99999) {
+    if ($nextNumber > 999999) {
         throw new RuntimeException('Reference code limit reached.');
     }
 
-    return 'Ref - ' . str_pad((string)$nextNumber, 5, '0', STR_PAD_LEFT);
+    return sprintf('Ref - %06d', $nextNumber);
 }
 
 /**

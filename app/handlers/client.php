@@ -213,17 +213,20 @@ if (!function_exists('deleteApprovedAgentRowByClient')) {
         $clientId = intval($clientId);
         $agentTable = agentStorageTableName();
         if ($clientId <= 0 || $agentTable === '') {
-            return;
+            return false;
         }
 
         $stmt = $db->prepare("DELETE FROM {$agentTable} WHERE client_id = ?");
         if (!$stmt) {
-            return;
+            return false;
         }
 
         $stmt->bind_param('i', $clientId);
         $stmt->execute();
+        $deleted = $stmt->affected_rows > 0;
         $stmt->close();
+
+        return $deleted;
     }
 }
 
@@ -487,13 +490,7 @@ if (!function_exists('queueClientForApproval')) {
 
 if (!function_exists('generateClientNumber')) {
     function generateClientNumber() {
-        try {
-            $suffix = strtoupper(bin2hex(random_bytes(3)));
-        } catch (Exception $e) {
-            $suffix = strtoupper(substr(md5(uniqid((string)mt_rand(), true)), 0, 6));
-        }
-
-        return 'CN-' . date('YmdHis') . '-' . $suffix;
+        return sprintf('CN - %06d', random_int(0, 999999));
     }
 }
 
@@ -845,6 +842,37 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $response['message'] = 'Client updated successfully';
     $response['activity_status_updated_at'] = $activityUpdatedAt;
     $response['activity_status_updated_display'] = clientActivityFormatDateTime($activityUpdatedAt);
+}
+
+// ============================================
+// DELETE AGENT RECORD
+// ============================================
+else if ($action === 'delete_agent_record' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $clientId = intval($_POST['client_id'] ?? 0);
+
+    if ($clientId === 0) {
+        $response['message'] = 'Invalid client ID';
+        echo json_encode($response);
+        exit;
+    }
+
+    $client = fetchAccessibleClientRecord($clientId);
+    if (!$client) {
+        $response['message'] = 'Client not found or access denied';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (strtolower(trim((string)($client['client_classification'] ?? 'client'))) !== 'agent') {
+        $response['message'] = 'Selected record is not an agent';
+        echo json_encode($response);
+        exit;
+    }
+
+    deleteApprovedAgentRowByClient($clientId);
+
+    $response['success'] = true;
+    $response['message'] = 'Agent record deleted successfully';
 }
 
 // ============================================

@@ -10,7 +10,7 @@ $clientTypeLabel = $isAgentFlow ? 'Individual Agent' : 'Individual Client';
 $newClientLabel = $isAgentFlow ? 'New Individual Agent' : 'New Individual Client';
 $breadcrumbParentLabel = $isAgentFlow ? 'Agents' : 'Clients';
 $recordNumberLabel = $isAgentFlow ? 'Agent Number' : 'Client Number';
-$recordNumberPlaceholder = $isAgentFlow ? 'Auto-generated agent number' : 'Auto-generated';
+$recordNumberPlaceholder = $isAgentFlow ? 'Auto-generated agent number' : 'CN - 000000';
 $agentOccupationOptions = ['Insurance Agent', 'Senior Insurance Agent', 'Unit Manager'];
 $agentTypeOptions = [
     'agent' => 'Agent',
@@ -1435,7 +1435,7 @@ function setButtonBusy(button, isBusy, label = 'Working...') {
 function generateRecordNumber(prefix, includeDate = true) {
     if (!includeDate) {
         const numericPart = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
-        return `${prefix}-${numericPart}`;
+        return `${prefix} - ${numericPart}`;
     }
 
     const now = new Date();
@@ -1454,7 +1454,9 @@ function generateRecordNumber(prefix, includeDate = true) {
 function ensureRecordNumber() {
     const field = document.getElementById('clientNumber');
     if (!field || field.value.trim()) return;
-    field.value = generateRecordNumber(isAgentFlow ? 'AG' : 'CN', !isAgentFlow);
+    field.value = isAgentFlow
+        ? generateRecordNumber('AG', false)
+        : `CN - ${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}`;
 }
 
 function syncAgentTypeFields() {
