@@ -368,9 +368,12 @@ if (!$isHeadOfficeUser) {
 
         .clients-table th.col-checkbox,
         .clients-table td.col-checkbox {
-            width: 42px;
-            min-width: 42px;
+            width: 1%;
+            min-width: 0;
+            padding-left: 6px;
+            padding-right: 6px;
             text-align: center;
+            white-space: nowrap;
         }
 
         .table-wrapper {

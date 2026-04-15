@@ -214,6 +214,27 @@ function executeUpdateById($db, $table, $idColumn, $idValue, $updateData, &$erro
     return $ok;
 }
 
+function deleteApplicationRowById($db, $table, $approvalId) {
+    $approvalId = intval($approvalId);
+    $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$table);
+
+    if ($approvalId <= 0 || $safeTable === '' || !tableExists($db, $safeTable)) {
+        return false;
+    }
+
+    $stmt = $db->prepare("DELETE FROM {$safeTable} WHERE approval_id = ?");
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('i', $approvalId);
+    $stmt->execute();
+    $deleted = $stmt->affected_rows > 0;
+    $stmt->close();
+
+    return $deleted;
+}
+
 function isHeadOfficeSession() {
     $sessionRole = strtolower(trim((string)($_SESSION['role'] ?? '')));
     $sessionDepartment = strtoupper(trim((string)($_SESSION['department'] ?? '')));
@@ -706,6 +727,34 @@ if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $response['success'] = true;
     $response['message'] = 'Submitted credentials were updated and resubmitted for review.';
     $response['data'] = ['approval_id' => $approvalId];
+    jsonExit($response);
+}
+
+if ($action === 'delete_application_record' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $approvalId = intval($_POST['approval_id'] ?? 0);
+
+    if ($approvalId <= 0) {
+        $response['message'] = 'Invalid application id.';
+        jsonExit($response, 400);
+    }
+
+    $existing = fetchOne(
+        "SELECT approval_id, client_id, reference_code, approval_status FROM client_approvals WHERE approval_id = ? AND submitted_by = ?",
+        [$approvalId, $userId]
+    );
+
+    if (!$existing) {
+        $response['message'] = 'Application record not found.';
+        jsonExit($response, 404);
+    }
+
+    if (!deleteApplicationRowById($db, 'client_approvals', $approvalId)) {
+        $response['message'] = 'Application record not found.';
+        jsonExit($response, 404);
+    }
+
+    $response['success'] = true;
+    $response['message'] = 'Application record deleted successfully';
     jsonExit($response);
 }
 

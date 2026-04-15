@@ -86,6 +86,24 @@ $isKycOfficerUser = $currentUserRoleNormalized === 'kyc_officer' && !$isHeadOffi
             min-width: 0;
         }
 
+        .applications-table th.col-checkbox,
+        .applications-table td.col-checkbox {
+            width: 2%;
+            min-width: 0;
+            padding-left: 6px;
+            padding-right: 6px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .applications-table tbody tr.is-checked td {
+            background: #eef8f2;
+        }
+
+        .applications-table tbody tr.is-checked:hover td {
+            background: #e8f5ee;
+        }
+
         .applications-table th,
         .applications-table td {
             text-align: center;
@@ -365,6 +383,61 @@ $isKycOfficerUser = $currentUserRoleNormalized === 'kyc_officer' && !$isHeadOffi
                 grid-template-columns: 1fr;
             }
         }
+
+        @media (max-width: 768px) {
+            .my-applications-page .topbar {
+                height: auto;
+                min-height: 58px;
+                padding: 10px 12px 10px 62px;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            .my-applications-page .topbar-left,
+            .my-applications-page .topbar-right {
+                width: 100%;
+            }
+
+            .my-applications-page .topbar-right {
+                justify-content: flex-end;
+            }
+
+            .my-applications-page .btn-delete-selected {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .applications-table th.col-checkbox,
+            .applications-table td.col-checkbox {
+                width: auto;
+                min-width: 0;
+                padding-left: 4px;
+                padding-right: 4px;
+            }
+
+            .remarks-cell,
+            .remarks-header,
+            .review-meta-cell {
+                min-width: 0;
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .my-applications-page .topbar {
+                padding: 8px 10px 8px 52px;
+            }
+
+            .my-applications-page .topbar-left h1 {
+                font-size: 0.9rem;
+                line-height: 1.15;
+            }
+
+            .my-applications-page .btn-delete-selected {
+                font-size: 0.72rem;
+            }
+        }
     </style>
 </head>
 <body class="clients-page my-applications-page">
@@ -393,7 +466,11 @@ include '../includes/sidebar.php';
                 Dashboard &rsaquo; <span>My Applications</span>
             </div>
         </div>
-        <div class="topbar-right"></div>
+        <div class="topbar-right">
+            <button type="button" class="btn-delete-selected" id="deleteSelectedApplicationsBtn" disabled>
+                <i class="bi bi-trash"></i> Delete Selected
+            </button>
+        </div>
     </header>
 
     <main class="content">
@@ -429,6 +506,7 @@ include '../includes/sidebar.php';
             <table class="clients-table applications-table">
                 <thead>
                     <tr>
+                        <th class="col-checkbox"><input type="checkbox" id="selectAll"></th>
                         <th class="col-ref">Ref Code</th>
                         <th class="col-name">Name</th>
                         <th class="col-type">Class</th>
@@ -443,7 +521,7 @@ include '../includes/sidebar.php';
                 </thead>
                 <tbody id="applicationsTableBody">
                     <tr>
-                        <td colspan="10" style="text-align:center; padding:20px;">Loading applications...</td>
+                        <td colspan="11" style="text-align:center; padding:20px;">Loading applications...</td>
                     </tr>
                 </tbody>
             </table>
@@ -484,9 +562,16 @@ include '../includes/sidebar.php';
     </div>
 </div>
 
+<script src="../../public/js/dialog-modal.js"></script>
+
 <script>
     let currentPage = 1;
     const pageSize = 10;
+    const applicationTableColumnCount = 11;
+    const hasApplicationCheckboxes = true;
+    const selectedApplicationIds = new Set();
+    const deleteSelectedApplicationsBtn = document.getElementById('deleteSelectedApplicationsBtn');
+    let totalApplications = 0;
     let searchDebounceTimer;
     const modalState = {
         approvalId: 0,
@@ -598,6 +683,155 @@ include '../includes/sidebar.php';
         const wrapper = document.querySelector('.table-wrapper');
         if (!wrapper) return;
         wrapper.classList.toggle('is-loading', isLoading);
+    }
+
+    function setApplicationDeleteButtonBusy(button, isBusy, busyText = 'Working...') {
+        if (!button) return;
+
+        if (isBusy) {
+            button.dataset.originalHtml = button.innerHTML;
+            button.innerHTML = `<span class="spinner" style="width:14px;height:14px;"></span> ${busyText}`;
+            button.disabled = true;
+            return;
+        }
+
+        button.disabled = false;
+        if (button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+    }
+
+    function updateApplicationBulkDeleteButtonState() {
+        if (!deleteSelectedApplicationsBtn || !hasApplicationCheckboxes) {
+            return;
+        }
+
+        deleteSelectedApplicationsBtn.disabled = selectedApplicationIds.size === 0;
+    }
+
+    function syncApplicationSelectAllCheckbox() {
+        if (!hasApplicationCheckboxes) {
+            return;
+        }
+
+        const selectAll = document.getElementById('selectAll');
+        if (!selectAll) {
+            return;
+        }
+
+        const rowCheckboxes = document.querySelectorAll('#applicationsTableBody .row-select');
+        const totalVisible = rowCheckboxes.length;
+        const checkedVisible = Array.from(rowCheckboxes).filter(cb => cb.checked).length;
+
+        if (totalVisible === 0) {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+            return;
+        }
+
+        selectAll.checked = checkedVisible === totalVisible;
+        selectAll.indeterminate = checkedVisible > 0 && checkedVisible < totalVisible;
+    }
+
+    function updateApplicationSelection(approvalId, isSelected) {
+        if (!hasApplicationCheckboxes) {
+            return;
+        }
+
+        const id = String(approvalId || '');
+        if (!id) {
+            return;
+        }
+
+        if (isSelected) {
+            selectedApplicationIds.add(id);
+        } else {
+            selectedApplicationIds.delete(id);
+        }
+
+        updateApplicationBulkDeleteButtonState();
+    }
+
+    function deleteApplicationRecord(approvalId) {
+        const formData = new FormData();
+        formData.append('action', 'delete_application_record');
+        formData.append('approval_id', String(approvalId));
+
+        return fetch('../handlers/my_applications.php', {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        }).then(response => response.json());
+    }
+
+    async function deleteSelectedApplications() {
+        if (!hasApplicationCheckboxes) {
+            return;
+        }
+
+        const selectedIds = Array.from(selectedApplicationIds);
+        if (selectedIds.length === 0) {
+            createToast('info', 'Nothing Selected', 'Select one or more applications first.');
+            return;
+        }
+
+        const confirmed = await showConfirmModal({
+            title: 'Confirm Delete',
+            message: `Delete ${selectedIds.length} selected application${selectedIds.length === 1 ? '' : 's'}? This will remove only the application records from your queue.`,
+            confirmText: 'Delete Selected',
+            cancelText: 'Cancel',
+            variant: 'danger'
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        setApplicationDeleteButtonBusy(deleteSelectedApplicationsBtn, true, 'Deleting...');
+
+        let successCount = 0;
+        let failureCount = 0;
+        let currentOpenApplicationDeleted = false;
+
+        try {
+            for (const approvalId of selectedIds) {
+                try {
+                    const payload = await deleteApplicationRecord(approvalId);
+                    if (payload.success) {
+                        successCount += 1;
+                        selectedApplicationIds.delete(String(approvalId));
+                        if (Number(approvalId) === Number(modalState.approvalId || 0)) {
+                            currentOpenApplicationDeleted = true;
+                        }
+                    } else {
+                        failureCount += 1;
+                    }
+                } catch (error) {
+                    failureCount += 1;
+                }
+            }
+
+            updateApplicationBulkDeleteButtonState();
+
+            if (currentOpenApplicationDeleted) {
+                hideEditModal();
+            }
+
+            if (successCount > 0) {
+                const remainingTotal = Math.max(0, totalApplications - successCount);
+                const maxPageAfterDelete = Math.max(1, Math.ceil(remainingTotal / pageSize));
+                const targetPage = Math.min(currentPage, maxPageAfterDelete);
+                createToast('success', 'Deleted', `${successCount} selected application${successCount === 1 ? '' : 's'} deleted.`);
+                loadMyApplications(targetPage);
+            }
+
+            if (failureCount > 0) {
+                createToast('error', 'Delete Failed', `${failureCount} selected application${failureCount === 1 ? '' : 's'} could not be deleted.`);
+            }
+        } finally {
+            setApplicationDeleteButtonBusy(deleteSelectedApplicationsBtn, false);
+        }
     }
 
     function getActiveFilters() {
@@ -904,7 +1138,9 @@ include '../includes/sidebar.php';
         if (!tbody) return;
 
         if (!Array.isArray(rows) || rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding: 22px;">No application records found</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="${applicationTableColumnCount}" style="text-align:center; padding: 22px;">No application records found</td></tr>`;
+            syncApplicationSelectAllCheckbox();
+            updateApplicationBulkDeleteButtonState();
             return;
         }
 
@@ -914,9 +1150,18 @@ include '../includes/sidebar.php';
             const statusAfter = String(row.status_after_review || row.approval_status || 'pending').toLowerCase();
             const canEdit = Boolean(row.can_edit);
             const remarks = String(row.admin_remarks || '').trim();
+            const approvalId = Number(row.approval_id || 0);
+            const rowId = String(approvalId || '');
 
             const tr = document.createElement('tr');
+            tr.className = 'application-row';
+            tr.dataset.approvalId = String(approvalId);
+            if (selectedApplicationIds.has(rowId)) {
+                tr.classList.add('is-checked');
+            }
+
             tr.innerHTML = `
+                <td class="col-checkbox"><input type="checkbox" class="row-select" data-approval-id="${approvalId}"></td>
                 <td class="col-ref"><span class="ref-badge">${escapeHtml(row.reference_code || 'N/A')}</span></td>
                 <td class="col-name">${escapeHtml(row.display_name || row.client_name || 'N/A')}</td>
                 <td class="col-type"><span class="type-badge ${classificationBadgeClass(row.client_classification)}">${escapeHtml(formatClassification(row.client_classification))}</span></td>
@@ -933,10 +1178,23 @@ include '../includes/sidebar.php';
                 </td>
             `;
 
+            const rowCheckbox = tr.querySelector('.row-select');
+            if (rowCheckbox) {
+                rowCheckbox.checked = selectedApplicationIds.has(rowId);
+                rowCheckbox.addEventListener('click', event => event.stopPropagation());
+                rowCheckbox.addEventListener('change', function () {
+                    updateApplicationSelection(this.dataset.approvalId, this.checked);
+                    tr.classList.toggle('is-checked', this.checked);
+                    syncApplicationSelectAllCheckbox();
+                });
+            }
+
             tbody.appendChild(tr);
         });
 
         attachActionHandlers();
+        syncApplicationSelectAllCheckbox();
+        updateApplicationBulkDeleteButtonState();
     }
 
     function attachActionHandlers() {
@@ -1030,6 +1288,7 @@ include '../includes/sidebar.php';
                 }
 
                 currentPage = Number(payload.page || 1);
+                totalApplications = Number(payload.total || 0);
 
                 renderTable(payload.data || []);
                 updatePaginationInfo(payload);
@@ -1038,7 +1297,7 @@ include '../includes/sidebar.php';
             .catch(error => {
                 const tbody = document.getElementById('applicationsTableBody');
                 if (tbody) {
-                    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#b42318; padding: 22px;">${escapeHtml(error.message || 'Failed to load applications')}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="${applicationTableColumnCount}" style="text-align:center; color:#b42318; padding: 22px;">${escapeHtml(error.message || 'Failed to load applications')}</td></tr>`;
                 }
                 updatePaginationInfo({ total: 0, page: 1, pageSize, totalPages: 1 });
                 renderPagination({ page: 1, totalPages: 1 });
@@ -1051,6 +1310,29 @@ include '../includes/sidebar.php';
 
     function applyFilters() {
         loadMyApplications(1);
+    }
+
+    if (deleteSelectedApplicationsBtn) {
+        deleteSelectedApplicationsBtn.addEventListener('click', deleteSelectedApplications);
+    }
+
+    if (hasApplicationCheckboxes) {
+        const selectAll = document.getElementById('selectAll');
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                document.querySelectorAll('#applicationsTableBody .row-select').forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                    updateApplicationSelection(checkbox.dataset.approvalId, checkbox.checked);
+                    const row = checkbox.closest('tr');
+                    if (row) {
+                        row.classList.toggle('is-checked', checkbox.checked);
+                    }
+                });
+
+                this.indeterminate = false;
+                updateApplicationBulkDeleteButtonState();
+            });
+        }
     }
 
     if (editApplicationForm) {
