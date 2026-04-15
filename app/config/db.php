@@ -92,7 +92,7 @@ function fetchOne($query, $params = []) {
 
 /**
  * Generate unique reference code
- * Format: Ref - 000000
+ * Format: REF - 000000
  */
 function generateUniqueReferenceCode() {
     global $db;
@@ -102,13 +102,13 @@ function generateUniqueReferenceCode() {
         FROM (
             SELECT CAST(SUBSTRING(TRIM(reference_code), 7) AS UNSIGNED) AS ref_number
             FROM clients
-            WHERE TRIM(reference_code) LIKE 'Ref - %'
+            WHERE UPPER(TRIM(reference_code)) LIKE 'REF - %'
 
             UNION ALL
 
             SELECT CAST(SUBSTRING(TRIM(reference_code), 7) AS UNSIGNED) AS ref_number
             FROM client_approvals
-            WHERE TRIM(reference_code) LIKE 'Ref - %'
+            WHERE UPPER(TRIM(reference_code)) LIKE 'REF - %'
 
             UNION ALL
 
@@ -117,7 +117,7 @@ function generateUniqueReferenceCode() {
                 7
             ) AS UNSIGNED) AS ref_number
             FROM kyc_verifications
-            WHERE COALESCE(NULLIF(TRIM(ref_code), ''), NULLIF(TRIM(reference_code), '')) LIKE 'Ref - %'
+            WHERE UPPER(COALESCE(NULLIF(TRIM(ref_code), ''), NULLIF(TRIM(reference_code), ''))) LIKE 'REF - %'
         ) AS reference_numbers
     ";
 
@@ -134,7 +134,7 @@ function generateUniqueReferenceCode() {
         throw new RuntimeException('Reference code limit reached.');
     }
 
-    return sprintf('Ref - %06d', $nextNumber);
+    return sprintf('REF - %06d', $nextNumber);
 }
 
 /**

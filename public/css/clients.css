@@ -1072,7 +1072,7 @@ body.clients-management-page .pagination-btn {
 }
 
 .view-modal-content {
-    width: min(900px, calc(100vw - 48px));
+    width: min(900px, calc(100vw - 24px));
 }
 
 .view-modal-content .form-control[readonly],
@@ -1092,7 +1092,7 @@ body.clients-management-page .pagination-btn {
 }
 
 .export-preview-modal-content {
-    width: min(1440px, calc(100vw - 32px));
+    width: min(1440px, calc(100vw - 24px));
 }
 
 .export-preview-content {
@@ -1403,11 +1403,31 @@ body.clients-management-page .pagination-btn {
 }
 
 @media (max-width: 768px) {
+    body.clients-page {
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    body.clients-page .main {
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+    }
+
+    body.clients-page .content {
+        overflow: visible;
+    }
+
+    .clients-table-shell {
+        overflow: visible;
+    }
+
     .table-wrapper {
         overflow-x: visible;
         height: auto;
         min-height: 0;
         max-height: none;
+        overflow-y: visible;
     }
 
     .clients-table {
@@ -1517,6 +1537,49 @@ body.clients-management-page .pagination-btn {
         text-align: center;
     }
 
+    .modal-header {
+        padding: 16px 18px;
+    }
+
+    .modal-body {
+        padding: 18px;
+        max-height: calc(100dvh - 160px);
+    }
+
+    .modal-footer {
+        padding: 14px 18px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modal-footer .btn-cancel,
+    .modal-footer .btn-save,
+    .modal-footer .btn-delete-confirm {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .export-preview-modal-content .modal-footer > div {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .export-preview-modal-content .modal-footer > div .btn {
+        flex: 1 1 100%;
+    }
+
+    .export-preview-content {
+        padding: 12px;
+    }
+
+    .export-preview-footer {
+        grid-template-columns: 1fr;
+    }
+
+    .export-preview-table {
+        min-width: 960px;
+    }
+
     .modal-content {
         width: 95%;
         max-height: calc(100dvh - 24px);
@@ -1542,6 +1605,24 @@ body.clients-management-page .pagination-btn {
         font-size: 0.68rem;
     }
 
+    .table-controls {
+        gap: 10px;
+    }
+
+    .controls-left,
+    .filter-group,
+    .controls-right {
+        width: 100%;
+    }
+
+    .filter-group select,
+    .search-input,
+    .btn-export,
+    .btn-add-client,
+    .btn-delete-selected {
+        width: 100%;
+    }
+
     .search-input {
         width: 100%;
     }
@@ -1551,10 +1632,31 @@ body.clients-management-page .pagination-btn {
         justify-content: center;
     }
 
+    .modal-header {
+        padding: 14px 16px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-footer {
+        padding: 12px 16px;
+    }
+
+    .export-preview-table {
+        min-width: 840px;
+    }
+
+    .export-preview-content {
+        padding: 10px;
+    }
+
     .ref-badge,
     .type-badge,
     .status-badge {
         padding: 3px 7px;
         margin-bottom: 4px;
         font-size: 0.7rem;
+    }
 }

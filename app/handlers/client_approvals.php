@@ -720,9 +720,6 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $filterParams = [];
     $filterTypes = '';
 
-    // Limit queue view to applications submitted by KYC officer accounts.
-    $whereClauses[] = "LOWER(REPLACE(COALESCE(su.role, ''), '-', '_')) = 'kyc_officer'";
-
     if ($search !== '') {
         $searchLike = '%' . $search . '%';
         $whereClauses[] = "(
@@ -906,8 +903,7 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
         "SELECT DISTINCT su.branch
          FROM {$queueTable} ca
          LEFT JOIN users su ON ca.submitted_by = su.user_id
-                 WHERE LOWER(REPLACE(COALESCE(su.role, ''), '-', '_')) = 'kyc_officer'
-                     AND su.branch IS NOT NULL AND TRIM(su.branch) <> ''
+         WHERE su.branch IS NOT NULL AND TRIM(su.branch) <> ''
          ORDER BY su.branch ASC"
     );
 

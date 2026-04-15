@@ -45,13 +45,18 @@ body {
     background-color: var(--gray-100);
     color: var(--gray-900);
     line-height: 1.6;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 /* ─── Auth Container ──────────────────────────────── */
 .auth-container {
-    height: 100vh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -63,6 +68,9 @@ body {
     background-blend-mode: multiply;
     position: relative;
     overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .auth-container::before {
@@ -740,6 +748,7 @@ body {
 @media (max-width: 768px) {
     .auth-container {
         padding: 16px;
+        background-attachment: scroll;
     }
 
     .auth-container.register-layout {
@@ -819,6 +828,10 @@ body {
 }
 
 @media (max-width: 480px) {
+    .auth-container {
+        padding: 14px;
+    }
+
     .brand-logo-image {
         width: 140px;
         max-width: 75%;

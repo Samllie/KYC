@@ -156,6 +156,34 @@ function activityStatusLabel(?string $status): string {
     return 'Pending';
 }
 
+function approvalStatusCounts(string $tableName, string $alias, array $whereClauses = [], array $params = []): array {
+    if (!tableExists($tableName)) {
+        return [
+            'pending_count' => 0,
+            'resubmit_count' => 0,
+            'approved_count' => 0,
+        ];
+    }
+
+    $query = "SELECT
+        COALESCE(SUM({$alias}.approval_status = 'pending'), 0) AS pending_count,
+        COALESCE(SUM({$alias}.approval_status = 'resubmit'), 0) AS resubmit_count,
+        COALESCE(SUM({$alias}.approval_status = 'approved'), 0) AS approved_count
+    FROM {$tableName} {$alias}";
+
+    if (!empty($whereClauses)) {
+        $query .= ' WHERE ' . implode(' AND ', $whereClauses);
+    }
+
+    $row = fetchOne($query, $params) ?? [];
+
+    return [
+        'pending_count' => intval($row['pending_count'] ?? 0),
+        'resubmit_count' => intval($row['resubmit_count'] ?? 0),
+        'approved_count' => intval($row['approved_count'] ?? 0),
+    ];
+}
+
 $workflowQuickAction = [
     'href' => 'kyc-verification.php',
     'icon' => 'bi-diagram-3',
@@ -200,6 +228,7 @@ if (!$isHeadOfficeUser) {
 }
 
 $hasClientApprovalsTable = tableExists('client_approvals');
+$hasAgentApprovalsTable = tableExists('agent_approvals');
 
 $approvalsScopeWhere = '';
 $approvalsScopeParams = [];
@@ -217,6 +246,9 @@ $obligeeTodayRow = [];
 $newThisWeekRow = [];
 $clientTypeSplit = [];
 $pipeline = [];
+$pipelinePendingPercent = 0;
+$pipelineResubmitPercent = 0;
+$pipelineApprovedPercent = 0;
 $recentActivity = [];
 $clientsHasClassification = columnExists('clients', 'client_classification');
 $liveClientsClassificationExpr = $clientsHasClassification
@@ -300,6 +332,37 @@ if ($hasClientApprovalsTable) {
     {$liveClientsApprovalFilterSql}
     ORDER BY COALESCE(c.submitted_at, c.created_at) DESC
     LIMIT 6", $clientsScopeParams);
+
+    if ($isHeadOfficeUser) {
+        $clientPipeline = approvalStatusCounts('client_approvals', 'ca', ["ca.client_classification = 'client'"]);
+
+        if ($hasAgentApprovalsTable) {
+            $agentPipeline = approvalStatusCounts('agent_approvals', 'aa');
+        } elseif ($hasClientApprovalsTable) {
+            $agentPipeline = approvalStatusCounts('client_approvals', 'ca', ["ca.client_classification = 'agent'"]);
+        } else {
+            $agentPipeline = [
+                'pending_count' => 0,
+                'resubmit_count' => 0,
+                'approved_count' => 0,
+            ];
+        }
+
+        $pipeline = [
+            'pending_count' => $clientPipeline['pending_count'] + $agentPipeline['pending_count'],
+            'resubmit_count' => $clientPipeline['resubmit_count'] + $agentPipeline['resubmit_count'],
+            'approved_count' => $clientPipeline['approved_count'] + $agentPipeline['approved_count'],
+        ];
+    } else {
+        $pipeline = fetchOne("SELECT
+            SUM(k.status = 'submitted') AS pending_count,
+            SUM(k.status = 'in_progress') AS resubmit_count,
+            SUM(k.status = 'approved') AS approved_count
+        FROM kyc_verifications k
+        LEFT JOIN clients c ON c.client_id = k.client_id
+        LEFT JOIN users su ON su.user_id = c.submitted_by
+        {$clientsScopeWhere}", $clientsScopeParams) ?? [];
+    }
 } else {
     $stats = fetchOne("SELECT
         COUNT(*) AS total_clients,
@@ -373,7 +436,14 @@ $corporatePct = max(0, 100 - $individualPct - $obligeePct);
 $pipelinePending = intval($pipeline['pending_count'] ?? 0);
 $pipelineResubmit = intval($pipeline['resubmit_count'] ?? 0);
 $pipelineApproved = intval($pipeline['approved_count'] ?? 0);
-$pipelineTotal = max(1, $pipelinePending + $pipelineResubmit + $pipelineApproved);
+$pipelineTotal = $pipelinePending + $pipelineResubmit + $pipelineApproved;
+$pipelineBasis = max(1, $pipelineTotal);
+
+if ($pipelineTotal > 0) {
+    $pipelinePendingPercent = round(($pipelinePending / $pipelineBasis) * 100);
+    $pipelineResubmitPercent = round(($pipelineResubmit / $pipelineBasis) * 100);
+    $pipelineApprovedPercent = max(0, 100 - $pipelinePendingPercent - $pipelineResubmitPercent);
+}
 $dashboardDataSourceLabel = 'Live Clients';
 $dashboardDataSourceClass = 'is-live';
 $dashboardDataSourceIcon = 'bi-people-fill';
@@ -504,22 +574,20 @@ include '../includes/sidebar.php';
                 <div class="card-header">
                     <div>
                         <h3 class="card-title">KYC Pipeline</h3>
-                        <div class="card-subtitle">Approval flow snapshot · <?php echo e($scopeLabel); ?></div>
+                        <div class="card-subtitle">Pending, resubmission, and approved split · <?php echo e($scopeLabel); ?></div>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="pipeline-list">
-                        <div class="pipeline-item pending">
-                            <div class="pipeline-head"><span>Pending Review</span><strong><?php echo e($pipelinePending); ?></strong></div>
-                            <div class="pipeline-track"><span style="width: <?php echo e(round(($pipelinePending / $pipelineTotal) * 100)); ?>%;"></span></div>
+                    <div class="split-visual pipeline-visual">
+                        <div class="split-bar pipeline-bar">
+                            <span class="pending" style="width: <?php echo e($pipelinePendingPercent); ?>%;"></span>
+                            <span class="resubmit" style="width: <?php echo e($pipelineResubmitPercent); ?>%;"></span>
+                            <span class="approved" style="width: <?php echo e($pipelineApprovedPercent); ?>%;"></span>
                         </div>
-                        <div class="pipeline-item resubmit">
-                            <div class="pipeline-head"><span>For Resubmission</span><strong><?php echo e($pipelineResubmit); ?></strong></div>
-                            <div class="pipeline-track"><span style="width: <?php echo e(round(($pipelineResubmit / $pipelineTotal) * 100)); ?>%;"></span></div>
-                        </div>
-                        <div class="pipeline-item approved">
-                            <div class="pipeline-head"><span>Approved</span><strong><?php echo e($pipelineApproved); ?></strong></div>
-                            <div class="pipeline-track"><span style="width: <?php echo e(round(($pipelineApproved / $pipelineTotal) * 100)); ?>%;"></span></div>
+                        <div class="split-legend">
+                            <div class="pending"><i class="bi bi-circle-fill"></i> Pending Review: <?php echo e($pipelinePending); ?> (<?php echo e($pipelinePendingPercent); ?>%)</div>
+                            <div class="resubmit"><i class="bi bi-circle-fill"></i> For Resubmission: <?php echo e($pipelineResubmit); ?> (<?php echo e($pipelineResubmitPercent); ?>%)</div>
+                            <div class="approved"><i class="bi bi-circle-fill"></i> Approved: <?php echo e($pipelineApproved); ?> (<?php echo e($pipelineApprovedPercent); ?>%)</div>
                         </div>
                     </div>
                 </div>
