@@ -151,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Hash password
     $passwordHash = hash('sha256', $password);
-    $avatarInitials = strtoupper(substr($fullname, 0, 1) . substr(strrchr($fullname, ' '), 1, 1));
+    $avatarInitials = getAvatarInitials($fullname);
     
     // Insert user
     $result = insert('users', [

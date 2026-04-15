@@ -55,6 +55,9 @@ $branchOptions = [
 ];
 $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedClassification);
 $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedClassification);
+$pageBackground = $isAgentFlow
+    ? 'radial-gradient(circle at 15% 20%, rgba(243, 232, 255, 0.92) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(235, 224, 255, 0.5) 0%, transparent 34%), linear-gradient(160deg, #fbf7ff 0%, #f3eaff 46%, #ffffff 100%)'
+    : 'radial-gradient(circle at 15% 20%, rgba(232, 240, 251, 0.9) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(220, 236, 255, 0.45) 0%, transparent 34%), linear-gradient(160deg, #f7fbff 0%, #eef6ff 46%, #ffffff 100%)';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -740,7 +743,7 @@ $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedCl
         }
     </style>
 </head>
-<body class="kyc-compact" style="--wizard-accent:<?php echo $isAgentFlow ? '#7c3aed' : '#2f7fd6'; ?>;--wizard-accent-soft:<?php echo $isAgentFlow ? '#f3e8ff' : '#e8f0fb'; ?>;--wizard-accent-deep:<?php echo $isAgentFlow ? '#5b21b6' : '#1f5ea9'; ?>;">
+<body class="kyc-compact" style="--wizard-accent:<?php echo $isAgentFlow ? '#7c3aed' : '#2f7fd6'; ?>;--wizard-accent-soft:<?php echo $isAgentFlow ? '#f3e8ff' : '#e8f0fb'; ?>;--wizard-accent-deep:<?php echo $isAgentFlow ? '#5b21b6' : '#1f5ea9'; ?>;--page-background:<?php echo $pageBackground; ?>;">
 
 <?php
 $activePage = 'kyc-verification';

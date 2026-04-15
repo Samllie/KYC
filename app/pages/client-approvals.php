@@ -156,14 +156,14 @@ if (!$isHeadOfficeUser) {
 
         .clients-table th.col-type,
         .clients-table td.col-type {
-            width: 8%;
-            min-width: 84px;
+            width: 9%;
+            min-width: 96px;
         }
 
         .clients-table th.col-branch,
         .clients-table td.col-branch {
-            width: 16%;
-            min-width: 140px;
+            width: 15%;
+            min-width: 132px;
         }
 
         .clients-table th.col-submitted-by,
@@ -208,6 +208,12 @@ if (!$isHeadOfficeUser) {
             color: #111827;
             font-size: 0.72rem;
             letter-spacing: 0.01em;
+        }
+
+        .clients-table th.col-type,
+        .clients-table td.col-type {
+            overflow: hidden;
+            text-overflow: clip;
         }
 
         .approval-pill {
@@ -396,14 +402,14 @@ if (!$isHeadOfficeUser) {
 
         .clients-table th.col-type,
         .clients-table td.col-type {
-            width: 7%;
-            min-width: 72px;
+            width: 8%;
+            min-width: 84px;
         }
 
         .clients-table th.col-branch,
         .clients-table td.col-branch {
-            width: 14%;
-            min-width: 128px;
+            width: 13%;
+            min-width: 120px;
         }
 
         .clients-table th.col-submitted-by,

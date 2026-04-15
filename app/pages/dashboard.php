@@ -563,6 +563,7 @@ include '../includes/sidebar.php';
                     <div class="action-buttons">
                         <a class="action-btn individual" href="kyc-individual.php"><i class="bi bi-person-plus"></i><span>New Individual</span></a>
                         <a class="action-btn corporate" href="kyc-corporate.php"><i class="bi bi-building-add"></i><span>New Corporate</span></a>
+                        <a class="action-btn obligee" href="kyc-obligee.php"><i class="bi bi-shield-check"></i><span>New Obligee</span></a>
                         <a class="action-btn agent" href="kyc-individual.php?classification=agent"><i class="bi bi-person-badge"></i><span>New Agent</span></a>
                         <a class="action-btn workflow" href="<?php echo e($workflowQuickAction['href']); ?>"><i class="bi <?php echo e($workflowQuickAction['icon']); ?>"></i><span><?php echo e($workflowQuickAction['label']); ?></span></a>
                         <a class="action-btn clients" href="clients.php"><i class="bi bi-inboxes"></i><span>View Clients</span></a>

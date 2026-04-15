@@ -5,6 +5,7 @@ requireLogin();
 $requestedClassification = strtolower(trim($_GET['classification'] ?? 'client'));
 $defaultClassification = $requestedClassification === 'agent' ? 'agent' : 'client';
 $isAgentDefault = $defaultClassification === 'agent';
+$pageBackground = 'radial-gradient(circle at 15% 20%, rgba(232, 240, 251, 0.9) 0%, transparent 34%), radial-gradient(circle at 82% 18%, rgba(232, 244, 238, 0.9) 0%, transparent 30%), radial-gradient(circle at 72% 82%, rgba(244, 232, 222, 0.85) 0%, transparent 30%), linear-gradient(160deg, #fbfdff 0%, #f7fafc 46%, #fffaf4 100%)';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -447,7 +448,7 @@ $isAgentDefault = $defaultClassification === 'agent';
         }
     </style>
 </head>
-<body class="kyc-compact">
+<body class="kyc-compact" style="--page-background:<?php echo $pageBackground; ?>;">
 
 <?php
 $activePage = 'kyc-verification';

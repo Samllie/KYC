@@ -115,16 +115,26 @@ function accountsManagementMakeAvatarInitials(string $fullName): string
         return getAvatarInitials($fullName);
     }
 
-    $parts = preg_split('/\s+/', trim($fullName)) ?: [];
-    $initials = '';
-    foreach ($parts as $part) {
-        $initials .= strtoupper(substr($part, 0, 1));
-        if (strlen($initials) >= 2) {
-            break;
-        }
+    $cleanName = trim(preg_replace('/\s+/', ' ', $fullName));
+    if ($cleanName === '') {
+        return 'U';
     }
 
-    return $initials !== '' ? substr($initials, 0, 2) : 'U';
+    $parts = preg_split('/\s+/', $cleanName) ?: [];
+    $firstPart = $parts[0] ?? '';
+    $lastPart = $parts[count($parts) - 1] ?? '';
+
+    $firstInitial = strtoupper(substr($firstPart, 0, 1));
+    if ($firstInitial === '') {
+        return 'U';
+    }
+
+    $lastInitial = strtoupper(substr($lastPart, 0, 1));
+    if ($lastInitial === '' || count($parts) === 1) {
+        return $firstInitial;
+    }
+
+    return $firstInitial . $lastInitial;
 }
 
 if (!isset($_SESSION['user_id'])) {

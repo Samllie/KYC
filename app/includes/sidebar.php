@@ -205,7 +205,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
     <nav class="sidebar-nav">
         <div class="sidebar-toggle-row">
             <button type="button" id="sidebarToggleBtn" class="sidebar-toggle" aria-label="Hide sidebar" title="Hide sidebar">
-                <i class="bi bi-list"></i>
+                <i class="bi bi-chevron-left"></i>
             </button>
         </div>
         <div class="nav-label sidebar-text">Main Menu</div>
@@ -391,7 +391,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
             return;
         }
 
-        icon.className = 'bi bi-list';
+        icon.className = collapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left';
     }
 
     function applyCollapsedState(collapsed) {

@@ -37,6 +37,7 @@ $supportingDocsTitle = $isObligee ? 'Government Requirements' : 'Supporting Docu
 $supportingDocsHint = $isObligee ? 'Upload authority letters, appointment orders, agency IDs, and other Philippine government requirements.' : 'PDF, JPG, PNG (Max 5MB each)';
 $idCardTitle = $isObligee ? 'Authorized Signatory ID Verification' : 'Government ID Verification';
 $idUploadHint = $isObligee ? 'Upload the authorized signatory\'s ID photo, then enter the ID number manually.' : 'Upload your ID photo, then enter the ID number manually.';
+$pageBackground = 'radial-gradient(circle at 15% 20%, rgba(244, 232, 222, 0.92) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(233, 213, 194, 0.5) 0%, transparent 34%), linear-gradient(160deg, #fcf6f0 0%, #f5eadf 46%, #ffffff 100%)';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -722,7 +723,7 @@ $idUploadHint = $isObligee ? 'Upload the authorized signatory\'s ID photo, then 
         }
     </style>
 </head>
-<body class="kyc-compact" style="--wizard-accent:#8b5a2b;--wizard-accent-soft:#f4e8de;--wizard-accent-deep:#6b4320;">
+<body class="kyc-compact" style="--wizard-accent:#8b5a2b;--wizard-accent-soft:#f4e8de;--wizard-accent-deep:#6b4320;--page-background:<?php echo $pageBackground; ?>;">
 
 <?php
 $activePage = 'kyc-verification';

@@ -9,6 +9,7 @@ $clientTypeLabel = 'Government Obligee Client';
 $breadcrumbParentLabel = 'Clients';
 $savedEntityLabel = 'Government Body';
 $backToEditUrl = 'kyc-obligee.php?classification=' . urlencode($selectedClassification);
+$pageBackground = 'radial-gradient(circle at 15% 20%, rgba(244, 232, 222, 0.92) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(233, 213, 194, 0.5) 0%, transparent 34%), linear-gradient(160deg, #fcf6f0 0%, #f5eadf 46%, #ffffff 100%)';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -97,7 +98,7 @@ $backToEditUrl = 'kyc-obligee.php?classification=' . urlencode($selectedClassifi
         }
     </style>
 </head>
-<body style="--wizard-accent:#8b5a2b;--wizard-accent-soft:#f4e8de;--wizard-accent-deep:#6b4320;">
+<body style="--wizard-accent:#8b5a2b;--wizard-accent-soft:#f4e8de;--wizard-accent-deep:#6b4320;--page-background:<?php echo $pageBackground; ?>;">
 
 <?php
 $activePage = 'kyc-verification';

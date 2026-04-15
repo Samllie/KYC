@@ -14,6 +14,9 @@ $breadcrumbParentLabel = 'Clients';
 $clientTypeIcon = $isObligee ? 'bi-shield-check' : 'bi-building';
 $reviewUrl = 'kyc-corporate-review.php?type=' . urlencode($selectedClientType) . '&classification=' . urlencode($selectedClassification);
 $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedClassification);
+$pageBackground = $isObligee
+    ? 'radial-gradient(circle at 15% 20%, rgba(244, 232, 222, 0.92) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(233, 213, 194, 0.5) 0%, transparent 34%), linear-gradient(160deg, #fcf6f0 0%, #f5eadf 46%, #ffffff 100%)'
+    : 'radial-gradient(circle at 15% 20%, rgba(232, 244, 238, 0.92) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(217, 242, 226, 0.5) 0%, transparent 34%), linear-gradient(160deg, #f7fcf9 0%, #edf8f1 46%, #ffffff 100%)';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -699,7 +702,7 @@ $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedC
         }
     </style>
 </head>
-<body class="kyc-compact" style="--wizard-accent:#2ea371;--wizard-accent-soft:#e8f4ee;--wizard-accent-deep:#16633f;">
+<body class="kyc-compact" style="--wizard-accent:#2ea371;--wizard-accent-soft:#e8f4ee;--wizard-accent-deep:#16633f;--page-background:<?php echo $pageBackground; ?>;">
 
 <?php
 $activePage = 'kyc-verification';

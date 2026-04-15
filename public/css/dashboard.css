@@ -294,6 +294,20 @@
     border-color: #86cba1;
 }
 
+.action-btn.obligee {
+    border-color: #e3c39c;
+    background: linear-gradient(180deg, #ffffff 0%, #f9f2ea 100%);
+    color: #6b4320;
+}
+
+.action-btn.obligee i {
+    color: #8b5a2b;
+}
+
+.action-btn.obligee:hover {
+    border-color: #c89a67;
+}
+
 .action-btn.agent {
     border-color: #d9c2ff;
     background: linear-gradient(180deg, #ffffff 0%, #f3e8ff 100%);
