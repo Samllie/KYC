@@ -178,7 +178,7 @@ include '../includes/sidebar.php';
 
 <!-- ═══════════════════════════════════════════════ MODAL: Edit Client -->
 <div id="editModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content edit-modal-content">
         <div class="modal-header">
             <h2>Edit <?php echo htmlspecialchars($recordTitleCaseSingular); ?> Information</h2>
             <button id="editModalCloseBtn" type="button" class="modal-close" title="Close"><i class="bi bi-x"></i></button>
@@ -194,6 +194,10 @@ include '../includes/sidebar.php';
                     <div class="form-group">
                         <label class="form-label">Ref Code</label>
                         <input type="text" id="editRefCode" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Submitted Branch</label>
+                        <input type="text" id="editSubmittedBranch" class="form-control" readonly>
                     </div>
                     <?php if ($isAgentsMode): ?>
                     <div class="form-group">
@@ -316,7 +320,7 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="activity-status-summary">Selected: <strong id="editActivityStatusLabel">Active</strong></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group full">
                         <label class="form-label">Status Updated At</label>
                         <input type="text" id="editActivityStatusUpdatedAt" class="form-control" readonly>
                     </div>
@@ -351,6 +355,10 @@ include '../includes/sidebar.php';
                     <div class="form-group">
                         <label class="form-label">Client Number</label>
                         <input type="text" id="viewClientNumber" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Submitted Branch</label>
+                        <input type="text" id="viewSubmittedBranch" class="form-control" readonly>
                     </div>
                 </div>
 
@@ -462,14 +470,16 @@ include '../includes/sidebar.php';
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group">
+                    <div class="form-group full">
                         <label class="form-label">Activity Status</label>
                         <input type="text" id="viewActivityStatus" class="form-control" readonly>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group full">
                         <label class="form-label">Status Updated At</label>
                         <input type="text" id="viewActivityStatusUpdatedAt" class="form-control" readonly>
                     </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group full">
                         <label class="form-label">Activity Note</label>
                         <input type="text" id="viewActivityNote" class="form-control" readonly>
@@ -1207,6 +1217,7 @@ include '../includes/sidebar.php';
             document.getElementById('viewClientId').value = client.client_id || '';
             document.getElementById('viewRefCode').value = client.reference_code || '';
             document.getElementById('viewClientNumber').value = client.client_number || '';
+            document.getElementById('viewSubmittedBranch').value = client.submitted_by_branch || 'N/A';
             if (isAgentsMode) {
                 const viewAgentTypeField = document.getElementById('viewAgentType');
                 const viewHeadAgentField = document.getElementById('viewHeadAgentName');
@@ -1274,6 +1285,7 @@ include '../includes/sidebar.php';
 
             document.getElementById('editClientId').value = client.client_id || '';
             document.getElementById('editRefCode').value = client.reference_code || '';
+            document.getElementById('editSubmittedBranch').value = client.submitted_by_branch || 'N/A';
             if (isAgentsMode) {
                 const clientTypeField = document.getElementById('editClientType');
                 if (clientTypeField) {
@@ -1369,10 +1381,12 @@ include '../includes/sidebar.php';
 
             const updatedStatusValue = result.activity_status_updated_display || result.activity_status_updated_at || '';
             if (updatedStatusValue) {
-                const updatedAtField = document.getElementById('editActivityStatusUpdatedAt');
-                if (updatedAtField) {
-                    updatedAtField.value = updatedStatusValue;
-                }
+                ['editActivityStatusUpdatedAt', 'viewActivityStatusUpdatedAt'].forEach(fieldId => {
+                    const updatedAtField = document.getElementById(fieldId);
+                    if (updatedAtField) {
+                        updatedAtField.value = updatedStatusValue;
+                    }
+                });
             }
 
             editModal.style.display = 'none';

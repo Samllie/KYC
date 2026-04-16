@@ -1,10 +1,10 @@
 <?php
 /**
  * Modular Sidebar Component
- * 
+ *
  * Usage:
  * <?php $activePage = 'dashboard'; include 'includes/sidebar.php'; ?>
- * 
+ *
  * Parameters: $activePage (string) - the current page (dashboard, clients, agents, my-applications, client-approvals, kyc-verification, policy)
  */
 
@@ -212,7 +212,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 
         <?php foreach ($menuItems as $item): ?>
             <a href="<?php echo htmlspecialchars($item['href']); ?>" class="nav-item <?php echo ($activePage === $item['page']) ? 'active' : ''; ?>" title="<?php echo htmlspecialchars($item['label']); ?>">
-                <i class="bi <?php echo htmlspecialchars($item['icon']); ?>"></i> 
+                <i class="bi <?php echo htmlspecialchars($item['icon']); ?>"></i>
                 <span class="nav-text sidebar-text"><?php echo htmlspecialchars($item['label']); ?></span>
                 <?php if ($item['badge']): ?>
                     <?php
@@ -242,9 +242,9 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
                 <button type="button" id="logoutMenuItem" class="user-menu-item logout" role="menuitem">
                     <i class="bi bi-box-arrow-right"></i> Logout
                 </button>
-            <button type="button" id="switchAccountMenuItem" class="user-menu-item switch-account" role="menuitem">
-                <i class="bi bi-arrow-left-right"></i> Switch Account
-            </button>
+                <button type="button" id="switchAccountMenuItem" class="user-menu-item switch-account" role="menuitem">
+                    <i class="bi bi-arrow-left-right"></i> Switch Account
+                </button>
             </div>
         </div>
     </div>
@@ -272,6 +272,7 @@ $avatarInitials = function_exists('getAvatarInitials') ? getAvatarInitials($disp
 
 <script>
 (function () {
+
     const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
     const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
     const sidebarBackdrop = document.getElementById('sidebarBackdrop');

@@ -368,12 +368,20 @@ if (!$isHeadOfficeUser) {
 
         .clients-table th.col-checkbox,
         .clients-table td.col-checkbox {
-            width: 1%;
-            min-width: 0;
-            padding-left: 6px;
-            padding-right: 6px;
+            width: 42px;
+            min-width: 42px;
+            max-width: 42px;
+            padding-left: 4px;
+            padding-right: 4px;
             text-align: center;
             white-space: nowrap;
+            box-sizing: border-box;
+        }
+
+        .clients-table th.col-checkbox input,
+        .clients-table td.col-checkbox input {
+            display: block;
+            margin: 0 auto;
         }
 
         .table-wrapper {
@@ -1914,19 +1922,6 @@ include '../includes/sidebar.php';
             return;
         }
 
-        const selectionLabel = approvalQueue === 'agent' ? 'agent approval' : 'client approval';
-        const confirmed = await showConfirmModal({
-            title: 'Confirm Delete',
-            message: `Delete ${selectedIds.length} selected ${selectionLabel}${selectedIds.length === 1 ? '' : 's'}? This will remove only the approval records from the queue.`,
-            confirmText: 'Delete Selected',
-            cancelText: 'Cancel',
-            variant: 'danger'
-        });
-
-        if (!confirmed) {
-            return;
-        }
-
         setApprovalDeleteButtonBusy(deleteSelectedApprovalsBtn, true, 'Deleting...');
 
         let successCount = 0;
@@ -2543,15 +2538,17 @@ include '../includes/sidebar.php';
             reviewNote = promptedNote;
         }
 
-        const confirmed = await showConfirmModal({
-            title: `Confirm ${actionTitle}`,
-            message: `Confirm ${actionTitle.toLowerCase()} for approval #${approvalId}?`,
-            confirmText: actionTitle,
-            cancelText: 'Cancel',
-            variant: action === 'decline' ? 'danger' : 'success'
-        });
-        if (!confirmed) {
-            return;
+        if (action !== 'approve') {
+            const confirmed = await showConfirmModal({
+                title: `Confirm ${actionTitle}`,
+                message: `Confirm ${actionTitle.toLowerCase()} for approval #${approvalId}?`,
+                confirmText: actionTitle,
+                cancelText: 'Cancel',
+                variant: action === 'decline' ? 'danger' : 'success'
+            });
+            if (!confirmed) {
+                return;
+            }
         }
 
         if (source === 'details') {

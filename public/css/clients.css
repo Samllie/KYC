@@ -857,6 +857,20 @@ body.clients-management-page .clients-table td.col-activity-updated {
     font-size: 0.78rem;
 }
 
+body.clients-management-page .col-activity-updated {
+    width: 10%;
+    min-width: 122px;
+}
+
+body.clients-management-page .col-actions {
+    width: 13%;
+    min-width: 140px;
+}
+
+body.clients-management-page .clients-table td.col-activity-updated {
+    font-variant-numeric: tabular-nums;
+}
+
 body.clients-management-page .ref-badge,
 body.clients-management-page .type-badge,
 body.clients-management-page .status-badge {
@@ -1075,6 +1089,10 @@ body.clients-management-page .pagination-btn {
     width: min(900px, calc(100vw - 24px));
 }
 
+.edit-modal-content {
+    width: min(900px, calc(100vw - 24px));
+}
+
 .view-modal-content .form-control[readonly],
 .view-modal-content .form-select:disabled {
     background: #f8fafb;
@@ -1083,8 +1101,32 @@ body.clients-management-page .pagination-btn {
     cursor: not-allowed;
 }
 
+.edit-modal-content .form-control[readonly],
+.edit-modal-content .form-select:disabled {
+    background: #f8fafb;
+    color: var(--gray-700);
+    opacity: 1;
+    cursor: not-allowed;
+}
+
 .view-modal-content .form-control[readonly]::placeholder {
     color: var(--gray-500);
+}
+
+.edit-modal-content .form-control[readonly]::placeholder {
+    color: var(--gray-500);
+}
+
+.view-modal-content .form-control,
+.view-modal-content .form-select,
+.edit-modal-content .form-control,
+.edit-modal-content .form-select {
+    text-align: center;
+}
+
+.view-modal-content .form-select,
+.edit-modal-content .form-select {
+    text-align-last: center;
 }
 
 .view-modal-content .modal-footer {

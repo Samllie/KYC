@@ -575,9 +575,24 @@ include '../includes/sidebar.php';
     let searchDebounceTimer;
     const modalState = {
         approvalId: 0,
+        sourceTable: '',
         editable: false,
         credentials: {},
     };
+
+    function makeApplicationKey(approvalId, sourceTable) {
+        const id = String(Number(approvalId || 0));
+        const table = String(sourceTable || 'client_approvals');
+        return `${table}::${id}`;
+    }
+
+    function parseApplicationKey(key) {
+        const parts = String(key || '').split('::');
+        return {
+            sourceTable: parts[0] || 'client_approvals',
+            approvalId: Number(parts[1] || 0),
+        };
+    }
 
     const credentialFieldDefs = [
         { key: 'client_type', label: 'Client Type', type: 'select', options: ['individual', 'corporate', 'obligee'], group: 'Application' },
@@ -620,6 +635,163 @@ include '../includes/sidebar.php';
         { key: 'home_address', label: 'Home Address', type: 'textarea', fullWidth: true, visibleFor: ['individual', 'obligee'], group: 'Address' },
         { key: 'full_address', label: 'Full Address', type: 'textarea', fullWidth: true, group: 'Address' },
     ];
+
+    function parseComposedAddress(addressStr) {
+        if (!addressStr) return null;
+        const parts = String(addressStr).split(',').map(part => part.trim()).filter(Boolean);
+        if (parts.length < 5) return null;
+
+        return {
+            street: parts[0],
+            barangay: parts[1],
+            city: parts[2],
+            province: parts[3],
+            region: parts.slice(4).join(', ')
+        };
+    }
+
+    function buildComposedAddress(street, barangay, city, province, region) {
+        return [street, barangay, city, province, region]
+            .map(part => String(part || '').trim())
+            .filter(Boolean)
+            .join(', ');
+    }
+
+    function resolveEditableClientType(credentials) {
+        const rawType = String(credentials?.client_type || '').toLowerCase().trim();
+        if (rawType === 'corporate' || rawType === 'obligee' || rawType === 'individual') {
+            return rawType;
+        }
+
+        const corporateHints = [
+            credentials?.businessType,
+            credentials?.business_type,
+            credentials?.corporateClientSince,
+            credentials?.client_since,
+            credentials?.corporateApSlCode,
+            credentials?.ap_sl_code,
+            credentials?.corporateArSlCode,
+            credentials?.ar_sl_code,
+            credentials?.corporateBusinessAddress,
+        ];
+
+        if (corporateHints.some(value => String(value || '').trim() !== '')) {
+            return 'corporate';
+        }
+
+        return 'individual';
+    }
+
+    const corporateBusinessTypeOptions = [
+        { value: 'private', label: 'Private' },
+        { value: 'government', label: 'Government' },
+    ];
+
+    const corporateGenderOptions = [
+        { value: 'male', label: 'Male' },
+        { value: 'female', label: 'Female' },
+        { value: 'other', label: 'Other' },
+    ];
+
+    const corporateGovernmentIdOptions = [
+        { value: 'philippine_passport', label: 'Philippine Passport' },
+        { value: 'drivers_license', label: "Driver's License" },
+        { value: 'umid', label: 'UMID' },
+        { value: 'philsys_national_id', label: 'PhilSys National ID' },
+        { value: 'postal_id', label: 'Postal ID' },
+        { value: 'sss_id', label: 'SSS ID' },
+        { value: 'gsis_id', label: 'GSIS ID' },
+        { value: 'prc_id', label: 'PRC ID' },
+        { value: 'tin_id', label: 'TIN ID' },
+        { value: 'philhealth_id', label: 'PhilHealth ID' },
+        { value: 'pagibig_id', label: 'Pag-IBIG ID' },
+        { value: 'voters_id', label: "Voter's ID" },
+        { value: 'senior_citizen_id', label: 'Senior Citizen ID' },
+        { value: 'ofw_id', label: 'OFW ID' },
+        { value: 'barangay_id', label: 'Barangay ID' },
+        { value: 'acr_id', label: 'Alien Certificate of Registration' },
+    ];
+
+    const corporateFieldDefs = [
+        { key: 'client_type', type: 'hidden' },
+
+        { key: 'corporateClientName', label: 'Business / Company Name', fullWidth: true, group: 'Company Information' },
+        { key: 'businessType', label: 'Business Type', type: 'select', options: corporateBusinessTypeOptions, emptyLabel: 'Select business type...', group: 'Company Information' },
+        { key: 'corporateClientSince', label: 'Client Since', type: 'date', group: 'Company Information' },
+
+        { key: 'tinNumber', label: 'TIN Number', fullWidth: true, group: 'Business Details' },
+        { key: 'corporateApSlCode', label: 'AP SL Code', group: 'Business Details' },
+        { key: 'corporateArSlCode', label: 'AR SL Code', group: 'Business Details' },
+        { key: 'designation', label: 'Contact Person Designation', fullWidth: true, group: 'Business Details' },
+
+        { key: 'region', label: 'Region', group: 'Business Address' },
+        { key: 'corporateBusinessProvince', label: 'Province', group: 'Business Address' },
+        { key: 'corporateBusinessCtm', label: 'City / Municipality', group: 'Business Address' },
+        { key: 'corporateBusinessBarangay', label: 'Barangay', group: 'Business Address' },
+        { key: 'corporateStreet', label: 'Street / Unit / Building', placeholder: 'House/Unit No., Street, Building', fullWidth: true, group: 'Business Address' },
+        { key: 'corporateBusinessAddress', type: 'hidden' },
+
+        { key: 'corporatePhone', label: 'Phone Number', group: 'Contact Information' },
+        { key: 'corporateContactPerson', label: 'Company Owner', group: 'Contact Information' },
+        { key: 'corporateEmail', label: 'Email Address', type: 'email', group: 'Contact Information' },
+
+        { key: 'corporateGender', label: 'Gender', type: 'select', options: corporateGenderOptions, emptyLabel: 'Select...', group: 'Contact Person Details' },
+        { key: 'nationality', label: 'Nationality', group: 'Contact Person Details' },
+
+        { key: 'idType', label: 'Government ID Type', type: 'select', options: corporateGovernmentIdOptions, emptyLabel: 'Select government ID...', fullWidth: true, group: 'Government ID Verification' },
+        { key: 'idNumber', label: 'ID Number', fullWidth: true, group: 'Government ID Verification' },
+    ];
+
+    function normalizeCorporateCredentials(credentials) {
+        const businessAddressRaw = String(
+            credentials?.corporateBusinessAddress
+            || credentials?.business_address
+            || ''
+        ).trim();
+        const parsedAddress = parseComposedAddress(businessAddressRaw);
+
+        const street = String(
+            credentials?.corporateStreet
+            || credentials?.business_street
+            || parsedAddress?.street
+            || ''
+        ).trim();
+        const barangay = String(
+            credentials?.corporateBusinessBarangay
+            || credentials?.business_barangay
+            || parsedAddress?.barangay
+            || ''
+        ).trim();
+        const city = String(credentials?.corporateBusinessCtm || credentials?.business_ctm || parsedAddress?.city || '').trim();
+        const province = String(credentials?.corporateBusinessProvince || credentials?.business_province || parsedAddress?.province || '').trim();
+        const region = String(credentials?.region || parsedAddress?.region || '').trim();
+        const composedAddress = buildComposedAddress(street, barangay, city, province, region);
+        const clientName = String(credentials?.corporateClientName || credentials?.client_name || credentials?.company_name || '').trim();
+
+        return {
+            client_type: 'corporate',
+            corporateClientName: clientName,
+            businessType: String(credentials?.businessType || credentials?.business_type || '').trim(),
+            corporateClientSince: String(credentials?.corporateClientSince || credentials?.client_since || '').trim(),
+            tinNumber: String(credentials?.tinNumber || credentials?.tin_number || '').trim(),
+            corporateApSlCode: String(credentials?.corporateApSlCode || credentials?.ap_sl_code || '').trim(),
+            corporateArSlCode: String(credentials?.corporateArSlCode || credentials?.ar_sl_code || '').trim(),
+            designation: String(credentials?.designation || '').trim(),
+            region,
+            corporateBusinessProvince: province,
+            corporateBusinessCtm: city,
+            corporateBusinessBarangay: barangay,
+            corporateStreet: street,
+            corporateBusinessAddress: composedAddress || businessAddressRaw,
+            corporatePhone: String(credentials?.corporatePhone || credentials?.office_phone || '').trim(),
+            corporateContactPerson: String(credentials?.corporateContactPerson || credentials?.contact_person || '').trim(),
+            corporateEmail: String(credentials?.corporateEmail || credentials?.email || '').trim(),
+            corporateGender: String(credentials?.corporateGender || credentials?.gender || '').trim(),
+            nationality: String(credentials?.nationality || '').trim(),
+            idType: String(credentials?.idType || credentials?.id_type || '').trim(),
+            idNumber: String(credentials?.idNumber || credentials?.id_number || '').trim(),
+        };
+    }
 
     const editModal = document.getElementById('editApplicationModal');
     const editModalMeta = document.getElementById('editModalMeta');
@@ -734,12 +906,12 @@ include '../includes/sidebar.php';
         selectAll.indeterminate = checkedVisible > 0 && checkedVisible < totalVisible;
     }
 
-    function updateApplicationSelection(approvalId, isSelected) {
+    function updateApplicationSelection(approvalId, sourceTable, isSelected) {
         if (!hasApplicationCheckboxes) {
             return;
         }
 
-        const id = String(approvalId || '');
+        const id = makeApplicationKey(approvalId, sourceTable);
         if (!id) {
             return;
         }
@@ -753,10 +925,11 @@ include '../includes/sidebar.php';
         updateApplicationBulkDeleteButtonState();
     }
 
-    function deleteApplicationRecord(approvalId) {
+    function deleteApplicationRecord(approvalId, sourceTable) {
         const formData = new FormData();
         formData.append('action', 'delete_application_record');
         formData.append('approval_id', String(approvalId));
+        formData.append('source_table', String(sourceTable || 'client_approvals'));
 
         return fetch('../handlers/my_applications.php', {
             method: 'POST',
@@ -770,15 +943,15 @@ include '../includes/sidebar.php';
             return;
         }
 
-        const selectedIds = Array.from(selectedApplicationIds);
-        if (selectedIds.length === 0) {
+        const selectedKeys = Array.from(selectedApplicationIds);
+        if (selectedKeys.length === 0) {
             createToast('info', 'Nothing Selected', 'Select one or more applications first.');
             return;
         }
 
         const confirmed = await showConfirmModal({
             title: 'Confirm Delete',
-            message: `Delete ${selectedIds.length} selected application${selectedIds.length === 1 ? '' : 's'}? This will remove only the application records from your queue.`,
+            message: `Delete ${selectedKeys.length} selected application${selectedKeys.length === 1 ? '' : 's'}? This will remove only the application records from your queue.`,
             confirmText: 'Delete Selected',
             cancelText: 'Cancel',
             variant: 'danger'
@@ -795,13 +968,14 @@ include '../includes/sidebar.php';
         let currentOpenApplicationDeleted = false;
 
         try {
-            for (const approvalId of selectedIds) {
+            for (const key of selectedKeys) {
+                const { approvalId, sourceTable } = parseApplicationKey(key);
                 try {
-                    const payload = await deleteApplicationRecord(approvalId);
+                    const payload = await deleteApplicationRecord(approvalId, sourceTable);
                     if (payload.success) {
                         successCount += 1;
-                        selectedApplicationIds.delete(String(approvalId));
-                        if (Number(approvalId) === Number(modalState.approvalId || 0)) {
+                        selectedApplicationIds.delete(key);
+                        if (Number(approvalId) === Number(modalState.approvalId || 0) && String(sourceTable || '') === String(modalState.sourceTable || '')) {
                             currentOpenApplicationDeleted = true;
                         }
                     } else {
@@ -931,6 +1105,9 @@ include '../includes/sidebar.php';
         }
 
         editModalFields.querySelectorAll('[name]').forEach(control => {
+            if (control.type === 'radio' && !control.checked) {
+                return;
+            }
             values[String(control.name)] = String(control.value ?? '');
         });
 
@@ -967,6 +1144,7 @@ include '../includes/sidebar.php';
         editModal.hidden = true;
         document.body.style.overflow = '';
         modalState.approvalId = 0;
+        modalState.sourceTable = '';
         modalState.editable = false;
         modalState.credentials = {};
 
@@ -978,6 +1156,18 @@ include '../includes/sidebar.php';
     function createEditField(definition, value, disabled) {
         const wrapper = document.createElement('div');
         wrapper.className = `edit-field${definition.fullWidth ? ' full' : ''}`;
+
+        if (definition.type === 'hidden') {
+            wrapper.style.display = 'none';
+            const hiddenControl = document.createElement('input');
+            hiddenControl.type = 'hidden';
+            hiddenControl.id = `editField-${definition.key}`;
+            hiddenControl.name = definition.key;
+            hiddenControl.value = value;
+            hiddenControl.disabled = disabled;
+            wrapper.appendChild(hiddenControl);
+            return wrapper;
+        }
 
         const label = document.createElement('label');
         label.textContent = definition.label;
@@ -996,13 +1186,18 @@ include '../includes/sidebar.php';
 
             const blankOption = document.createElement('option');
             blankOption.value = '';
-            blankOption.textContent = 'Select option';
+            blankOption.textContent = definition.emptyLabel || 'Select option';
             control.appendChild(blankOption);
 
             (definition.options || []).forEach(optionValue => {
                 const option = document.createElement('option');
-                option.value = String(optionValue);
-                option.textContent = toTitleCase(optionValue);
+                const isOptionObject = optionValue !== null && typeof optionValue === 'object';
+                const optionRawValue = isOptionObject ? String(optionValue.value ?? '') : String(optionValue);
+                const optionLabel = isOptionObject
+                    ? String(optionValue.label ?? optionRawValue)
+                    : toTitleCase(optionRawValue);
+                option.value = optionRawValue;
+                option.textContent = optionLabel;
                 control.appendChild(option);
             });
 
@@ -1016,6 +1211,9 @@ include '../includes/sidebar.php';
 
         control.id = `editField-${definition.key}`;
         control.name = definition.key;
+        if (definition.placeholder) {
+            control.placeholder = definition.placeholder;
+        }
         control.disabled = disabled;
         wrapper.appendChild(control);
 
@@ -1029,11 +1227,83 @@ include '../includes/sidebar.php';
         return heading;
     }
 
+    function syncCorporateAddressField() {
+        if (!editModalFields) {
+            return '';
+        }
+
+        const addressField = editModalFields.querySelector('#editField-corporateBusinessAddress');
+        if (!addressField) {
+            return '';
+        }
+
+        const street = editModalFields.querySelector('#editField-corporateStreet')?.value || '';
+        const barangay = editModalFields.querySelector('#editField-corporateBusinessBarangay')?.value || '';
+        const city = editModalFields.querySelector('#editField-corporateBusinessCtm')?.value || '';
+        const province = editModalFields.querySelector('#editField-corporateBusinessProvince')?.value || '';
+        const region = editModalFields.querySelector('#editField-region')?.value || '';
+        const composedAddress = buildComposedAddress(street, barangay, city, province, region);
+
+        addressField.value = composedAddress;
+        return composedAddress;
+    }
+
+    function renderCorporateEditFields(credentials, disabled) {
+        if (!editModalFields) return;
+
+        const normalizedCredentials = normalizeCorporateCredentials(credentials || {});
+
+        editModalFields.innerHTML = '';
+        let lastGroup = '';
+
+        corporateFieldDefs.forEach(definition => {
+            const rawValue = Object.prototype.hasOwnProperty.call(normalizedCredentials, definition.key)
+                ? normalizedCredentials[definition.key]
+                : '';
+            const safeValue = rawValue === null || typeof rawValue === 'undefined'
+                ? ''
+                : String(rawValue);
+
+            if (definition.type === 'hidden') {
+                editModalFields.appendChild(createEditField(definition, safeValue, disabled));
+                return;
+            }
+
+            const currentGroup = String(definition.group || 'Details');
+            if (currentGroup !== lastGroup) {
+                editModalFields.appendChild(createSectionHeading(currentGroup));
+                lastGroup = currentGroup;
+            }
+
+            editModalFields.appendChild(createEditField(definition, safeValue, disabled));
+        });
+
+        if (!disabled) {
+            ['corporateStreet', 'corporateBusinessBarangay', 'corporateBusinessCtm', 'corporateBusinessProvince', 'region'].forEach(fieldKey => {
+                const fieldEl = editModalFields.querySelector(`#editField-${fieldKey}`);
+                if (!fieldEl) {
+                    return;
+                }
+
+                fieldEl.addEventListener('input', syncCorporateAddressField);
+                fieldEl.addEventListener('change', syncCorporateAddressField);
+            });
+        }
+
+        syncCorporateAddressField();
+    }
+
     function renderEditFields(credentials, disabled) {
         if (!editModalFields) return;
 
-        const normalizedType = normalizeClientType(credentials.client_type || 'individual');
-        const visibleFieldDefs = getVisibleFieldDefs(normalizedType);
+        const normalizedType = resolveEditableClientType(credentials);
+        if (normalizedType === 'corporate') {
+            renderCorporateEditFields(credentials, disabled);
+            return;
+        }
+
+        const normalizedTypeValue = normalizeClientType(credentials.client_type || 'individual');
+        const visibleFieldDefs = getVisibleFieldDefs(normalizedTypeValue);
 
         editModalFields.innerHTML = '';
         let lastGroup = '';
@@ -1069,12 +1339,13 @@ include '../includes/sidebar.php';
         }
     }
 
-    function openEditModal(approvalId) {
+    function openEditModal(approvalId, sourceTable) {
         if (!approvalId) {
             return;
         }
 
         modalState.approvalId = Number(approvalId);
+        modalState.sourceTable = String(sourceTable || 'client_approvals');
         modalState.editable = false;
 
         if (editModalMeta) {
@@ -1089,7 +1360,7 @@ include '../includes/sidebar.php';
 
         showEditModal();
 
-        fetch(`../handlers/my_applications.php?action=details&approval_id=${encodeURIComponent(String(approvalId))}`, {
+        fetch(`../handlers/my_applications.php?action=details&approval_id=${encodeURIComponent(String(approvalId))}&source_table=${encodeURIComponent(modalState.sourceTable)}`, {
             method: 'GET',
             credentials: 'include'
         })
@@ -1100,13 +1371,18 @@ include '../includes/sidebar.php';
                 }
 
                 const details = payload.data || {};
-                modalState.editable = Boolean(details.editable);
-                modalState.credentials = {
+                const loadedCredentials = {
                     ...(details.credentials || {}),
                 };
-                modalState.credentials.client_type = normalizeClientType(
-                    modalState.credentials.client_type || details.client_type || 'individual'
-                );
+                const resolvedClientType = resolveEditableClientType(loadedCredentials);
+
+                modalState.editable = Boolean(details.editable);
+                modalState.credentials = resolvedClientType === 'corporate'
+                    ? normalizeCorporateCredentials(loadedCredentials)
+                    : loadedCredentials;
+                modalState.credentials.client_type = resolvedClientType === 'corporate'
+                    ? 'corporate'
+                    : normalizeClientType(modalState.credentials.client_type || details.client_type || 'individual');
 
                 if (editModalMeta) {
                     const statusText = toTitleCase(details.approval_status || 'pending') || 'Pending';
@@ -1151,17 +1427,19 @@ include '../includes/sidebar.php';
             const canEdit = Boolean(row.can_edit);
             const remarks = String(row.admin_remarks || '').trim();
             const approvalId = Number(row.approval_id || 0);
-            const rowId = String(approvalId || '');
+            const sourceTable = String(row.source_table || 'client_approvals');
+            const rowId = makeApplicationKey(approvalId, sourceTable);
 
             const tr = document.createElement('tr');
             tr.className = 'application-row';
             tr.dataset.approvalId = String(approvalId);
+            tr.dataset.sourceTable = sourceTable;
             if (selectedApplicationIds.has(rowId)) {
                 tr.classList.add('is-checked');
             }
 
             tr.innerHTML = `
-                <td class="col-checkbox"><input type="checkbox" class="row-select" data-approval-id="${approvalId}"></td>
+                <td class="col-checkbox"><input type="checkbox" class="row-select" data-approval-id="${approvalId}" data-source-table="${escapeHtml(sourceTable)}"></td>
                 <td class="col-ref"><span class="ref-badge">${escapeHtml(row.reference_code || 'N/A')}</span></td>
                 <td class="col-name">${escapeHtml(row.display_name || row.client_name || 'N/A')}</td>
                 <td class="col-type"><span class="type-badge ${classificationBadgeClass(row.client_classification)}">${escapeHtml(formatClassification(row.client_classification))}</span></td>
@@ -1169,10 +1447,10 @@ include '../includes/sidebar.php';
                 <td class="col-owner">${escapeHtml(formatDateOnly(row.submitted_at))}</td>
                 <td class="col-status"><span class="status-badge ${statusBadgeClass(statusAfter)}">${escapeHtml(statusAfter)}</span></td>
                 <td class="col-owner review-meta-cell">${escapeHtml(row.reviewed_by_name || 'N/A')}</td>
-                <td class="col-owner review-meta-cell">${escapeHtml(formatDateTime(row.reviewed_at || row.latest_reviewed_at))}</td>
+                <td class="col-owner review-meta-cell">${escapeHtml(formatDateOnly(row.reviewed_at || row.latest_reviewed_at))}</td>
                 <td class="remarks-cell">${escapeHtml(remarks || 'No remarks')}</td>
                 <td class="col-actions">
-                    <button class="action-icon action-resubmit" data-action="edit" data-approval-id="${Number(row.approval_id || 0)}" ${canEdit ? '' : 'disabled'}>
+                    <button class="action-icon action-resubmit" data-action="edit" data-approval-id="${Number(row.approval_id || 0)}" data-source-table="${escapeHtml(sourceTable)}" ${canEdit ? '' : 'disabled'}>
                         <i class="bi bi-pencil-square"></i>Edit
                     </button>
                 </td>
@@ -1183,7 +1461,7 @@ include '../includes/sidebar.php';
                 rowCheckbox.checked = selectedApplicationIds.has(rowId);
                 rowCheckbox.addEventListener('click', event => event.stopPropagation());
                 rowCheckbox.addEventListener('change', function () {
-                    updateApplicationSelection(this.dataset.approvalId, this.checked);
+                    updateApplicationSelection(this.dataset.approvalId, this.dataset.sourceTable, this.checked);
                     tr.classList.toggle('is-checked', this.checked);
                     syncApplicationSelectAllCheckbox();
                 });
@@ -1202,10 +1480,11 @@ include '../includes/sidebar.php';
             button.addEventListener('click', event => {
                 event.preventDefault();
                 const approvalId = Number(button.dataset.approvalId || 0);
+                const sourceTable = String(button.dataset.sourceTable || 'client_approvals');
                 if (!approvalId) {
                     return;
                 }
-                openEditModal(approvalId);
+                openEditModal(approvalId, sourceTable);
             });
         });
     }
@@ -1322,7 +1601,7 @@ include '../includes/sidebar.php';
             selectAll.addEventListener('change', function () {
                 document.querySelectorAll('#applicationsTableBody .row-select').forEach(checkbox => {
                     checkbox.checked = this.checked;
-                    updateApplicationSelection(checkbox.dataset.approvalId, checkbox.checked);
+                    updateApplicationSelection(checkbox.dataset.approvalId, checkbox.dataset.sourceTable, checkbox.checked);
                     const row = checkbox.closest('tr');
                     if (row) {
                         row.classList.toggle('is-checked', checkbox.checked);
@@ -1343,11 +1622,29 @@ include '../includes/sidebar.php';
                 return;
             }
 
+            const isCorporateClient = resolveEditableClientType(modalState.credentials) === 'corporate';
+            if (isCorporateClient) {
+                syncCorporateAddressField();
+            }
+
             modalState.credentials = {
                 ...modalState.credentials,
                 ...collectModalFieldValues(),
             };
-            modalState.credentials.client_type = normalizeClientType(modalState.credentials.client_type || 'individual');
+            if (isCorporateClient) {
+                modalState.credentials.client_type = 'corporate';
+                modalState.credentials.corporateBusinessAddress = buildComposedAddress(
+                    modalState.credentials.corporateStreet,
+                    modalState.credentials.corporateBusinessBarangay,
+                    modalState.credentials.corporateBusinessCtm,
+                    modalState.credentials.corporateBusinessProvince,
+                    modalState.credentials.region
+                ) || '';
+                modalState.credentials.company_name = modalState.credentials.corporateClientName || '';
+                modalState.credentials.full_address = modalState.credentials.corporateBusinessAddress || '';
+            } else {
+                modalState.credentials.client_type = normalizeClientType(modalState.credentials.client_type || 'individual');
+            }
             const fields = { ...modalState.credentials };
 
             const originalButtonHtml = editModalSaveBtn ? editModalSaveBtn.innerHTML : '';
@@ -1364,6 +1661,7 @@ include '../includes/sidebar.php';
                 },
                 body: JSON.stringify({
                     approval_id: modalState.approvalId,
+                    source_table: modalState.sourceTable,
                     fields
                 })
             })
