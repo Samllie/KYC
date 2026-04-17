@@ -620,7 +620,10 @@ include '../includes/sidebar.php';
         { key: 'occupation', label: 'Occupation', visibleFor: ['individual', 'obligee'], group: 'Work & Business' },
         { key: 'company_name', label: 'Company Name', visibleFor: ['corporate', 'obligee'], group: 'Work & Business' },
         { key: 'designation', label: 'Designation', visibleFor: ['corporate', 'obligee'], group: 'Work & Business' },
-        { key: 'business_type', label: 'Business Type', type: 'select', options: ['private', 'government'], visibleFor: ['corporate', 'obligee'], group: 'Work & Business' },
+        { key: 'business_type', label: 'Business Type', type: 'select', options: [
+            { value: 'private', label: 'Private Sector' },
+            { value: 'government', label: 'Government' }
+        ], visibleFor: ['corporate', 'obligee'], group: 'Work & Business' },
 
         { key: 'spouse_name', label: 'Spouse Name', visibleFor: ['individual', 'obligee'], group: 'Family' },
         { key: 'spouse_birthdate', label: 'Spouse Birthdate', type: 'date', visibleFor: ['individual', 'obligee'], group: 'Family' },
@@ -683,7 +686,7 @@ include '../includes/sidebar.php';
     }
 
     const corporateBusinessTypeOptions = [
-        { value: 'private', label: 'Private' },
+        { value: 'private', label: 'Private Sector' },
         { value: 'government', label: 'Government' },
     ];
 

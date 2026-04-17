@@ -450,13 +450,13 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($isCorporateLike && $postedBusinessType === '') {
-        $response['message'] = 'Business type is required';
+        $response['message'] = $clientType === 'obligee' ? 'Body type is required' : 'Business type is required';
         echo json_encode($response);
         exit;
     }
 
-    if ($clientType === 'obligee' && $postedBusinessType !== 'government') {
-        $response['message'] = 'Obligee clients must be registered as Philippine government bodies';
+    if ($isCorporateLike && !in_array($postedBusinessType, ['private', 'government'], true)) {
+        $response['message'] = 'Please select a valid business type';
         echo json_encode($response);
         exit;
     }
@@ -532,7 +532,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'client_classification' => $clientClassification,
             'client_name' => $corporateName,
             'company_name' => $corporateName,
-            'business_type' => $clientType === 'obligee' ? 'government' : $postedBusinessType,
+            'business_type' => $postedBusinessType,
             'id_type' => $formData['id_type'],
             'id_number' => $formData['id_number'],
             'client_since' => trim($_POST['corporateClientSince'] ?? ''),
@@ -797,7 +797,7 @@ else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             'client_classification' => $clientClassification,
             'client_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
             'company_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
-            'business_type' => $clientType === 'obligee' ? 'government' : ($postedBusinessType ?: null),
+            'business_type' => $postedBusinessType ?: null,
             'id_type' => trim($_POST['idType'] ?? '') ?: null,
             'id_number' => trim($_POST['idNumber'] ?? '') ?: null,
             'client_since' => trim($_POST['corporateClientSince'] ?? '') ?: null,

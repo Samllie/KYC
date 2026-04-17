@@ -233,6 +233,17 @@ function escapeHtml(value) {
         .replaceAll("'", '&#039;');
 }
 
+function formatReviewValue(key, value) {
+    const text = String(value || '').trim();
+    if (!text) return '';
+
+    if (key === 'businessType') {
+        return text.toLowerCase() === 'government' ? 'Government' : 'Private Sector';
+    }
+
+    return text;
+}
+
 // ── Display Review Information ─────────────────────────
 function displayReview() {
     const formData = JSON.parse(sessionStorage.getItem('kycFormData') || '{}');
@@ -315,7 +326,7 @@ function displayReview() {
         `;
         
         section.fields.forEach(field => {
-            const value = formData[field.key] || '';
+            const value = formatReviewValue(field.key, formData[field.key]);
             if (value) {
                 html += `
                     <div>

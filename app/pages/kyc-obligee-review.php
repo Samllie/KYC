@@ -236,7 +236,7 @@ function formatReviewValue(key, value) {
     if (key === 'businessType') {
         return text.toLowerCase() === 'government'
             ? 'Government'
-            : text.charAt(0).toUpperCase() + text.slice(1);
+            : 'Private Sector';
     }
 
     if (key === 'clientType') {
@@ -279,7 +279,7 @@ function displayReview() {
             title: 'Government Agency Information',
             fields: [
                 { label: 'Government Agency / Office Name', key: 'corporateClientName' },
-                { label: 'Government Body Type', key: 'businessType' },
+                { label: 'Body Type', key: 'businessType' },
                 { label: 'Date of Registration / Establishment', key: 'corporateClientSince' }
             ]
         },

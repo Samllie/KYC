@@ -16,8 +16,8 @@ $companyCardTitle = $isObligee ? 'Government Agency Information' : 'Company Info
 $companyNameLabel = $isObligee ? 'Government Agency / Office Name' : 'Business / Company Name';
 $companyNamePlaceholder = $isObligee ? 'e.g. Department of Education - Region IV-A' : 'Registered Business/Company Name';
 $companyNameError = $isObligee ? 'Government agency/office name is required' : 'Business/Company name is required';
-$businessTypeLabel = $isObligee ? 'Government Body Type' : 'Business Type';
-$businessTypeHelper = $isObligee ? 'Obligee registrations are limited to Philippine government bodies. Government is fixed for this workflow.' : '';
+$businessTypeLabel = $isObligee ? 'Body Type' : 'Business Type';
+$businessTypeHelper = $isObligee ? 'Choose whether this obligee record represents the Government or the Private Sector.' : '';
 $clientSinceLabel = $isObligee ? 'Date of Registration / Establishment' : 'Client Since';
 $businessDetailsTitle = $isObligee ? 'Agency Details' : 'Business Details';
 $designationLabel = $isObligee ? 'Authorized Contact Position' : 'Contact Person Designation';
@@ -878,8 +878,11 @@ include '../includes/sidebar.php';
                             <div class="form-group">
                                 <label class="form-label"><?php echo htmlspecialchars($businessTypeLabel); ?> <span class="req">*</span></label>
                                 <?php if ($isObligee): ?>
-                                    <input type="hidden" name="businessType" value="government" data-locked="true">
-                                    <input type="text" class="form-control" value="Government" readonly>
+                                    <select name="businessType" class="form-select" required>
+                                        <option value="">Select body type...</option>
+                                        <option value="government">Government</option>
+                                        <option value="private">Private Sector</option>
+                                    </select>
                                     <div class="form-hint" style="margin-top:8px;color:var(--gray-500);font-size:.78rem;"><?php echo htmlspecialchars($businessTypeHelper); ?></div>
                                 <?php else: ?>
                                     <div style="display:flex;gap:20px;margin-top:8px;">
@@ -1155,7 +1158,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Documents Card -->
-            <div class="card card-span-2" data-wizard-step="3">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-file-earmark"></i> <?php echo htmlspecialchars($supportingDocsTitle); ?></div>
                 </div>
@@ -1321,8 +1324,8 @@ function validateAllRequired() {
     });
     
     if (isObligeeClient) {
-        const businessTypeField = document.querySelector('input[name="businessType"]');
-        if (!businessTypeField || businessTypeField.value !== 'government') {
+        const businessTypeField = document.querySelector('[name="businessType"]');
+        if (!businessTypeField || !['government', 'private'].includes(String(businessTypeField.value || '').toLowerCase())) {
             allValid = false;
         }
     } else if (!validateRadioGroup('businessType')) {
@@ -2701,13 +2704,6 @@ async function clearForm() {
         el.value = '';
         el.classList.remove('is-invalid','is-valid');
     });
-
-    if (isObligeeClient) {
-        const businessTypeField = document.querySelector('input[name="businessType"]');
-        if (businessTypeField) {
-            businessTypeField.value = 'government';
-        }
-    }
 
     const draftSelect = document.getElementById('draftSelect');
     if (draftSelect) draftSelect.value = '';

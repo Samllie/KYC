@@ -1098,7 +1098,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Documents Card -->
-            <div class="card card-span-2" data-wizard-step="3">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-file-earmark"></i> Supporting Documents</div>
                 </div>

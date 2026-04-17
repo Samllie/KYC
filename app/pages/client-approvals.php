@@ -1353,6 +1353,8 @@ include '../includes/sidebar.php';
                 } else {
                     value = formatDateTime(rawValue);
                 }
+            } else if (normalizedKey === 'business_type' || normalizedKey === 'businesstype') {
+                value = formatBusinessType(rawValue);
             } else if (typeof rawValue === 'boolean') {
                 value = rawValue ? 'Yes' : 'No';
             } else if (rawValue && typeof rawValue === 'object') {
@@ -1781,6 +1783,14 @@ include '../includes/sidebar.php';
         const text = String(value || '').toLowerCase();
         if (text === 'agent') return 'Agent';
         return text === 'client' ? 'Client' : 'N/A';
+    }
+
+    function formatBusinessType(value) {
+        const text = String(value || '').trim().toLowerCase();
+        if (!text) return 'N/A';
+        if (text === 'government') return 'Government';
+        if (text === 'private') return 'Private Sector';
+        return text.charAt(0).toUpperCase() + text.slice(1);
     }
 
     function statusBadgeClass(status) {

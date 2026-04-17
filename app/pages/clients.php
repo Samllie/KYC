@@ -620,7 +620,7 @@ include '../includes/sidebar.php';
         }
 
         if (format === 'businesstype') {
-            return text.toLowerCase() === 'government' ? 'Government' : 'Private';
+            return text.toLowerCase() === 'government' ? 'Government' : 'Private Sector';
         }
 
         if (format === 'mailingaddresstype') {
@@ -752,7 +752,7 @@ include '../includes/sidebar.php';
     function buildCorporatePreviewSections(client, isObligee = false) {
         const companySectionTitle = isObligee ? 'Government Agency Information' : 'Company Information';
         const companyNameLabel = isObligee ? 'Government Agency / Office Name' : 'Business / Company Name';
-        const businessTypeLabel = isObligee ? 'Government Body Type' : 'Business Type';
+        const businessTypeLabel = isObligee ? 'Body Type' : 'Business Type';
         const clientSinceLabel = isObligee ? 'Date of Registration / Establishment' : 'Client Since';
         const detailsSectionTitle = isObligee ? 'Agency Details' : 'Business Details';
         const addressSectionTitle = isObligee ? 'Government Office Address' : 'Business Address';
