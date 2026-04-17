@@ -98,7 +98,7 @@ After migration, the application maintains proper relative path references:
 ## Entry Point
 
 - **Old**: `localhost/KYC/index.php`
-- **New**: `localhost/KYC/` (automatically routes to public/index.php via .htaccess)
+- **New**: `localhost/KYC/` (served directly by the root `index.php` and rewrite rules)
 
 ## Security Benefits
 
@@ -111,4 +111,4 @@ After migration, the application maintains proper relative path references:
 - All PHP requires/includes have been updated to reflect new structure
 - CSS and asset paths have been corrected for new folder layout
 - Database redirects use dynamic URL construction for flexibility
-- The .htaccess file ensures proper routing to the public folder entry point
+- The .htaccess file ensures proper routing to the root entry point
