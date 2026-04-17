@@ -1236,6 +1236,8 @@ include '../includes/sidebar.php';
 
         setIfFilled(summary, 'reference_code', approval?.reference_code || client?.reference_code || kyc?.reference_code);
         setIfFilled(summary, 'display_name', approval?.display_name || client?.client_name || kyc?.client_name);
+        setIfFilled(summary, 'submitted_by', approval?.submitted_by_name || approval?.submitted_by);
+        setIfFilled(summary, 'submitted_by_branch', approval?.submitted_by_branch);
         setIfFilled(summary, 'client_classification', approval?.client_classification || client?.client_classification || kyc?.client_classification);
         setIfFilled(summary, 'client_type', approval?.client_type || client?.client_type || kyc?.client_type);
         setIfFilled(summary, 'approval_status', approval?.approval_status);
@@ -2360,6 +2362,8 @@ include '../includes/sidebar.php';
             'approval_id',
             'reference_code',
             'display_name',
+            'submitted_by',
+            'submitted_by_branch',
             'client_classification',
             'client_type',
             'agent_type',
