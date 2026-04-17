@@ -1124,6 +1124,10 @@ body.sidebar-collapsed .steps-bar.sticky {
         box-shadow: 24px 0 38px rgba(17, 24, 39, 0.24);
     }
 
+    .steps-bar.sticky {
+        z-index: 150;
+    }
+
     body.sidebar-mobile-open .sidebar {
         transform: translateX(0);
     }
