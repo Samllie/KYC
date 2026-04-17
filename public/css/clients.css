@@ -14,15 +14,17 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     align-self: stretch;
     min-height: 0;
+    height: clamp(640px, calc(100vh - 145px), 980px);
+    resize: vertical;
+    overflow: auto;
     padding: 6px;
     border: 1px solid #d6e4db;
     border-radius: 18px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #fbfefc 100%);
     box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
-    overflow: hidden;
 }
 
 .controls-container {
@@ -37,6 +39,7 @@
 .content {
     display: flex;
     flex-direction: column;
+    min-height: 0;
     overflow: visible;
 }
 
@@ -139,13 +142,17 @@ body.clients-page.agents-mode .filter-select:focus {
 }
 
 .btn-export {
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--gray-700);
-    border: 1px solid #d2e0d8;
+    background: linear-gradient(180deg, #eef8f2 0%, #dff2e6 100%);
+    color: #16583b;
+    border: 1px solid #b9ddc7;
+    box-shadow: 0 8px 16px rgba(17, 106, 58, 0.08);
 }
 
 .btn-export:hover {
-    background: #eef8f2;
+    background: linear-gradient(180deg, #e4f5ea 0%, #cdebd8 100%);
+    border-color: #9fd3b0;
+    color: #0f5b30;
+    box-shadow: 0 10px 18px rgba(17, 106, 58, 0.14);
 }
 
 body.clients-page.agents-mode .search-box i {
@@ -221,7 +228,8 @@ body.clients-page.agents-mode .table-wrapper.is-loading::before {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
-    flex: 0 0 auto;
+    flex: 1 1 auto;
+    max-height: 100%;
     scrollbar-gutter: stable both-edges;
     border: 1px solid #d8e5dd;
     border-radius: 14px;
@@ -295,14 +303,14 @@ body.clients-page .content {
 }
 
 .clients-table th {
-    padding: 6px 9px;
-    text-align: left;
+    padding: 4px 8px;
+    text-align: center;
     font-weight: 700;
     color: #f2fff3;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.15;
+    line-height: 1.05;
     vertical-align: middle;
 }
 
@@ -342,6 +350,7 @@ body.clients-page .content {
 .clients-table td {
     padding: 6px 9px;
     color: var(--gray-700);
+    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -387,20 +396,24 @@ body.clients-page.agents-mode .col-actions { width: 13%; min-width: 130px; }
     white-space: nowrap;
     overflow: visible;
     text-overflow: clip;
+    text-align: center;
 }
 
-.clients-table td.col-type {
-    overflow: visible;
-    text-overflow: clip;
-}
-
-.clients-table td.col-activity {
-    overflow: visible;
-    text-overflow: clip;
-}
 .clients-table td.col-owner,
 .clients-table td.col-activity-updated {
     font-size: 0.74rem;
+}
+
+.clients-table td.col-owner,
+.clients-table td.col-verified,
+.clients-table td.col-contact,
+.clients-table td.col-email,
+.clients-table td.col-main-agent,
+.clients-table td.col-type,
+.clients-table td.col-activity,
+.clients-table td.col-activity-updated {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .clients-table td.col-type .type-badge {
@@ -412,6 +425,10 @@ body.clients-page.agents-mode .col-actions { width: 13%; min-width: 130px; }
     flex-direction: column;
     gap: 0;
     min-width: 0;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    text-align: center;
 }
 
 .activity-indicator-row {
@@ -607,15 +624,13 @@ body.clients-page.agents-mode .type-badge.individual {
 }
 
 body.clients-page.agents-mode .clients-table td.col-type {
-    white-space: normal;
     overflow: hidden;
-    text-overflow: clip;
+    text-overflow: ellipsis;
 }
 
 body.clients-page.agents-mode .clients-table td.col-main-agent {
-    white-space: normal;
     overflow: hidden;
-    text-overflow: clip;
+    text-overflow: ellipsis;
     min-width: 0;
 }
 
@@ -624,9 +639,9 @@ body.clients-page.agents-mode .agent-main-agent {
     color: var(--gray-500);
     font-size: 0.7rem;
     line-height: 1.2;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .type-badge.muted {
@@ -793,6 +808,7 @@ body.clients-page.agents-mode .agent-main-agent {
 
 body.clients-management-page .clients-table-shell {
     padding: 8px;
+    flex: 1 1 auto;
 }
 
 body.clients-management-page .controls-container {
@@ -830,16 +846,16 @@ body.clients-management-page .clients-table {
 }
 
 body.clients-management-page .clients-table th {
-    padding: 9px 10px;
-    line-height: 1.15;
+    padding: 6px 8px;
+    line-height: 1.05;
 }
 
 body.clients-management-page .clients-table th.col-verified,
 body.clients-management-page .clients-table th.col-activity,
 body.clients-management-page .clients-table th.col-activity-updated,
 body.clients-management-page .clients-table th.col-actions {
-    line-height: 1.12;
-    font-size: 0.76rem;
+    line-height: 1.05;
+    font-size: 0.74rem;
 }
 
 body.clients-management-page .clients-table td {
@@ -850,9 +866,11 @@ body.clients-management-page .clients-table td {
 body.clients-management-page .clients-table th,
 body.clients-management-page .clients-table td {
     text-align: center;
+    vertical-align: middle;
 }
 
 body.clients-management-page .clients-table td.col-owner,
+body.clients-management-page .clients-table td.col-verified,
 body.clients-management-page .clients-table td.col-activity-updated {
     font-size: 0.78rem;
 }
@@ -860,11 +878,9 @@ body.clients-management-page .clients-table td.col-activity-updated {
 body.clients-management-page .clients-table td.col-owner,
 body.clients-management-page .clients-table td.col-verified,
 body.clients-management-page .clients-table td.col-activity-updated {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    word-break: break-word;
-    vertical-align: top;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 body.clients-management-page .col-activity-updated {
@@ -879,6 +895,10 @@ body.clients-management-page .col-actions {
 
 body.clients-management-page .clients-table td.col-activity-updated {
     font-variant-numeric: tabular-nums;
+}
+
+body.clients-management-page .table-wrapper {
+    flex: 1 1 auto;
 }
 
 body.clients-management-page .ref-badge,
@@ -1204,13 +1224,45 @@ body.clients-page.agents-mode .client-preview-section-title {
     gap: 14px;
 }
 
-.export-preview-summary {
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #e8f7ee 0%, #f5fbf7 100%);
-    color: #22543d;
-    border: 1px solid #c8e7d5;
-    font-size: 0.9rem;
+.export-preview-brand {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 6px 0 4px;
+    margin-bottom: 50px;
+    text-align: left;
+}
+
+.export-preview-brand-logo {
+    width: 150px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    flex: 0 0 auto;
+}
+
+.export-preview-brand-copy {
+    min-width: 0;
+    padding-top: 8px;
+}
+
+.export-preview-kicker {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #6b7f76;
+    text-align: left;
+}
+
+.export-preview-brand-copy h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.2;
+    color: #116a3a;
+    text-align: left;
 }
 
 .export-preview-table {
@@ -1226,16 +1278,16 @@ body.clients-page.agents-mode .client-preview-section-title {
 }
 
 .export-preview-table thead th {
-    padding: 13px 20px;
+    padding: 10px 12px;
     background: linear-gradient(180deg, #2f7a54 0%, #246743 100%);
     color: #ffffff;
-    text-align: left;
-    font-size: 0.78rem;
+    text-align: center;
+    font-size: 0.74rem;
     font-weight: 700;
     letter-spacing: 0.03em;
     border-right: 1px solid rgba(255, 255, 255, 0.12);
     white-space: normal;
-    line-height: 1.25;
+    line-height: 1.15;
     vertical-align: middle;
     word-break: break-word;
 }
@@ -1245,8 +1297,8 @@ body.clients-page.agents-mode .client-preview-section-title {
 }
 
 .export-preview-table tbody td {
-    padding: 12px;
-    font-size: 0.84rem;
+    padding: 10px 10px;
+    font-size: 0.8rem;
     color: #244236;
     border-top: 1px solid #e2eee6;
     border-right: 1px solid #edf5ef;
@@ -1254,6 +1306,7 @@ body.clients-page.agents-mode .client-preview-section-title {
     text-overflow: ellipsis;
     white-space: nowrap;
     background: #ffffff;
+    text-align: center;
 }
 
 .export-preview-table th:nth-child(1),
@@ -1300,7 +1353,7 @@ body.clients-page.agents-mode .client-preview-section-title {
 
 .export-preview-footer {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     padding: 12px 14px;
     border-radius: 12px;
@@ -1316,6 +1369,24 @@ body.clients-page.agents-mode .client-preview-section-title {
 
 .export-preview-footer strong {
     color: #1f4f37;
+}
+
+.export-preview-empty-state {
+    padding: 22px 18px;
+    border-radius: 14px;
+    border: 1px dashed #c9ded2;
+    background: #fbfdfb;
+    color: #4f635a;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.export-preview-empty-state strong {
+    color: #116a3a;
 }
 
 .export-preview-table thead th:first-child {

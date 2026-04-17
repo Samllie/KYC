@@ -848,6 +848,38 @@ include '../includes/sidebar.php';
         return `${clientTypeLabel} Client Preview`;
     }
 
+    function formatTableDateOnly(value) {
+        const text = normalizePreviewText(value);
+        if (!text || text === 'N/A') {
+            return 'N/A';
+        }
+
+        const normalized = text.includes('T') ? text : text.replace(' ', 'T');
+        const parsedDate = new Date(normalized);
+
+        if (!Number.isNaN(parsedDate.getTime())) {
+            return parsedDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        const dateMatch = text.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+            const fallbackDate = new Date(`${dateMatch[1]}T00:00:00`);
+            if (!Number.isNaN(fallbackDate.getTime())) {
+                return fallbackDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            }
+        }
+
+        return text;
+    }
+
     function updateBranchFilterOptions(branches) {
         if (!isHeadOfficeUser) {
             return;
@@ -1030,7 +1062,7 @@ include '../includes/sidebar.php';
                 : (client.mobile_phone || 'N/A');
             const activityStatus = client.activity_status_display || 'Active';
             const activityStatusClass = normalizeActivityStatusClass(client.activity_status_class || 'active');
-            const activityUpdatedAt = client.activity_status_updated_display || 'N/A';
+            const activityUpdatedAt = formatTableDateOnly(client.activity_status_updated_at || client.activity_status_updated_display || 'N/A');
             const mainAgentText = isAgentsMode
                 ? (agentType === 'sub_agent' ? (mainAgentName !== '' ? mainAgentName : 'N/A') : 'None')
                 : '';
@@ -1752,6 +1784,7 @@ include '../includes/sidebar.php';
     // Export list functionality
     let exportData = [];
     let exportScopeLabel = `Filtered ${recordLabelPlural}`;
+    const exportLogoUrl = new URL('../../public/images/SterlingLogo2.png', window.location.href).href;
 
     const exportHeaders = isAgentsMode
         ? ['Ref Code', `Business / ${recordTitleCaseSingular} Name`, 'Submitted Branch', 'Agent Type', 'Main Agent', 'Contact', 'Client Number', 'Submitted By']
@@ -1920,29 +1953,40 @@ include '../includes/sidebar.php';
         const previewContent = document.getElementById('previewContent');
         const resolved = await resolveExportPayload();
         const data = resolved.data;
+        const safeGeneratedAt = escapeHtml(new Date().toLocaleString());
 
         if (data.length === 0) {
             exportData = [];
             exportScopeLabel = resolved.label;
-            previewContent.innerHTML = `<div style="padding: 20px; color: #6b7280;"><strong>No ${recordLabelPlural} found</strong> for ${resolved.label}.</div>`;
+            previewContent.innerHTML = `
+                <div class="export-preview-empty-state">
+                    <strong>No ${escapeHtml(recordLabelPlural)} found</strong>
+                </div>`;
             return;
         }
 
         // Build HTML preview table
         let html = '<div class="export-preview-shell">';
-        html += `<div class="export-preview-summary"><strong>Scope:</strong> ${resolved.label}</div>`;
+        html += `
+            <div class="export-preview-brand">
+                <img class="export-preview-brand-logo" src="${exportLogoUrl}" alt="Sterling logo">
+                <div class="export-preview-brand-copy">
+                    <div class="export-preview-kicker">Sterling Insurance Company Incorporated</div>
+                    <h2>${escapeHtml(recordTitleCasePlural)} Management Report</h2>
+                </div>
+            </div>`;
         html += '<table class="export-preview-table">';
         html += '<thead><tr>';
 
         exportHeaders.forEach(header => {
-            html += `<th>${header}</th>`;
+            html += `<th>${escapeHtml(header)}</th>`;
         });
         html += '</tr></thead><tbody>';
         
         data.forEach((row, index) => {
             html += `<tr class="${index % 2 === 0 ? 'is-even' : 'is-odd'}">`;
             getExportRowValues(row).forEach(value => {
-                html += `<td>${value}</td>`;
+                html += `<td>${escapeHtml(value)}</td>`;
             });
             html += '</tr>';
         });
@@ -1950,8 +1994,7 @@ include '../includes/sidebar.php';
         html += '</tbody></table>';
         html += `<div class="export-preview-footer">`;
         html += `<p><strong>Total Records:</strong> ${data.length}</p>`;
-        html += `<p><strong>Scope:</strong> ${resolved.label}</p>`;
-        html += `<p><strong>Export Date:</strong> ${new Date().toLocaleString()}</p>`;
+        html += `<p><strong>Export Date:</strong> ${safeGeneratedAt}</p>`;
         html += `</div>`;
         html += `</div>`;
 
@@ -2036,23 +2079,191 @@ include '../includes/sidebar.php';
                 <title>Sterling insurance Company Incorporated</title>
     <link rel='icon' type='image/png' href='../css/images/SterlingLogo.png'>
                 <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    h1 { text-align: center; color: #374151; margin-bottom: 20px; }
-                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                    th { background: #f3f4f6; padding: 10px; text-align: left; border: 1px solid #d1d5db; font-weight: bold; }
-                    td { padding: 10px; border: 1px solid #d1d5db; }
-                    tr:nth-child(even) { background: #f9fafb; }
-                    .footer { margin-top: 20px; font-size: 0.9rem; color: #6b7280; border-top: 1px solid #d1d5db; padding-top: 10px; }
-                    @media print { body { margin: 0; padding: 10px; } }
+                    :root { color-scheme: light; }
+                    * { box-sizing: border-box; }
+                    body {
+                        margin: 0;
+                        padding: 18px;
+                        font-family: 'Sora', Arial, sans-serif;
+                        font-size: 9pt;
+                        line-height: 1.3;
+                        color: #173226;
+                        background: #ffffff;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .print-sheet {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 14px;
+                    }
+                    .export-preview-brand {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: flex-start;
+                        justify-content: flex-start;
+                        gap: 14px;
+                        padding: 0;
+                        margin: 0 0 50px;
+                        text-align: left;
+                    }
+                    .export-preview-brand-logo {
+                        width: 176px;
+                        height: auto;
+                        display: block;
+                        flex: 0 0 auto;
+                        object-fit: contain;
+                        object-position: center;
+                    }
+                    .export-preview-brand-copy {
+                        min-width: 0;
+                        padding: 2px 0 0;
+                    }
+                    .export-preview-kicker {
+                        font-size: 9pt;
+                        font-weight: 600;
+                        letter-spacing: 0.12em;
+                        text-transform: uppercase;
+                        color: #6b7f76;
+                        white-space: normal;
+                        line-height: 1.1;
+                        text-align: left;
+                        word-break: break-word;
+                    }
+                    .export-preview-brand-copy h2 {
+                        margin: 0;
+                        padding: 0;
+                        font-size: 9pt;
+                        font-weight: 700;
+                        line-height: 1.15;
+                        color: #116a3a;
+                        text-align: left;
+                    }
+                    .export-preview-footer {
+                        border-radius: 0;
+                        border: 1px solid #d8e9df;
+                        font-size: 9pt;
+                        text-overflow: clip;
+                        white-space: normal;
+                        overflow-wrap: anywhere;
+                        word-break: break-word;
+                    }
+                    .export-preview-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        table-layout: fixed;
+                        border: 1px solid #cfe4d6;
+                        border-radius: 0;
+                        overflow: hidden;
+                    }
+                    .export-preview-table thead th {
+                        padding: 10px 8px;
+                        background: #2f7a54;
+                        color: #ffffff;
+                        text-align: center;
+                        font-size: 9pt;
+                        font-weight: 700;
+                        letter-spacing: 0.03em;
+                        border-right: 1px solid rgba(255, 255, 255, 0.14);
+                        vertical-align: middle;
+                    }
+                    .export-preview-table thead th:last-child { border-right: none; }
+                    .export-preview-table tbody td {
+                        padding: 9px 8px;
+                        font-size: 9pt;
+                        color: #244236;
+                        border-top: 1px solid #e2eee6;
+                        border-right: 1px solid #edf5ef;
+                        text-align: center;
+                        vertical-align: middle;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .export-preview-table tbody td:last-child { border-right: none; }
+                    .export-preview-footer {
+                        display: grid;
+                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        gap: 10px;
+                        padding: 12px 14px;
+                        font-size: 9pt;
+                    }
+                    .export-preview-footer p { margin: 0; }
+                    .export-preview-empty-state {
+                        padding: 22px 18px;
+                        border-radius: 14px;
+                        border: 1px dashed #c9ded2;
+                        background: #fbfdfb;
+                        color: #4f635a;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        align-items: center;
+                        justify-content: center;
+                        text-align: center;
+                    }
+                    .export-preview-empty-state strong { color: #116a3a; }
+                    @page {
+                        size: portrait;
+                        margin: 10mm;
+                    }
+                    @media print {
+                        body { padding: 0; }
+                        .print-sheet { gap: 10px; }
+                        .export-preview-brand,
+                        .export-preview-footer {
+                            break-inside: avoid;
+                            page-break-inside: avoid;
+                        }
+                        .export-preview-brand,
+                        .export-preview-table,
+                        .export-preview-footer,
+                        .export-preview-empty-state {
+                            border-radius: 0;
+                        }
+                        .export-preview-table {
+                            width: 100%;
+                            min-width: 0;
+                            table-layout: auto;
+                        }
+                        .export-preview-table th:nth-child(5),
+                        .export-preview-table td:nth-child(5) {
+                            white-space: nowrap;
+                            overflow-wrap: normal;
+                            word-break: normal;
+                            min-width: 10px;
+                            font-variant-numeric: tabular-nums;
+                        }
+                        .export-preview-table th:nth-child(4),
+                        .export-preview-table td:nth-child(4) {
+                            white-space: nowrap;
+                            overflow-wrap: normal;
+                            word-break: normal;
+                            min-width: 90px;
+                        }
+                        .export-preview-table thead th,
+                        .export-preview-table tbody td {
+                            white-space: normal;
+                            overflow: visible;
+                            text-overflow: clip;
+                            overflow-wrap: anywhere;
+                            word-break: break-word;
+                        }
+                        .export-preview-table thead th {
+                            font-size: 9pt;
+                        }
+                        .export-preview-table tbody td {
+                            background: #ffffff;
+                            font-size: 9pt;
+                            padding: 7px 6px;
+                        }
+                    }
                 </style>
             </head>
             <body>
-                <h1>${recordTitleCasePlural} Management Report</h1>
-                ${content}
-                <div class="footer">
-                    <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
-                    <p><strong>Total Records:</strong> ${exportData.length}</p>
-                    <p><strong>Scope:</strong> ${exportScopeLabel}</p>
+                <div class="print-sheet">
+                    ${content}
                 </div>
             </body>
             </html>
