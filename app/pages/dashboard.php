@@ -134,10 +134,11 @@ function approvalStatusCounts(string $tableName, string $alias, array $whereClau
         ];
     }
 
+    $statusExpr = "COALESCE(NULLIF(LOWER(TRIM({$alias}.approval_status)), ''), 'pending')";
     $query = "SELECT
-        COALESCE(SUM({$alias}.approval_status = 'pending'), 0) AS pending_count,
-        COALESCE(SUM({$alias}.approval_status = 'resubmit'), 0) AS resubmit_count,
-        COALESCE(SUM({$alias}.approval_status = 'approved'), 0) AS approved_count
+        COALESCE(SUM({$statusExpr} = 'pending'), 0) AS pending_count,
+        COALESCE(SUM({$statusExpr} = 'resubmit'), 0) AS resubmit_count,
+        COALESCE(SUM({$statusExpr} = 'approved'), 0) AS approved_count
     FROM {$tableName} {$alias}";
 
     if (!empty($whereClauses)) {
@@ -185,11 +186,17 @@ $scopeLabel = $isHeadOfficeUser
     ? 'All branches'
     : ($currentUserBranch !== '' ? $currentUserBranch : 'Unassigned branch');
 
+$usersHasBranch = columnExists('users', 'branch');
+$clientsHasSubmittedBranch = columnExists('clients', 'submitted_by_branch');
+$clientsBranchExpr = $clientsHasSubmittedBranch
+    ? "COALESCE(NULLIF(TRIM(c.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))"
+    : "NULLIF(TRIM(su.branch), '')";
+
 $clientsScopeWhere = '';
 $clientsScopeParams = [];
 if (!$isHeadOfficeUser) {
     if ($currentUserBranch !== '') {
-        $clientsScopeWhere = " WHERE UPPER(TRIM(COALESCE(su.branch, ''))) = ?";
+        $clientsScopeWhere = " WHERE UPPER(TRIM(COALESCE($clientsBranchExpr, ''))) = ?";
         $clientsScopeParams[] = $currentUserBranch;
     } else {
         $clientsScopeWhere = ' WHERE 1 = 0';
@@ -223,6 +230,12 @@ $clientsHasClassification = columnExists('clients', 'client_classification');
 $liveClientsClassificationExpr = $clientsHasClassification
     ? "COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client')"
     : "'client'";
+$recentActivityBranchExpr = $clientsHasSubmittedBranch
+    ? "COALESCE(NULLIF(TRIM(c.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''), 'UNASSIGNED')"
+    : "COALESCE(NULLIF(TRIM(su.branch), ''), 'UNASSIGNED')";
+$approvalActivityBranchExpr = $usersHasBranch
+    ? "COALESCE(NULLIF(TRIM(r.branch), ''), 'UNASSIGNED')"
+    : "COALESCE(CAST(h.reviewed_by AS CHAR), 'UNASSIGNED')";
 $liveClientsApprovalJoinSql = $hasClientApprovalsTable ? ' LEFT JOIN client_approvals ca ON ca.reference_code = c.reference_code' : '';
 $liveClientsApprovalFilterSql = $hasClientApprovalsTable ? " AND (ca.approval_status IS NULL OR ca.approval_status = 'approved')" : '';
 $liveClientsWherePrefix = $clientsScopeWhere === '' ? 'WHERE' : ' AND';
@@ -282,25 +295,113 @@ if ($hasClientApprovalsTable) {
     LEFT JOIN users su ON su.user_id = ca.submitted_by
     {$approvalsScopeWhere}", $approvalsScopeParams) ?? [];
 
-    $recentActivity = fetchAll("SELECT
+    $clientRecentActivity = fetchAll("SELECT
         c.client_id,
         c.reference_code,
         c.client_type,
         c.client_classification,
         c.verification_status AS activity_status,
         COALESCE(NULLIF(c.client_name, ''), TRIM(CONCAT(c.first_name, ' ', c.last_name))) AS display_name,
-        COALESCE(c.submitted_at, c.created_at) AS action_time,
+        COALESCE(c.updated_at, c.submitted_at, c.created_at) AS action_time,
+        'client' AS activity_kind,
+        'Added' AS activity_label,
+        COALESCE(su.full_name, 'System') AS activity_actor_name,
         COALESCE(su.full_name, 'System') AS submitted_by_name,
-        COALESCE(NULLIF(TRIM(su.branch), ''), 'UNASSIGNED') AS submitted_by_branch
+        {$recentActivityBranchExpr} AS submitted_by_branch
     FROM clients c
     LEFT JOIN users su ON su.user_id = c.submitted_by
-    {$liveClientsApprovalJoinSql}
     {$clientsScopeWhere}
     {$liveClientsWherePrefix} 1=1
     AND {$liveClientsClassificationExpr} = 'client'
-    {$liveClientsApprovalFilterSql}
-    ORDER BY COALESCE(c.submitted_at, c.created_at) DESC
+    ORDER BY COALESCE(c.updated_at, c.submitted_at, c.created_at) DESC
     LIMIT 6", $clientsScopeParams);
+
+    $approvalHistoryRecentActivity = [];
+    if (tableExists('client_approval_status_history')) {
+        $approvalHistoryScopeWhere = '';
+        $approvalHistoryScopeParams = [];
+        if (!$isHeadOfficeUser) {
+            if ($currentUserBranch !== '') {
+                $approvalHistoryScopeWhere = " WHERE UPPER(TRIM(COALESCE($approvalActivityBranchExpr, ''))) = ?";
+                $approvalHistoryScopeParams[] = $currentUserBranch;
+            } else {
+                $approvalHistoryScopeWhere = ' WHERE 1 = 0';
+            }
+        }
+
+        $approvalHistoryRecentActivity = fetchAll("SELECT
+            h.client_id,
+            h.reference_code,
+            c.client_type,
+            c.client_classification,
+            h.new_status AS activity_status,
+            COALESCE(NULLIF(c.client_name, ''), TRIM(CONCAT(c.first_name, ' ', c.last_name))) AS display_name,
+            h.reviewed_at AS action_time,
+            CASE h.new_status
+                WHEN 'approved' THEN 'Approved'
+                WHEN 'declined' THEN 'Declined'
+                WHEN 'resubmit' THEN 'Resubmitted'
+                ELSE 'Reviewed'
+            END AS activity_label,
+            'approval' AS activity_kind,
+            COALESCE(r.full_name, 'System') AS activity_actor_name,
+            COALESCE(r.full_name, 'System') AS submitted_by_name,
+            {$approvalActivityBranchExpr} AS submitted_by_branch
+        FROM client_approval_status_history h
+        LEFT JOIN clients c ON c.client_id = h.client_id
+        LEFT JOIN users r ON r.user_id = h.reviewed_by
+        {$approvalHistoryScopeWhere}
+        ORDER BY h.reviewed_at DESC
+        LIMIT 6", $approvalHistoryScopeParams);
+    }
+
+    $recentActivity = array_merge($clientRecentActivity, $approvalHistoryRecentActivity);
+    usort($recentActivity, static function (array $left, array $right): int {
+        $leftTime = appParseTimestampLocal((string)($left['action_time'] ?? ''));
+        $rightTime = appParseTimestampLocal((string)($right['action_time'] ?? ''));
+        $leftTs = $leftTime instanceof DateTimeInterface ? $leftTime->getTimestamp() : 0;
+        $rightTs = $rightTime instanceof DateTimeInterface ? $rightTime->getTimestamp() : 0;
+
+        if ($leftTs === $rightTs) {
+            return strcmp((string)($right['reference_code'] ?? ''), (string)($left['reference_code'] ?? ''));
+        }
+
+        return $rightTs <=> $leftTs;
+    });
+    $recentActivity = array_slice($recentActivity, 0, 6);
+
+    $recentActivityLatestTs = 0;
+    $recentActivitySignatureParts = [];
+    foreach ($recentActivity as $recentActivityRow) {
+        $actionTime = appParseTimestampLocal((string)($recentActivityRow['action_time'] ?? ''));
+        if ($actionTime instanceof DateTimeInterface) {
+            $recentActivityLatestTs = max($recentActivityLatestTs, $actionTime->getTimestamp());
+        }
+
+        $recentActivitySignatureParts[] = implode(':', [
+            (string)($recentActivityRow['activity_kind'] ?? 'client'),
+            (string)($recentActivityRow['activity_label'] ?? ''),
+            (string)($recentActivityRow['client_id'] ?? ''),
+            (string)($recentActivityRow['reference_code'] ?? ''),
+            (string)($recentActivityRow['action_time'] ?? ''),
+            (string)($recentActivityRow['submitted_by_branch'] ?? ''),
+        ]);
+    }
+
+    $recentActivitySignature = sha1(implode('|', $recentActivitySignatureParts));
+
+    if (($_GET['ajax'] ?? '') === 'recent_activity') {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'data' => [
+                'items' => $recentActivity,
+                'signature' => $recentActivitySignature,
+                'latest_action_ts' => $recentActivityLatestTs,
+            ],
+        ]);
+        exit;
+    }
 
     if ($isHeadOfficeUser) {
         $clientPipeline = approvalStatusCounts('client_approvals', 'ca', ["ca.client_classification = 'client'"]);
@@ -324,13 +425,12 @@ if ($hasClientApprovalsTable) {
         ];
     } else {
         $pipeline = fetchOne("SELECT
-            SUM(k.status = 'submitted') AS pending_count,
-            SUM(k.status = 'in_progress') AS resubmit_count,
-            SUM(k.status = 'approved') AS approved_count
-        FROM kyc_verifications k
-        LEFT JOIN clients c ON c.client_id = k.client_id
-        LEFT JOIN users su ON su.user_id = c.submitted_by
-        {$clientsScopeWhere}", $clientsScopeParams) ?? [];
+            SUM(COALESCE(NULLIF(LOWER(TRIM(ca.approval_status)), ''), 'pending') = 'pending') AS pending_count,
+            SUM(COALESCE(NULLIF(LOWER(TRIM(ca.approval_status)), ''), 'pending') = 'resubmit') AS resubmit_count,
+            SUM(COALESCE(NULLIF(LOWER(TRIM(ca.approval_status)), ''), 'pending') = 'approved') AS approved_count
+        FROM client_approvals ca
+        LEFT JOIN users su ON su.user_id = ca.submitted_by
+        {$approvalsScopeWhere}", $approvalsScopeParams) ?? [];
     }
 } else {
     $stats = fetchOne("SELECT
@@ -378,13 +478,13 @@ if ($hasClientApprovalsTable) {
         c.client_classification,
         c.verification_status AS activity_status,
         COALESCE(NULLIF(c.client_name, ''), TRIM(CONCAT(c.first_name, ' ', c.last_name))) AS display_name,
-        COALESCE(c.submitted_at, c.created_at) AS action_time,
+        COALESCE(c.updated_at, c.submitted_at, c.created_at) AS action_time,
         COALESCE(su.full_name, 'System') AS submitted_by_name,
-        COALESCE(NULLIF(TRIM(su.branch), ''), 'UNASSIGNED') AS submitted_by_branch
+        COALESCE(NULLIF(TRIM(c.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''), 'UNASSIGNED') AS submitted_by_branch
     FROM clients c
     LEFT JOIN users su ON su.user_id = c.submitted_by
     {$clientsScopeWhere}
-    ORDER BY COALESCE(c.submitted_at, c.created_at) DESC
+    ORDER BY COALESCE(c.updated_at, c.submitted_at, c.created_at) DESC
     LIMIT 6", $clientsScopeParams);
 }
 
@@ -637,9 +737,105 @@ include '../includes/sidebar.php';
 
 <script>
 (function () {
-    const activityTimeElements = Array.from(document.querySelectorAll('.activity-time[data-action-time-ts]'));
-    if (!activityTimeElements.length) {
-        return;
+    const recentActivityFallbackEndpoint = 'dashboard.php?ajax=recent_activity';
+    const recentActivityStreamEndpoint = '../handlers/dashboard_recent_activity.php';
+    const recentActivityState = {
+        signature: <?php echo json_encode($recentActivitySignature ?? ''); ?>,
+        latestActionTs: <?php echo json_encode($recentActivityLatestTs ?? 0); ?>
+    };
+    const activityList = document.querySelector('.activity-list');
+    let recentActivityEventSource = null;
+    let recentActivityFallbackTimer = null;
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function parseTimestampValue(value) {
+        const trimmed = String(value || '').trim();
+        if (trimmed === '') {
+            return null;
+        }
+
+        const normalized = trimmed.replace('T', ' ').replace(/Z$/i, '');
+        const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+        if (match) {
+            const year = Number(match[1]);
+            const month = Number(match[2]) - 1;
+            const day = Number(match[3]);
+            const hour = Number(match[4] || 0);
+            const minute = Number(match[5] || 0);
+            const second = Number(match[6] || 0);
+            return new Date(year, month, day, hour, minute, second);
+        }
+
+        const parsed = new Date(trimmed);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function formatDateTime(value) {
+        const date = parseTimestampValue(value);
+        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return String(value || '').trim() || 'N/A';
+        }
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const hours = date.getHours();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHour = hours % 12 || 12;
+        const minute = String(date.getMinutes()).padStart(2, '0');
+
+        return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()} ${displayHour}:${minute} ${ampm}`;
+    }
+
+    function formatType(value) {
+        const text = String(value || '').trim().toLowerCase();
+        if (!text) {
+            return 'Client';
+        }
+
+        return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    function normalizeActivityStatusValue(status) {
+        const value = String(status || '').trim().toLowerCase();
+
+        if (value === 'approved' || value === 'verified') {
+            return 'approved';
+        }
+
+        if (value === 'declined' || value === 'rejected') {
+            return 'declined';
+        }
+
+        if (value === 'resubmit') {
+            return 'resubmit';
+        }
+
+        return 'pending';
+    }
+
+    function activityStatusLabelValue(status) {
+        const normalized = normalizeActivityStatusValue(status);
+
+        if (normalized === 'approved') {
+            return 'Approved';
+        }
+
+        if (normalized === 'declined') {
+            return 'Declined';
+        }
+
+        if (normalized === 'resubmit') {
+            return 'Resubmit';
+        }
+
+        return 'Pending';
     }
 
     function getRelativeLabel(timestampSeconds) {
@@ -661,7 +857,70 @@ include '../includes/sidebar.php';
         return Math.floor(diff / 86400) + ' day ago';
     }
 
+    function renderRecentActivityItem(item) {
+        const actionTime = parseTimestampValue(item.action_time);
+        const actionTimeTs = actionTime ? Math.floor(actionTime.getTime() / 1000) : 0;
+        const activityClassification = String(item.client_classification || 'client').toLowerCase() === 'agent' ? 'agent' : 'client';
+        const clientType = formatType(item.client_type || '');
+        const activityLabel = String(item.activity_label || 'Added').trim() || 'Added';
+        const activityActor = String(item.activity_actor_name || item.submitted_by_name || 'System').trim() || 'System';
+        const relativeLabel = actionTimeTs > 0 ? getRelativeLabel(actionTimeTs) : 'just now';
+        const fullDateLabel = formatDateTime(item.action_time || '');
+
+        return `
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <i class="bi bi-clipboard2-check"></i>
+                </div>
+                <div class="activity-info">
+                    <div class="activity-title">${escapeHtml(item.display_name || 'Unnamed Client')} (${escapeHtml(item.reference_code || 'N/A')})</div>
+                    <div class="activity-desc">${escapeHtml(clientType)} <span class="activity-classification ${activityClassification}">${activityClassification === 'agent' ? 'Agent' : 'Client'}</span> record · ${escapeHtml(activityLabel)} by ${escapeHtml(activityActor)}</div>
+                    <div class="activity-meta">
+                        <span class="activity-status status-${escapeHtml(normalizeActivityStatusValue(item.activity_status))}">${escapeHtml(activityStatusLabelValue(item.activity_status))}</span>
+                        <span class="activity-branch">${escapeHtml(item.submitted_by_branch || 'UNASSIGNED')}</span>
+                        <span class="activity-added-at">${escapeHtml(fullDateLabel)}</span>
+                    </div>
+                </div>
+                <div class="activity-time" data-action-time-ts="${escapeHtml(String(actionTimeTs))}">${escapeHtml(relativeLabel)}</div>
+            </div>
+        `;
+    }
+
+    function renderRecentActivity(items) {
+        if (!activityList) {
+            return;
+        }
+
+        if (!Array.isArray(items) || items.length === 0) {
+            activityList.innerHTML = '<div class="empty-state">No activity available yet.</div>';
+            return;
+        }
+
+        activityList.innerHTML = items.map(renderRecentActivityItem).join('');
+    }
+
+    function applyRecentActivityPayload(payload) {
+        if (!payload || !payload.success || !payload.data) {
+            return;
+        }
+
+        const signature = String(payload.data.signature || '');
+        const latestActionTs = Number(payload.data.latest_action_ts || 0);
+
+        if (signature && signature === recentActivityState.signature) {
+            recentActivityState.latestActionTs = latestActionTs;
+            refreshActivityTimes();
+            return;
+        }
+
+        recentActivityState.signature = signature;
+        recentActivityState.latestActionTs = latestActionTs;
+        renderRecentActivity(payload.data.items || []);
+        refreshActivityTimes();
+    }
+
     function refreshActivityTimes() {
+        const activityTimeElements = Array.from(document.querySelectorAll('.activity-time[data-action-time-ts]'));
         activityTimeElements.forEach(function (element) {
             const timestampRaw = element.getAttribute('data-action-time-ts') || '0';
             const timestampSeconds = parseInt(timestampRaw, 10);
@@ -674,17 +933,100 @@ include '../includes/sidebar.php';
         });
     }
 
+    async function refreshRecentActivity() {
+        if (!activityList) {
+            return;
+        }
+
+        try {
+            const response = await fetch(recentActivityFallbackEndpoint, {
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const payload = await response.json();
+            applyRecentActivityPayload(payload);
+        } catch (error) {
+            return;
+        }
+    }
+
+    function startRecentActivityStream() {
+        if (!activityList) {
+            return;
+        }
+
+        if (typeof window.EventSource !== 'function') {
+            refreshRecentActivity();
+            recentActivityFallbackTimer = window.setInterval(function () {
+                if (document.visibilityState === 'visible') {
+                    refreshRecentActivity();
+                }
+            }, 15000);
+            return;
+        }
+
+        recentActivityEventSource = new EventSource(recentActivityStreamEndpoint, {
+            withCredentials: true
+        });
+
+        recentActivityEventSource.addEventListener('recent-activity', function (event) {
+            try {
+                applyRecentActivityPayload(JSON.parse(event.data));
+            } catch (error) {
+                return;
+            }
+        });
+
+        recentActivityEventSource.addEventListener('connected', function () {
+            return;
+        });
+
+        recentActivityEventSource.onerror = function () {
+            return;
+        };
+    }
+
+    function stopRecentActivityStream() {
+        if (recentActivityEventSource) {
+            recentActivityEventSource.close();
+            recentActivityEventSource = null;
+        }
+
+        if (recentActivityFallbackTimer) {
+            window.clearInterval(recentActivityFallbackTimer);
+            recentActivityFallbackTimer = null;
+        }
+    }
+
     refreshActivityTimes();
+    startRecentActivityStream();
     const refreshTimer = window.setInterval(refreshActivityTimes, 60000);
 
-    // Refresh feed data every hour so newly added records appear without manual reload.
-    const reloadTimer = window.setTimeout(function () {
-        window.location.reload();
-    }, 3600000);
+    const visibilityHandler = function () {
+        if (document.visibilityState === 'visible') {
+            refreshActivityTimes();
+            if (!recentActivityEventSource) {
+                refreshRecentActivity();
+            }
+        }
+    };
+
+    document.addEventListener('visibilitychange', visibilityHandler);
+    window.addEventListener('focus', visibilityHandler);
 
     window.addEventListener('beforeunload', function () {
         window.clearInterval(refreshTimer);
-        window.clearTimeout(reloadTimer);
+        stopRecentActivityStream();
+        document.removeEventListener('visibilitychange', visibilityHandler);
+        window.removeEventListener('focus', visibilityHandler);
     });
 })();
 </script>
