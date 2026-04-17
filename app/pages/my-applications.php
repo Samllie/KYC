@@ -1016,18 +1016,55 @@ include '../includes/sidebar.php';
         };
     }
 
+    function parseTimestampValue(value) {
+        const trimmed = String(value || '').trim();
+        if (trimmed === '') {
+            return null;
+        }
+
+        const normalized = trimmed.replace('T', ' ').replace(/Z$/i, '');
+        const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+        if (match) {
+            const year = Number(match[1]);
+            const month = Number(match[2]) - 1;
+            const day = Number(match[3]);
+            const hour = Number(match[4] || 0);
+            const minute = Number(match[5] || 0);
+            const second = Number(match[6] || 0);
+            return new Date(year, month, day, hour, minute, second);
+        }
+
+        const parsed = new Date(trimmed);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function formatTimestampValue(date, includeTime = true) {
+        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return 'N/A';
+        }
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const base = `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        if (!includeTime) {
+            return base;
+        }
+
+        const hours = date.getHours();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHour = hours % 12 || 12;
+        const minute = String(date.getMinutes()).padStart(2, '0');
+
+        return `${base} ${displayHour}:${minute} ${ampm}`;
+    }
+
     function formatDateTime(value) {
-        if (!value) return 'N/A';
-        const date = new Date(String(value).replace(' ', 'T'));
-        if (Number.isNaN(date.getTime())) return value;
-        return date.toLocaleString();
+        const parsed = parseTimestampValue(value);
+        return parsed ? formatTimestampValue(parsed, true) : (String(value || '').trim() || 'N/A');
     }
 
     function formatDateOnly(value) {
-        if (!value) return 'N/A';
-        const date = new Date(String(value).replace(' ', 'T'));
-        if (Number.isNaN(date.getTime())) return value;
-        return date.toLocaleDateString();
+        const parsed = parseTimestampValue(value);
+        return parsed ? formatTimestampValue(parsed, false) : (String(value || '').trim() || 'N/A');
     }
 
     function formatType(value) {

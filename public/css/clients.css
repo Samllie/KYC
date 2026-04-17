@@ -857,6 +857,16 @@ body.clients-management-page .clients-table td.col-activity-updated {
     font-size: 0.78rem;
 }
 
+body.clients-management-page .clients-table td.col-owner,
+body.clients-management-page .clients-table td.col-verified,
+body.clients-management-page .clients-table td.col-activity-updated {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    word-break: break-word;
+    vertical-align: top;
+}
+
 body.clients-management-page .col-activity-updated {
     width: 10%;
     min-width: 122px;
@@ -1091,6 +1101,49 @@ body.clients-management-page .pagination-btn {
 
 .edit-modal-content {
     width: min(900px, calc(100vw - 24px));
+}
+
+.client-preview-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.client-preview-section {
+    padding: 14px 14px 6px;
+    border: 1px solid #dbe9df;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f9fcfa 100%);
+}
+
+.client-preview-summary {
+    background: linear-gradient(135deg, #eef8f1 0%, #f8fcfa 100%);
+}
+
+.client-preview-section-title {
+    margin-bottom: 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #116a3a;
+}
+
+body.clients-page.agents-mode .client-preview-section-title {
+    color: #6d28d9;
+}
+
+.client-preview-section .form-row {
+    margin-bottom: 0;
+}
+
+.client-preview-empty {
+    padding: 18px;
+    border: 1px dashed #d0ded6;
+    border-radius: 12px;
+    text-align: center;
+    color: var(--gray-500);
+    background: #fbfdfb;
 }
 
 .view-modal-content .form-control[readonly],
@@ -1436,8 +1489,10 @@ body.clients-management-page .pagination-btn {
         display: none;
     }
 
-    .col-activity-updated {
-        display: none;
+    body.clients-management-page .col-activity-updated {
+        display: table-cell;
+        width: 11%;
+        min-width: 128px;
     }
 
     .col-name { width: 200px; }
@@ -1551,6 +1606,10 @@ body.clients-management-page .pagination-btn {
         display: none;
     }
 
+    body.clients-management-page .clients-table td.col-activity-updated {
+        display: flex;
+    }
+
     .clients-table td.col-ref::before { content: 'Ref Code'; }
     .clients-table td.col-name::before { content: 'Client Name'; }
     .clients-table td.col-activity::before { content: 'Activity'; }
@@ -1640,6 +1699,7 @@ body.clients-management-page .pagination-btn {
 
 @media (max-width: 480px) {
     .col-checkbox { display: none; }
+    body.clients-management-page .col-activity-updated { display: table-cell; }
     .col-activity-updated { display: none; }
 
     .clients-table td::before {

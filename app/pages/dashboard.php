@@ -80,42 +80,11 @@ function e($value) {
 }
 
 function relativeTime(?string $dateTime): string {
-    if (!$dateTime) {
-        return 'just now';
-    }
-
-    $timestamp = strtotime($dateTime);
-    if (!$timestamp) {
-        return 'just now';
-    }
-
-    $diff = time() - $timestamp;
-    if ($diff < 60) {
-        return 'just now';
-    }
-
-    if ($diff < 3600) {
-        return floor($diff / 60) . ' min ago';
-    }
-
-    if ($diff < 86400) {
-        return floor($diff / 3600) . ' hr ago';
-    }
-
-    return floor($diff / 86400) . ' day ago';
+    return appRelativeTimeLocal($dateTime);
 }
 
 function formatDateTime(?string $dateTime): string {
-    if (!$dateTime) {
-        return 'N/A';
-    }
-
-    $timestamp = strtotime($dateTime);
-    if (!$timestamp) {
-        return 'N/A';
-    }
-
-    return date('M d, Y h:i A', $timestamp);
+    return appFormatTimestampLocal($dateTime);
 }
 
 function normalizeActivityStatus(?string $status): string {
@@ -654,7 +623,7 @@ include '../includes/sidebar.php';
                                 </div>
                                 <div
                                     class="activity-time"
-                                    data-action-time-ts="<?php echo e((string)(intval(strtotime((string)($row['action_time'] ?? '')) ?: 0))); ?>"
+                                    data-action-time-ts="<?php echo e((string)intval(($actionTime = appParseTimestampLocal((string)($row['action_time'] ?? ''))) ? $actionTime->getTimestamp() : 0)); ?>"
                                 ><?php echo e(relativeTime($row['action_time'])); ?></div>
                             </div>
                         <?php endforeach; ?>

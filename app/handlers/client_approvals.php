@@ -1001,31 +1001,11 @@ if ($action === 'get_application' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $matchingCredentials = findMatchingClients($approval, $client, $kyc, $clientId, $approval['reference_code'] ?? '');
 
-    $allSubmittedData = [];
-    if (is_array($approval)) {
-        foreach ($approval as $key => $value) {
-            $allSubmittedData['approval_' . $key] = $value;
-        }
-    }
-
-    if (is_array($client)) {
-        foreach ($client as $key => $value) {
-            $allSubmittedData['client_' . $key] = $value;
-        }
-    }
-
-    if (is_array($kyc)) {
-        foreach ($kyc as $key => $value) {
-            $allSubmittedData['kyc_' . $key] = $value;
-        }
-    }
-
     $response['success'] = true;
     $response['data'] = [
         'approval' => $approval,
         'client' => $client,
         'kyc' => $kyc,
-        'all_submitted_data' => $allSubmittedData,
         'documents' => is_array($documents) ? $documents : [],
         'matching_credentials' => $matchingCredentials,
     ];

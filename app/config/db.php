@@ -4,6 +4,8 @@
  * KYC System - Sterling Insurance Company
  */
 
+date_default_timezone_set('Asia/Taipei');
+
 // Database Configuration
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
@@ -22,9 +24,96 @@ try {
     
     // Set charset to UTF-8
     $db->set_charset("utf8mb4");
+
+    // Keep MySQL timestamps aligned with the PHP timezone used by the app.
+    $db->query("SET time_zone = '" . $db->real_escape_string(date('P')) . "'");
     
 } catch (Exception $e) {
     die("Database Error: " . $e->getMessage());
+}
+
+function appTimestampTimezone(): DateTimeZone {
+    static $timezone = null;
+
+    if ($timezone instanceof DateTimeZone) {
+        return $timezone;
+    }
+
+    $timezoneName = date_default_timezone_get() ?: 'Asia/Taipei';
+    try {
+        $timezone = new DateTimeZone($timezoneName);
+    } catch (Throwable $e) {
+        $timezone = new DateTimeZone('Asia/Taipei');
+    }
+
+    return $timezone;
+}
+
+function appParseTimestampLocal(?string $value): ?DateTimeImmutable {
+    $trimmed = trim((string)$value);
+    if ($trimmed === '') {
+        return null;
+    }
+
+    $timezone = appTimestampTimezone();
+    $normalized = preg_replace('/\.(\d+)$/', '', str_replace('T', ' ', $trimmed)) ?? $trimmed;
+
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $normalized)) {
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $normalized, $timezone);
+        return $date instanceof DateTimeImmutable ? $date : null;
+    }
+
+    if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $normalized)) {
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d H:i', $normalized, $timezone);
+        return $date instanceof DateTimeImmutable ? $date : null;
+    }
+
+    if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $normalized)) {
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $normalized, $timezone);
+        return $date instanceof DateTimeImmutable ? $date : null;
+    }
+
+    try {
+        return (new DateTimeImmutable($trimmed, $timezone))->setTimezone($timezone);
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+function appFormatTimestampLocal(?string $value, string $format = 'M j, Y g:i A'): string {
+    $date = appParseTimestampLocal($value);
+    return $date ? $date->format($format) : 'N/A';
+}
+
+function appFormatDateLocal(?string $value, string $format = 'M j, Y'): string {
+    $date = appParseTimestampLocal($value);
+    return $date ? $date->format($format) : 'N/A';
+}
+
+function appRelativeTimeLocal(?string $value, ?DateTimeInterface $now = null): string {
+    $date = appParseTimestampLocal($value);
+    if (!$date) {
+        return 'just now';
+    }
+
+    $current = $now instanceof DateTimeInterface
+        ? DateTimeImmutable::createFromInterface($now)
+        : new DateTimeImmutable('now', appTimestampTimezone());
+
+    $diff = $current->getTimestamp() - $date->getTimestamp();
+    if ($diff < 60) {
+        return 'just now';
+    }
+
+    if ($diff < 3600) {
+        return floor($diff / 60) . ' min ago';
+    }
+
+    if ($diff < 86400) {
+        return floor($diff / 3600) . ' hr ago';
+    }
+
+    return floor($diff / 86400) . ' day ago';
 }
 
 /**

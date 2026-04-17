@@ -339,152 +339,13 @@ include '../includes/sidebar.php';
 <div id="viewModal" class="modal">
     <div class="modal-content view-modal-content" style="max-width: 900px; max-height: 92vh; display: flex; flex-direction: column;">
         <div class="modal-header">
-            <h2><?php echo htmlspecialchars($recordTitleCaseSingular); ?> Preview</h2>
+            <h2 id="viewModalTitle"><?php echo htmlspecialchars($recordTitleCaseSingular); ?> Preview</h2>
             <button class="modal-close" title="Close" onclick="document.getElementById('viewModal').style.display='none'"><i class="bi bi-x"></i></button>
         </div>
         <div class="modal-body">
             <form id="viewForm">
                 <input type="hidden" id="viewClientId">
-
-                <!-- Row 1: Reference & Number -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Ref Code</label>
-                        <input type="text" id="viewRefCode" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Client Number</label>
-                        <input type="text" id="viewClientNumber" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Submitted Branch</label>
-                        <input type="text" id="viewSubmittedBranch" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <!-- Row 2: Type -->
-                <?php if ($isAgentsMode): ?>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Agent Type</label>
-                        <input type="text" id="viewAgentType" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Head Agent Name</label>
-                        <input type="text" id="viewHeadAgentName" class="form-control" readonly>
-                    </div>
-                </div>
-                <?php else: ?>
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Client Type</label>
-                        <select id="viewClientType" class="form-select" disabled>
-                            <option value="individual">Individual</option>
-                            <option value="corporate">Corporate</option>
-                            <option value="obligee">Obligee</option>
-                        </select>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <!-- Row 3: Name -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">First Name</label>
-                        <input type="text" id="viewFirstName" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Middle Name</label>
-                        <input type="text" id="viewMiddleName" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Last Name</label>
-                        <input type="text" id="viewLastName" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <!-- Row 4: Personal Details -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Birthdate</label>
-                        <input type="date" id="viewBirthdate" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Gender</label>
-                        <select id="viewGender" class="form-select" disabled>
-                            <option value="">Select</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Prefer not to say</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Civil Status</label>
-                        <select id="viewCivilStatus" class="form-select" disabled>
-                            <option>Single</option>
-                            <option>Married</option>
-                            <option>Widowed</option>
-                            <option>Separated</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Row 5: Additional Details -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Occupation</label>
-                        <input type="text" id="viewOccupation" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Nationality</label>
-                        <input type="text" id="viewNationality" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">TIN / Tax ID</label>
-                        <input type="text" id="viewTin" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <!-- Row 6: Contact Information -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" id="viewEmail" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Mobile Number</label>
-                        <input type="tel" id="viewMobile" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Telephone</label>
-                        <input type="tel" id="viewTelephone" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <!-- Row 7: Address -->
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Present Address</label>
-                        <input type="text" id="viewAddress" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Activity Status</label>
-                        <input type="text" id="viewActivityStatus" class="form-control" readonly>
-                    </div>
-                    <div class="form-group full">
-                        <label class="form-label">Status Updated At</label>
-                        <input type="text" id="viewActivityStatusUpdatedAt" class="form-control" readonly>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Activity Note</label>
-                        <input type="text" id="viewActivityNote" class="form-control" readonly>
-                    </div>
-                </div>
+                <div id="viewClientDetails" class="client-preview-shell"></div>
             </form>
         </div>
         <div class="modal-footer">
@@ -640,6 +501,351 @@ include '../includes/sidebar.php';
         if (!isSubAgent) {
             headAgentField.value = '';
         }
+    }
+
+    function normalizePreviewText(value) {
+        return String(value ?? '').trim();
+    }
+
+    function capitalizePreviewText(value) {
+        const text = normalizePreviewText(value);
+        if (!text) {
+            return '';
+        }
+
+        return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    function humanizePreviewText(value) {
+        const text = normalizePreviewText(value);
+        if (!text) {
+            return '';
+        }
+
+        return text
+            .replace(/[_-]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .split(' ')
+            .map(part => {
+                if (!part) {
+                    return part;
+                }
+
+                return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+            })
+            .join(' ');
+    }
+
+    function getFirstPreviewValue(client, keys) {
+        if (!client || !Array.isArray(keys)) {
+            return '';
+        }
+
+        for (const key of keys) {
+            const value = normalizePreviewText(client[key]);
+            if (value !== '') {
+                return value;
+            }
+        }
+
+        return '';
+    }
+
+    function getClientTypeDisplayLabel(clientType) {
+        const normalized = normalizePreviewText(clientType).toLowerCase();
+        if (normalized === 'corporate') {
+            return 'Corporate';
+        }
+        if (normalized === 'obligee') {
+            return 'Obligee';
+        }
+        if (normalized === 'individual') {
+            return 'Individual';
+        }
+
+        return normalized ? capitalizePreviewText(normalized) : 'Client';
+    }
+
+    function getPreviewRecordNumberLabel(client) {
+        return normalizePreviewText(client?.client_classification).toLowerCase() === 'agent'
+            ? 'Agent Number'
+            : 'Client Number';
+    }
+
+    function getPreviewDisplayName(client) {
+        const clientType = normalizePreviewText(client?.client_type).toLowerCase();
+        const classification = normalizePreviewText(client?.client_classification).toLowerCase();
+        const firstName = normalizePreviewText(client?.first_name);
+        const middleName = normalizePreviewText(client?.middle_name);
+        const lastName = normalizePreviewText(client?.last_name);
+        const personalName = [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
+        const companyName = normalizePreviewText(client?.client_name || client?.company_name);
+        const contactPerson = normalizePreviewText(client?.contact_person);
+        const fallbackName = normalizePreviewText(client?.reference_code) || 'N/A';
+
+        if (classification === 'agent') {
+            if (clientType === 'corporate' || clientType === 'obligee') {
+                return companyName || contactPerson || personalName || fallbackName;
+            }
+
+            return personalName || companyName || contactPerson || fallbackName;
+        }
+
+        if (clientType === 'corporate' || clientType === 'obligee') {
+            return companyName || contactPerson || personalName || fallbackName;
+        }
+
+        return personalName || companyName || contactPerson || fallbackName;
+    }
+
+    function formatPreviewValue(field, rawValue) {
+        const text = normalizePreviewText(rawValue);
+        if (!text) {
+            return '';
+        }
+
+        const format = normalizePreviewText(field?.format).toLowerCase();
+
+        if (format === 'clienttype') {
+            return getClientTypeDisplayLabel(text);
+        }
+
+        if (format === 'classification') {
+            return text.toLowerCase() === 'agent' ? 'Agent' : 'Client';
+        }
+
+        if (format === 'agenttype') {
+            return text.toLowerCase() === 'sub_agent' ? 'Sub agent' : 'Agent';
+        }
+
+        if (format === 'businesstype') {
+            return text.toLowerCase() === 'government' ? 'Government' : 'Private';
+        }
+
+        if (format === 'mailingaddresstype') {
+            return humanizePreviewText(text);
+        }
+
+        if (format === 'gender' || format === 'status') {
+            return capitalizePreviewText(text);
+        }
+
+        if (format === 'humanize' || format === 'idtype') {
+            return humanizePreviewText(text);
+        }
+
+        return text;
+    }
+
+    function resolvePreviewFieldValue(client, field) {
+        if (typeof field.value === 'function') {
+            return field.value(client);
+        }
+
+        if (Array.isArray(field.keys)) {
+            return getFirstPreviewValue(client, field.keys);
+        }
+
+        if (field.key) {
+            return normalizePreviewText(client?.[field.key]);
+        }
+
+        return '';
+    }
+
+    function renderPreviewField(client, field) {
+        const rawValue = resolvePreviewFieldValue(client, field);
+        const formattedValue = formatPreviewValue(field, rawValue);
+
+        if (!formattedValue) {
+            return '';
+        }
+
+        const groupClass = field.fullWidth ? 'form-group full' : 'form-group';
+
+        if (normalizePreviewText(field.type).toLowerCase() === 'textarea') {
+            const rows = Math.max(2, parseInt(field.rows || 2, 10) || 2);
+            return `
+                <div class="${groupClass}">
+                    <label class="form-label">${escapeHtml(field.label)}</label>
+                    <textarea class="form-control" rows="${rows}" readonly>${escapeHtml(formattedValue)}</textarea>
+                </div>`;
+        }
+
+        return `
+            <div class="${groupClass}">
+                <label class="form-label">${escapeHtml(field.label)}</label>
+                <input type="text" class="form-control" readonly value="${escapeHtml(formattedValue)}">
+            </div>`;
+    }
+
+    function renderPreviewSection(title, fields, client, extraClass = '') {
+        const renderedFields = (Array.isArray(fields) ? fields : [])
+            .map(field => renderPreviewField(client, field))
+            .filter(Boolean);
+
+        if (renderedFields.length === 0) {
+            return '';
+        }
+
+        const sectionClasses = ['client-preview-section'];
+        if (extraClass) {
+            sectionClasses.push(extraClass);
+        }
+
+        return `
+            <section class="${sectionClasses.join(' ')}">
+                <div class="client-preview-section-title">${escapeHtml(title)}</div>
+                <div class="form-row">
+                    ${renderedFields.join('')}
+                </div>
+            </section>`;
+    }
+
+    function buildIndividualPreviewSections(client) {
+        return [
+            renderPreviewSection('Personal Information', [
+                { label: 'Salutation', keys: ['salutation'] },
+                { label: 'First Name', keys: ['first_name'] },
+                { label: 'Middle Name', keys: ['middle_name'] },
+                { label: 'Last Name', keys: ['last_name'] },
+                { label: 'Suffix', keys: ['suffix'] },
+                { label: 'Date of Birth', keys: ['date_of_birth'] },
+                { label: 'Gender', keys: ['gender'], format: 'gender' },
+                { label: 'Nationality', keys: ['nationality'] }
+            ], client),
+            renderPreviewSection('Account Details', [
+                { label: 'Client Since', keys: ['client_since'] },
+                { label: 'Occupation', keys: ['occupation'], format: 'humanize' },
+                { label: 'Employer / Company', keys: ['company_name'] },
+                { label: 'AP SL Code', keys: ['ap_sl_code'] },
+                { label: 'AR SL Code', keys: ['ar_sl_code'] },
+                { label: 'TIN Number', keys: ['tin_number'] }
+            ], client),
+            renderPreviewSection('Family Information', [
+                { label: 'Spouse Name', keys: ['spouse_name'] },
+                { label: 'Spouse Birthdate', keys: ['spouse_birthdate'] },
+                { label: 'Spouse Occupation', keys: ['spouse_occupation'], format: 'humanize' }
+            ], client),
+            renderPreviewSection('Address Information', [
+                { label: 'Home Address', keys: ['home_address'], type: 'textarea', fullWidth: true, rows: 2 },
+                { label: 'Business Address', keys: ['business_address'], type: 'textarea', fullWidth: true, rows: 2 },
+                { label: 'Mailing Address Type', keys: ['mailing_address_type'], format: 'mailingAddressType' },
+                { label: 'Region', keys: ['region'] },
+                { label: 'Home City / Municipality', keys: ['home_ctm'] },
+                { label: 'Home Province', keys: ['home_province'] },
+                { label: 'Full Address', keys: ['full_address'], type: 'textarea', fullWidth: true, rows: 2 }
+            ], client),
+            renderPreviewSection('Contact Information', [
+                { label: 'Mobile Number', keys: ['mobile_phone'] },
+                { label: 'Telephone', keys: ['landline_phone', 'office_phone'] },
+                { label: 'Email Address', keys: ['email'] }
+            ], client),
+            renderPreviewSection('Government ID', [
+                { label: 'Government ID Type', keys: ['id_type'], format: 'idType' },
+                { label: 'ID Number', keys: ['id_number'] }
+            ], client)
+        ].filter(Boolean).join('');
+    }
+
+    function buildCorporatePreviewSections(client, isObligee = false) {
+        const companySectionTitle = isObligee ? 'Government Agency Information' : 'Company Information';
+        const companyNameLabel = isObligee ? 'Government Agency / Office Name' : 'Business / Company Name';
+        const businessTypeLabel = isObligee ? 'Government Body Type' : 'Business Type';
+        const clientSinceLabel = isObligee ? 'Date of Registration / Establishment' : 'Client Since';
+        const detailsSectionTitle = isObligee ? 'Agency Details' : 'Business Details';
+        const addressSectionTitle = isObligee ? 'Government Office Address' : 'Business Address';
+        const addressLabel = isObligee ? 'Government Office Address' : 'Business Address';
+        const regionLabel = isObligee ? 'Region / Jurisdiction' : 'Region';
+        const provinceLabel = isObligee ? 'Province / Area' : 'Province';
+        const contactPersonLabel = isObligee ? 'Authorized Contact Person' : 'Company Owner / Contact Person';
+        const contactPhoneLabel = isObligee ? 'Agency Phone Number' : 'Phone Number';
+        const designationLabel = isObligee ? 'Authorized Contact Position' : 'Contact Person Designation';
+        const emailLabel = isObligee ? 'Official Email Address' : 'Email Address';
+
+        return [
+            renderPreviewSection(companySectionTitle, [
+                { label: companyNameLabel, keys: ['client_name', 'company_name'], fullWidth: true },
+                { label: businessTypeLabel, keys: ['business_type'], format: 'businessType' },
+                { label: clientSinceLabel, keys: ['client_since'] },
+                { label: 'Gender', keys: ['gender'], format: 'gender' },
+                { label: 'Nationality', keys: ['nationality'] }
+            ], client),
+            renderPreviewSection(detailsSectionTitle, [
+                { label: 'TIN Number', keys: ['tin_number'] },
+                { label: 'AP SL Code', keys: ['ap_sl_code'] },
+                { label: 'AR SL Code', keys: ['ar_sl_code'] },
+                { label: designationLabel, keys: ['designation'] }
+            ], client),
+            renderPreviewSection(addressSectionTitle, [
+                { label: addressLabel, keys: ['business_address'], type: 'textarea', fullWidth: true, rows: 2 },
+                { label: 'City / Municipality', keys: ['business_ctm'] },
+                { label: provinceLabel, keys: ['business_province'] },
+                { label: regionLabel, keys: ['region'] },
+                { label: 'Full Address', keys: ['full_address'], type: 'textarea', fullWidth: true, rows: 2 }
+            ], client),
+            renderPreviewSection('Contact Information', [
+                { label: contactPhoneLabel, keys: ['office_phone', 'mobile_phone', 'landline_phone'] },
+                { label: contactPersonLabel, keys: ['contact_person'] },
+                { label: emailLabel, keys: ['email'] }
+            ], client),
+            renderPreviewSection('Government ID', [
+                { label: 'Government ID Type', keys: ['id_type'], format: 'idType' },
+                { label: 'ID Number', keys: ['id_number'] }
+            ], client)
+        ].filter(Boolean).join('');
+    }
+
+    function buildClientPreviewHtml(client) {
+        const clientType = normalizePreviewText(client?.client_type).toLowerCase() || 'individual';
+        const classification = normalizePreviewText(client?.client_classification).toLowerCase() || 'client';
+        const recordNumberLabel = getPreviewRecordNumberLabel(client);
+        const sections = [
+            renderPreviewSection('Record Overview', [
+                { label: 'Display Name', value: record => getPreviewDisplayName(record), fullWidth: true },
+                { label: 'Reference Code', keys: ['reference_code'] },
+                { label: recordNumberLabel, keys: ['client_number'] },
+                { label: 'Submitted Branch', keys: ['submitted_by_branch'] },
+                { label: 'Client Type', keys: ['client_type'], format: 'clientType' },
+                { label: 'Classification', keys: ['client_classification'], format: 'classification' },
+                { label: 'Verification Status', keys: ['verification_status'], format: 'status' },
+                { label: 'Activity Status', keys: ['activity_status_display'], format: 'status' },
+                { label: 'Status Updated At', keys: ['activity_status_updated_display'] }
+            ], client, 'client-preview-summary')
+        ];
+
+        if (classification === 'agent') {
+            sections.push(renderPreviewSection('Agent Details', [
+                { label: 'Agent Type', keys: ['agent_type'], format: 'agentType' },
+                { label: 'Agent Branch', keys: ['agent_branch'] },
+                { label: 'Head Agent Name', keys: ['head_agent_name'] }
+            ], client));
+        }
+
+        if (clientType === 'corporate') {
+            sections.push(buildCorporatePreviewSections(client, false));
+        } else if (clientType === 'obligee') {
+            sections.push(buildCorporatePreviewSections(client, true));
+        } else {
+            sections.push(buildIndividualPreviewSections(client));
+        }
+
+        const html = sections.filter(Boolean).join('');
+        return html || '<div class="client-preview-empty">No preview data available.</div>';
+    }
+
+    function getPreviewModalTitle(client) {
+        const clientTypeLabel = getClientTypeDisplayLabel(client?.client_type);
+        const classification = normalizePreviewText(client?.client_classification).toLowerCase();
+
+        if (classification === 'agent') {
+            return clientTypeLabel === 'Client'
+                ? 'Agent Preview'
+                : `${clientTypeLabel} Agent Preview`;
+        }
+
+        return `${clientTypeLabel} Client Preview`;
     }
 
     function updateBranchFilterOptions(branches) {
@@ -1142,6 +1348,8 @@ include '../includes/sidebar.php';
     // Modal functionality
     const editModal = document.getElementById('editModal');
     const viewModal = document.getElementById('viewModal');
+    const viewModalTitle = document.getElementById('viewModalTitle');
+    const viewClientDetails = document.getElementById('viewClientDetails');
     const cancelBtn = document.getElementById('cancelBtn');
     const editModalCloseBtn = document.getElementById('editModalCloseBtn');
     const editActivityStatusButtons = document.querySelectorAll('.activity-status-toggle');
@@ -1212,45 +1420,15 @@ include '../includes/sidebar.php';
             }
 
             const client = result.data;
-            const fallbackName = (client.client_name || '').trim();
 
             document.getElementById('viewClientId').value = client.client_id || '';
-            document.getElementById('viewRefCode').value = client.reference_code || '';
-            document.getElementById('viewClientNumber').value = client.client_number || '';
-            document.getElementById('viewSubmittedBranch').value = client.submitted_by_branch || 'N/A';
-            if (isAgentsMode) {
-                const viewAgentTypeField = document.getElementById('viewAgentType');
-                const viewHeadAgentField = document.getElementById('viewHeadAgentName');
-                if (viewAgentTypeField) {
-                    const agentType = (client.agent_type || 'agent').toLowerCase();
-                    viewAgentTypeField.value = agentType === 'sub_agent' ? 'Sub agent' : 'Agent';
-                }
-                if (viewHeadAgentField) {
-                    viewHeadAgentField.value = client.head_agent_name || 'None';
-                }
-            } else {
-                document.getElementById('viewClientType').value = client.client_type || 'individual';
+            if (viewModalTitle) {
+                viewModalTitle.textContent = getPreviewModalTitle(client);
             }
-            const viewVerificationStatusEl = document.getElementById('viewVerificationStatus');
-            if (viewVerificationStatusEl) {
-                viewVerificationStatusEl.value = client.verification_status || 'pending';
+
+            if (viewClientDetails) {
+                viewClientDetails.innerHTML = buildClientPreviewHtml(client);
             }
-            document.getElementById('viewFirstName').value = client.first_name || fallbackName;
-            document.getElementById('viewMiddleName').value = client.middle_name || '';
-            document.getElementById('viewLastName').value = client.last_name || '';
-            document.getElementById('viewBirthdate').value = client.date_of_birth || '';
-            document.getElementById('viewGender').value = (client.gender || '').toLowerCase();
-            document.getElementById('viewCivilStatus').value = client.civil_status || 'Single';
-            document.getElementById('viewOccupation').value = client.occupation || '';
-            document.getElementById('viewNationality').value = client.nationality || '';
-            document.getElementById('viewTin').value = client.tin_number || '';
-            document.getElementById('viewEmail').value = client.email || '';
-            document.getElementById('viewMobile').value = client.mobile_phone || client.office_phone || '';
-            document.getElementById('viewTelephone').value = client.landline_phone || client.office_phone || '';
-            document.getElementById('viewAddress').value = client.full_address || client.home_address || client.business_address || '';
-            document.getElementById('viewActivityStatus').value = client.activity_status_display || 'Active';
-            document.getElementById('viewActivityStatusUpdatedAt').value = client.activity_status_updated_display || 'N/A';
-            document.getElementById('viewActivityNote').value = 'Activity is managed manually from the edit modal.';
 
             viewModal.style.display = 'block';
         })
@@ -1381,12 +1559,10 @@ include '../includes/sidebar.php';
 
             const updatedStatusValue = result.activity_status_updated_display || result.activity_status_updated_at || '';
             if (updatedStatusValue) {
-                ['editActivityStatusUpdatedAt', 'viewActivityStatusUpdatedAt'].forEach(fieldId => {
-                    const updatedAtField = document.getElementById(fieldId);
-                    if (updatedAtField) {
-                        updatedAtField.value = updatedStatusValue;
-                    }
-                });
+                const updatedAtField = document.getElementById('editActivityStatusUpdatedAt');
+                if (updatedAtField) {
+                    updatedAtField.value = updatedStatusValue;
+                }
             }
 
             editModal.style.display = 'none';

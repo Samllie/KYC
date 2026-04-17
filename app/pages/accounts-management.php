@@ -23,13 +23,7 @@ function accountValue(?string $value, string $fallback = 'N/A'): string
 
 function formatAccountDateTime(?string $value): string
 {
-    $trimmed = trim((string)$value);
-    if ($trimmed === '') {
-        return 'N/A';
-    }
-
-    $timestamp = strtotime($trimmed);
-    return $timestamp ? date('M j, Y g:i A', $timestamp) : 'N/A';
+    return appFormatTimestampLocal($value);
 }
 
 function normalizeAccountStatus(?string $status): string
@@ -817,24 +811,44 @@ $pageHeading = 'Accounts Management';
         }
     }
 
-    function formatAccountDateTimeValue(value) {
+    function parseAccountTimestamp(value) {
         const trimmed = String(value || '').trim();
         if (trimmed === '') {
+            return null;
+        }
+
+        const normalized = trimmed.replace('T', ' ').replace(/Z$/i, '');
+        const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+        if (match) {
+            const year = Number(match[1]);
+            const month = Number(match[2]) - 1;
+            const day = Number(match[3]);
+            const hour = Number(match[4] || 0);
+            const minute = Number(match[5] || 0);
+            const second = Number(match[6] || 0);
+            return new Date(year, month, day, hour, minute, second);
+        }
+
+        const parsed = new Date(trimmed);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function formatAccountTimestampValue(date) {
+        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
             return 'N/A';
         }
 
-        const parsed = new Date(trimmed.replace(' ', 'T'));
-        if (Number.isNaN(parsed.getTime())) {
-            return 'N/A';
-        }
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const hours = date.getHours();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHour = hours % 12 || 12;
+        const minute = String(date.getMinutes()).padStart(2, '0');
 
-        return parsed.toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-        });
+        return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()} ${displayHour}:${minute} ${ampm}`;
+    }
+
+    function formatAccountDateTimeValue(value) {
+        return formatAccountTimestampValue(parseAccountTimestamp(value));
     }
 
     function resetReauthModalState() {

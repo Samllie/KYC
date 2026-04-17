@@ -1100,14 +1100,14 @@ include '../includes/sidebar.php';
         <div class="application-details-header">
             <div>
                 <h2 id="applicationModalTitle">Application Details</h2>
-                <p id="applicationModalSubtitle" class="application-modal-subtitle">Select a row to compare closest client matches and review filled fields only.</p>
+                <p id="applicationModalSubtitle" class="application-modal-subtitle">Select a row to compare closest client matches.</p>
             </div>
             <button type="button" class="btn-cancel" id="applicationDetailsClearBtn">Close</button>
         </div>
 
         <div class="application-details-scroll">
             <div id="applicationDetailsEmpty" class="application-details-empty">
-                Choose an approval row from the table to compare submitted names against client records, review only the populated fields, and inspect documents.
+                Choose an approval row from the table to compare submitted names against client records and inspect documents.
             </div>
 
             <div id="applicationDetailsContent" class="application-modal-body" hidden>
@@ -1127,16 +1127,6 @@ include '../includes/sidebar.php';
                         <h3>Approval Summary</h3>
                     </div>
                     <div id="approvalDetailsGrid" class="detail-grid"></div>
-                </section>
-
-                <section class="detail-section">
-                    <div class="detail-section-header">
-                        <div class="detail-section-header-copy">
-                            <h3>Filled Submission Fields</h3>
-                            <p class="filled-fields-hint">Only fields with values are shown here from the approval, client, and KYC records.</p>
-                        </div>
-                    </div>
-                    <div id="allSubmittedDetailsGrid" class="detail-grid"></div>
                 </section>
 
                 <section class="detail-section">
@@ -1179,7 +1169,6 @@ include '../includes/sidebar.php';
     const approvalDetailsGrid = document.getElementById('approvalDetailsGrid');
     const matchingCredentialsSummary = document.getElementById('matchingCredentialsSummary');
     const matchingCredentialsGrid = document.getElementById('matchingCredentialsGrid');
-    const allSubmittedDetailsGrid = document.getElementById('allSubmittedDetailsGrid');
     const applicationDocumentGrid = document.getElementById('applicationDocumentGrid');
     const decisionReviewNotes = document.getElementById('decisionReviewNotes');
     const modalApproveBtn = document.getElementById('modalApproveBtn');
@@ -1222,6 +1211,84 @@ include '../includes/sidebar.php';
             .replace(/\bKyc\b/g, 'KYC')
             .replace(/\bTin\b/g, 'TIN')
             .replace(/\bId\b/g, 'ID');
+    }
+
+    function normalizeApprovalType(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
+    function setIfFilled(target, key, value) {
+        if (isBlank(value)) {
+            return;
+        }
+
+        target[key] = value;
+    }
+
+    function buildApprovalSummaryRecord(approval, client, kyc) {
+        const summary = {};
+        const clientClassification = normalizeApprovalType(
+            approval?.client_classification || client?.client_classification || kyc?.client_classification
+        );
+        const clientType = normalizeApprovalType(
+            approval?.client_type || client?.client_type || kyc?.client_type
+        );
+
+        setIfFilled(summary, 'reference_code', approval?.reference_code || client?.reference_code || kyc?.reference_code);
+        setIfFilled(summary, 'display_name', approval?.display_name || client?.client_name || kyc?.client_name);
+        setIfFilled(summary, 'client_classification', approval?.client_classification || client?.client_classification || kyc?.client_classification);
+        setIfFilled(summary, 'client_type', approval?.client_type || client?.client_type || kyc?.client_type);
+        setIfFilled(summary, 'approval_status', approval?.approval_status);
+        setIfFilled(summary, 'submitted_at', approval?.submitted_at);
+        setIfFilled(summary, 'reviewed_at', approval?.reviewed_at);
+        setIfFilled(summary, 'approved_at', approval?.approved_at);
+        setIfFilled(summary, 'review_notes', approval?.review_notes);
+
+        if (clientClassification === 'agent') {
+            setIfFilled(summary, 'agent_type', approval?.agent_type || client?.agent_type || kyc?.agent_type);
+            setIfFilled(summary, 'head_agent_name', approval?.head_agent_name || client?.head_agent_name || kyc?.head_agent_name);
+            setIfFilled(summary, 'agent_branch', approval?.agent_branch || client?.agent_branch || kyc?.agent_branch);
+        }
+
+        if (clientType === 'corporate' || clientType === 'obligee') {
+            setIfFilled(summary, 'client_name', approval?.client_name || client?.client_name || kyc?.client_name);
+            setIfFilled(summary, 'company_name', client?.company_name || kyc?.company_name);
+            setIfFilled(summary, 'business_type', client?.business_type || kyc?.business_type);
+            setIfFilled(summary, 'designation', client?.designation || kyc?.designation);
+            setIfFilled(summary, 'contact_person', client?.contact_person || kyc?.contact_person);
+            setIfFilled(summary, 'business_address', client?.business_address || kyc?.business_address || approval?.business_address);
+            setIfFilled(summary, 'business_ctm', client?.business_ctm || kyc?.business_ctm);
+            setIfFilled(summary, 'business_province', client?.business_province || kyc?.business_province);
+            setIfFilled(summary, 'region', client?.region || kyc?.region);
+            setIfFilled(summary, 'office_phone', client?.office_phone || kyc?.office_phone);
+            setIfFilled(summary, 'mobile_phone', client?.mobile_phone || kyc?.mobile_phone);
+            setIfFilled(summary, 'email', client?.email || kyc?.email);
+            setIfFilled(summary, 'tin_number', client?.tin_number || kyc?.tin_number);
+            setIfFilled(summary, 'ap_sl_code', client?.ap_sl_code || kyc?.ap_sl_code);
+            setIfFilled(summary, 'ar_sl_code', client?.ar_sl_code || kyc?.ar_sl_code);
+        } else {
+            setIfFilled(summary, 'salutation', client?.salutation || kyc?.salutation);
+            setIfFilled(summary, 'first_name', approval?.first_name || client?.first_name || kyc?.first_name);
+            setIfFilled(summary, 'middle_name', approval?.middle_name || client?.middle_name || kyc?.middle_name);
+            setIfFilled(summary, 'last_name', approval?.last_name || client?.last_name || kyc?.last_name);
+            setIfFilled(summary, 'suffix', client?.suffix || kyc?.suffix);
+            setIfFilled(summary, 'date_of_birth', client?.date_of_birth || kyc?.birthdate || kyc?.date_of_birth);
+            setIfFilled(summary, 'gender', client?.gender || kyc?.gender);
+            setIfFilled(summary, 'nationality', client?.nationality || kyc?.nationality);
+            setIfFilled(summary, 'client_since', client?.client_since || kyc?.client_since);
+            setIfFilled(summary, 'occupation', client?.occupation || kyc?.occupation);
+            setIfFilled(summary, 'tin_number', client?.tin_number || kyc?.tin_number);
+            setIfFilled(summary, 'mobile_phone', client?.mobile_phone || kyc?.mobile_phone);
+            setIfFilled(summary, 'email', client?.email || kyc?.email);
+            setIfFilled(summary, 'home_address', client?.home_address || kyc?.home_address || approval?.home_address);
+            setIfFilled(summary, 'id_type', client?.id_type || kyc?.id_type);
+            setIfFilled(summary, 'id_number', client?.id_number || kyc?.id_number);
+            setIfFilled(summary, 'spouse_name', client?.spouse_name || kyc?.spouse_name);
+            setIfFilled(summary, 'spouse_birthdate', client?.spouse_birthdate || kyc?.spouse_birthdate);
+            setIfFilled(summary, 'spouse_occupation', client?.spouse_occupation || kyc?.spouse_occupation);
+        }
+
+        return summary;
     }
 
     function orderedRecordEntries(record, priorityKeys = []) {
@@ -1651,18 +1718,55 @@ include '../includes/sidebar.php';
         }
     }
 
+    function parseTimestampValue(value) {
+        const trimmed = String(value || '').trim();
+        if (trimmed === '') {
+            return null;
+        }
+
+        const normalized = trimmed.replace('T', ' ').replace(/Z$/i, '');
+        const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+        if (match) {
+            const year = Number(match[1]);
+            const month = Number(match[2]) - 1;
+            const day = Number(match[3]);
+            const hour = Number(match[4] || 0);
+            const minute = Number(match[5] || 0);
+            const second = Number(match[6] || 0);
+            return new Date(year, month, day, hour, minute, second);
+        }
+
+        const parsed = new Date(trimmed);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function formatTimestampValue(date, includeTime = true) {
+        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+            return 'N/A';
+        }
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const base = `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        if (!includeTime) {
+            return base;
+        }
+
+        const hours = date.getHours();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHour = hours % 12 || 12;
+        const minute = String(date.getMinutes()).padStart(2, '0');
+
+        return `${base} ${displayHour}:${minute} ${ampm}`;
+    }
+
     function formatDateTime(value) {
-        if (!value) return 'N/A';
-        const date = new Date(String(value).replace(' ', 'T'));
-        if (Number.isNaN(date.getTime())) return value;
-        return date.toLocaleString();
+        const parsed = parseTimestampValue(value);
+        return parsed ? formatTimestampValue(parsed, true) : (String(value || '').trim() || 'N/A');
     }
 
     function formatDateOnly(value) {
-        if (!value) return 'N/A';
-        const date = new Date(String(value).replace(' ', 'T'));
-        if (Number.isNaN(date.getTime())) return value;
-        return date.toLocaleDateString();
+        const parsed = parseTimestampValue(value);
+        return parsed ? formatTimestampValue(parsed, false) : (String(value || '').trim() || 'N/A');
     }
 
     function formatType(value) {
@@ -1743,8 +1847,8 @@ include '../includes/sidebar.php';
             return false;
         }
 
-        const date = new Date(String(value).replace(' ', 'T'));
-        if (Number.isNaN(date.getTime())) {
+        const date = parseTimestampValue(value);
+        if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
             return false;
         }
 
@@ -2143,7 +2247,7 @@ include '../includes/sidebar.php';
         }
 
         if (applicationModalSubtitle) {
-            applicationModalSubtitle.textContent = 'Loading application details, closest client matches, and filled fields...';
+            applicationModalSubtitle.textContent = 'Loading closest client matches and approval summary...';
         }
 
         if (matchingCredentialsSummary) {
@@ -2156,7 +2260,6 @@ include '../includes/sidebar.php';
         });
 
         renderFallbackGrid(approvalDetailsGrid, 'Loading approval summary...');
-        renderFallbackGrid(allSubmittedDetailsGrid, 'Loading filled fields...');
 
         if (applicationDocumentGrid) {
             applicationDocumentGrid.innerHTML = `
@@ -2194,7 +2297,7 @@ include '../includes/sidebar.php';
         }
 
         if (applicationModalSubtitle) {
-            applicationModalSubtitle.textContent = 'Select a row to compare closest client matches and review filled fields only.';
+            applicationModalSubtitle.textContent = 'Select a row to compare closest client matches.';
         }
 
         if (applicationDetailsEmpty) {
@@ -2210,7 +2313,6 @@ include '../includes/sidebar.php';
         const approval = payload.approval || null;
         const client = payload.client || null;
         const kyc = payload.kyc || null;
-        const allSubmittedData = payload.all_submitted_data || null;
         const documents = Array.isArray(payload.documents) ? payload.documents : [];
         const matchingCredentialsPayload = payload.matching_credentials || {};
         const matchingCredentials = Array.isArray(matchingCredentialsPayload.items)
@@ -2244,9 +2346,8 @@ include '../includes/sidebar.php';
         }
 
         if (applicationModalSubtitle) {
-            const submittedBy = approval && approval.submitted_by_name ? approval.submitted_by_name : 'Unknown submitter';
             const submittedAt = approval ? formatDateTime(approval.submitted_at) : 'N/A';
-            applicationModalSubtitle.textContent = `Status: ${status} | Submitted by ${submittedBy} | ${submittedAt}`;
+            applicationModalSubtitle.textContent = `Status: ${status} | Submitted: ${submittedAt}`;
         }
 
         if (decisionReviewNotes) {
@@ -2255,76 +2356,21 @@ include '../includes/sidebar.php';
                 : '';
         }
 
-        renderRecordGrid(approvalDetailsGrid, approval, [
+        renderRecordGrid(approvalDetailsGrid, buildApprovalSummaryRecord(approval, client, kyc), [
             'approval_id',
             'reference_code',
+            'display_name',
             'client_classification',
             'client_type',
             'agent_type',
             'head_agent_name',
             'agent_branch',
             'approval_status',
-            'display_name',
-            'client_name',
-            'submitted_by_name',
-            'submitted_by_branch',
             'submitted_at',
-            'reviewed_by_name',
             'reviewed_at',
             'approved_at',
             'review_notes',
             'client_id'
-        ]);
-
-        renderRecordGrid(allSubmittedDetailsGrid, allSubmittedData, [
-            'approval_reference_code',
-            'approval_client_type',
-            'approval_client_classification',
-            'approval_agent_type',
-            'approval_head_agent_name',
-            'approval_agent_branch',
-            'approval_approval_status',
-            'approval_submitted_by_name',
-            'approval_submitted_by_branch',
-            'approval_submitted_at',
-            'client_reference_code',
-            'client_client_type',
-            'client_client_classification',
-            'client_agent_type',
-            'client_head_agent_name',
-            'client_agent_branch',
-            'client_client_name',
-            'client_first_name',
-            'client_middle_name',
-            'client_last_name',
-            'client_contact_person',
-            'client_mobile_phone',
-            'client_email',
-            'client_home_address',
-            'client_business_address',
-            'client_verification_status',
-            'kyc_reference_code',
-            'kyc_ref_code',
-            'kyc_client_type',
-            'kyc_last_name',
-            'kyc_first_name',
-            'kyc_middle_name',
-            'kyc_birthdate',
-            'kyc_gender',
-            'kyc_nationality',
-            'kyc_agent_type',
-            'kyc_head_agent_name',
-            'kyc_agent_branch',
-            'kyc_id_type',
-            'kyc_id_number',
-            'kyc_occupation',
-            'kyc_company',
-            'kyc_mobile',
-            'kyc_phone',
-            'kyc_email',
-            'kyc_address',
-            'kyc_status',
-            'kyc_submitted_at'
         ]);
 
         renderDocuments(documents);
@@ -2365,7 +2411,6 @@ include '../includes/sidebar.php';
                 setModalActionsBusy(false);
 
                 renderFallbackGrid(approvalDetailsGrid, error.message || 'Unable to load application details.');
-                renderFallbackGrid(allSubmittedDetailsGrid, 'Filled fields are unavailable.');
 
                 if (applicationDocumentGrid) {
                     applicationDocumentGrid.innerHTML = `
