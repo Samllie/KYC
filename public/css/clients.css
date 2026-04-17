@@ -1591,68 +1591,110 @@ body.clients-page.agents-mode .client-preview-section-title {
     }
 
     .table-wrapper {
-        overflow-x: visible;
+        overflow: auto;
         height: auto;
         min-height: 0;
-        max-height: none;
-        overflow-y: visible;
+        max-height: 58dvh;
+        -webkit-overflow-scrolling: touch;
     }
 
     .clients-table {
-        min-width: 0;
-        width: 100%;
-        table-layout: auto;
-        border-collapse: separate;
-        border-spacing: 0 10px;
-        font-size: 0.75rem;
+        min-width: 1220px;
+        width: max(100%, 1220px);
+        table-layout: fixed;
+        border-collapse: collapse;
+        border-spacing: 0;
+        font-size: 0.76rem;
     }
 
     .clients-table thead {
-        display: none;
+        display: table-header-group;
     }
 
     .clients-table tbody {
-        display: block;
+        display: table-row-group;
     }
 
     .clients-table tbody tr {
-        display: block;
-        border: 1px solid #d9e8df;
-        border-radius: 12px;
-        background: #ffffff;
-        box-shadow: 0 8px 18px rgba(14, 62, 35, 0.08);
-        padding: 8px;
+        display: table-row;
     }
 
     .clients-table tbody tr:hover {
         transform: none;
-        background: #ffffff;
-        box-shadow: 0 10px 20px rgba(14, 62, 35, 0.1);
     }
 
     .clients-table td {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 12px;
-        width: 100%;
-        padding: 6px 8px;
-        white-space: normal;
-        overflow: visible;
-        text-overflow: clip;
+        display: table-cell;
+        width: auto;
+        padding: 7px 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         border: none;
-        font-size: 0.8rem;
+        font-size: 0.76rem;
+        line-height: 1.15;
+        text-align: center;
     }
 
     .clients-table td::before {
-        content: '';
-        min-width: 112px;
-        color: #5b746c;
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        line-height: 1.35;
+        content: none;
+    }
+
+    .clients-table td.col-checkbox {
+        display: table-cell;
+    }
+
+    .clients-table td.col-actions {
+        display: table-cell;
+        padding-top: 7px;
+        text-align: center;
+    }
+
+    .clients-table td.col-actions::before {
+        content: none;
+    }
+
+    .clients-table td.col-actions .action-stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+    }
+
+    .clients-table td.col-actions .action-icon {
+        width: auto;
+    }
+
+    .clients-table th.col-ref,
+    .clients-table th.col-name,
+    .clients-table th.col-owner,
+    .clients-table th.col-type,
+    .clients-table th.col-contact,
+    .clients-table th.col-email,
+    .clients-table th.col-verified,
+    .clients-table th.col-activity,
+    .clients-table th.col-activity-updated,
+    .clients-table th.col-actions,
+    .clients-table th.col-main-agent,
+    .clients-table td.col-ref,
+    .clients-table td.col-name,
+    .clients-table td.col-owner,
+    .clients-table td.col-type,
+    .clients-table td.col-contact,
+    .clients-table td.col-email,
+    .clients-table td.col-verified,
+    .clients-table td.col-activity,
+    .clients-table td.col-activity-updated,
+    .clients-table td.col-actions,
+    .clients-table td.col-main-agent,
+    .clients-table td.col-checkbox,
+    .clients-table td.col-owner,
+    .clients-table td.col-contact,
+    .clients-table td.col-email,
+    .clients-table td.col-verified,
+    .clients-table td.col-activity-updated,
+    .clients-table td.col-main-agent {
+        display: table-cell;
     }
 
     .controls-left,
@@ -1666,37 +1708,13 @@ body.clients-page.agents-mode .client-preview-section-title {
         grid-template-columns: 1fr;
     }
 
-    .clients-table td.col-checkbox,
-    .clients-table td.col-owner,
-    .clients-table td.col-contact,
-    .clients-table td.col-email,
-    .clients-table td.col-main-agent,
-    .clients-table td.col-verified,
-    .clients-table td.col-type,
-    .clients-table td.col-activity-updated {
-        display: none;
-    }
-
-    body.clients-management-page .clients-table td.col-activity-updated {
-        display: flex;
-    }
-
-    .clients-table td.col-ref::before { content: 'Ref Code'; }
-    .clients-table td.col-name::before { content: 'Client Name'; }
-    .clients-table td.col-activity::before { content: 'Activity'; }
-    .clients-table td.col-actions::before { content: 'Actions'; }
-
-    .clients-table td.col-ref {
-        display: flex;
-    }
-
     .clients-table td.col-actions {
-        justify-content: flex-end;
-        gap: 8px;
+        justify-content: center;
+        gap: 0;
     }
 
     .clients-table td.col-actions::before {
-        margin-right: auto;
+        margin-right: 0;
     }
 
     .col-name {
@@ -1769,13 +1787,8 @@ body.clients-page.agents-mode .client-preview-section-title {
 }
 
 @media (max-width: 480px) {
-    .col-checkbox { display: none; }
-    body.clients-management-page .col-activity-updated { display: table-cell; }
-    .col-activity-updated { display: none; }
-
-    .clients-table td::before {
-        min-width: 92px;
-        font-size: 0.68rem;
+    .table-wrapper {
+        max-height: 54dvh;
     }
 
     .table-controls {
@@ -1803,6 +1816,36 @@ body.clients-page.agents-mode .client-preview-section-title {
     .pagination {
         flex-wrap: wrap;
         justify-content: center;
+    }
+
+    .clients-table {
+        font-size: 0.74rem;
+    }
+
+    .clients-table th,
+    .clients-table td {
+        padding: 6px 7px;
+        font-size: inherit;
+    }
+
+    .clients-table td.col-checkbox {
+        padding-bottom: 6px;
+    }
+
+    .clients-table td.col-actions .action-stack {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .clients-table td.col-actions .action-icon {
+        padding: 6px 9px;
+        font-size: 0.72rem;
+    }
+
+    .clients-table td.col-actions .action-icon i {
+        font-size: 0.7rem;
     }
 
     .modal-header {
