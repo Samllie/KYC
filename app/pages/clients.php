@@ -1,13 +1,17 @@
 <?php
 require_once '../config/session.php';
+require_once '../config/db.php';
 requireLogin();
 
-$currentUserBranch = trim($_SESSION['branch'] ?? '');
+$currentUser = getCurrentUser() ?? [];
+$currentUserBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
 $currentUserRole = strtolower(trim($_SESSION['role'] ?? ''));
 $currentUserDepartment = strtoupper(trim($_SESSION['department'] ?? ''));
+$currentUserFullName = trim((string)($currentUser['full_name'] ?? ''));
 $isHeadOfficeView = $currentUserRole === 'admin'
     || $currentUserDepartment === 'HEAD OFFICE'
     || in_array(strtoupper($currentUserBranch), ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+$currentUserBranchForAgentSelectors = $currentUserBranch !== '' ? $currentUserBranch : ($isHeadOfficeView ? 'HEAD OFFICE' : '');
 
 $requestedClassification = strtolower(trim($_GET['classification'] ?? 'client'));
 $listClassification = $requestedClassification === 'agent' ? 'agent' : 'client';
@@ -25,6 +29,108 @@ $newRecordLabel = $isAgentsMode ? 'New Agent' : 'New Client';
 $kycEntryUrl = $isAgentsMode
     ? 'kyc-individual.php?classification=agent'
     : ('kyc-verification.php?classification=' . urlencode($listClassification));
+
+function clientsPageResolveBranchManagerName(string $branch, string $fallbackName = '', string $fallbackRole = ''): string {
+    global $db;
+
+    $branch = strtoupper(trim($branch));
+    if ($branch === '' || !$db instanceof mysqli) {
+        return '';
+    }
+
+    $stmt = $db->prepare(
+        "SELECT full_name
+         FROM users
+         WHERE UPPER(TRIM(branch)) = ?
+           AND LOWER(TRIM(role)) IN ('manager', 'admin')
+           AND full_name IS NOT NULL
+           AND TRIM(full_name) <> ''
+         ORDER BY CASE WHEN LOWER(TRIM(role)) = 'manager' THEN 0 ELSE 1 END, user_id ASC
+         LIMIT 1"
+    );
+
+    if ($stmt) {
+        $stmt->bind_param('s', $branch);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+
+        if ($result instanceof mysqli_result) {
+            $result->free();
+        }
+
+        $stmt->close();
+
+        if (!empty($row['full_name'])) {
+            return trim((string)$row['full_name']);
+        }
+    }
+
+    $fallbackName = trim($fallbackName);
+    $fallbackRole = strtolower(trim($fallbackRole));
+    if ($fallbackName !== '' && in_array($fallbackRole, ['manager', 'admin'], true)) {
+        return $fallbackName;
+    }
+
+    return '';
+}
+
+function clientsPageFetchHeadAgentOptions(string $branch): array {
+    global $db;
+
+    $branch = strtoupper(trim($branch));
+    if ($branch === '' || !$db instanceof mysqli) {
+        return [];
+    }
+
+    $options = [];
+    $stmt = $db->prepare(
+        "SELECT DISTINCT
+            COALESCE(
+                NULLIF(TRIM(c.client_name), ''),
+                NULLIF(TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, ''))), ''),
+                c.reference_code
+            ) AS head_agent_name
+         FROM clients c
+         WHERE COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client') = 'agent'
+           AND COALESCE(NULLIF(LOWER(TRIM(c.agent_type)), ''), 'agent') = 'agent'
+                     AND COALESCE(NULLIF(UPPER(TRIM(c.agent_branch)), ''), '') = ?
+           AND COALESCE(NULLIF(LOWER(TRIM(c.verification_status)), ''), '') = 'verified'
+           AND COALESCE(NULLIF(LOWER(TRIM(c.activity_status)), ''), 'active') = 'active'
+         ORDER BY head_agent_name ASC"
+    );
+
+    if (!$stmt) {
+        return [];
+    }
+
+    $stmt->bind_param('s', $branch);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $name = trim((string)($row['head_agent_name'] ?? ''));
+            if ($name !== '') {
+                $options[] = $name;
+            }
+        }
+
+        $result->free();
+    }
+
+    $stmt->close();
+
+    return array_values(array_unique($options));
+}
+
+$editBranchManagerName = $isAgentsMode ? clientsPageResolveBranchManagerName($currentUserBranchForAgentSelectors, $currentUserFullName, $currentUserRole) : '';
+$editHeadAgentOptions = $isAgentsMode ? clientsPageFetchHeadAgentOptions($currentUserBranchForAgentSelectors) : [];
+$editHeadAgentOptions = $isAgentsMode
+    ? array_values(array_filter($editHeadAgentOptions, static function ($name) use ($editBranchManagerName) {
+        return $editBranchManagerName === '' || strcasecmp(trim((string)$name), $editBranchManagerName) !== 0;
+    }))
+    : [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -223,7 +329,17 @@ include '../includes/sidebar.php';
                 <div class="form-row">
                     <div class="form-group full" id="editHeadAgentGroup" style="display:none;">
                         <label class="form-label">Head Agent Name</label>
-                        <input type="text" id="editHeadAgentName" class="form-control" placeholder="Enter the main agent name">
+                        <div class="select-wrap">
+                            <select id="editHeadAgentName" class="form-select">
+                                <option value="">Select head agent...</option>
+                                <?php if ($editBranchManagerName !== ''): ?>
+                                <option value="<?php echo htmlspecialchars($editBranchManagerName); ?>">Branch Manager</option>
+                                <?php endif; ?>
+                                <?php foreach ($editHeadAgentOptions as $editHeadAgentOption): ?>
+                                <option value="<?php echo htmlspecialchars($editHeadAgentOption); ?>"><?php echo htmlspecialchars($editHeadAgentOption); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -501,6 +617,37 @@ include '../includes/sidebar.php';
         if (!isSubAgent) {
             headAgentField.value = '';
         }
+    }
+
+    function ensureEditHeadAgentOption(selectEl, headAgentName) {
+        if (!selectEl) {
+            return;
+        }
+
+        const value = String(headAgentName || '').trim();
+        if (!value) {
+            return;
+        }
+
+        Array.from(selectEl.options).forEach(option => {
+            if (option.dataset.generated === 'true') {
+                option.remove();
+            }
+        });
+
+        const existingOption = Array.from(selectEl.options).some(option => option.value === value);
+        if (existingOption) {
+            selectEl.value = value;
+            return;
+        }
+
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        option.selected = true;
+        option.dataset.generated = 'true';
+        selectEl.appendChild(option);
+        selectEl.value = value;
     }
 
     function normalizePreviewText(value) {
@@ -800,6 +947,8 @@ include '../includes/sidebar.php';
     function buildClientPreviewHtml(client) {
         const clientType = normalizePreviewText(client?.client_type).toLowerCase() || 'individual';
         const classification = normalizePreviewText(client?.client_classification).toLowerCase() || 'client';
+        const previewStatusLabel = classification === 'agent' ? 'Approval Status' : 'Verification Status';
+        const previewStatusKey = classification === 'agent' ? 'approval_status' : 'verification_status';
         const recordNumberLabel = getPreviewRecordNumberLabel(client);
         const sections = [
             renderPreviewSection('Record Overview', [
@@ -809,7 +958,7 @@ include '../includes/sidebar.php';
                 { label: 'Submitted Branch', keys: ['submitted_by_branch'] },
                 { label: 'Client Type', keys: ['client_type'], format: 'clientType' },
                 { label: 'Classification', keys: ['client_classification'], format: 'classification' },
-                { label: 'Verification Status', keys: ['verification_status'], format: 'status' },
+                { label: previewStatusLabel, keys: [previewStatusKey], format: 'status' },
                 { label: 'Activity Status', keys: ['activity_status_display'], format: 'status' },
                 { label: 'Status Updated At', keys: ['activity_status_updated_display'] }
             ], client, 'client-preview-summary')
@@ -1509,7 +1658,7 @@ include '../includes/sidebar.php';
 
                 const headAgentField = document.getElementById('editHeadAgentName');
                 if (headAgentField) {
-                    headAgentField.value = client.head_agent_name || '';
+                    ensureEditHeadAgentOption(headAgentField, client.head_agent_name || '');
                 }
 
                 syncEditAgentFields();

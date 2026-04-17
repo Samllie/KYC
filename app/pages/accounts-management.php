@@ -47,6 +47,10 @@ function formatRoleLabel(?string $role): string
         return 'KYC Officer';
     }
 
+    if ($normalized === 'admin') {
+        return 'Head Office';
+    }
+
     return ucwords(str_replace(['-', '_'], ' ', $normalized));
 }
 
@@ -124,7 +128,7 @@ $allowedBranches = [
 ];
 
 $allowedRoles = [
-    'admin' => 'Admin',
+    'admin' => 'Head Office',
     'kyc_officer' => 'KYC Officer',
     'manager' => 'Branch Manager',
     'compliance' => 'Compliance Officer'

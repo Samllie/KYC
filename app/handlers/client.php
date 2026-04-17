@@ -86,6 +86,138 @@ if (!function_exists('agentApprovalsTableExists')) {
     }
 }
 
+if (!function_exists('clientCurrentUserBranchContext')) {
+    function clientCurrentUserBranchContext(): string {
+        $branch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
+        $department = strtoupper(trim((string)($_SESSION['department'] ?? '')));
+        $role = strtolower(trim((string)($_SESSION['role'] ?? '')));
+
+        if ($branch !== '') {
+            return $branch;
+        }
+
+        if ($role === 'admin' || $department === 'HEAD OFFICE') {
+            return 'HEAD OFFICE';
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('clientResolveBranchManagerName')) {
+    function clientResolveBranchManagerName(string $branch, string $fallbackName = '', string $fallbackRole = ''): string {
+        global $db;
+
+        $branch = strtoupper(trim($branch));
+        if ($branch === '' || !$db instanceof mysqli) {
+            return '';
+        }
+
+        $stmt = $db->prepare(
+            "SELECT full_name
+             FROM users
+             WHERE UPPER(TRIM(branch)) = ?
+               AND LOWER(TRIM(role)) IN ('manager', 'admin')
+               AND full_name IS NOT NULL
+               AND TRIM(full_name) <> ''
+             ORDER BY CASE WHEN LOWER(TRIM(role)) = 'manager' THEN 0 ELSE 1 END, user_id ASC
+             LIMIT 1"
+        );
+
+        if ($stmt) {
+            $stmt->bind_param('s', $branch);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result ? $result->fetch_assoc() : null;
+
+            if ($result instanceof mysqli_result) {
+                $result->free();
+            }
+
+            $stmt->close();
+
+            if (!empty($row['full_name'])) {
+                return trim((string)$row['full_name']);
+            }
+        }
+
+        $fallbackName = trim($fallbackName);
+        $fallbackRole = strtolower(trim($fallbackRole));
+        if ($fallbackName !== '' && in_array($fallbackRole, ['manager', 'admin'], true)) {
+            return $fallbackName;
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('clientFetchAllowedHeadAgentNames')) {
+    function clientFetchAllowedHeadAgentNames(string $branch): array {
+        global $db;
+
+        $branch = strtoupper(trim($branch));
+        if ($branch === '' || !$db instanceof mysqli) {
+            return [];
+        }
+
+        $names = [];
+        $stmt = $db->prepare(
+            "SELECT DISTINCT
+                COALESCE(
+                    NULLIF(TRIM(c.client_name), ''),
+                    NULLIF(TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, ''))), ''),
+                    c.reference_code
+                ) AS head_agent_name
+             FROM clients c
+             WHERE COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client') = 'agent'
+               AND COALESCE(NULLIF(LOWER(TRIM(c.agent_type)), ''), 'agent') = 'agent'
+                             AND COALESCE(NULLIF(UPPER(TRIM(c.agent_branch)), ''), '') = ?
+               AND COALESCE(NULLIF(LOWER(TRIM(c.verification_status)), ''), '') = 'verified'
+               AND COALESCE(NULLIF(LOWER(TRIM(c.activity_status)), ''), 'active') = 'active'
+             ORDER BY head_agent_name ASC"
+        );
+
+        if ($stmt) {
+            $stmt->bind_param('s', $branch);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result instanceof mysqli_result) {
+                while ($row = $result->fetch_assoc()) {
+                    $name = trim((string)($row['head_agent_name'] ?? ''));
+                    if ($name !== '') {
+                        $names[] = $name;
+                    }
+                }
+
+                $result->free();
+            }
+
+            $stmt->close();
+        }
+
+        return array_values(array_unique($names));
+    }
+}
+
+if (!function_exists('clientHeadAgentNameIsAllowed')) {
+    function clientHeadAgentNameIsAllowed(string $headAgentName, array $allowedNames, string $currentHeadAgentName = ''): bool {
+        $headAgentName = trim($headAgentName);
+        if ($headAgentName === '') {
+            return false;
+        }
+
+        foreach ($allowedNames as $allowedName) {
+            if (strcasecmp($headAgentName, trim((string)$allowedName)) === 0) {
+                return true;
+            }
+        }
+
+        $currentHeadAgentName = trim($currentHeadAgentName);
+        return $currentHeadAgentName !== '' && strcasecmp($headAgentName, $currentHeadAgentName) === 0;
+    }
+}
+
 if (!function_exists('approvalQueueTableForClassification')) {
     function approvalQueueTableForClassification($clientClassification) {
         $classification = strtolower(trim((string)$clientClassification));
@@ -774,6 +906,7 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $headAgentName = trim($_POST['headAgentName'] ?? '');
     $allowedAgentTypes = ['agent', 'sub_agent'];
     $existingAgentType = strtolower(trim((string)($client['agent_type'] ?? 'agent')));
+    $currentHeadAgentName = trim((string)($client['head_agent_name'] ?? ''));
 
     $agentType = null;
     if ($effectiveClassification === 'agent') {
@@ -785,8 +918,25 @@ else if ($action === 'edit_client' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $agentType = 'agent';
         }
 
+        $branchContext = clientCurrentUserBranchContext();
+        $branchManagerName = $agentType === 'sub_agent'
+            ? clientResolveBranchManagerName($branchContext, (string)($_SESSION['full_name'] ?? ''), (string)($_SESSION['role'] ?? ''))
+            : '';
+        $allowedHeadAgentNames = $agentType === 'sub_agent'
+            ? array_values(array_unique(array_merge(
+                $branchManagerName !== '' ? [$branchManagerName] : [],
+                clientFetchAllowedHeadAgentNames($branchContext)
+            )))
+            : [];
+
         if ($agentType === 'sub_agent' && $headAgentName === '') {
             $response['message'] = 'Head Agent Name is required for Sub agent';
+            echo json_encode($response);
+            exit;
+        }
+
+        if ($agentType === 'sub_agent' && !clientHeadAgentNameIsAllowed($headAgentName, $allowedHeadAgentNames, $currentHeadAgentName)) {
+            $response['message'] = 'Please select a valid head agent for your branch';
             echo json_encode($response);
             exit;
         }
@@ -929,6 +1079,32 @@ else if ($action === 'get_client' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     ) {
         clientActivityRefreshRow($db, 'clients', $clientId);
         $client = fetchAccessibleClientRecord($clientId) ?: $client;
+    }
+
+    $classification = strtolower(trim((string)($client['client_classification'] ?? 'client')));
+    if ($classification === 'agent') {
+        $queueTable = approvalQueueTableForClassification($classification);
+        if ($queueTable !== '') {
+            $approvalRow = fetchOne(
+                "SELECT approval_status, reviewed_at, approved_at, submitted_at
+                 FROM {$queueTable}
+                 WHERE reference_code = ?
+                 LIMIT 1",
+                [(string)($client['reference_code'] ?? '')]
+            );
+
+            if (is_array($approvalRow)) {
+                $client['approval_status'] = $approvalRow['approval_status'] ?? ($client['verification_status'] ?? null);
+                $client['approval_status_updated_at'] = $approvalRow['reviewed_at']
+                    ?? $approvalRow['approved_at']
+                    ?? $approvalRow['submitted_at']
+                    ?? null;
+            } else {
+                $client['approval_status'] = $client['verification_status'] ?? null;
+            }
+        } else {
+            $client['approval_status'] = $client['verification_status'] ?? null;
+        }
     }
     
     $response['success'] = true;

@@ -1,10 +1,120 @@
 <?php
 require_once '../config/session.php';
+require_once '../config/db.php';
 requireLogin();
 
 $classificationFromQuery = strtolower(trim($_GET['classification'] ?? 'client'));
 $selectedClassification = $classificationFromQuery === 'agent' ? 'agent' : 'client';
 $isAgentFlow = $selectedClassification === 'agent';
+
+$currentUser = getCurrentUser() ?? [];
+$currentUserBranch = strtoupper(trim((string)($currentUser['branch'] ?? '')));
+$currentUserRole = strtolower(trim((string)($currentUser['role'] ?? '')));
+$currentUserDepartment = strtoupper(trim((string)($currentUser['department'] ?? '')));
+$currentUserFullName = trim((string)($currentUser['full_name'] ?? ''));
+$isHeadOfficeUser = $currentUserRole === 'admin'
+    || $currentUserDepartment === 'HEAD OFFICE'
+    || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+$effectiveBranch = $currentUserBranch !== '' ? $currentUserBranch : ($isHeadOfficeUser ? 'HEAD OFFICE' : '');
+
+function kycPageResolveBranchManagerName(string $branch, string $fallbackName = '', string $fallbackRole = ''): string {
+    global $db;
+
+    $branch = strtoupper(trim($branch));
+    if ($branch === '' || !$db instanceof mysqli) {
+        return '';
+    }
+
+    $stmt = $db->prepare(
+        "SELECT full_name
+         FROM users
+         WHERE UPPER(TRIM(branch)) = ?
+           AND LOWER(TRIM(role)) IN ('manager', 'admin')
+           AND full_name IS NOT NULL
+           AND TRIM(full_name) <> ''
+         ORDER BY CASE WHEN LOWER(TRIM(role)) = 'manager' THEN 0 ELSE 1 END, user_id ASC
+         LIMIT 1"
+    );
+
+    if ($stmt) {
+        $stmt->bind_param('s', $branch);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+
+        if ($result instanceof mysqli_result) {
+            $result->free();
+        }
+
+        $stmt->close();
+
+        if (!empty($row['full_name'])) {
+            return trim((string)$row['full_name']);
+        }
+    }
+
+    $fallbackName = trim($fallbackName);
+    $fallbackRole = strtolower(trim($fallbackRole));
+    if ($fallbackName !== '' && in_array($fallbackRole, ['manager', 'admin'], true)) {
+        return $fallbackName;
+    }
+
+    return '';
+}
+
+function kycPageFetchHeadAgentOptions(string $branch): array {
+    global $db;
+
+    $branch = strtoupper(trim($branch));
+    if ($branch === '' || !$db instanceof mysqli) {
+        return [];
+    }
+
+    $options = [];
+    $stmt = $db->prepare(
+        "SELECT DISTINCT
+            COALESCE(
+                NULLIF(TRIM(c.client_name), ''),
+                NULLIF(TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, ''))), ''),
+                c.reference_code
+            ) AS head_agent_name
+         FROM clients c
+         WHERE COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client') = 'agent'
+           AND COALESCE(NULLIF(LOWER(TRIM(c.agent_type)), ''), 'agent') = 'agent'
+                     AND COALESCE(NULLIF(UPPER(TRIM(c.agent_branch)), ''), '') = ?
+           AND COALESCE(NULLIF(LOWER(TRIM(c.verification_status)), ''), '') = 'verified'
+           AND COALESCE(NULLIF(LOWER(TRIM(c.activity_status)), ''), 'active') = 'active'
+         ORDER BY head_agent_name ASC"
+    );
+
+    if (!$stmt) {
+        return [];
+    }
+
+    $stmt->bind_param('s', $branch);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $name = trim((string)($row['head_agent_name'] ?? ''));
+            if ($name !== '') {
+                $options[] = $name;
+            }
+        }
+        $result->free();
+    }
+
+    $stmt->close();
+
+    return array_values(array_unique($options));
+}
+
+$branchManagerName = kycPageResolveBranchManagerName($effectiveBranch, $currentUserFullName, $currentUserRole);
+$headAgentOptions = kycPageFetchHeadAgentOptions($effectiveBranch);
+$headAgentOptions = array_values(array_filter($headAgentOptions, static function ($name) use ($branchManagerName) {
+    return $branchManagerName === '' || strcasecmp(trim((string)$name), $branchManagerName) !== 0;
+}));
 
 $clientTypeLabel = $isAgentFlow ? 'Individual Agent' : 'Individual Client';
 $newClientLabel = $isAgentFlow ? 'New Individual Agent' : 'New Individual Client';
@@ -1054,8 +1164,19 @@ include '../includes/sidebar.php';
                         <div class="col-md-12" id="headAgentNameGroup" style="display:none;">
                             <div class="form-group">
                                 <label for="headAgentName" class="form-label">Head Agent Name <span style="font-size:0.85rem;color:#999;">(Required for Sub agent)</span></label>
-                                <input type="text" id="headAgentName" name="headAgentName" class="form-control" placeholder="Enter head agent name">
+                                <div class="select-wrap">
+                                    <select id="headAgentName" name="headAgentName" class="form-select">
+                                        <option value="">Select head agent...</option>
+                                        <?php if ($branchManagerName !== ''): ?>
+                                            <option value="<?php echo htmlspecialchars($branchManagerName); ?>">Branch Manager</option>
+                                        <?php endif; ?>
+                                        <?php foreach ($headAgentOptions as $headAgentOption): ?>
+                                            <option value="<?php echo htmlspecialchars($headAgentOption); ?>"><?php echo htmlspecialchars($headAgentOption); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                                 <div class="form-error">Head Agent Name is required for Sub agent</div>
+                                <div class="form-hint" style="margin-top:6px;">Options are limited to <?php echo htmlspecialchars($effectiveBranch !== '' ? $effectiveBranch : 'your branch'); ?>. Use Branch Manager if the head agent is not listed.</div>
                             </div>
                         </div>
                         <div class="col-md-12">
