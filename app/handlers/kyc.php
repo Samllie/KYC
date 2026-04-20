@@ -19,6 +19,15 @@ if (!function_exists('kyc_finalize_temp_uploads')) {
 
         if (function_exists('kyc_finalize_uploads')) {
             return kyc_finalize_uploads($userId, $uploadedFiles, $clientId, $kycId);
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Upload finalizer function is not available',
+            'files' => []
+        ];
+    }
+}
 
 if (!function_exists('kycCurrentUserBranchContext')) {
     function kycCurrentUserBranchContext(): string {
@@ -103,11 +112,10 @@ if (!function_exists('kycFetchAllowedHeadAgentNames')) {
                     c.reference_code
                 ) AS head_agent_name
              FROM clients c
-             WHERE COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client') = 'agent'
-               AND COALESCE(NULLIF(LOWER(TRIM(c.agent_type)), ''), 'agent') = 'agent'
+                         WHERE COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client') = 'agent'
+                             AND COALESCE(NULLIF(LOWER(TRIM(c.agent_type)), ''), 'agent') = 'agent'
                              AND COALESCE(NULLIF(UPPER(TRIM(c.agent_branch)), ''), '') = ?
-               AND COALESCE(NULLIF(LOWER(TRIM(c.verification_status)), ''), '') = 'verified'
-               AND COALESCE(NULLIF(LOWER(TRIM(c.activity_status)), ''), 'active') = 'active'
+                             AND COALESCE(NULLIF(LOWER(TRIM(c.activity_status)), ''), 'active') = 'active'
              ORDER BY head_agent_name ASC"
         );
 
@@ -149,13 +157,10 @@ if (!function_exists('kycHeadAgentNameIsAllowed')) {
         return false;
     }
 }
-        }
 
-        return [
-            'success' => false,
-            'message' => 'Upload finalizer function is not available',
-            'files' => []
-        ];
+if (!function_exists('kycIsNoneOfTheAboveHeadAgentValue')) {
+    function kycIsNoneOfTheAboveHeadAgentValue(string $value): bool {
+        return strtolower(trim($value)) === '__none_of_the_above__';
     }
 }
 
@@ -475,6 +480,31 @@ if (!isset($_SESSION['user_id'])) {
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
+if ($action === 'head_agent_options' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    $branch = strtoupper(trim((string)($_GET['branch'] ?? '')));
+    if ($branch === '') {
+        echo json_encode([
+            'success' => true,
+            'branch_manager_name' => '',
+            'options' => []
+        ]);
+        exit;
+    }
+
+    $branchManagerName = kycResolveBranchManagerName($branch, (string)($_SESSION['full_name'] ?? ''), (string)($_SESSION['role'] ?? ''));
+    $options = kycFetchAllowedHeadAgentNames($branch);
+    $options = array_values(array_filter($options, static function ($name) use ($branchManagerName) {
+        return $branchManagerName === '' || strcasecmp(trim((string)$name), $branchManagerName) !== 0;
+    }));
+
+    echo json_encode([
+        'success' => true,
+        'branch_manager_name' => $branchManagerName,
+        'options' => $options
+    ]);
+    exit;
+}
+
 // ============================================
 // SUBMIT KYC VERIFICATION FORM
 // ============================================
@@ -592,15 +622,15 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($clientClassification === 'agent') {
-        $branchContext = kycCurrentUserBranchContext();
+        $branchContext = strtoupper(trim($agentBranch));
+        if ($branchContext === '') {
+            $branchContext = kycCurrentUserBranchContext();
+        }
         $branchManagerName = $agentType === 'sub_agent'
             ? kycResolveBranchManagerName($branchContext, (string)($_SESSION['full_name'] ?? ''), (string)($_SESSION['role'] ?? ''))
             : '';
         $allowedHeadAgentNames = $agentType === 'sub_agent'
-            ? array_values(array_unique(array_merge(
-                $branchManagerName !== '' ? [$branchManagerName] : [],
-                kycFetchAllowedHeadAgentNames($branchContext)
-            )))
+            ? kycFetchAllowedHeadAgentNames($branchContext)
             : [];
 
         if ($agentBranch === '') {
@@ -615,7 +645,16 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        if ($agentType === 'sub_agent' && !kycHeadAgentNameIsAllowed($headAgentName, $allowedHeadAgentNames)) {
+        if ($agentType === 'sub_agent' && kycIsNoneOfTheAboveHeadAgentValue($headAgentName)) {
+            $headAgentName = $branchManagerName;
+            if ($headAgentName === '') {
+                $response['message'] = 'No branch manager is registered for the selected branch';
+                echo json_encode($response);
+                exit;
+            }
+        }
+
+        if ($agentType === 'sub_agent' && !kycHeadAgentNameIsAllowed($headAgentName, $allowedHeadAgentNames) && !kycIsNoneOfTheAboveHeadAgentValue($_POST['headAgentName'] ?? '')) {
             $response['message'] = 'Please select a valid head agent for your branch';
             echo json_encode($response);
             exit;
@@ -853,367 +892,6 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $response['reference_code'] = $formData['ref_code'];
 }
 
-// ============================================
-// SAVE DRAFT
-// ============================================
-else if ($action === 'save_draft' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $userProvidedRefCode = trim($_POST['refCode'] ?? '');
-    $clientTypeRaw = strtolower(trim($_POST['clientType'] ?? ''));
-    $allowedClientTypes = ['individual', 'corporate', 'obligee'];
-    $clientType = in_array($clientTypeRaw, $allowedClientTypes, true) ? $clientTypeRaw : 'individual';
-
-    $isCorporateLike = in_array($clientType, ['corporate', 'obligee'], true);
-    $postedBusinessType = trim($_POST['businessType'] ?? '');
-
-    $classificationRaw = strtolower(trim($_POST['clientClassification'] ?? 'client'));
-    // Product rule: only individual can be classified as agent.
-    $clientClassification = ($classificationRaw === 'agent' && $clientType === 'individual')
-        ? 'agent'
-        : 'client';
-
-    $postedClientNumber = trim($_POST['clientNumber'] ?? '');
-    $resolvedClientNumber = $postedClientNumber !== ''
-        ? $postedClientNumber
-        : ($clientClassification === 'agent' ? generateAgentNumber() : generateClientNumber());
-
-    $individualOccupation = trim($_POST['occupation'] ?? '');
-    if ($clientClassification === 'agent' && $individualOccupation === '') {
-        $individualOccupation = 'Insurance Agent';
-    }
-
-    $agentTypeRaw = strtolower(trim($_POST['agentType'] ?? 'agent'));
-    $agentType = in_array($agentTypeRaw, ['agent', 'sub_agent'], true) ? $agentTypeRaw : 'agent';
-    $headAgentName = trim($_POST['headAgentName'] ?? '');
-    $agentBranch = trim($_POST['agentBranch'] ?? '');
-
-    if ($clientClassification !== 'agent') {
-        $agentType = null;
-        $headAgentName = null;
-        $agentBranch = null;
-    }
-
-    // Keep kyc_verifications values in a unified shape so get_kyc/load draft works for both client types.
-    $formData = [
-        'ref_code' => $userProvidedRefCode,
-        'client_type' => $clientType,
-        'last_name' => $isCorporateLike ? '' : trim($_POST['lastName'] ?? ''),
-        'first_name' => $isCorporateLike ? '' : trim($_POST['firstName'] ?? ''),
-        'middle_name' => $isCorporateLike ? '' : trim($_POST['middleName'] ?? ''),
-        'suffix' => $isCorporateLike ? '' : trim($_POST['suffixName'] ?? ''),
-        'birthdate' => $isCorporateLike ? null : trim($_POST['birthdate'] ?? ''),
-        'gender' => trim($_POST['gender'] ?? $_POST['corporateGender'] ?? ''),
-        'nationality' => trim($_POST['nationality'] ?? ''),
-        'id_type' => trim($_POST['idType'] ?? ''),
-        'id_number' => trim($_POST['idNumber'] ?? ''),
-        'tin_number' => trim($_POST['tinNumber'] ?? ''),
-        'occupation' => $isCorporateLike
-            ? trim($_POST['corporateContactPerson'] ?? '')
-            : $individualOccupation,
-        'agent_type' => $clientClassification === 'agent' ? $agentType : null,
-        'head_agent_name' => $clientClassification === 'agent' && $agentType === 'sub_agent' ? $headAgentName : null,
-        'agent_branch' => $clientClassification === 'agent' ? $agentBranch : null,
-        'company' => $isCorporateLike
-            ? trim($_POST['corporateClientName'] ?? '')
-            : trim($_POST['employer'] ?? $_POST['company'] ?? ''),
-        'mobile' => $isCorporateLike
-            ? trim($_POST['corporatePhone'] ?? '')
-            : trim($_POST['mobile'] ?? ''),
-        'phone' => $isCorporateLike
-            ? trim($_POST['corporatePhone'] ?? '')
-            : trim($_POST['telephone'] ?? $_POST['phone'] ?? ''),
-        'email' => $isCorporateLike
-            ? trim($_POST['corporateEmail'] ?? '')
-            : trim($_POST['email'] ?? ''),
-        'address' => $isCorporateLike
-            ? trim($_POST['corporateBusinessAddress'] ?? $_POST['address'] ?? '')
-            : trim($_POST['homeAddress'] ?? $_POST['address'] ?? '')
-    ];
-    
-    // If no reference code provided, generate a unique one
-    if (empty($userProvidedRefCode)) {
-        $formData['ref_code'] = generateUniqueReferenceCode();
-    }
-
-    if (empty($formData['client_type'])) {
-        $formData['client_type'] = 'individual';
-    }
-
-    if ($isCorporateLike) {
-        $clientUpdateData = [
-            'client_type' => $clientType,
-            'client_classification' => $clientClassification,
-            'client_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
-            'company_name' => trim($_POST['corporateClientName'] ?? '') ?: null,
-            'business_type' => $postedBusinessType ?: null,
-            'id_type' => trim($_POST['idType'] ?? '') ?: null,
-            'id_number' => trim($_POST['idNumber'] ?? '') ?: null,
-            'client_since' => trim($_POST['corporateClientSince'] ?? '') ?: null,
-            'tin_number' => trim($_POST['tinNumber'] ?? '') ?: null,
-            'ap_sl_code' => trim($_POST['corporateApSlCode'] ?? '') ?: null,
-            'ar_sl_code' => trim($_POST['corporateArSlCode'] ?? '') ?: null,
-            'designation' => trim($_POST['designation'] ?? '') ?: null,
-            'business_address' => trim($_POST['corporateBusinessAddress'] ?? '') ?: null,
-            'business_ctm' => trim($_POST['corporateBusinessCtm'] ?? '') ?: null,
-            'business_province' => trim($_POST['corporateBusinessProvince'] ?? '') ?: null,
-            'region' => trim($_POST['region'] ?? '') ?: null,
-            'office_phone' => trim($_POST['corporatePhone'] ?? '') ?: null,
-            'email' => trim($_POST['corporateEmail'] ?? '') ?: null,
-            'contact_person' => trim($_POST['corporateContactPerson'] ?? '') ?: null,
-            'gender' => trim($_POST['corporateGender'] ?? '') ?: null,
-            'nationality' => trim($_POST['nationality'] ?? '') ?: null,
-            'agent_type' => null,
-            'head_agent_name' => null,
-            'agent_branch' => null,
-            'verification_status' => 'draft'
-        ];
-    } else {
-        $clientUpdateData = [
-            'client_type' => $formData['client_type'],
-            'client_classification' => $clientClassification,
-            'first_name' => $formData['first_name'] ?: null,
-            'middle_name' => $formData['middle_name'] ?: null,
-            'last_name' => $formData['last_name'] ?: null,
-            'suffix' => $formData['suffix'] ?: null,
-            'salutation' => trim($_POST['salutation'] ?? '') ?: null,
-            'date_of_birth' => $formData['birthdate'] ?: null,
-            'gender' => $formData['gender'] ?: null,
-            'nationality' => $formData['nationality'] ?: null,
-            'client_since' => trim($_POST['clientSince'] ?? '') ?: null,
-            'spouse_name' => trim($_POST['spouseName'] ?? '') ?: null,
-            'spouse_birthdate' => trim($_POST['spouseBirthdate'] ?? '') ?: null,
-            'spouse_occupation' => trim($_POST['spouseOccupation'] ?? '') ?: null,
-            'id_type' => $formData['id_type'] ?: null,
-            'id_number' => $formData['id_number'] ?: null,
-            'tin_number' => $formData['tin_number'] ?: null,
-            'occupation' => $formData['occupation'] ?: null,
-            'agent_type' => $clientClassification === 'agent' ? $agentType : null,
-            'head_agent_name' => $clientClassification === 'agent' && $agentType === 'sub_agent' ? $headAgentName : null,
-            'agent_branch' => $clientClassification === 'agent' ? $agentBranch : null,
-            'company_name' => $formData['company'] ?: null,
-            'ap_sl_code' => trim($_POST['apSlCode'] ?? '') ?: null,
-            'ar_sl_code' => trim($_POST['arSlCode'] ?? $_POST['apSlCode2'] ?? '') ?: null,
-            'mailing_address_type' => trim($_POST['mailingAddressType'] ?? '') ?: null,
-            'business_address' => trim($_POST['businessAddress'] ?? '') ?: null,
-            'business_ctm' => trim($_POST['businessCtm'] ?? '') ?: null,
-            'business_province' => trim($_POST['businessProvince'] ?? '') ?: null,
-            'home_address' => $formData['address'] ?: null,
-            'home_ctm' => trim($_POST['homeCtm'] ?? '') ?: null,
-            'home_province' => trim($_POST['homeProvince'] ?? '') ?: null,
-            'office_phone' => trim($_POST['officePhone'] ?? '') ?: null,
-            'home_phone' => $formData['phone'] ?: null,
-            'mobile_phone' => $formData['mobile'] ?: null,
-            'landline_phone' => $formData['phone'] ?: null,
-            'email' => $formData['email'] ?: null,
-            'verification_status' => 'draft'
-        ];
-    }
-
-    // Ensure a client exists for this ref_code (kyc_verifications.client_id is NOT NULL)
-    $clientId = 0;
-    $existingClient = fetchOne("SELECT client_id, submitted_by, client_number FROM clients WHERE reference_code = ?", [$formData['ref_code']]);
-    if ($existingClient) {
-        $clientId = intval($existingClient['client_id']);
-
-        if (empty($existingClient['submitted_by'])) {
-            $clientUpdateData['submitted_by'] = intval($_SESSION['user_id']);
-            $clientUpdateData['submitted_at'] = date('Y-m-d H:i:s');
-        }
-
-        if (empty($existingClient['client_number']) && $resolvedClientNumber !== '') {
-            $clientUpdateData['client_number'] = $resolvedClientNumber;
-        }
-
-        update('clients', $clientUpdateData, 'client_id = ?', [$clientId]);
-    } else {
-        $clientInsert = insert('clients', array_merge([
-            'reference_code' => $formData['ref_code'],
-            'client_number' => $resolvedClientNumber,
-            'submitted_by' => intval($_SESSION['user_id']),
-            'submitted_at' => date('Y-m-d H:i:s')
-        ], $clientUpdateData));
-        $clientId = intval($clientInsert['id'] ?? 0);
-    }
-
-    if ($clientId > 0) {
-        if ($clientClassification === 'agent') {
-            syncAgentRowFromClient($clientId);
-        } else {
-            deleteAgentRowByClient($clientId);
-        }
-    }
-    
-    // Check if KYC record exists
-    $existingKyc = fetchOne("SELECT kyc_id FROM kyc_verifications WHERE ref_code = ?", [$formData['ref_code']]);
-
-    $kycId = 0;
-    if ($existingKyc) {
-        $kycId = intval($existingKyc['kyc_id']);
-        update('kyc_verifications', array_merge($formData, ['status' => 'draft']), 'kyc_id = ?', [$existingKyc['kyc_id']]);
-    } else {
-        // Create draft record
-        $kycInsert = insert('kyc_verifications', array_merge($formData, [
-            'client_id' => $clientId,
-            'reference_code' => $formData['ref_code'],
-            'status' => 'draft',
-            'step_current' => 1
-        ]));
-        $kycId = intval($kycInsert['id'] ?? 0);
-    }
-
-    // Finalize any temp-uploaded files even for drafts (optional)
-    $uploadedFilesRaw = $_POST['uploadedFiles'] ?? '[]';
-    $uploadedFiles = [];
-    if (is_string($uploadedFilesRaw) && $uploadedFilesRaw !== '') {
-        $decoded = json_decode($uploadedFilesRaw, true);
-        if (is_array($decoded)) $uploadedFiles = $decoded;
-    }
-
-    if (!empty($uploadedFiles) && $clientId && $kycId) {
-        $finalize = kyc_finalize_temp_uploads($_SESSION['user_id'], $uploadedFiles, $clientId, $kycId);
-        if (($finalize['success'] ?? false) && !empty($finalize['files'])) {
-            foreach ($finalize['files'] as $doc) {
-                $filePath = $doc['file_path'] ?? null;
-                // Avoid duplicating rows when resuming drafts.
-                if ($filePath) {
-                    $already = fetchOne(
-                        "SELECT document_id FROM documents WHERE kyc_id = ? AND file_path = ? LIMIT 1",
-                        [$kycId, $filePath]
-                    );
-                    if ($already) continue;
-                }
-                insert('documents', [
-                    'kyc_id' => $kycId,
-                    'client_id' => $clientId,
-                    'file_name' => $doc['file_name'] ?? '',
-                    'file_type' => $doc['file_type'] ?? null,
-                    'file_size' => $doc['file_size'] ?? null,
-                    'file_path' => $doc['file_path'] ?? null,
-                    'document_type' => 'supporting',
-                    'uploaded_by' => $_SESSION['user_id'],
-                    'status' => 'pending'
-                ]);
-            }
-        }
-    }
-
-    $uploadedIdFilesRaw = $_POST['uploadedIdFiles'] ?? '[]';
-    $uploadedIdFiles = [];
-    if (is_string($uploadedIdFilesRaw) && $uploadedIdFilesRaw !== '') {
-        $decoded = json_decode($uploadedIdFilesRaw, true);
-        if (is_array($decoded)) $uploadedIdFiles = $decoded;
-    }
-
-    if (!empty($uploadedIdFiles) && $clientId && $kycId) {
-        $finalize = kyc_finalize_temp_uploads($_SESSION['user_id'], $uploadedIdFiles, $clientId, $kycId);
-        if (($finalize['success'] ?? false) && !empty($finalize['files'])) {
-            foreach ($finalize['files'] as $doc) {
-                $filePath = $doc['file_path'] ?? null;
-                if ($filePath) {
-                    $already = fetchOne(
-                        "SELECT document_id FROM documents WHERE kyc_id = ? AND file_path = ? LIMIT 1",
-                        [$kycId, $filePath]
-                    );
-                    if ($already) continue;
-                }
-                insert('documents', [
-                    'kyc_id' => $kycId,
-                    'client_id' => $clientId,
-                    'file_name' => $doc['file_name'] ?? '',
-                    'file_type' => $doc['file_type'] ?? null,
-                    'file_size' => $doc['file_size'] ?? null,
-                    'file_path' => $doc['file_path'] ?? null,
-                    'document_type' => 'government_id',
-                    'uploaded_by' => $_SESSION['user_id'],
-                    'status' => 'pending'
-                ]);
-            }
-        }
-    }
-    
-    $response['success'] = true;
-    $response['message'] = 'Draft saved successfully';
-    $response['reference_code'] = $formData['ref_code'];
-}
-
-// ============================================
-// LIST DRAFTS
-// ============================================
-else if ($action === 'get_drafts' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    $draftType = trim($_GET['draftType'] ?? '');
-
-    $params = [$_SESSION['user_id']];
-    $whereSql = "WHERE k.status = 'draft' AND c.submitted_by = ?";
-
-    if (!empty($draftType)) {
-        $whereSql .= " AND k.client_type = ?";
-        $params[] = $draftType;
-    }
-
-    $sql = "
-        SELECT
-            k.kyc_id,
-            COALESCE(k.ref_code, k.reference_code) AS ref_code,
-            k.client_type,
-            k.status,
-            k.updated_at,
-            k.first_name,
-            k.last_name,
-            k.company,
-            k.mobile,
-            k.email
-        FROM kyc_verifications k
-        INNER JOIN clients c ON c.client_id = k.client_id
-        $whereSql
-        ORDER BY k.updated_at DESC
-    ";
-
-    $drafts = fetchAll($sql, $params);
-
-    $response['success'] = true;
-    $response['data'] = $drafts;
-    echo json_encode($response);
-    exit;
-}
-
-// ============================================
-// GET DRAFT DOCUMENTS
-// ============================================
-else if ($action === 'get_draft_documents' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    $refCode = trim($_GET['ref_code'] ?? '');
-    if (empty($refCode)) {
-        $response['message'] = 'Reference code is required';
-        echo json_encode($response);
-        exit;
-    }
-
-    $sql = "
-        SELECT
-            d.document_id,
-            d.file_name,
-            d.file_type,
-            d.file_size,
-            d.file_path,
-            d.document_type,
-            d.uploaded_at,
-            d.status
-        FROM documents d
-        INNER JOIN kyc_verifications k ON k.kyc_id = d.kyc_id
-        INNER JOIN clients c ON c.client_id = k.client_id
-        WHERE k.status = 'draft'
-          AND c.submitted_by = ?
-          AND COALESCE(k.ref_code, k.reference_code) = ?
-        ORDER BY d.uploaded_at DESC
-    ";
-
-    $docs = fetchAll($sql, [$_SESSION['user_id'], $refCode]);
-
-    $response['success'] = true;
-    $response['data'] = $docs;
-    echo json_encode($response);
-    exit;
-}
-
-// ============================================
 // GET KYC RECORD
 // ============================================
 else if ($action === 'get_kyc' && $_SERVER['REQUEST_METHOD'] === 'GET') {

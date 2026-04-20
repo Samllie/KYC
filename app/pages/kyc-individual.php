@@ -695,6 +695,17 @@ $pageBackground = $isAgentFlow
             margin-top: 3px;
         }
 
+        .agent-warning {
+            margin: 0 0 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid #f2d27a;
+            background: #fff8e1;
+            color: #7a5600;
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
         body.kyc-compact .btn {
             height: 36px;
             padding: 0 14px;
@@ -873,9 +884,6 @@ include '../includes/sidebar.php';
             </div>
         </div>
         <div class="topbar-right">
-            <button type="button" class="drafts-toggle-btn" title="Saved Drafts" onclick="toggleDraftsPanel()">
-                <i class="bi bi-inbox"></i>
-            </button>
         </div>
     </header>
 
@@ -957,36 +965,6 @@ include '../includes/sidebar.php';
                                 <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="<?php echo htmlspecialchars($recordNumberPlaceholder); ?>" readonly>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Drafts Card -->
-            <div class="card" id="draftsCard">
-                <div class="card-header">
-                    <div class="card-title"><i class="bi bi-inbox"></i> Saved Drafts</div>
-                    <button type="button" id="refreshDraftBtn" class="btn btn-sm btn-outline-secondary" onclick="refreshDrafts()">
-                        <i class="bi bi-arrow-clockwise"></i> Refresh
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="drafts-fields">
-                        <div>
-                            <label for="draftSelect" class="form-label">Drafts</label>
-                            <select id="draftSelect" class="form-select">
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="draftInfo" style="margin-top:10px; color: var(--gray-500); font-size: .85rem;"></div>
-                    <div id="draftDocsWrapper" style="margin-top:14px;">
-                        <div style="color: var(--gray-500); font-size:.85rem;">Attachments saved to the selected draft:</div>
-                        <div id="draftDocsContainer" style="margin-top:8px;"></div>
-                    </div>
-                    <div class="drafts-action-row">
-                        <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
-                            <i class="bi bi-box-arrow-in-right"></i> Load Draft
-                        </button>
                     </div>
                 </div>
             </div>
@@ -1164,19 +1142,20 @@ include '../includes/sidebar.php';
                         <div class="col-md-12" id="headAgentNameGroup" style="display:none;">
                             <div class="form-group">
                                 <label for="headAgentName" class="form-label">Head Agent Name <span style="font-size:0.85rem;color:#999;">(Required for Sub agent)</span></label>
+                                <div class="agent-warning">
+                                    Warning: only agents from the selected branch will appear here. If you choose None of the above, the system will use that branch's manager instead.
+                                </div>
                                 <div class="select-wrap">
                                     <select id="headAgentName" name="headAgentName" class="form-select">
                                         <option value="">Select head agent...</option>
-                                        <?php if ($branchManagerName !== ''): ?>
-                                            <option value="<?php echo htmlspecialchars($branchManagerName); ?>">Branch Manager</option>
-                                        <?php endif; ?>
                                         <?php foreach ($headAgentOptions as $headAgentOption): ?>
                                             <option value="<?php echo htmlspecialchars($headAgentOption); ?>"><?php echo htmlspecialchars($headAgentOption); ?></option>
                                         <?php endforeach; ?>
+                                        <option value="__none_of_the_above__">None of the above</option>
                                     </select>
                                 </div>
                                 <div class="form-error">Head Agent Name is required for Sub agent</div>
-                                <div class="form-hint" style="margin-top:6px;">Options are limited to <?php echo htmlspecialchars($effectiveBranch !== '' ? $effectiveBranch : 'your branch'); ?>. Use Branch Manager if the head agent is not listed.</div>
+                                <div class="form-hint" style="margin-top:6px;">Choose None of the above only if you want the selected branch manager saved as the main agent.</div>
                             </div>
                         </div>
                         <div class="col-md-12">
@@ -1495,9 +1474,6 @@ include '../includes/sidebar.php';
                     <button type="button" id="clearBtn" class="btn btn-outline" onclick="clearForm()">
                         <i class="bi bi-arrow-counterclockwise"></i> Clear Form
                     </button>
-                    <button type="button" id="saveDraftBtn" class="btn btn-outline" onclick="saveDraft()">
-                        <i class="bi bi-download"></i> Save Draft
-                    </button>
                     <button type="button" id="wizardNextBtn" class="btn btn-primary">
                         Next <i class="bi bi-chevron-right"></i>
                     </button>
@@ -1592,14 +1568,17 @@ function syncAgentTypeFields() {
     const headAgentGroup = document.getElementById('headAgentNameGroup');
     const headAgentField = document.getElementById('headAgentName');
 
-    if (!agentTypeField || !headAgentGroup || !headAgentField) {
+    const agentBranchField = document.getElementById('agentBranch');
+    if (!agentTypeField || !headAgentGroup || !headAgentField || !agentBranchField) {
         return;
     }
 
     const isSubAgent = agentTypeField.value === 'sub_agent';
     headAgentGroup.style.display = isSubAgent ? '' : 'none';
-    headAgentField.required = isSubAgent;
-    headAgentField.dataset.required = isSubAgent ? 'true' : 'false';
+    const agentBranchValue = String(agentBranchField?.value || '').trim();
+    const requireHeadAgent = isSubAgent && agentBranchValue !== '';
+    headAgentField.required = requireHeadAgent;
+    headAgentField.dataset.required = requireHeadAgent ? 'true' : 'false';
 
     if (!isSubAgent) {
         headAgentField.value = '';
@@ -1618,6 +1597,119 @@ function revealFlowCards() {
         card.classList.add('flow-reveal');
         card.style.animationDelay = `${Math.min(idx * 45, 280)}ms`;
     });
+}
+
+const NONE_OF_THE_ABOVE_HEAD_AGENT_VALUE = '__none_of_the_above__';
+let headAgentOptionsRequestToken = 0;
+
+function getHeadAgentField() {
+    return document.getElementById('headAgentName');
+}
+
+function getAgentBranchField() {
+    return document.getElementById('agentBranch');
+}
+
+function setHeadAgentDropdownState(branchName, options, branchManagerName, preferredValue = '') {
+    const headAgentField = getHeadAgentField();
+    if (!headAgentField) {
+        return;
+    }
+
+    const normalizedBranch = String(branchName || '').trim();
+    const normalizedPreferred = String(preferredValue || headAgentField.value || '').trim();
+    const allowedValues = new Set();
+
+    headAgentField.innerHTML = '';
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = normalizedBranch === '' ? 'Select branch first...' : 'Select head agent...';
+    headAgentField.appendChild(placeholder);
+
+    (Array.isArray(options) ? options : []).forEach((optionLabel) => {
+        const value = String(optionLabel || '').trim();
+        if (value === '') {
+            return;
+        }
+
+        allowedValues.add(value.toLowerCase());
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        headAgentField.appendChild(option);
+    });
+
+    const noneOption = document.createElement('option');
+    noneOption.value = NONE_OF_THE_ABOVE_HEAD_AGENT_VALUE;
+    noneOption.textContent = 'None of the above';
+    headAgentField.appendChild(noneOption);
+
+    headAgentField.disabled = normalizedBranch === '';
+
+    let nextValue = normalizedPreferred;
+    if (nextValue !== '' && nextValue.toLowerCase() === String(branchManagerName || '').trim().toLowerCase()) {
+        nextValue = NONE_OF_THE_ABOVE_HEAD_AGENT_VALUE;
+    }
+
+    if (nextValue !== '' && nextValue !== NONE_OF_THE_ABOVE_HEAD_AGENT_VALUE && !allowedValues.has(nextValue.toLowerCase())) {
+        nextValue = '';
+    }
+
+    headAgentField.value = nextValue;
+    headAgentField.classList.remove('is-invalid', 'is-valid');
+}
+
+async function refreshHeadAgentOptions(preferredValue = '') {
+    if (!isAgentFlow) {
+        return;
+    }
+
+    const agentBranchField = getAgentBranchField();
+    const headAgentField = getHeadAgentField();
+    if (!agentBranchField || !headAgentField) {
+        return;
+    }
+
+    const branch = String(agentBranchField.value || '').trim();
+    const requestToken = ++headAgentOptionsRequestToken;
+
+    if (branch === '') {
+        setHeadAgentDropdownState('', [], '', preferredValue);
+        return;
+    }
+
+    setHeadAgentDropdownState(branch, [], '', preferredValue);
+
+    try {
+        const response = await fetch(`../handlers/kyc.php?action=head_agent_options&branch=${encodeURIComponent(branch)}`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        const payload = await response.json();
+
+        if (requestToken !== headAgentOptionsRequestToken) {
+            return;
+        }
+
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.message || 'Unable to load head agent options.');
+        }
+
+        setHeadAgentDropdownState(
+            branch,
+            Array.isArray(payload.options) ? payload.options : [],
+            payload.branch_manager_name || '',
+            preferredValue
+        );
+    } catch (error) {
+        if (requestToken !== headAgentOptionsRequestToken) {
+            return;
+        }
+
+        setHeadAgentDropdownState(branch, [], '', preferredValue);
+        console.error(error);
+    }
 }
 
 // ── Form Validation ────────────────────────────────────────
@@ -2368,341 +2460,6 @@ async function restoreHomeAddressFromDraftAddress(addressStr) {
     syncComposedAddressFields();
 }
 
-async function loadSelectedDraft() {
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    const draftInfoEl = document.getElementById('draftInfo');
-
-    if (!draftSelect || !loadDraftBtn) return;
-    const refCode = draftSelect.value;
-    if (!refCode) return;
-
-    setButtonBusy(loadDraftBtn, true, 'Loading...');
-    if (draftDocsContainer) draftDocsContainer.innerHTML = 'Loading attachments...';
-    if (draftInfoEl) draftInfoEl.textContent = 'Loading draft...';
-
-    try {
-        const kycResp = await fetch(`../handlers/kyc.php?action=get_kyc&ref_code=${encodeURIComponent(refCode)}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const kycData = await kycResp.json();
-        if (!kycData || !kycData.success) {
-            showToast('error', 'Load Draft Failed', kycData?.message || 'Unable to load the selected draft.');
-            return;
-        }
-
-        const draft = kycData.data || {};
-
-        // Apply fields (only those present in the individual form).
-        document.getElementById('refCode').value = draft.ref_code || draft.reference_code || refCode;
-        document.getElementById('refCode').readOnly = true;
-
-        const setIfEl = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) el.value = value ?? '';
-        };
-
-        setIfEl('lastName', draft.last_name);
-        setIfEl('firstName', draft.first_name);
-        setIfEl('middleName', draft.middle_name);
-        setIfEl('birthdate', draft.birthdate);
-        setIfEl('gender', draft.gender);
-        setIfEl('agentType', draft.agent_type || draft.agentType || 'agent');
-        setIfEl('headAgentName', draft.head_agent_name || draft.headAgentName);
-        setIfEl('agentBranch', draft.agent_branch || draft.agentBranch);
-        setIfEl('occupation', draft.occupation);
-        setIfEl('employer', draft.company);
-        setIfEl('mobile', draft.mobile);
-        setIfEl('telephone', draft.phone);
-        setIfEl('email', draft.email);
-
-        syncAgentTypeFields();
-
-        // Address restore (stored as composed homeAddress string).
-        await restoreHomeAddressFromDraftAddress(draft.address);
-
-        if (draftInfoEl) {
-            const updatedAt = draft.updated_at ? new Date(draft.updated_at).toLocaleString() : '';
-            draftInfoEl.textContent = `Loaded ${refCode}${updatedAt ? ` (updated: ${escapeHtml(updatedAt)})` : ''}.`;
-        }
-
-        // Load documents for this draft.
-        const docsResp = await fetch(`../handlers/kyc.php?action=get_draft_documents&ref_code=${encodeURIComponent(refCode)}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const docsData = await docsResp.json();
-        const docs = (docsData && docsData.success) ? (docsData.data || []) : [];
-        const governmentIdDocs = docs.filter(doc => {
-            const docType = String(doc.document_type || '').toLowerCase();
-            return docType === 'government_id' || docType === 'id' || docType === 'id_photo';
-        });
-        const supportingDocs = docs.filter(doc => !governmentIdDocs.includes(doc));
-
-        if (!draftDocsContainer) return;
-        if (!docs.length) {
-            draftDocsContainer.innerHTML = `<div style="color: var(--gray-500);">No saved attachments for this draft yet.</div>`;
-        } else {
-            draftDocsContainer.innerHTML = docs.map(doc => {
-                const fileUrl = `../../${doc.file_path}`;
-                const name = escapeHtml(doc.file_name || 'file');
-                const ext = (doc.file_name || '').split('.').pop().toLowerCase();
-                const icon = ext === 'pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark';
-                const size = doc.file_size ? ` (${escapeHtml(String(doc.file_size))} bytes)` : '';
-
-                if (ext === 'jpg' || ext === 'jpeg' || ext === 'png') {
-                    return `
-                        <div class="file-item" style="margin-bottom:10px;">
-                            <i class="bi ${icon}"></i>
-                            <span>${name}</span>
-                            <div style="margin-top:6px;">
-                                <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Open</a>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                return `
-                    <div class="file-item" style="margin-bottom:10px;">
-                        <i class="bi ${icon}"></i>
-                        <span>${name}</span>
-                        <span style="color: var(--gray-500); font-size: .8rem;">${escapeHtml(size)}</span>
-                        <div style="margin-top:6px;">
-                            <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Open</a>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        setStoredGovernmentIdUploads(governmentIdDocs.map(doc => ({
-            original_name: doc.file_name || '',
-            file_name: doc.file_name || '',
-            file_type: doc.file_type || null,
-            file_size: doc.file_size || null,
-            file_path: doc.file_path || null
-        })));
-        renderGovernmentIdUploads();
-
-        // Also load attachments into the form's attachment holder.
-        // These attachments are already finalized (stored in `documents`), so we keep their `file_path`
-        // and avoid relying on temp upload paths.
-        const draftSessionUploads = docs.map(doc => ({
-            file_name: doc.file_name || '',
-            original_name: doc.file_name || '',
-            file_type: doc.file_type || null,
-            file_size: doc.file_size || null,
-            file_path: doc.file_path || null
-        }));
-
-        if (typeof setStoredUploads === 'function' && typeof renderStoredUploads === 'function') {
-            setStoredUploads(draftSessionUploads || []);
-            renderStoredUploads();
-        }
-    } catch (error) {
-        console.error('Error loading draft:', error);
-        showToast('error', 'Load Draft Failed', 'Unexpected error while loading the draft.');
-    } finally {
-        setButtonBusy(loadDraftBtn, false);
-    }
-}
-
-async function refreshDrafts() {
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    const refreshDraftBtn = document.getElementById('refreshDraftBtn');
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    const draftInfoEl = document.getElementById('draftInfo');
-
-    if (!draftSelect) return;
-
-    setButtonBusy(refreshDraftBtn, true, 'Refreshing...');
-
-    draftSelect.innerHTML = `<option value="">Loading...</option>`;
-    draftSelect.value = '';
-    if (loadDraftBtn) loadDraftBtn.disabled = true;
-    if (draftDocsContainer) draftDocsContainer.innerHTML = '';
-    if (draftInfoEl) draftInfoEl.textContent = '';
-
-    try {
-        const resp = await fetch(`../handlers/kyc.php?action=get_drafts&draftType=individual`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const data = await resp.json();
-        const drafts = (data && data.success) ? (data.data || []) : [];
-
-        if (!drafts.length) {
-            draftSelect.innerHTML = `<option value="">No drafts found</option>`;
-            if (loadDraftBtn) loadDraftBtn.disabled = true;
-            return;
-        }
-
-        draftSelect.innerHTML = `
-            <option value="">Select a draft...</option>
-        ` + drafts.map(d => {
-            const refCode = d.ref_code || d.reference_code || '';
-            const label = (d.first_name || d.last_name)
-                ? `${(d.first_name || '').toString().trim()} ${(d.last_name || '').toString().trim()}`.trim()
-                : (d.company || d.email || 'Draft');
-            return `<option value="${escapeHtml(refCode)}">${escapeHtml(refCode)} - ${escapeHtml(label)}</option>`;
-        }).join('');
-
-        draftSelect.onchange = function () {
-            if (loadDraftBtn) loadDraftBtn.disabled = !this.value;
-        };
-    } catch (error) {
-        console.error('Error loading drafts:', error);
-        draftSelect.innerHTML = `<option value="">Failed to load drafts</option>`;
-        if (loadDraftBtn) loadDraftBtn.disabled = true;
-    } finally {
-        setButtonBusy(refreshDraftBtn, false);
-    }
-}
-
-function getResumeReferenceFromQuery() {
-    const params = new URLSearchParams(window.location.search || '');
-    return String(params.get('resume_ref') || params.get('ref_code') || '').trim();
-}
-
-async function autoLoadDraftFromQuery() {
-    const resumeRef = getResumeReferenceFromQuery();
-    if (!resumeRef) {
-        return;
-    }
-
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    if (!draftSelect) {
-        return;
-    }
-
-    const hasDraftOption = Array.from(draftSelect.options || []).some(option => option.value === resumeRef);
-    if (!hasDraftOption) {
-        showToast('info', 'Draft Not Found', `Draft ${resumeRef} is not available for this account.`);
-        return;
-    }
-
-    draftSelect.value = resumeRef;
-    if (loadDraftBtn) {
-        loadDraftBtn.disabled = false;
-    }
-
-    await loadSelectedDraft();
-}
-
-// Load drafts list on page open.
-document.addEventListener('DOMContentLoaded', async () => {
-    const draftSelect = document.getElementById('draftSelect');
-    if (!draftSelect) return;
-    await refreshDrafts();
-    await autoLoadDraftFromQuery();
-});
-
-function toggleDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel) return;
-    const willOpen = !panel.classList.contains('open');
-    panel.classList.toggle('open', willOpen);
-    document.body.classList.toggle('drafts-popup-open', willOpen);
-    if (toggleBtn) {
-        toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-    }
-    if (willOpen && typeof refreshDrafts === 'function') {
-        queueDraftsPanelPosition();
-        startDraftsPanelFollow();
-        refreshDrafts();
-    } else {
-        stopDraftsPanelFollow();
-    }
-}
-
-let draftsPanelPositionRaf = 0;
-let draftsPanelFollowRaf = 0;
-
-function queueDraftsPanelPosition() {
-    if (draftsPanelPositionRaf) return;
-    draftsPanelPositionRaf = requestAnimationFrame(() => {
-        draftsPanelPositionRaf = 0;
-        positionDraftsPanel();
-    });
-}
-
-function startDraftsPanelFollow() {
-    if (draftsPanelFollowRaf) return;
-    const tick = () => {
-        const panel = document.getElementById('draftsCard');
-        if (!panel || !panel.classList.contains('open')) {
-            draftsPanelFollowRaf = 0;
-            return;
-        }
-        positionDraftsPanel();
-        draftsPanelFollowRaf = requestAnimationFrame(tick);
-    };
-    draftsPanelFollowRaf = requestAnimationFrame(tick);
-}
-
-function stopDraftsPanelFollow() {
-    if (draftsPanelFollowRaf) {
-        cancelAnimationFrame(draftsPanelFollowRaf);
-        draftsPanelFollowRaf = 0;
-    }
-    if (draftsPanelPositionRaf) {
-        cancelAnimationFrame(draftsPanelPositionRaf);
-        draftsPanelPositionRaf = 0;
-    }
-}
-
-function positionDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    if (!panel || !panel.classList.contains('open')) {
-        return;
-    }
-
-    panel.style.top = '50%';
-    panel.style.left = '50%';
-    panel.style.right = 'auto';
-    panel.style.bottom = 'auto';
-    panel.style.width = '';
-    panel.style.maxWidth = '';
-}
-
-function closeDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel) return;
-    panel.classList.remove('open');
-    document.body.classList.remove('drafts-popup-open');
-    stopDraftsPanelFollow();
-    if (toggleBtn) {
-        toggleBtn.setAttribute('aria-expanded', 'false');
-    }
-}
-
-document.addEventListener('click', function (event) {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel || !panel.classList.contains('open')) return;
-
-    const clickedInsidePanel = panel.contains(event.target);
-    const clickedToggle = !!(toggleBtn && (toggleBtn === event.target || toggleBtn.contains(event.target)));
-    if (!clickedInsidePanel && !clickedToggle) {
-        closeDraftsPanel();
-    }
-});
-
-document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') {
-        closeDraftsPanel();
-    }
-});
-
-window.addEventListener('resize', queueDraftsPanelPosition);
-window.addEventListener('scroll', queueDraftsPanelPosition, true);
-
 let kycMasonryRaf = 0;
 let kycMasonryObserver = null;
 
@@ -2898,11 +2655,23 @@ function goToWizardStep(step) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const agentTypeField = document.getElementById('agentType');
+    const agentBranchField = document.getElementById('agentBranch');
     if (agentTypeField) {
-        agentTypeField.addEventListener('change', syncAgentTypeFields);
+        agentTypeField.addEventListener('change', async () => {
+            syncAgentTypeFields();
+            await refreshHeadAgentOptions();
+        });
+    }
+
+    if (agentBranchField) {
+        agentBranchField.addEventListener('change', async () => {
+            syncAgentTypeFields();
+            await refreshHeadAgentOptions();
+        });
     }
 
     syncAgentTypeFields();
+    refreshHeadAgentOptions();
 
     const prevBtn = document.getElementById('wizardPrevBtn');
     const nextBtn = document.getElementById('wizardNextBtn');
@@ -3075,58 +2844,6 @@ function submitForm() {
     });
 }
 
-function saveDraft() {
-    const saveDraftBtn = document.getElementById('saveDraftBtn');
-    if (saveDraftBtn?.disabled) return;
-
-    syncComposedAddressFields();
-    syncAgentTypeFields();
-    setButtonBusy(saveDraftBtn, true, 'Saving...');
-
-    // Collect form data
-    const formData = new FormData();
-    formData.append('action', 'save_draft');
-    
-    // Add all form fields
-    const form = document.getElementById('kycForm');
-    const elements = form.querySelectorAll('input, select, textarea');
-    elements.forEach(el => {
-        if (el.name) {
-            formData.append(el.name, el.value);
-        }
-    });
-
-    // Persist attachments into `documents` for this draft.
-    const uploadedFiles = isAgentFlow ? [] : (getStoredUploads ? getStoredUploads() : []);
-    formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
-    formData.append('uploadedIdFiles', JSON.stringify(isAgentFlow ? [] : (getStoredGovernmentIdUploads() || [])));
-    
-    // Submit to handler
-    fetch('../handlers/kyc.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (data.reference_code && !document.getElementById('refCode').value) {
-                document.getElementById('refCode').value = data.reference_code;
-                document.getElementById('refCode').readOnly = true;
-            }
-            showToast('info', 'Draft Saved', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Your progress has been saved successfully.');
-        } else {
-            showToast('error', 'Save Failed', data.message || 'Please try again.');
-        }
-    })
-    .catch(error => {
-        showToast('error', 'Error', 'An error occurred. Please try again.');
-        console.error('Error:', error);
-    })
-    .finally(() => {
-        setButtonBusy(saveDraftBtn, false);
-    });
-}
-
 async function clearForm() {
     const clearBtn = document.getElementById('clearBtn');
     setButtonBusy(clearBtn, true, 'Clearing...');
@@ -3136,15 +2853,6 @@ async function clearForm() {
         el.value = '';
         el.classList.remove('is-invalid','is-valid');
     });
-
-    const draftSelect = document.getElementById('draftSelect');
-    if (draftSelect) draftSelect.value = '';
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    if (loadDraftBtn) loadDraftBtn.disabled = true;
-    const draftInfoEl = document.getElementById('draftInfo');
-    if (draftInfoEl) draftInfoEl.textContent = '';
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    if (draftDocsContainer) draftDocsContainer.innerHTML = '';
 
     // Clear any temp-uploaded documents
     const uploads = (typeof getStoredUploads === 'function') ? getStoredUploads() : [];

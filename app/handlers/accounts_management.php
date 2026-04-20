@@ -69,6 +69,11 @@ function accountsManagementAllowedRoles(): array
     return ['admin', 'kyc_officer', 'manager', 'compliance'];
 }
 
+function accountsManagementAllowedClassifications(): array
+{
+    return ['head_office', 'branch_manager', 'kyc_officer'];
+}
+
 function accountsManagementAllowedStatuses(): array
 {
     return ['active', 'inactive', 'suspended'];
@@ -78,6 +83,61 @@ function accountsManagementNormalizeRole(string $role): string
 {
     $normalized = strtolower(trim($role));
     return $normalized === 'kyc officer' ? 'kyc_officer' : str_replace('-', '_', $normalized);
+}
+
+function accountsManagementNormalizeClassification(string $classification): string
+{
+    $normalized = strtolower(trim($classification));
+    return str_replace(['-', ' '], '_', $normalized);
+}
+
+function accountsManagementIsHeadOfficeBranch(?string $branch): bool
+{
+    $normalizedBranch = strtoupper(trim((string)$branch));
+    return in_array($normalizedBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+}
+
+function accountsManagementClassificationFromRole(?string $role, ?string $department = null, ?string $branch = null): string
+{
+    $normalizedRole = accountsManagementNormalizeRole((string)$role);
+    $normalizedDepartment = strtoupper(trim((string)$department));
+
+    if ($normalizedRole === 'admin' || $normalizedDepartment === 'HEAD OFFICE' || accountsManagementIsHeadOfficeBranch($branch)) {
+        return 'head_office';
+    }
+
+    if ($normalizedRole === 'manager') {
+        return 'branch_manager';
+    }
+
+    return 'kyc_officer';
+}
+
+function accountsManagementRoleFromClassification(string $classification): string
+{
+    return match ($classification) {
+        'head_office' => 'admin',
+        'branch_manager' => 'manager',
+        default => 'kyc_officer',
+    };
+}
+
+function accountsManagementDepartmentFromClassification(string $classification): string
+{
+    return match ($classification) {
+        'head_office' => 'HEAD OFFICE',
+        'branch_manager' => 'BRANCH MANAGEMENT',
+        default => 'KYC',
+    };
+}
+
+function accountsManagementLevelFromClassification(string $classification): int
+{
+    return match ($classification) {
+        'head_office' => 3,
+        'branch_manager' => 2,
+        default => 1,
+    };
 }
 
 function accountsManagementNormalizeStatus(string $status): string
@@ -211,6 +271,7 @@ if ($action === 'update_account' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim((string)($_POST['email'] ?? ''));
     $department = trim((string)($_POST['department'] ?? ''));
     $branch = trim((string)($_POST['branch'] ?? ''));
+    $accountClassification = accountsManagementNormalizeClassification((string)($_POST['account_classification'] ?? ''));
     $role = accountsManagementNormalizeRole((string)($_POST['role'] ?? ''));
     $status = accountsManagementNormalizeStatus((string)($_POST['status'] ?? 'active'));
     $newPassword = trim((string)($_POST['new_password'] ?? ''));
@@ -234,20 +295,18 @@ if ($action === 'update_account' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if ($department === '' || strlen($department) > 50) {
-        $response['message'] = 'Department is required';
+    if ($accountClassification === '') {
+        $accountClassification = accountsManagementClassificationFromRole($role, $department, $branch);
+    }
+
+    if (!in_array($accountClassification, accountsManagementAllowedClassifications(), true)) {
+        $response['message'] = 'Invalid account classification selected';
         echo json_encode($response);
         exit;
     }
 
     if (!in_array($branch, accountsManagementAllowedBranches(), true)) {
         $response['message'] = 'Invalid branch selected';
-        echo json_encode($response);
-        exit;
-    }
-
-    if (!in_array($role, accountsManagementAllowedRoles(), true)) {
-        $response['message'] = 'Invalid role selected';
         echo json_encode($response);
         exit;
     }
@@ -287,9 +346,11 @@ if ($action === 'update_account' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $updateData = [
         'full_name' => $fullName,
         'email' => $email,
-        'department' => $department,
+        'department' => accountsManagementDepartmentFromClassification($accountClassification),
         'branch' => $branch,
-        'role' => $role,
+        'role' => accountsManagementRoleFromClassification($accountClassification),
+        'account_classification' => $accountClassification,
+        'account_level' => accountsManagementLevelFromClassification($accountClassification),
         'status' => $status,
         'avatar_initials' => accountsManagementMakeAvatarInitials($fullName),
         'updated_at' => date('Y-m-d H:i:s')
@@ -309,9 +370,11 @@ if ($action === 'update_account' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($targetUserId === intval($_SESSION['user_id'] ?? 0)) {
         $_SESSION['full_name'] = $fullName;
         $_SESSION['email'] = $email;
-        $_SESSION['department'] = $department;
+        $_SESSION['department'] = $updateData['department'];
         $_SESSION['branch'] = $branch;
-        $_SESSION['role'] = $role;
+        $_SESSION['role'] = $updateData['role'];
+        $_SESSION['account_classification'] = $accountClassification;
+        $_SESSION['account_level'] = $updateData['account_level'];
     }
 
     accountsManagementClearReauthSession();

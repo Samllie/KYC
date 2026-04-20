@@ -47,6 +47,8 @@ function getCurrentUser() {
         'department' => $_SESSION['department'] ?? '',
         'branch' => $_SESSION['branch'] ?? '',
         'role' => $_SESSION['role'] ?? '',
+        'account_classification' => $_SESSION['account_classification'] ?? '',
+        'account_level' => intval($_SESSION['account_level'] ?? 0),
         'avatar_initials' => getAvatarInitials($_SESSION['full_name'] ?? '')
     ];
 }

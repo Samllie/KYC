@@ -321,6 +321,8 @@ CREATE TABLE `users` (
   `department` varchar(50) NOT NULL,
   `branch` enum('ALABANG BRANCH','MANILA BRANCH I','MANILA BRANCH II','WEST AVENUE BRANCH','CUBAO BRANCH','ANGELES BRANCH','BATANGAS BRANCH','BACOLOD BRANCH','CABANATUAN BRANCH','BUTUAN BRANCH','CAGAYAN DE ORO BRANCH','CEBU BRANCH','CEBU REGIONAL OFFICE BRANCH','DAGUPAN BRANCH','DAVAO I BRANCH','DAVAO II BRANCH','GENSAN BRANCH','ISABELA BRANCH','LA UNION BRANCH','LAOAG BRANCH','LEGAZPI I BRANCH','LEGAZPI II BRANCH','MINDORO BRANCH','NAGA BRANCH','ORMOC BRANCH','OZAMIZ BRANCH','PAGADIAN BRANCH','SAN FERNANDO, PAMPANGA BRANCH','HEAD OFFICE BRANCH','SMRO BRANCH','TACLOBAN BRANCH','TUGUEGARAO BRANCH','VIGAN BRANCH','ILOILO BRANCH') NOT NULL DEFAULT 'ALABANG BRANCH',
   `role` varchar(30) DEFAULT 'kyc_officer',
+  `account_classification` enum('head_office','branch_manager','kyc_officer') NOT NULL DEFAULT 'kyc_officer',
+  `account_level` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `avatar_initials` varchar(5) DEFAULT NULL,
   `status` enum('active','inactive','suspended') DEFAULT 'active',
   `last_login` datetime DEFAULT NULL,
@@ -332,16 +334,16 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `department`, `branch`, `role`, `avatar_initials`, `status`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, 'Juan Dela Cruz', 'juan@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'ALABANG BRANCH', 'kyc_officer', 'JD', 'active', '2026-04-07 02:02:58', '2026-03-17 03:27:01', '2026-04-07 00:02:58'),
-(2, 'Maria Garcia', 'maria@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'compliance', 'MANILA BRANCH I', 'kyc_officer', 'MG', 'active', NULL, '2026-03-17 03:27:01', '2026-04-06 00:39:37'),
-(3, 'Robert Santos', 'robert@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'operations', 'MANILA BRANCH II', 'manager', 'RS', 'active', NULL, '2026-03-17 03:27:01', '2026-04-06 00:39:37'),
-(4, 'Angela Torres', 'angela@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'WEST AVENUE BRANCH', 'kyc_officer', 'AT', 'active', NULL, '2026-03-17 03:27:01', '2026-04-06 00:39:37'),
-(5, 'John Reyes', 'john@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'compliance', 'CUBAO BRANCH', 'kyc_officer', 'JR', 'active', NULL, '2026-03-17 03:27:01', '2026-04-06 00:39:37'),
-(6, 'Luisa Cruz', 'luisa@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'CEBU BRANCH', 'kyc_officer', 'LC', 'active', '2026-04-06 07:40:36', '2026-03-17 03:27:01', '2026-04-06 05:40:36'),
-(7, 'Ezekiel Robin Codillo', 'ezekielcodillo56@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'BATANGAS BRANCH', 'kyc_officer', 'EC', 'active', NULL, '2026-03-23 03:36:50', '2026-04-06 00:39:37'),
-(8, 'Paulynous K. Gonzales', 'gonzalespaul528@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'ILOILO BRANCH', 'kyc_officer', 'PG', 'active', '2026-03-24 08:37:59', '2026-03-23 07:37:10', '2026-04-06 00:39:37'),
-(9, 'Jun H. Geronimo', 'junix@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'KYC', 'HEAD OFFICE BRANCH', 'kyc_officer', 'JG', 'active', '2026-04-07 02:03:57', '2026-04-06 05:37:39', '2026-04-07 00:03:57');
+INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `department`, `branch`, `role`, `account_classification`, `account_level`, `avatar_initials`, `status`, `last_login`, `created_at`, `updated_at`) VALUES
+(1, 'Juan Dela Cruz', 'juan@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'ALABANG BRANCH', 'kyc_officer', 'kyc_officer', 1, 'JD', 'active', '2026-04-07 02:02:58', '2026-03-17 03:27:01', '2026-04-07 00:02:58'),
+(2, 'Maria Garcia', 'maria@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'compliance', 'MANILA BRANCH I', 'kyc_officer', 'kyc_officer', 1, 'MG', 'active', NULL, '2026-03-17 03:27:01', '2026-04-06 00:39:37'),
+(3, 'Robert Santos', 'robert@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'operations', 'MANILA BRANCH II', 'manager', 'branch_manager', 2, 'RS', 'active', NULL, '2026-03-17 03:27:01', '2026-04-06 00:39:37'),
+(4, 'Angela Torres', 'angela@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'WEST AVENUE BRANCH', 'kyc_officer', 'kyc_officer', 1, 'AT', 'active', NULL, '2026-03-17 03:27:01', '2026-04-06 00:39:37'),
+(5, 'John Reyes', 'john@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'compliance', 'CUBAO BRANCH', 'kyc_officer', 'kyc_officer', 1, 'JR', 'active', NULL, '2026-03-17 03:27:01', '2026-04-06 00:39:37'),
+(6, 'Luisa Cruz', 'luisa@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'kyc-officer', 'CEBU BRANCH', 'kyc_officer', 'kyc_officer', 1, 'LC', 'active', '2026-04-06 07:40:36', '2026-03-17 03:27:01', '2026-04-06 05:40:36'),
+(7, 'Ezekiel Robin Codillo', 'ezekielcodillo56@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'BATANGAS BRANCH', 'kyc_officer', 'kyc_officer', 1, 'EC', 'active', NULL, '2026-03-23 03:36:50', '2026-04-06 00:39:37'),
+(8, 'Paulynous K. Gonzales', 'gonzalespaul528@gmail.com', '7a12a69239582aaeffc5010f059685d5756b2996dc1853f0c973ce72f93b5f39', 'kyc-officer', 'ILOILO BRANCH', 'kyc_officer', 'kyc_officer', 1, 'PG', 'active', '2026-03-24 08:37:59', '2026-03-23 07:37:10', '2026-04-06 00:39:37'),
+(9, 'Jun H. Geronimo', 'junix@sterlingins.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', 'KYC', 'HEAD OFFICE BRANCH', 'kyc_officer', 'head_office', 3, 'JG', 'active', '2026-04-07 02:03:57', '2026-04-06 05:37:39', '2026-04-07 00:03:57');
 
 -- --------------------------------------------------------
 

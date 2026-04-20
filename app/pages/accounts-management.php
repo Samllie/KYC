@@ -54,6 +54,38 @@ function formatRoleLabel(?string $role): string
     return ucwords(str_replace(['-', '_'], ' ', $normalized));
 }
 
+function formatClassificationLabel(?string $classification): string
+{
+    $normalized = strtolower(trim((string)$classification));
+    if ($normalized === '') {
+        return 'N/A';
+    }
+
+    if ($normalized === 'head_office') {
+        return 'Head Office';
+    }
+
+    if ($normalized === 'branch_manager') {
+        return 'Branch Manager';
+    }
+
+    if ($normalized === 'kyc_officer') {
+        return 'KYC Officer';
+    }
+
+    return ucwords(str_replace(['-', '_'], ' ', $normalized));
+}
+
+function formatAccountLevelLabel(?string $level): string
+{
+    $normalized = trim((string)$level);
+    if ($normalized === '') {
+        return 'N/A';
+    }
+
+    return 'Level ' . intval($normalized);
+}
+
 function formatDepartmentLabel(?string $department): string
 {
     $normalized = trim((string)$department);
@@ -145,7 +177,7 @@ $accountsError = '';
 
 try {
     $result = $db->query(
-        "SELECT user_id, full_name, email, department, branch, role, avatar_initials, status, last_login, created_at, updated_at
+        "SELECT user_id, full_name, email, department, branch, role, account_classification, account_level, avatar_initials, status, last_login, created_at, updated_at
          FROM users
          ORDER BY created_at DESC"
     );
@@ -499,9 +531,10 @@ $pageHeading = 'Accounts Management';
                             <th>User ID</th>
                             <th>Full Name</th>
                             <th>Email</th>
-                            <th>Department</th>
+                            <th>Account Classification</th>
                             <th>Branch</th>
                             <th>Role</th>
+                            <th>Level</th>
                             <th>Status</th>
                             <th>Last Login</th>
                             <th>Created At</th>
@@ -511,12 +544,28 @@ $pageHeading = 'Accounts Management';
                     <tbody id="accountsTableBody">
                         <?php if (empty($accounts)): ?>
                             <tr>
-                                <td colspan="11" style="text-align:center; padding:20px;">No registered accounts found.</td>
+                                <td colspan="12" style="text-align:center; padding:20px;">No registered accounts found.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($accounts as $account): ?>
                                 <?php
                                     $status = normalizeAccountStatus($account['status'] ?? 'active');
+                                    $classification = strtolower(trim((string)($account['account_classification'] ?? '')));
+                                    if ($classification === '') {
+                                        $roleForFallback = strtolower(trim((string)($account['role'] ?? '')));
+                                        $departmentForFallback = strtoupper(trim((string)($account['department'] ?? '')));
+                                        if ($roleForFallback === 'admin' || $departmentForFallback === 'HEAD OFFICE') {
+                                            $classification = 'head_office';
+                                        } elseif ($roleForFallback === 'manager') {
+                                            $classification = 'branch_manager';
+                                        } else {
+                                            $classification = 'kyc_officer';
+                                        }
+                                    }
+                                    $accountLevel = intval($account['account_level'] ?? 0);
+                                    if ($accountLevel <= 0) {
+                                        $accountLevel = $classification === 'head_office' ? 3 : ($classification === 'branch_manager' ? 2 : 1);
+                                    }
                                     $accountPayload = [
                                         'user_id' => intval($account['user_id'] ?? 0),
                                         'full_name' => $account['full_name'] ?? '',
@@ -524,6 +573,8 @@ $pageHeading = 'Accounts Management';
                                         'department' => $account['department'] ?? '',
                                         'branch' => $account['branch'] ?? '',
                                         'role' => $account['role'] ?? '',
+                                        'account_classification' => $classification,
+                                        'account_level' => $accountLevel,
                                         'status' => $status,
                                         'avatar_initials' => $account['avatar_initials'] ?? '',
                                         'last_login' => $account['last_login'] ?? '',
@@ -533,7 +584,8 @@ $pageHeading = 'Accounts Management';
                                     $searchBlob = strtolower(trim(implode(' ', array_map('strval', array_values($accountPayload)))));
                                     $avatarInitials = formatAvatarInitials($account['avatar_initials'] ?? null, $account['full_name'] ?? null);
                                     $roleLabel = formatRoleLabel($account['role'] ?? null);
-                                    $departmentLabel = formatDepartmentLabel($account['department'] ?? null);
+                                    $departmentLabel = formatClassificationLabel($classification);
+                                    $levelLabel = formatAccountLevelLabel((string)$accountLevel);
                                     $accountDataAttr = htmlspecialchars(json_encode($accountPayload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES);
                                 ?>
                                 <tr data-account="<?php echo $accountDataAttr; ?>" data-status="<?php echo htmlspecialchars($status); ?>" data-search="<?php echo htmlspecialchars($searchBlob); ?>">
@@ -544,6 +596,7 @@ $pageHeading = 'Accounts Management';
                                     <td><?php echo htmlspecialchars($departmentLabel); ?></td>
                                     <td><?php echo htmlspecialchars(accountValue($account['branch'] ?? null)); ?></td>
                                     <td><span class="account-role-badge"><?php echo htmlspecialchars($roleLabel); ?></span></td>
+                                    <td><?php echo htmlspecialchars($levelLabel); ?></td>
                                     <td><span class="account-status-badge <?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars(ucfirst($status)); ?></span></td>
                                     <td><?php echo htmlspecialchars(formatAccountDateTime($account['last_login'] ?? null)); ?></td>
                                     <td><?php echo htmlspecialchars(formatAccountDateTime($account['created_at'] ?? null)); ?></td>
@@ -633,8 +686,8 @@ $pageHeading = 'Accounts Management';
                             </div>
 
                             <div class="form-group account-col-6">
-                                <label class="form-label">Department</label>
-                                <input type="text" id="editAccountDepartment" class="form-control" maxlength="50" required>
+                                <label class="form-label">Account Classification</label>
+                                <input type="text" id="editAccountDepartment" class="form-control" maxlength="50" readonly>
                             </div>
                             <div class="form-group account-col-6">
                                 <label class="form-label">Branch</label>
@@ -647,12 +700,20 @@ $pageHeading = 'Accounts Management';
                             </div>
 
                             <div class="form-group account-col-6">
-                                <label class="form-label">Role</label>
-                                <select id="editAccountRole" class="form-select" required>
-                                    <?php foreach ($allowedRoles as $roleValue => $roleLabel): ?>
-                                        <option value="<?php echo htmlspecialchars($roleValue); ?>"><?php echo htmlspecialchars($roleLabel); ?></option>
-                                    <?php endforeach; ?>
+                                <label class="form-label">Account Classification</label>
+                                <select id="editAccountClassification" class="form-select" required>
+                                    <option value="head_office">Head Office</option>
+                                    <option value="branch_manager">Branch Manager</option>
+                                    <option value="kyc_officer">KYC Officer</option>
                                 </select>
+                            </div>
+                            <div class="form-group account-col-6">
+                                <label class="form-label">Account Level</label>
+                                <input type="text" id="editAccountLevel" class="form-control" readonly>
+                            </div>
+                            <div class="form-group account-col-6">
+                                <label class="form-label">Role</label>
+                                <input type="text" id="editAccountRole" class="form-control" readonly>
                             </div>
                             <div class="form-group account-col-6">
                                 <label class="form-label">Password</label>
@@ -767,6 +828,8 @@ $pageHeading = 'Accounts Management';
     const editAccountEmail = document.getElementById('editAccountEmail');
     const editAccountDepartment = document.getElementById('editAccountDepartment');
     const editAccountBranch = document.getElementById('editAccountBranch');
+    const editAccountClassification = document.getElementById('editAccountClassification');
+    const editAccountLevel = document.getElementById('editAccountLevel');
     const editAccountRole = document.getElementById('editAccountRole');
     const editAccountPassword = document.getElementById('editAccountPassword');
     const editAccountPasswordConfirm = document.getElementById('editAccountPasswordConfirm');
@@ -855,6 +918,85 @@ $pageHeading = 'Accounts Management';
         return formatAccountTimestampValue(parseAccountTimestamp(value));
     }
 
+    function getClassificationFromAccount(account) {
+        const classification = String(account && account.account_classification ? account.account_classification : '').trim().toLowerCase();
+        if (classification !== '') {
+            return classification;
+        }
+
+        const role = String(account && account.role ? account.role : '').trim().toLowerCase();
+        const department = String(account && account.department ? account.department : '').trim().toUpperCase();
+        const branch = String(account && account.branch ? account.branch : '').trim().toUpperCase();
+
+        if (role === 'admin' || department === 'HEAD OFFICE' || ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'].includes(branch)) {
+            return 'head_office';
+        }
+
+        if (role === 'manager') {
+            return 'branch_manager';
+        }
+
+        return 'kyc_officer';
+    }
+
+    function getLevelFromClassification(classification) {
+        if (classification === 'head_office') {
+            return 3;
+        }
+
+        if (classification === 'branch_manager') {
+            return 2;
+        }
+
+        return 1;
+    }
+
+    function getClassificationLabelFromClassification(classification) {
+        if (classification === 'head_office') {
+            return 'Head Office';
+        }
+
+        if (classification === 'branch_manager') {
+            return 'Branch Manager';
+        }
+
+        return 'KYC Officer';
+    }
+
+    function getRoleFromClassification(classification) {
+        if (classification === 'head_office') {
+            return 'admin';
+        }
+
+        if (classification === 'branch_manager') {
+            return 'manager';
+        }
+
+        return 'kyc_officer';
+    }
+
+    function formatRoleValue(role) {
+        const normalized = String(role || '').trim().toLowerCase();
+
+        if (normalized === 'admin') {
+            return 'Head Office';
+        }
+
+        if (normalized === 'manager') {
+            return 'Branch Manager';
+        }
+
+        if (normalized === 'kyc_officer') {
+            return 'KYC Officer';
+        }
+
+        if (normalized === '') {
+            return 'N/A';
+        }
+
+        return normalized.replace(/[-_]/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+    }
+
     function resetReauthModalState() {
         if (reauthModalMessage) {
             reauthModalMessage.textContent = DEFAULT_REAUTH_MESSAGE;
@@ -930,9 +1072,15 @@ $pageHeading = 'Accounts Management';
         if (editAccountStatus) editAccountStatus.value = String(account.status || 'active');
         if (editAccountFullName) editAccountFullName.value = account.full_name || '';
         if (editAccountEmail) editAccountEmail.value = account.email || '';
-        if (editAccountDepartment) editAccountDepartment.value = account.department || '';
         if (editAccountBranch) editAccountBranch.value = account.branch || '';
-        if (editAccountRole) editAccountRole.value = account.role || 'kyc_officer';
+        const classification = getClassificationFromAccount(account);
+        const accountLevel = Number.isFinite(Number(account.account_level)) && Number(account.account_level) > 0
+            ? Number(account.account_level)
+            : getLevelFromClassification(classification);
+        if (editAccountDepartment) editAccountDepartment.value = getClassificationLabelFromClassification(classification);
+        if (editAccountClassification) editAccountClassification.value = classification;
+        if (editAccountLevel) editAccountLevel.value = `Level ${accountLevel}`;
+        if (editAccountRole) editAccountRole.value = formatRoleValue(getRoleFromClassification(classification));
         if (editAccountPassword) editAccountPassword.value = '';
         if (editAccountPasswordConfirm) editAccountPasswordConfirm.value = '';
         if (editAccountLastLogin) editAccountLastLogin.value = formatAccountDateTimeValue(account.last_login || '');
@@ -1091,6 +1239,7 @@ $pageHeading = 'Accounts Management';
             const email = editAccountEmail ? editAccountEmail.value.trim() : '';
             const department = editAccountDepartment ? editAccountDepartment.value.trim() : '';
             const branch = editAccountBranch ? editAccountBranch.value.trim() : '';
+            const accountClassification = editAccountClassification ? editAccountClassification.value.trim() : '';
             const role = editAccountRole ? editAccountRole.value.trim() : '';
             const status = editAccountStatus ? editAccountStatus.value.trim() : '';
             const passwordValue = editAccountPassword ? editAccountPassword.value : '';
@@ -1115,6 +1264,7 @@ $pageHeading = 'Accounts Management';
             formData.append('email', email);
             formData.append('department', department);
             formData.append('branch', branch);
+            formData.append('account_classification', accountClassification);
             formData.append('role', role);
             formData.append('status', status);
             formData.append('new_password', passwordValue);

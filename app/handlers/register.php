@@ -51,6 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'branch_manager' => 'manager',
         'kyc_officer' => 'kyc_officer'
     ];
+    $classificationLevelMap = [
+        'head_office' => 3,
+        'branch_manager' => 2,
+        'kyc_officer' => 1
+    ];
     $classificationDepartmentMap = [
         'head_office' => 'HEAD OFFICE',
         'branch_manager' => 'BRANCH MANAGEMENT',
@@ -158,6 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $role = $classificationRoleMap[$accountClassification] ?? 'kyc_officer';
     $department = $classificationDepartmentMap[$accountClassification] ?? 'KYC';
+    $accountLevel = $classificationLevelMap[$accountClassification] ?? 1;
 
     if ($password !== $confirmPassword) {
         $response['message'] = 'Passwords do not match';
@@ -185,6 +191,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'department' => $department,
         'branch' => $branch,
         'role' => $role,
+        'account_classification' => $accountClassification,
+        'account_level' => $accountLevel,
         'avatar_initials' => $avatarInitials,
         'status' => 'active'
     ]);
