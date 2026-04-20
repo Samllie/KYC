@@ -231,7 +231,6 @@ $pageBackground = $isAgentFlow
             --draft-btn-size: 42px;
         }
 
-        /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
             top: 50%;
@@ -763,11 +762,6 @@ $pageBackground = $isAgentFlow
             pointer-events: none;
             transition: opacity 0.2s ease;
             z-index: 9997;
-        }
-
-        body.drafts-popup-open::before {
-            opacity: 1;
-            pointer-events: auto;
         }
 
         @media (max-width: 900px) {
@@ -1589,11 +1583,6 @@ function syncAgentTypeFields() {
 function revealFlowCards() {
     const cards = document.querySelectorAll('main.content .card');
     cards.forEach((card, idx) => {
-        if (card.id === 'draftsCard') {
-            card.classList.remove('flow-reveal');
-            card.style.animationDelay = '';
-            return;
-        }
         card.classList.add('flow-reveal');
         card.style.animationDelay = `${Math.min(idx * 45, 280)}ms`;
     });
@@ -2144,7 +2133,7 @@ function restoreHomeAddress(addressData) {
 // Restore form data on page load
 const KYC_NAVIGATION_TYPE = (performance.getEntriesByType('navigation')[0]?.type) || (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'navigate');
 
-async function clearDraftStateOnRefresh() {
+async function clearFormStateOnRefresh() {
     const regularUploads = getStoredUploads();
     const governmentIdUploads = getStoredGovernmentIdUploads();
 
@@ -2160,7 +2149,7 @@ async function clearDraftStateOnRefresh() {
 }
 
 if (KYC_NAVIGATION_TYPE === 'reload') {
-    void clearDraftStateOnRefresh();
+    void clearFormStateOnRefresh();
 }
 
 document.addEventListener('DOMContentLoaded', restoreFormData);
@@ -2380,92 +2369,11 @@ if (governmentIdTypeSelect) {
 
 document.addEventListener('DOMContentLoaded', renderGovernmentIdUploads);
 
-// ── Drafts UI (resume/load) ─────────────────────────────────────────────
-function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-}
-
-function parseComposedAddress(addressStr) {
-    // Expected format from buildAddress(): "street, barangay, city, province, region"
-    if (!addressStr) return null;
-    const parts = String(addressStr).split(',').map(p => p.trim()).filter(Boolean);
-    if (parts.length < 5) return null;
-    return {
-        street: parts[0],
-        barangay: parts[1],
-        city: parts[2],
-        province: parts[3],
-        region: parts.slice(4).join(', ')
-    };
-}
-
-function waitForSelectReady(selectEl, minOptions = 2, timeoutMs = 8000) {
-    return new Promise(resolve => {
-        const start = Date.now();
-        const timer = setInterval(() => {
-            const ok = selectEl && selectEl.options && selectEl.options.length >= minOptions && !selectEl.disabled;
-            if (ok) {
-                clearInterval(timer);
-                resolve(true);
-                return;
-            }
-            if (Date.now() - start >= timeoutMs) {
-                clearInterval(timer);
-                resolve(false);
-            }
-        }, 200);
-    });
-}
-
-async function restoreHomeAddressFromDraftAddress(addressStr) {
-    const parsed = parseComposedAddress(addressStr);
-    if (!parsed) return;
-
-    const homeRegionEl = document.getElementById('homeRegion');
-    const homeProvinceEl = document.getElementById('homeProvince');
-    const homeCityEl = document.getElementById('homeCtm');
-    const homeBarangayEl = document.getElementById('homeBarangay');
-    const homeStreetEl = document.getElementById('homeStreet');
-
-    if (!homeRegionEl || !homeProvinceEl || !homeCityEl || !homeBarangayEl || !homeStreetEl) return;
-
-    // Wait for PSGC options to load.
-    const regionReady = await waitForSelectReady(homeRegionEl, 2);
-    if (!regionReady) return;
-
-    homeRegionEl.value = parsed.region;
-    homeRegionEl.dispatchEvent(new Event('change'));
-
-    const provinceReady = await waitForSelectReady(homeProvinceEl, 2);
-    if (!provinceReady) return;
-    homeProvinceEl.value = parsed.province;
-    homeProvinceEl.dispatchEvent(new Event('change'));
-
-    const cityReady = await waitForSelectReady(homeCityEl, 2);
-    if (!cityReady) return;
-    homeCityEl.value = parsed.city;
-    homeCityEl.dispatchEvent(new Event('change'));
-
-    const barangayReady = await waitForSelectReady(homeBarangayEl, 2);
-    if (!barangayReady) return;
-    homeBarangayEl.value = parsed.barangay;
-
-    homeStreetEl.value = parsed.street;
-    syncComposedAddressFields();
-}
-
 let kycMasonryRaf = 0;
 let kycMasonryObserver = null;
 
 function getKycMasonryItems(form) {
     return Array.from(form.children).filter((el) => {
-        if (el.id === 'draftsCard') return false;
         if (el.classList.contains('wizard-hidden')) return false;
         return el.classList.contains('card') || el.classList.contains('client-type-inline');
     });

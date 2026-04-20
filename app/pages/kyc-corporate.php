@@ -80,7 +80,6 @@ $pageBackground = $isObligee
             --draft-btn-size: 42px;
         }
 
-        /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
             top: 50%;
@@ -601,11 +600,6 @@ $pageBackground = $isObligee
             pointer-events: none;
             transition: opacity 0.2s ease;
             z-index: 9997;
-        }
-
-        body.drafts-popup-open::before {
-            opacity: 1;
-            pointer-events: auto;
         }
 
         @media (max-width: 900px) {
@@ -1160,11 +1154,6 @@ function setButtonBusy(button, isBusy, label = 'Working...') {
 function revealFlowCards() {
     const cards = document.querySelectorAll('main.content .card');
     cards.forEach((card, idx) => {
-        if (card.id === 'draftsCard') {
-            card.classList.remove('flow-reveal');
-            card.style.animationDelay = '';
-            return;
-        }
         card.classList.add('flow-reveal');
         card.style.animationDelay = `${Math.min(idx * 45, 280)}ms`;
     });
@@ -1512,7 +1501,7 @@ initCorporateAddressSelectors();
 // Restore form data on page load
 const KYC_NAVIGATION_TYPE = (performance.getEntriesByType('navigation')[0]?.type) || (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'navigate');
 
-async function clearDraftStateOnRefresh() {
+async function clearFormStateOnRefresh() {
     const regularUploads = getStoredUploads();
     const governmentIdUploads = getStoredGovernmentIdUploads();
 
@@ -1528,7 +1517,7 @@ async function clearDraftStateOnRefresh() {
 }
 
 if (KYC_NAVIGATION_TYPE === 'reload') {
-    void clearDraftStateOnRefresh();
+    void clearFormStateOnRefresh();
 }
 
 document.addEventListener('DOMContentLoaded', restoreFormData);
@@ -1744,7 +1733,6 @@ if (governmentIdTypeSelect) {
 
 document.addEventListener('DOMContentLoaded', renderGovernmentIdUploads);
 
-// ── Drafts UI (resume/load) ─────────────────────────────────────────────
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
@@ -1828,7 +1816,6 @@ let kycMasonryObserver = null;
 
 function getKycMasonryItems(form) {
     return Array.from(form.children).filter((el) => {
-        if (el.id === 'draftsCard') return false;
         if (el.classList.contains('wizard-hidden')) return false;
         return el.classList.contains('card') || el.classList.contains('client-type-inline');
     });
@@ -2170,57 +2157,6 @@ function submitForm() {
     });
 }
 
-function saveDraft() {
-    const saveDraftBtn = document.getElementById('saveDraftBtn');
-    if (saveDraftBtn?.disabled) return;
-
-    syncCorporateAddressField();
-    setButtonBusy(saveDraftBtn, true, 'Saving...');
-
-    // Collect form data
-    const formData = new FormData();
-    formData.append('action', 'save_draft');
-    
-    // Add all form fields
-    const form = document.getElementById('kycForm');
-    const elements = form.querySelectorAll('input, select, textarea');
-    elements.forEach(el => {
-        if (el.name) {
-            formData.append(el.name, el.value);
-        }
-    });
-
-    // Persist attachments into `documents` for this draft.
-    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
-    formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
-    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
-    
-    // Submit to handler
-    fetch('../handlers/kyc.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (data.reference_code && !document.getElementById('refCode').value) {
-                document.getElementById('refCode').value = data.reference_code;
-                document.getElementById('refCode').readOnly = true;
-            }
-            showToast('info', 'Draft Saved', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Your progress has been saved successfully.');
-        } else {
-            showToast('error', 'Save Failed', data.message || 'Please try again.');
-        }
-    })
-    .catch(error => {
-        showToast('error', 'Error', 'An error occurred. Please try again.');
-        console.error('Error:', error);
-    })
-    .finally(() => {
-        setButtonBusy(saveDraftBtn, false);
-    });
-}
-
 async function clearForm() {
     const clearBtn = document.getElementById('clearBtn');
     setButtonBusy(clearBtn, true, 'Clearing...');
@@ -2257,59 +2193,13 @@ const list   = document.getElementById('fileList');
 const UPLOAD_STORAGE_KEY = 'kycUploadedFiles';
 
 function getStoredUploads() {
-    try {
-        const raw = sessionStorage.getItem(UPLOAD_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
-}
-
-function setStoredUploads(files) {
-    sessionStorage.setItem(UPLOAD_STORAGE_KEY, JSON.stringify(files || []));
-}
-
-function fileIconClass(filename) {
-    const ext = (filename || '').split('.').pop().toLowerCase();
-    const icons = { pdf:'bi-file-earmark-pdf', jpg:'bi-file-earmark-image', jpeg:'bi-file-earmark-image', png:'bi-file-earmark-image' };
-    return icons[ext] || 'bi-file-earmark';
-}
-
-function formatSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
-    return (bytes/1048576).toFixed(1) + ' MB';
-}
-
-async function deleteTempUpload(tempPath) {
-    if (!tempPath) return;
-    const fd = new FormData();
-    fd.append('action', 'delete_temp');
-    fd.append('path', tempPath);
-    try {
-        await fetch('../handlers/upload.php', { method: 'POST', body: fd });
-    } catch {
-        // Best-effort cleanup
-    }
-}
-
-function buildUploadOpenUrl(file) {
-    const rawPath = String(file?.file_path || file?.temp_path || '').trim();
-    if (!rawPath) return '';
-
-    const normalized = rawPath
-        .replace(/^\.{1,2}[\\/]+/, '')
-        .replace(/^[\\/]+/, '')
-        .replace(/\\/g, '/');
-
-    if (!normalized) return '';
-    return normalized.startsWith('uploads/') ? `../../${normalized}` : `../../uploads/${normalized}`;
-}
 
 function renderStoredUploads() {
     if (!list) return;
     const stored = getStoredUploads();
+    }
+
+    // ── File Upload ────────────────────────────────────────────
     list.innerHTML = '';
 
     stored.forEach((f, idx) => {

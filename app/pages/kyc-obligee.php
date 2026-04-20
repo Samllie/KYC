@@ -101,7 +101,6 @@ $pageBackground = 'radial-gradient(circle at 15% 20%, rgba(244, 232, 222, 0.92) 
             --draft-btn-size: 42px;
         }
 
-        /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
             top: 50%;
@@ -624,11 +623,6 @@ $pageBackground = 'radial-gradient(circle at 15% 20%, rgba(244, 232, 222, 0.92) 
             z-index: 9997;
         }
 
-        body.drafts-popup-open::before {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
         @media (max-width: 900px) {
             body {
                 --draft-btn-bottom: 12px;
@@ -743,9 +737,6 @@ include '../includes/sidebar.php';
             </div>
         </div>
         <div class="topbar-right">
-            <button type="button" class="drafts-toggle-btn" title="Saved Drafts" onclick="toggleDraftsPanel()">
-                <i class="bi bi-inbox"></i>
-            </button>
         </div>
     </header>
 
@@ -826,36 +817,6 @@ include '../includes/sidebar.php';
                                 <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="Auto-generated" readonly>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Drafts Card -->
-            <div class="card" id="draftsCard">
-                <div class="card-header">
-                    <div class="card-title"><i class="bi bi-inbox"></i> Saved Drafts</div>
-                    <button type="button" id="refreshDraftBtn" class="btn btn-sm btn-outline-secondary" onclick="refreshDrafts()">
-                        <i class="bi bi-arrow-clockwise"></i> Refresh
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="drafts-fields">
-                        <div>
-                            <label for="draftSelect" class="form-label">Drafts</label>
-                            <select id="draftSelect" class="form-select">
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="draftInfo" style="margin-top:10px; color: var(--gray-500); font-size: .85rem;"></div>
-                    <div id="draftDocsWrapper" style="margin-top:14px;">
-                        <div style="color: var(--gray-500); font-size:.85rem;">Attachments saved to the selected draft:</div>
-                        <div id="draftDocsContainer" style="margin-top:8px;"></div>
-                    </div>
-                    <div class="drafts-action-row">
-                        <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
-                            <i class="bi bi-box-arrow-in-right"></i> Load Draft
-                        </button>
                     </div>
                 </div>
             </div>
@@ -1192,9 +1153,6 @@ include '../includes/sidebar.php';
                     <button type="button" id="clearBtn" class="btn btn-outline" onclick="clearForm()">
                         <i class="bi bi-arrow-counterclockwise"></i> Clear Form
                     </button>
-                    <button type="button" id="saveDraftBtn" class="btn btn-outline" onclick="saveDraft()">
-                        <i class="bi bi-download"></i> Save Draft
-                    </button>
                     <button type="button" id="wizardNextBtn" class="btn btn-primary">
                         Next <i class="bi bi-chevron-right"></i>
                     </button>
@@ -1257,11 +1215,6 @@ function setButtonBusy(button, isBusy, label = 'Working...') {
 function revealFlowCards() {
     const cards = document.querySelectorAll('main.content .card');
     cards.forEach((card, idx) => {
-        if (card.id === 'draftsCard') {
-            card.classList.remove('flow-reveal');
-            card.style.animationDelay = '';
-            return;
-        }
         card.classList.add('flow-reveal');
         card.style.animationDelay = `${Math.min(idx * 45, 280)}ms`;
     });
@@ -1649,7 +1602,7 @@ initCorporateAddressSelectors();
 // Restore form data on page load
 const KYC_NAVIGATION_TYPE = (performance.getEntriesByType('navigation')[0]?.type) || (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'navigate');
 
-async function clearDraftStateOnRefresh() {
+async function clearFormStateOnRefresh() {
     const regularUploads = getStoredUploads();
     const governmentIdUploads = getStoredGovernmentIdUploads();
 
@@ -1665,7 +1618,7 @@ async function clearDraftStateOnRefresh() {
 }
 
 if (KYC_NAVIGATION_TYPE === 'reload') {
-    void clearDraftStateOnRefresh();
+    void clearFormStateOnRefresh();
 }
 
 document.addEventListener('DOMContentLoaded', restoreFormData);
@@ -1881,7 +1834,6 @@ if (governmentIdTypeSelect) {
 
 document.addEventListener('DOMContentLoaded', renderGovernmentIdUploads);
 
-// ── Drafts UI (resume/load) ─────────────────────────────────────────────
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
@@ -1919,378 +1871,11 @@ function parseComposedAddress(addressStr) {
     };
 }
 
-function waitForSelectReady(selectEl, minOptions = 2, timeoutMs = 8000) {
-    return new Promise(resolve => {
-        const start = Date.now();
-        const timer = setInterval(() => {
-            const ok = selectEl && selectEl.options && selectEl.options.length >= minOptions && !selectEl.disabled;
-            if (ok) {
-                clearInterval(timer);
-                resolve(true);
-                return;
-            }
-            if (Date.now() - start >= timeoutMs) {
-                clearInterval(timer);
-                resolve(false);
-            }
-        }, 200);
-    });
-}
-
-async function restoreCorporateAddressFromDraftAddress(addressStr) {
-    const parsed = parseComposedAddress(addressStr);
-    if (!parsed) return;
-
-    const regionEl = document.getElementById('region');
-    const provinceEl = document.getElementById('corporateBusinessProvince');
-    const cityEl = document.getElementById('corporateBusinessCtm');
-    const barangayEl = document.getElementById('corporateBusinessBarangay');
-    const streetEl = document.getElementById('corporateStreet');
-
-    if (!regionEl || !provinceEl || !cityEl || !streetEl) return;
-
-    const regionReady = await waitForSelectReady(regionEl, 2);
-    if (!regionReady) return;
-
-    regionEl.value = parsed.region;
-    regionEl.dispatchEvent(new Event('change'));
-
-    const provinceReady = await waitForSelectReady(provinceEl, 2);
-    if (!provinceReady) return;
-    provinceEl.value = parsed.province;
-    provinceEl.dispatchEvent(new Event('change'));
-
-    const cityReady = await waitForSelectReady(cityEl, 2);
-    if (!cityReady) return;
-    cityEl.value = parsed.city;
-    cityEl.dispatchEvent(new Event('change'));
-
-    if (barangayEl) {
-        const barangayReady = await waitForSelectReady(barangayEl, 2);
-        if (barangayReady && parsed.barangay) {
-            barangayEl.value = parsed.barangay;
-        }
-    }
-
-    streetEl.value = parsed.street;
-    syncCorporateAddressField();
-}
-
-async function loadSelectedDraft() {
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    const draftInfoEl = document.getElementById('draftInfo');
-
-    if (!draftSelect || !loadDraftBtn) return;
-    const refCode = draftSelect.value;
-    if (!refCode) return;
-
-    setButtonBusy(loadDraftBtn, true, 'Loading...');
-    if (draftDocsContainer) draftDocsContainer.innerHTML = 'Loading attachments...';
-    if (draftInfoEl) draftInfoEl.textContent = 'Loading draft...';
-
-    try {
-        const kycResp = await fetch(`../handlers/kyc.php?action=get_kyc&ref_code=${encodeURIComponent(refCode)}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const kycData = await kycResp.json();
-        if (!kycData || !kycData.success) {
-            showToast('error', 'Load Draft Failed', kycData?.message || 'Unable to load the selected draft.');
-            return;
-        }
-
-        const draft = kycData.data || {};
-
-        // Apply fields (only those present/mapped for the corporate form).
-        const refInput = document.getElementById('refCode');
-        if (refInput) {
-            refInput.value = draft.ref_code || draft.reference_code || refCode;
-            refInput.readOnly = true;
-        }
-
-        const setIfEl = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) el.value = value ?? '';
-        };
-
-        setIfEl('corporateClientName', draft.company);
-        setIfEl('corporatePhone', draft.mobile || draft.phone);
-        setIfEl('corporateEmail', draft.email);
-        setIfEl('corporateContactPerson', draft.occupation);
-        setIfEl('corporateGender', draft.gender);
-
-        await restoreCorporateAddressFromDraftAddress(draft.address);
-
-        if (draftInfoEl) {
-            const updatedAt = draft.updated_at ? new Date(draft.updated_at).toLocaleString() : '';
-            draftInfoEl.textContent = `Loaded ${refCode}${updatedAt ? ` (updated: ${escapeHtml(updatedAt)})` : ''}.`;
-        }
-
-        const docsResp = await fetch(`../handlers/kyc.php?action=get_draft_documents&ref_code=${encodeURIComponent(refCode)}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const docsData = await docsResp.json();
-        const docs = (docsData && docsData.success) ? (docsData.data || []) : [];
-        const governmentIdDocs = docs.filter(doc => {
-            const docType = String(doc.document_type || '').toLowerCase();
-            return docType === 'government_id' || docType === 'id' || docType === 'id_photo';
-        });
-
-        if (!draftDocsContainer) return;
-        if (!docs.length) {
-            draftDocsContainer.innerHTML = `<div style="color: var(--gray-500);">No saved attachments for this draft yet.</div>`;
-        } else {
-            draftDocsContainer.innerHTML = docs.map(doc => {
-                const fileUrl = `../../${doc.file_path}`;
-                const name = escapeHtml(doc.file_name || 'file');
-                const ext = (doc.file_name || '').split('.').pop().toLowerCase();
-                const icon = ext === 'pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark';
-                const size = doc.file_size ? ` (${escapeHtml(String(doc.file_size))} bytes)` : '';
-
-                return `
-                    <div class="file-item" style="margin-bottom:10px;">
-                        <i class="bi ${icon}"></i>
-                        <span>${name}</span>
-                        <span style="color: var(--gray-500); font-size: .8rem;">${escapeHtml(size)}</span>
-                        <div style="margin-top:6px;">
-                            <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Open</a>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        setStoredGovernmentIdUploads(governmentIdDocs.map(doc => ({
-            original_name: doc.file_name || '',
-            file_name: doc.file_name || '',
-            file_type: doc.file_type || null,
-            file_size: doc.file_size || null,
-            file_path: doc.file_path || null
-        })));
-        renderGovernmentIdUploads();
-
-        // Also load attachments into the form's attachment holder.
-        const draftSessionUploads = docs.map(doc => ({
-            file_name: doc.file_name || '',
-            original_name: doc.file_name || '',
-            file_type: doc.file_type || null,
-            file_size: doc.file_size || null,
-            file_path: doc.file_path || null
-        }));
-
-        if (typeof setStoredUploads === 'function' && typeof renderStoredUploads === 'function') {
-            setStoredUploads(draftSessionUploads || []);
-            renderStoredUploads();
-        }
-    } catch (error) {
-        console.error('Error loading draft:', error);
-        showToast('error', 'Load Draft Failed', 'Unexpected error while loading the draft.');
-    } finally {
-        setButtonBusy(loadDraftBtn, false);
-    }
-}
-
-async function refreshDrafts() {
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    const refreshDraftBtn = document.getElementById('refreshDraftBtn');
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    const draftInfoEl = document.getElementById('draftInfo');
-
-    if (!draftSelect) return;
-
-    setButtonBusy(refreshDraftBtn, true, 'Refreshing...');
-
-    draftSelect.innerHTML = `<option value="">Loading...</option>`;
-    draftSelect.value = '';
-    if (loadDraftBtn) loadDraftBtn.disabled = true;
-    if (draftDocsContainer) draftDocsContainer.innerHTML = '';
-    if (draftInfoEl) draftInfoEl.textContent = '';
-
-    try {
-        const resp = await fetch(`../handlers/kyc.php?action=get_drafts&draftType=${encodeURIComponent(currentClientType)}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const data = await resp.json();
-        const drafts = (data && data.success) ? (data.data || []) : [];
-
-        if (!drafts.length) {
-            draftSelect.innerHTML = `<option value="">No drafts found</option>`;
-            if (loadDraftBtn) loadDraftBtn.disabled = true;
-            return;
-        }
-
-        draftSelect.innerHTML = `
-            <option value="">Select a draft...</option>
-        ` + drafts.map(d => {
-            const refCode = d.ref_code || d.reference_code || '';
-            const label = (d.company || d.email || 'Draft');
-            return `<option value="${escapeHtml(refCode)}">${escapeHtml(refCode)} - ${escapeHtml(label)}</option>`;
-        }).join('');
-
-        draftSelect.onchange = function () {
-            if (loadDraftBtn) loadDraftBtn.disabled = !this.value;
-        };
-    } catch (error) {
-        console.error('Error loading drafts:', error);
-        draftSelect.innerHTML = `<option value="">Failed to load drafts</option>`;
-        if (loadDraftBtn) loadDraftBtn.disabled = true;
-    } finally {
-        setButtonBusy(refreshDraftBtn, false);
-    }
-}
-
-function getResumeReferenceFromQuery() {
-    const params = new URLSearchParams(window.location.search || '');
-    return String(params.get('resume_ref') || params.get('ref_code') || '').trim();
-}
-
-async function autoLoadDraftFromQuery() {
-    const resumeRef = getResumeReferenceFromQuery();
-    if (!resumeRef) {
-        return;
-    }
-
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    if (!draftSelect) {
-        return;
-    }
-
-    const hasDraftOption = Array.from(draftSelect.options || []).some(option => option.value === resumeRef);
-    if (!hasDraftOption) {
-        showToast('info', 'Draft Not Found', `Draft ${resumeRef} is not available for this account.`);
-        return;
-    }
-
-    draftSelect.value = resumeRef;
-    if (loadDraftBtn) {
-        loadDraftBtn.disabled = false;
-    }
-
-    await loadSelectedDraft();
-}
-
-// Load drafts list on page open.
-document.addEventListener('DOMContentLoaded', async () => {
-    const draftSelect = document.getElementById('draftSelect');
-    if (!draftSelect) return;
-    await refreshDrafts();
-    await autoLoadDraftFromQuery();
-});
-
-function toggleDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel) return;
-    const willOpen = !panel.classList.contains('open');
-    panel.classList.toggle('open', willOpen);
-    document.body.classList.toggle('drafts-popup-open', willOpen);
-    if (toggleBtn) {
-        toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-    }
-    if (willOpen && typeof refreshDrafts === 'function') {
-        queueDraftsPanelPosition();
-        startDraftsPanelFollow();
-        refreshDrafts();
-    } else {
-        stopDraftsPanelFollow();
-    }
-}
-
-let draftsPanelPositionRaf = 0;
-let draftsPanelFollowRaf = 0;
-
-function queueDraftsPanelPosition() {
-    if (draftsPanelPositionRaf) return;
-    draftsPanelPositionRaf = requestAnimationFrame(() => {
-        draftsPanelPositionRaf = 0;
-        positionDraftsPanel();
-    });
-}
-
-function startDraftsPanelFollow() {
-    if (draftsPanelFollowRaf) return;
-    const tick = () => {
-        const panel = document.getElementById('draftsCard');
-        if (!panel || !panel.classList.contains('open')) {
-            draftsPanelFollowRaf = 0;
-            return;
-        }
-        positionDraftsPanel();
-        draftsPanelFollowRaf = requestAnimationFrame(tick);
-    };
-    draftsPanelFollowRaf = requestAnimationFrame(tick);
-}
-
-function stopDraftsPanelFollow() {
-    if (draftsPanelFollowRaf) {
-        cancelAnimationFrame(draftsPanelFollowRaf);
-        draftsPanelFollowRaf = 0;
-    }
-    if (draftsPanelPositionRaf) {
-        cancelAnimationFrame(draftsPanelPositionRaf);
-        draftsPanelPositionRaf = 0;
-    }
-}
-
-function positionDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    if (!panel || !panel.classList.contains('open')) {
-        return;
-    }
-
-    panel.style.top = '50%';
-    panel.style.left = '50%';
-    panel.style.right = 'auto';
-    panel.style.bottom = 'auto';
-    panel.style.width = '';
-    panel.style.maxWidth = '';
-}
-
-function closeDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel) return;
-    panel.classList.remove('open');
-    document.body.classList.remove('drafts-popup-open');
-    stopDraftsPanelFollow();
-    if (toggleBtn) {
-        toggleBtn.setAttribute('aria-expanded', 'false');
-    }
-}
-
-document.addEventListener('click', function (event) {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel || !panel.classList.contains('open')) return;
-
-    const clickedInsidePanel = panel.contains(event.target);
-    const clickedToggle = !!(toggleBtn && (toggleBtn === event.target || toggleBtn.contains(event.target)));
-    if (!clickedInsidePanel && !clickedToggle) {
-        closeDraftsPanel();
-    }
-});
-
-document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') {
-        closeDraftsPanel();
-    }
-});
-
-window.addEventListener('resize', queueDraftsPanelPosition);
-window.addEventListener('scroll', queueDraftsPanelPosition, true);
-
 let kycMasonryRaf = 0;
 let kycMasonryObserver = null;
 
 function getKycMasonryItems(form) {
     return Array.from(form.children).filter((el) => {
-        if (el.id === 'draftsCard') return false;
         if (el.classList.contains('wizard-hidden')) return false;
         return el.classList.contains('card') || el.classList.contains('client-type-inline');
     });
@@ -2644,57 +2229,6 @@ function submitForm() {
     });
 }
 
-function saveDraft() {
-    const saveDraftBtn = document.getElementById('saveDraftBtn');
-    if (saveDraftBtn?.disabled) return;
-
-    syncCorporateAddressField();
-    setButtonBusy(saveDraftBtn, true, 'Saving...');
-
-    // Collect form data
-    const formData = new FormData();
-    formData.append('action', 'save_draft');
-    
-    // Add all form fields
-    const form = document.getElementById('kycForm');
-    const elements = form.querySelectorAll('input, select, textarea');
-    elements.forEach(el => {
-        if (el.name) {
-            formData.append(el.name, el.value);
-        }
-    });
-
-    // Persist attachments into `documents` for this draft.
-    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
-    formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
-    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
-    
-    // Submit to handler
-    fetch('../handlers/kyc.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (data.reference_code && !document.getElementById('refCode').value) {
-                document.getElementById('refCode').value = data.reference_code;
-                document.getElementById('refCode').readOnly = true;
-            }
-            showToast('info', 'Draft Saved', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Your progress has been saved successfully.');
-        } else {
-            showToast('error', 'Save Failed', data.message || 'Please try again.');
-        }
-    })
-    .catch(error => {
-        showToast('error', 'Error', 'An error occurred. Please try again.');
-        console.error('Error:', error);
-    })
-    .finally(() => {
-        setButtonBusy(saveDraftBtn, false);
-    });
-}
-
 async function clearForm() {
     const clearBtn = document.getElementById('clearBtn');
     setButtonBusy(clearBtn, true, 'Clearing...');
@@ -2704,15 +2238,6 @@ async function clearForm() {
         el.value = '';
         el.classList.remove('is-invalid','is-valid');
     });
-
-    const draftSelect = document.getElementById('draftSelect');
-    if (draftSelect) draftSelect.value = '';
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    if (loadDraftBtn) loadDraftBtn.disabled = true;
-    const draftInfoEl = document.getElementById('draftInfo');
-    if (draftInfoEl) draftInfoEl.textContent = '';
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    if (draftDocsContainer) draftDocsContainer.innerHTML = '';
 
     // Clear any temp-uploaded documents
     const uploads = (typeof getStoredUploads === 'function') ? getStoredUploads() : [];

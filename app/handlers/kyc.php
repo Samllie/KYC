@@ -828,7 +828,7 @@ if ($action === 'submit_kyc' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (($finalize['success'] ?? false) && !empty($finalize['files'])) {
             foreach ($finalize['files'] as $doc) {
                 $filePath = $doc['file_path'] ?? null;
-                // Avoid duplicating rows when resuming drafts (attachments may already be finalized).
+                // Avoid duplicating rows when attachments have already been finalized.
                 if ($filePath) {
                     $already = fetchOne(
                         "SELECT document_id FROM documents WHERE kyc_id = ? AND file_path = ? LIMIT 1",
