@@ -96,17 +96,15 @@ body {
     z-index: 2;
 }
 
-.page-corner-logo-wrap {
-    position: absolute;
-    top: 18px;
-    left: 18px;
-    z-index: 3;
-    pointer-events: none;
+.auth-panel-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
 }
 
-.page-corner-logo {
-    width: 270px;
-    max-width: 36vw;
+.auth-panel-logo-image {
+    width: 170px;
+    max-width: 52vw;
     height: auto;
     object-fit: contain;
     filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18));
@@ -166,23 +164,24 @@ body {
 /* ─── Form Container ──────────────────────────────── */
 .auth-form-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     justify-content: center;
     position: relative;
     background: rgba(255, 255, 255, 0.92);
     border-radius: 20px;
-    padding: 20px;
+    padding: 18px;
     border: 1px solid #d7e5dd;
     box-shadow: 0 14px 34px rgba(13, 56, 34, 0.14);
 }
 
 .auth-form {
     background: rgba(255, 255, 255, 0.85);
-    padding: 28px;
+    padding: 24px;
     border-radius: 18px;
     box-shadow: none;
     width: 100%;
-    max-width: 500px;
+    max-width: 460px;
 }
 
 /* Register-specific layout polish */
@@ -204,19 +203,26 @@ body {
 .auth-container.register-layout .auth-form-container {
     position: relative;
     width: 100%;
-    max-width: 560px;
-    justify-self: center;
+    max-width: 520px;
     border-radius: var(--radius-lg);
-    padding: 20px;
+    padding: 18px;
     border: 1.5px solid var(--gray-300);
     background: var(--white);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
 }
 
+.auth-container.register-layout .auth-panel-logo {
+    margin-bottom: 14px;
+}
+
+.auth-container.register-layout .auth-panel-logo-image {
+    width: 150px;
+}
+
 .auth-container.register-layout .auth-form {
     border-radius: 18px;
-    padding: 24px;
+    padding: 22px;
     max-width: 100%;
 }
 
@@ -750,8 +756,8 @@ body {
     .auth-container {
         padding: 16px;
         background-attachment: scroll;
-        align-items: flex-start;
-        justify-content: flex-start;
+        align-items: center;
+        justify-content: center;
     }
 
     .auth-container.register-layout {
@@ -762,27 +768,31 @@ body {
         max-width: 100%;
     }
 
-    .auth-container.register-layout .auth-brand {
-        display: flex;
-    }
-
     .auth-wrapper {
         gap: 16px;
         width: 100%;
-        max-width: 560px;
+        max-width: 460px;
     }
 
-    .page-corner-logo-wrap {
-        position: static;
-        display: flex;
-        justify-content: center;
-        width: 100%;
-        margin: 0 0 4px;
+    .auth-container.login-layout .auth-wrapper {
+        grid-template-columns: 1fr;
+        max-width: 420px;
     }
 
-    .page-corner-logo {
-        width: 180px;
-        max-width: 54vw;
+    .auth-container.login-layout .auth-brand {
+        display: none;
+    }
+
+    .auth-container.register-layout .auth-brand {
+        display: none;
+    }
+
+    .auth-container.login-layout .auth-form-container {
+        padding: 12px;
+    }
+
+    .auth-container.register-layout .auth-form-container {
+        padding: 12px;
     }
 
     .auth-brand {
@@ -809,22 +819,31 @@ body {
 
     .auth-form-container {
         width: 100%;
-        padding: 14px;
-        border-radius: 18px;
+        padding: 12px;
+        border-radius: 16px;
+    }
+
+    .auth-panel-logo {
+        margin-bottom: 10px;
+    }
+
+    .auth-panel-logo-image {
+        width: 128px;
+        max-width: 50vw;
     }
 
     .auth-form {
         max-width: none;
-        padding: 22px;
+        padding: 18px;
     }
 
     .auth-container.register-layout .auth-form-container {
         max-width: none;
-        padding: 14px;
+        padding: 12px;
     }
 
     .auth-container.register-layout .auth-form {
-        padding: 22px;
+        padding: 18px;
     }
 
     .register-form-grid {
@@ -890,15 +909,28 @@ body {
 @media (max-width: 480px) {
     .auth-container {
         padding: 12px;
+        gap: 10px;
+    }
+
+    .auth-container.login-layout .auth-wrapper {
+        max-width: 100%;
+    }
+
+    .auth-container.login-layout .auth-form-container {
+        padding: 10px;
+    }
+
+    .auth-container.register-layout .auth-form-container {
+        padding: 10px;
     }
 
     .auth-wrapper {
         gap: 12px;
     }
 
-    .page-corner-logo {
-        width: 150px;
-        max-width: 58vw;
+    .auth-panel-logo-image {
+        width: 116px;
+        max-width: 52vw;
     }
 
     .auth-brand {
@@ -915,12 +947,12 @@ body {
     }
 
     .auth-form-container {
-        padding: 12px;
+        padding: 10px;
         border-radius: 16px;
     }
 
     .auth-form {
-        padding: 18px;
+        padding: 16px;
         border-radius: 14px;
     }
 

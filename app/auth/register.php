@@ -32,10 +32,6 @@ if (!$isHeadOfficeUser) {
 
 <!-- ═══════════════════════════════════════════════ AUTH CONTAINER -->
 <div class="auth-container register-layout">
-    <div class="page-corner-logo-wrap" aria-hidden="true">
-        <img src="../../css/images/SterlingLogo2.jpg" alt="" class="page-corner-logo">
-    </div>
-
     <div class="auth-wrapper">
         
         <!-- Left Side - Branding -->
@@ -48,6 +44,10 @@ if (!$isHeadOfficeUser) {
 
         <!-- Right Side - Register Form -->
         <div class="auth-form-container">
+            <div class="auth-panel-logo" aria-hidden="true">
+                <img src="../../css/images/SterlingLogo2.jpg" alt="" class="auth-panel-logo-image">
+            </div>
+
             <div class="auth-form">
                 <div class="form-header register-form-header">
                     <h2>Add Account</h2>

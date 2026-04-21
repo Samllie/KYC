@@ -51,11 +51,7 @@ $isRememberChecked = $rememberedEmail !== '';
 <body>
 
 <!-- ═══════════════════════════════════════════════ AUTH CONTAINER -->
-<div class="auth-container">
-    <div class="page-corner-logo-wrap" aria-hidden="true">
-        <img src="../../css/images/SterlingLogo2.jpg" alt="" class="page-corner-logo">
-    </div>
-
+<div class="auth-container login-layout">
     <div class="auth-wrapper">
         
         <!-- Left Side - Branding -->
@@ -68,6 +64,10 @@ $isRememberChecked = $rememberedEmail !== '';
 
         <!-- Right Side - Login Form -->
         <div class="auth-form-container">
+            <div class="auth-panel-logo" aria-hidden="true">
+                <img src="../../css/images/SterlingLogo2.jpg" alt="" class="auth-panel-logo-image">
+            </div>
+
             <div class="auth-form">
                 <div class="form-header login-form-header">
                     <h2>Welcome</h2>
