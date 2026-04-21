@@ -1,17 +1,24 @@
 <?php
 require_once '../config/session.php';
+require_once '../config/db.php';
 requireLogin();
 
-$currentUserBranch = trim($_SESSION['branch'] ?? '');
+$currentUser = getCurrentUser() ?? [];
+$currentUserBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
 $currentUserRole = strtolower(trim($_SESSION['role'] ?? ''));
 $currentUserDepartment = strtoupper(trim($_SESSION['department'] ?? ''));
+$currentUserFullName = trim((string)($currentUser['full_name'] ?? ''));
 $isHeadOfficeView = $currentUserRole === 'admin'
     || $currentUserDepartment === 'HEAD OFFICE'
     || in_array(strtoupper($currentUserBranch), ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+$currentUserBranchForAgentSelectors = $currentUserBranch !== '' ? $currentUserBranch : ($isHeadOfficeView ? 'HEAD OFFICE' : '');
 
 $requestedClassification = strtolower(trim($_GET['classification'] ?? 'client'));
 $listClassification = $requestedClassification === 'agent' ? 'agent' : 'client';
 $isAgentsMode = $listClassification === 'agent';
+$requestedType = strtolower(trim($_GET['type'] ?? ''));
+$allowedInitialTypes = $isAgentsMode ? ['agent', 'sub_agent'] : ['individual', 'corporate', 'obligee'];
+$initialTypeFilter = in_array($requestedType, $allowedInitialTypes, true) ? $requestedType : '';
 
 $pageHeading = $isAgentsMode ? 'Agents Management' : 'Clients Management';
 $recordLabelSingular = $isAgentsMode ? 'agent' : 'client';
@@ -22,6 +29,108 @@ $newRecordLabel = $isAgentsMode ? 'New Agent' : 'New Client';
 $kycEntryUrl = $isAgentsMode
     ? 'kyc-individual.php?classification=agent'
     : ('kyc-verification.php?classification=' . urlencode($listClassification));
+
+function clientsPageResolveBranchManagerName(string $branch, string $fallbackName = '', string $fallbackRole = ''): string {
+    global $db;
+
+    $branch = strtoupper(trim($branch));
+    if ($branch === '' || !$db instanceof mysqli) {
+        return '';
+    }
+
+    $stmt = $db->prepare(
+        "SELECT full_name
+         FROM users
+         WHERE UPPER(TRIM(branch)) = ?
+           AND LOWER(TRIM(role)) IN ('manager', 'admin')
+           AND full_name IS NOT NULL
+           AND TRIM(full_name) <> ''
+         ORDER BY CASE WHEN LOWER(TRIM(role)) = 'manager' THEN 0 ELSE 1 END, user_id ASC
+         LIMIT 1"
+    );
+
+    if ($stmt) {
+        $stmt->bind_param('s', $branch);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+
+        if ($result instanceof mysqli_result) {
+            $result->free();
+        }
+
+        $stmt->close();
+
+        if (!empty($row['full_name'])) {
+            return trim((string)$row['full_name']);
+        }
+    }
+
+    $fallbackName = trim($fallbackName);
+    $fallbackRole = strtolower(trim($fallbackRole));
+    if ($fallbackName !== '' && in_array($fallbackRole, ['manager', 'admin'], true)) {
+        return $fallbackName;
+    }
+
+    return '';
+}
+
+function clientsPageFetchHeadAgentOptions(string $branch): array {
+    global $db;
+
+    $branch = strtoupper(trim($branch));
+    if ($branch === '' || !$db instanceof mysqli) {
+        return [];
+    }
+
+    $options = [];
+    $stmt = $db->prepare(
+        "SELECT DISTINCT
+            COALESCE(
+                NULLIF(TRIM(c.client_name), ''),
+                NULLIF(TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, ''))), ''),
+                c.reference_code
+            ) AS head_agent_name
+         FROM clients c
+         WHERE COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client') = 'agent'
+           AND COALESCE(NULLIF(LOWER(TRIM(c.agent_type)), ''), 'agent') = 'agent'
+                     AND COALESCE(NULLIF(UPPER(TRIM(c.agent_branch)), ''), '') = ?
+           AND COALESCE(NULLIF(LOWER(TRIM(c.verification_status)), ''), '') = 'verified'
+           AND COALESCE(NULLIF(LOWER(TRIM(c.activity_status)), ''), 'active') = 'active'
+         ORDER BY head_agent_name ASC"
+    );
+
+    if (!$stmt) {
+        return [];
+    }
+
+    $stmt->bind_param('s', $branch);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $name = trim((string)($row['head_agent_name'] ?? ''));
+            if ($name !== '') {
+                $options[] = $name;
+            }
+        }
+
+        $result->free();
+    }
+
+    $stmt->close();
+
+    return array_values(array_unique($options));
+}
+
+$editBranchManagerName = $isAgentsMode ? clientsPageResolveBranchManagerName($currentUserBranchForAgentSelectors, $currentUserFullName, $currentUserRole) : '';
+$editHeadAgentOptions = $isAgentsMode ? clientsPageFetchHeadAgentOptions($currentUserBranchForAgentSelectors) : [];
+$editHeadAgentOptions = $isAgentsMode
+    ? array_values(array_filter($editHeadAgentOptions, static function ($name) use ($editBranchManagerName) {
+        return $editBranchManagerName === '' || strcasecmp(trim((string)$name), $editBranchManagerName) !== 0;
+    }))
+    : [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -77,10 +186,16 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="filter-group">
                             <select id="filterType" class="filter-select">
-                                <option value="">All Types</option>
-                                <option value="individual">Individual</option>
-                                <option value="corporate">Corporate</option>
-                                <option value="obligee">Obligee</option>
+                                <?php if ($isAgentsMode): ?>
+                                    <option value="">All Agent Types</option>
+                                    <option value="agent">Agent</option>
+                                    <option value="sub_agent">Sub agent</option>
+                                <?php else: ?>
+                                    <option value="">All Types</option>
+                                    <option value="individual">Individual</option>
+                                    <option value="corporate">Corporate</option>
+                                    <option value="obligee">Obligee</option>
+                                <?php endif; ?>
                             </select>
                         </div>
                         <div class="filter-group">
@@ -108,6 +223,11 @@ include '../includes/sidebar.php';
                         <?php endif; ?>
                     </div>
                     <div class="controls-right">
+                        <?php if ($isAgentsMode): ?>
+                        <button type="button" class="btn-delete-selected" id="deleteSelectedBtn" disabled>
+                            <i class="bi bi-trash"></i> Delete Selected
+                        </button>
+                        <?php endif; ?>
                         <button class="btn-export" title="Export" onclick="showExportPreview()">
                             <i class="bi bi-download"></i> Export
                         </button>
@@ -127,9 +247,14 @@ include '../includes/sidebar.php';
                             <th class="col-ref">Ref Code</th>
                             <th class="col-name">Business/<?php echo htmlspecialchars($recordTitleCaseSingular); ?> Name</th>
                             <th class="col-owner">Branch</th>
-                            <th class="col-type">Type</th>
+                            <th class="col-type"><?php echo $isAgentsMode ? 'Agent Type' : 'Type'; ?></th>
+                            <?php if ($isAgentsMode): ?>
+                            <th class="col-main-agent">Main Agent</th>
+                            <?php endif; ?>
                             <th class="col-contact">Contact</th>
+                            <?php if (!$isAgentsMode): ?>
                             <th class="col-email">Email</th>
+                            <?php endif; ?>
                             <th class="col-verified">Submitted By</th>
                             <th class="col-activity">Activity Status</th>
                             <th class="col-activity-updated">Status Updated</th>
@@ -159,7 +284,7 @@ include '../includes/sidebar.php';
 
 <!-- ═══════════════════════════════════════════════ MODAL: Edit Client -->
 <div id="editModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content edit-modal-content">
         <div class="modal-header">
             <h2>Edit <?php echo htmlspecialchars($recordTitleCaseSingular); ?> Information</h2>
             <button id="editModalCloseBtn" type="button" class="modal-close" title="Close"><i class="bi bi-x"></i></button>
@@ -167,12 +292,28 @@ include '../includes/sidebar.php';
         <div class="modal-body">
             <form id="editForm">
                 <input type="hidden" id="editClientId">
+                <?php if ($isAgentsMode): ?>
+                <input type="hidden" id="editClientType" value="individual">
+                <?php endif; ?>
                 <!-- Row 1: Reference & Type -->
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Ref Code</label>
                         <input type="text" id="editRefCode" class="form-control" readonly>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">Submitted Branch</label>
+                        <input type="text" id="editSubmittedBranch" class="form-control" readonly>
+                    </div>
+                    <?php if ($isAgentsMode): ?>
+                    <div class="form-group">
+                        <label class="form-label">Agent Type</label>
+                        <select id="editAgentType" class="form-select">
+                            <option value="agent">Agent</option>
+                            <option value="sub_agent">Sub agent</option>
+                        </select>
+                    </div>
+                    <?php else: ?>
                     <div class="form-group">
                         <label class="form-label">Client Type</label>
                         <select id="editClientType" class="form-select">
@@ -181,7 +322,27 @@ include '../includes/sidebar.php';
                             <option value="obligee">Obligee</option>
                         </select>
                     </div>
+                    <?php endif; ?>
                 </div>
+
+                <?php if ($isAgentsMode): ?>
+                <div class="form-row">
+                    <div class="form-group full" id="editHeadAgentGroup" style="display:none;">
+                        <label class="form-label">Head Agent Name</label>
+                        <div class="select-wrap">
+                            <select id="editHeadAgentName" class="form-select">
+                                <option value="">Select head agent...</option>
+                                <?php if ($editBranchManagerName !== ''): ?>
+                                <option value="<?php echo htmlspecialchars($editBranchManagerName); ?>">Branch Manager</option>
+                                <?php endif; ?>
+                                <?php foreach ($editHeadAgentOptions as $editHeadAgentOption): ?>
+                                <option value="<?php echo htmlspecialchars($editHeadAgentOption); ?>"><?php echo htmlspecialchars($editHeadAgentOption); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Row 2: Name -->
                 <div class="form-row">
@@ -275,7 +436,7 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="activity-status-summary">Selected: <strong id="editActivityStatusLabel">Active</strong></div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group full">
                         <label class="form-label">Status Updated At</label>
                         <input type="text" id="editActivityStatusUpdatedAt" class="form-control" readonly>
                     </div>
@@ -294,133 +455,13 @@ include '../includes/sidebar.php';
 <div id="viewModal" class="modal">
     <div class="modal-content view-modal-content" style="max-width: 900px; max-height: 92vh; display: flex; flex-direction: column;">
         <div class="modal-header">
-            <h2><?php echo htmlspecialchars($recordTitleCaseSingular); ?> Preview</h2>
+            <h2 id="viewModalTitle"><?php echo htmlspecialchars($recordTitleCaseSingular); ?> Preview</h2>
             <button class="modal-close" title="Close" onclick="document.getElementById('viewModal').style.display='none'"><i class="bi bi-x"></i></button>
         </div>
         <div class="modal-body">
             <form id="viewForm">
                 <input type="hidden" id="viewClientId">
-
-                <!-- Row 1: Reference & Number -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Ref Code</label>
-                        <input type="text" id="viewRefCode" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Client Number</label>
-                        <input type="text" id="viewClientNumber" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <!-- Row 2: Type -->
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Client Type</label>
-                        <select id="viewClientType" class="form-select" disabled>
-                            <option value="individual">Individual</option>
-                            <option value="corporate">Corporate</option>
-                            <option value="obligee">Obligee</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Row 3: Name -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">First Name</label>
-                        <input type="text" id="viewFirstName" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Middle Name</label>
-                        <input type="text" id="viewMiddleName" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Last Name</label>
-                        <input type="text" id="viewLastName" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <!-- Row 4: Personal Details -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Birthdate</label>
-                        <input type="date" id="viewBirthdate" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Gender</label>
-                        <select id="viewGender" class="form-select" disabled>
-                            <option value="">Select</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Prefer not to say</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Civil Status</label>
-                        <select id="viewCivilStatus" class="form-select" disabled>
-                            <option>Single</option>
-                            <option>Married</option>
-                            <option>Widowed</option>
-                            <option>Separated</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Row 5: Additional Details -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Occupation</label>
-                        <input type="text" id="viewOccupation" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Nationality</label>
-                        <input type="text" id="viewNationality" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">TIN / Tax ID</label>
-                        <input type="text" id="viewTin" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <!-- Row 6: Contact Information -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" id="viewEmail" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Mobile Number</label>
-                        <input type="tel" id="viewMobile" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Telephone</label>
-                        <input type="tel" id="viewTelephone" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <!-- Row 7: Address -->
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Present Address</label>
-                        <input type="text" id="viewAddress" class="form-control" readonly>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Activity Status</label>
-                        <input type="text" id="viewActivityStatus" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Status Updated At</label>
-                        <input type="text" id="viewActivityStatusUpdatedAt" class="form-control" readonly>
-                    </div>
-                    <div class="form-group full">
-                        <label class="form-label">Activity Note</label>
-                        <input type="text" id="viewActivityNote" class="form-control" readonly>
-                    </div>
-                </div>
+                <div id="viewClientDetails" class="client-preview-shell"></div>
             </form>
         </div>
         <div class="modal-footer">
@@ -487,6 +528,8 @@ include '../includes/sidebar.php';
     </div>
 </div>
 
+<script src="../../public/js/dialog-modal.js"></script>
+
 <script>
     // Pagination state
     let currentPage = 1;
@@ -499,8 +542,11 @@ include '../includes/sidebar.php';
     let pendingDeleteClient = null;
     const selectedClientIds = new Set();
     const selectedClientRows = new Map();
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
     const isHeadOfficeUser = <?php echo $isHeadOfficeView ? 'true' : 'false'; ?>;
     const listClassification = <?php echo json_encode($listClassification); ?>;
+    const initialTypeFilter = <?php echo json_encode($initialTypeFilter); ?>;
+    const isAgentsMode = <?php echo $isAgentsMode ? 'true' : 'false'; ?>;
     const recordLabelSingular = <?php echo json_encode($recordLabelSingular); ?>;
     const recordLabelPlural = <?php echo json_encode($recordLabelPlural); ?>;
     const recordTitleCaseSingular = <?php echo json_encode($recordTitleCaseSingular); ?>;
@@ -549,6 +595,438 @@ include '../includes/sidebar.php';
             const buttonStatus = normalizeEditableActivityStatus(button.dataset.status || 'active');
             button.classList.toggle('is-selected', buttonStatus === normalized);
         });
+    }
+
+    function syncEditAgentFields() {
+        if (!isAgentsMode) {
+            return;
+        }
+
+        const agentTypeField = document.getElementById('editAgentType');
+        const headAgentGroup = document.getElementById('editHeadAgentGroup');
+        const headAgentField = document.getElementById('editHeadAgentName');
+
+        if (!agentTypeField || !headAgentGroup || !headAgentField) {
+            return;
+        }
+
+        const isSubAgent = agentTypeField.value === 'sub_agent';
+        headAgentGroup.style.display = isSubAgent ? '' : 'none';
+        headAgentField.required = isSubAgent;
+
+        if (!isSubAgent) {
+            headAgentField.value = '';
+        }
+    }
+
+    function ensureEditHeadAgentOption(selectEl, headAgentName) {
+        if (!selectEl) {
+            return;
+        }
+
+        const value = String(headAgentName || '').trim();
+        if (!value) {
+            return;
+        }
+
+        Array.from(selectEl.options).forEach(option => {
+            if (option.dataset.generated === 'true') {
+                option.remove();
+            }
+        });
+
+        const existingOption = Array.from(selectEl.options).some(option => option.value === value);
+        if (existingOption) {
+            selectEl.value = value;
+            return;
+        }
+
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        option.selected = true;
+        option.dataset.generated = 'true';
+        selectEl.appendChild(option);
+        selectEl.value = value;
+    }
+
+    function normalizePreviewText(value) {
+        return String(value ?? '').trim();
+    }
+
+    function capitalizePreviewText(value) {
+        const text = normalizePreviewText(value);
+        if (!text) {
+            return '';
+        }
+
+        return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    function humanizePreviewText(value) {
+        const text = normalizePreviewText(value);
+        if (!text) {
+            return '';
+        }
+
+        return text
+            .replace(/[_-]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .split(' ')
+            .map(part => {
+                if (!part) {
+                    return part;
+                }
+
+                return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+            })
+            .join(' ');
+    }
+
+    function getFirstPreviewValue(client, keys) {
+        if (!client || !Array.isArray(keys)) {
+            return '';
+        }
+
+        for (const key of keys) {
+            const value = normalizePreviewText(client[key]);
+            if (value !== '') {
+                return value;
+            }
+        }
+
+        return '';
+    }
+
+    function getClientTypeDisplayLabel(clientType) {
+        const normalized = normalizePreviewText(clientType).toLowerCase();
+        if (normalized === 'corporate') {
+            return 'Corporate';
+        }
+        if (normalized === 'obligee') {
+            return 'Obligee';
+        }
+        if (normalized === 'individual') {
+            return 'Individual';
+        }
+
+        return normalized ? capitalizePreviewText(normalized) : 'Client';
+    }
+
+    function getPreviewRecordNumberLabel(client) {
+        return normalizePreviewText(client?.client_classification).toLowerCase() === 'agent'
+            ? 'Agent Number'
+            : 'Client Number';
+    }
+
+    function getPreviewDisplayName(client) {
+        const clientType = normalizePreviewText(client?.client_type).toLowerCase();
+        const classification = normalizePreviewText(client?.client_classification).toLowerCase();
+        const firstName = normalizePreviewText(client?.first_name);
+        const middleName = normalizePreviewText(client?.middle_name);
+        const lastName = normalizePreviewText(client?.last_name);
+        const personalName = [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
+        const companyName = normalizePreviewText(client?.client_name || client?.company_name);
+        const contactPerson = normalizePreviewText(client?.contact_person);
+        const fallbackName = normalizePreviewText(client?.reference_code) || 'N/A';
+
+        if (classification === 'agent') {
+            if (clientType === 'corporate' || clientType === 'obligee') {
+                return companyName || contactPerson || personalName || fallbackName;
+            }
+
+            return personalName || companyName || contactPerson || fallbackName;
+        }
+
+        if (clientType === 'corporate' || clientType === 'obligee') {
+            return companyName || contactPerson || personalName || fallbackName;
+        }
+
+        return personalName || companyName || contactPerson || fallbackName;
+    }
+
+    function formatPreviewValue(field, rawValue) {
+        const text = normalizePreviewText(rawValue);
+        if (!text) {
+            return '';
+        }
+
+        const format = normalizePreviewText(field?.format).toLowerCase();
+
+        if (format === 'clienttype') {
+            return getClientTypeDisplayLabel(text);
+        }
+
+        if (format === 'classification') {
+            return text.toLowerCase() === 'agent' ? 'Agent' : 'Client';
+        }
+
+        if (format === 'agenttype') {
+            return text.toLowerCase() === 'sub_agent' ? 'Sub agent' : 'Agent';
+        }
+
+        if (format === 'businesstype') {
+            return text.toLowerCase() === 'government' ? 'Government' : 'Private Sector';
+        }
+
+        if (format === 'mailingaddresstype') {
+            return humanizePreviewText(text);
+        }
+
+        if (format === 'gender' || format === 'status') {
+            return capitalizePreviewText(text);
+        }
+
+        if (format === 'humanize' || format === 'idtype') {
+            return humanizePreviewText(text);
+        }
+
+        return text;
+    }
+
+    function resolvePreviewFieldValue(client, field) {
+        if (typeof field.value === 'function') {
+            return field.value(client);
+        }
+
+        if (Array.isArray(field.keys)) {
+            return getFirstPreviewValue(client, field.keys);
+        }
+
+        if (field.key) {
+            return normalizePreviewText(client?.[field.key]);
+        }
+
+        return '';
+    }
+
+    function renderPreviewField(client, field) {
+        const rawValue = resolvePreviewFieldValue(client, field);
+        const formattedValue = formatPreviewValue(field, rawValue);
+
+        if (!formattedValue) {
+            return '';
+        }
+
+        const groupClass = field.fullWidth ? 'form-group full' : 'form-group';
+
+        if (normalizePreviewText(field.type).toLowerCase() === 'textarea') {
+            const rows = Math.max(2, parseInt(field.rows || 2, 10) || 2);
+            return `
+                <div class="${groupClass}">
+                    <label class="form-label">${escapeHtml(field.label)}</label>
+                    <textarea class="form-control" rows="${rows}" readonly>${escapeHtml(formattedValue)}</textarea>
+                </div>`;
+        }
+
+        return `
+            <div class="${groupClass}">
+                <label class="form-label">${escapeHtml(field.label)}</label>
+                <input type="text" class="form-control" readonly value="${escapeHtml(formattedValue)}">
+            </div>`;
+    }
+
+    function renderPreviewSection(title, fields, client, extraClass = '') {
+        const renderedFields = (Array.isArray(fields) ? fields : [])
+            .map(field => renderPreviewField(client, field))
+            .filter(Boolean);
+
+        if (renderedFields.length === 0) {
+            return '';
+        }
+
+        const sectionClasses = ['client-preview-section'];
+        if (extraClass) {
+            sectionClasses.push(extraClass);
+        }
+
+        return `
+            <section class="${sectionClasses.join(' ')}">
+                <div class="client-preview-section-title">${escapeHtml(title)}</div>
+                <div class="form-row">
+                    ${renderedFields.join('')}
+                </div>
+            </section>`;
+    }
+
+    function buildIndividualPreviewSections(client) {
+        return [
+            renderPreviewSection('Personal Information', [
+                { label: 'Salutation', keys: ['salutation'] },
+                { label: 'First Name', keys: ['first_name'] },
+                { label: 'Middle Name', keys: ['middle_name'] },
+                { label: 'Last Name', keys: ['last_name'] },
+                { label: 'Suffix', keys: ['suffix'] },
+                { label: 'Date of Birth', keys: ['date_of_birth'] },
+                { label: 'Gender', keys: ['gender'], format: 'gender' },
+                { label: 'Nationality', keys: ['nationality'] }
+            ], client),
+            renderPreviewSection('Account Details', [
+                { label: 'Client Since', keys: ['client_since'] },
+                { label: 'Occupation', keys: ['occupation'], format: 'humanize' },
+                { label: 'Employer / Company', keys: ['company_name'] },
+                { label: 'AP SL Code', keys: ['ap_sl_code'] },
+                { label: 'AR SL Code', keys: ['ar_sl_code'] },
+                { label: 'TIN Number', keys: ['tin_number'] }
+            ], client),
+            renderPreviewSection('Family Information', [
+                { label: 'Spouse Name', keys: ['spouse_name'] },
+                { label: 'Spouse Birthdate', keys: ['spouse_birthdate'] },
+                { label: 'Spouse Occupation', keys: ['spouse_occupation'], format: 'humanize' }
+            ], client),
+            renderPreviewSection('Address Information', [
+                { label: 'Home Address', keys: ['home_address'], type: 'textarea', fullWidth: true, rows: 2 },
+                { label: 'Business Address', keys: ['business_address'], type: 'textarea', fullWidth: true, rows: 2 },
+                { label: 'Mailing Address Type', keys: ['mailing_address_type'], format: 'mailingAddressType' },
+                { label: 'Region', keys: ['region'] },
+                { label: 'Home City / Municipality', keys: ['home_ctm'] },
+                { label: 'Home Province', keys: ['home_province'] },
+                { label: 'Full Address', keys: ['full_address'], type: 'textarea', fullWidth: true, rows: 2 }
+            ], client),
+            renderPreviewSection('Contact Information', [
+                { label: 'Mobile Number', keys: ['mobile_phone'] },
+                { label: 'Telephone', keys: ['landline_phone', 'office_phone'] },
+                { label: 'Email Address', keys: ['email'] }
+            ], client),
+            renderPreviewSection('Government ID', [
+                { label: 'Government ID Type', keys: ['id_type'], format: 'idType' },
+                { label: 'ID Number', keys: ['id_number'] }
+            ], client)
+        ].filter(Boolean).join('');
+    }
+
+    function buildCorporatePreviewSections(client, isObligee = false) {
+        const companySectionTitle = isObligee ? 'Government Agency Information' : 'Company Information';
+        const companyNameLabel = isObligee ? 'Government Agency / Office Name' : 'Business / Company Name';
+        const businessTypeLabel = isObligee ? 'Body Type' : 'Business Type';
+        const clientSinceLabel = isObligee ? 'Date of Registration / Establishment' : 'Client Since';
+        const detailsSectionTitle = isObligee ? 'Agency Details' : 'Business Details';
+        const addressSectionTitle = isObligee ? 'Government Office Address' : 'Business Address';
+        const addressLabel = isObligee ? 'Government Office Address' : 'Business Address';
+        const regionLabel = isObligee ? 'Region / Jurisdiction' : 'Region';
+        const provinceLabel = isObligee ? 'Province / Area' : 'Province';
+        const contactPersonLabel = isObligee ? 'Authorized Contact Person' : 'Company Owner / Contact Person';
+        const contactPhoneLabel = isObligee ? 'Agency Phone Number' : 'Phone Number';
+        const designationLabel = isObligee ? 'Authorized Contact Position' : 'Contact Person Designation';
+        const emailLabel = isObligee ? 'Official Email Address' : 'Email Address';
+
+        return [
+            renderPreviewSection(companySectionTitle, [
+                { label: companyNameLabel, keys: ['client_name', 'company_name'], fullWidth: true },
+                { label: businessTypeLabel, keys: ['business_type'], format: 'businessType' },
+                { label: clientSinceLabel, keys: ['client_since'] },
+                { label: 'Gender', keys: ['gender'], format: 'gender' },
+                { label: 'Nationality', keys: ['nationality'] }
+            ], client),
+            renderPreviewSection(detailsSectionTitle, [
+                { label: 'TIN Number', keys: ['tin_number'] },
+                { label: 'AP SL Code', keys: ['ap_sl_code'] },
+                { label: 'AR SL Code', keys: ['ar_sl_code'] },
+                { label: designationLabel, keys: ['designation'] }
+            ], client),
+            renderPreviewSection(addressSectionTitle, [
+                { label: addressLabel, keys: ['business_address'], type: 'textarea', fullWidth: true, rows: 2 },
+                { label: 'City / Municipality', keys: ['business_ctm'] },
+                { label: provinceLabel, keys: ['business_province'] },
+                { label: regionLabel, keys: ['region'] },
+                { label: 'Full Address', keys: ['full_address'], type: 'textarea', fullWidth: true, rows: 2 }
+            ], client),
+            renderPreviewSection('Contact Information', [
+                { label: contactPhoneLabel, keys: ['office_phone', 'mobile_phone', 'landline_phone'] },
+                { label: contactPersonLabel, keys: ['contact_person'] },
+                { label: emailLabel, keys: ['email'] }
+            ], client),
+            renderPreviewSection('Government ID', [
+                { label: 'Government ID Type', keys: ['id_type'], format: 'idType' },
+                { label: 'ID Number', keys: ['id_number'] }
+            ], client)
+        ].filter(Boolean).join('');
+    }
+
+    function buildClientPreviewHtml(client) {
+        const clientType = normalizePreviewText(client?.client_type).toLowerCase() || 'individual';
+        const classification = normalizePreviewText(client?.client_classification).toLowerCase() || 'client';
+        const previewStatusLabel = classification === 'agent' ? 'Approval Status' : 'Verification Status';
+        const previewStatusKey = classification === 'agent' ? 'approval_status' : 'verification_status';
+        const recordNumberLabel = getPreviewRecordNumberLabel(client);
+        const sections = [
+            renderPreviewSection('Record Overview', [
+                { label: 'Display Name', value: record => getPreviewDisplayName(record), fullWidth: true },
+                { label: 'Reference Code', keys: ['reference_code'] },
+                { label: recordNumberLabel, keys: ['client_number'] },
+                { label: 'Submitted Branch', keys: ['submitted_by_branch'] },
+                { label: 'Client Type', keys: ['client_type'], format: 'clientType' },
+                { label: 'Classification', keys: ['client_classification'], format: 'classification' },
+                { label: previewStatusLabel, keys: [previewStatusKey], format: 'status' },
+                { label: 'Activity Status', keys: ['activity_status_display'], format: 'status' },
+                { label: 'Status Updated At', keys: ['activity_status_updated_display'] }
+            ], client, 'client-preview-summary')
+        ];
+
+        if (classification === 'agent') {
+            sections.push(renderPreviewSection('Agent Details', [
+                { label: 'Agent Type', keys: ['agent_type'], format: 'agentType' },
+                { label: 'Agent Branch', keys: ['agent_branch'] },
+                { label: 'Head Agent Name', keys: ['head_agent_name'] }
+            ], client));
+        }
+
+        if (clientType === 'corporate') {
+            sections.push(buildCorporatePreviewSections(client, false));
+        } else if (clientType === 'obligee') {
+            sections.push(buildCorporatePreviewSections(client, true));
+        } else {
+            sections.push(buildIndividualPreviewSections(client));
+        }
+
+        const html = sections.filter(Boolean).join('');
+        return html || '<div class="client-preview-empty">No preview data available.</div>';
+    }
+
+    function getPreviewModalTitle(client) {
+        const clientTypeLabel = getClientTypeDisplayLabel(client?.client_type);
+        const classification = normalizePreviewText(client?.client_classification).toLowerCase();
+
+        if (classification === 'agent') {
+            return clientTypeLabel === 'Client'
+                ? 'Agent Preview'
+                : `${clientTypeLabel} Agent Preview`;
+        }
+
+        return `${clientTypeLabel} Client Preview`;
+    }
+
+    function formatTableDateOnly(value) {
+        const text = normalizePreviewText(value);
+        if (!text || text === 'N/A') {
+            return 'N/A';
+        }
+
+        const normalized = text.includes('T') ? text : text.replace(' ', 'T');
+        const parsedDate = new Date(normalized);
+
+        if (!Number.isNaN(parsedDate.getTime())) {
+            return parsedDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        const dateMatch = text.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+            const fallbackDate = new Date(`${dateMatch[1]}T00:00:00`);
+            if (!Number.isNaN(fallbackDate.getTime())) {
+                return fallbackDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            }
+        }
+
+        return text;
     }
 
     function updateBranchFilterOptions(branches) {
@@ -602,6 +1080,14 @@ include '../includes/sidebar.php';
                 delete button.dataset.originalText;
             }
         }
+    }
+
+    function updateBulkDeleteButtonState() {
+        if (!deleteSelectedBtn) {
+            return;
+        }
+
+        deleteSelectedBtn.disabled = selectedClientIds.size === 0;
     }
 
     function getActiveFilters() {
@@ -698,6 +1184,13 @@ include '../includes/sidebar.php';
             return normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : 'N/A';
         };
 
+        const formatAgentType = (rawType) => {
+            const normalizedType = (rawType || '').toLowerCase();
+            if (normalizedType === 'sub_agent') return 'Sub agent';
+            if (normalizedType === 'agent') return 'Agent';
+            return normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : 'Agent';
+        };
+
         const isCorporateLike = (rawType) => {
             const normalizedType = (rawType || '').toLowerCase();
             return normalizedType === 'corporate' || normalizedType === 'obligee';
@@ -706,7 +1199,10 @@ include '../includes/sidebar.php';
         clients.forEach(client => {
             const normalizedType = (client.client_type || '').toLowerCase();
             const typeClass = normalizedType || 'corporate';
-            const typeText = formatClientType(client.client_type);
+            const agentType = (client.agent_type || 'agent').toLowerCase();
+            const typeText = isAgentsMode ? formatAgentType(client.agent_type) : formatClientType(client.client_type);
+            const agentTypeClass = agentType || 'agent';
+            const mainAgentName = (client.head_agent_name || '').trim();
             const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
             const submittedBranch = client.submitted_by_branch || 'N/A';
             const submittedByName = client.submitted_by_name || 'N/A';
@@ -715,21 +1211,35 @@ include '../includes/sidebar.php';
                 : (client.mobile_phone || 'N/A');
             const activityStatus = client.activity_status_display || 'Active';
             const activityStatusClass = normalizeActivityStatusClass(client.activity_status_class || 'active');
-            const activityUpdatedAt = client.activity_status_updated_display || 'N/A';
+            const activityUpdatedAt = formatTableDateOnly(client.activity_status_updated_at || client.activity_status_updated_display || 'N/A');
+            const mainAgentText = isAgentsMode
+                ? (agentType === 'sub_agent' ? (mainAgentName !== '' ? mainAgentName : 'N/A') : 'None')
+                : '';
+            const typeCellHtml = isAgentsMode
+                ? `<span class="type-badge ${escapeHtml(agentTypeClass)}">${escapeHtml(typeText)}</span>`
+                : `<span class="type-badge ${typeClass}">${escapeHtml(typeText)}</span>`;
+            const mainAgentCellHtml = isAgentsMode
+                ? `<span class="agent-main-agent${mainAgentText === 'None' ? ' is-none' : ''}">${escapeHtml(mainAgentText)}</span>`
+                : '';
 
             const row = document.createElement('tr');
             row.classList.add('row-enter');
             row.dataset.clientId = client.client_id;
             row.dataset.clientType = client.client_type || '';
+            row.dataset.agentType = client.agent_type || '';
+            row.dataset.headAgentName = client.head_agent_name || '';
+            row.dataset.contactNumber = contactNumber;
+            row.dataset.email = client.email || '';
             row.style.animationDelay = `${Math.min(tbody.children.length * 35, 220)}ms`;
             row.innerHTML = `
                 <td class="col-checkbox"><input type="checkbox" class="row-select" data-client-id="${client.client_id}"></td>
                 <td class="col-ref"><span class="ref-badge">${escapeHtml(client.reference_code || 'N/A')}</span></td>
                 <td class="col-name">${escapeHtml(displayName)}</td>
                 <td class="col-owner">${escapeHtml(submittedBranch)}</td>
-                <td class="col-type"><span class="type-badge ${typeClass}">${escapeHtml(typeText)}</span></td>
+                <td class="col-type">${typeCellHtml}</td>
+                ${isAgentsMode ? `<td class="col-main-agent">${mainAgentCellHtml}</td>` : ''}
                 <td class="col-contact">${escapeHtml(contactNumber)}</td>
-                <td class="col-email">${escapeHtml(client.email || 'N/A')}</td>
+                ${isAgentsMode ? '' : `<td class="col-email">${escapeHtml(client.email || 'N/A')}</td>`}
                 <td class="col-verified">${escapeHtml(submittedByName)}</td>
                 <td class="col-activity">
                     <div class="activity-cell">
@@ -752,6 +1262,9 @@ include '../includes/sidebar.php';
 
             tbody.appendChild(row);
         });
+
+        syncSelectAllCheckbox();
+        updateBulkDeleteButtonState();
     }
 
     function getCurrentPageClientById(clientId) {
@@ -772,6 +1285,87 @@ include '../includes/sidebar.php';
             selectedClientIds.delete(id);
             selectedClientRows.delete(id);
         }
+
+        updateBulkDeleteButtonState();
+    }
+
+    function deleteClientRecord(clientId) {
+        const formData = new FormData();
+        formData.append('action', isAgentsMode ? 'delete_agent_record' : 'delete_client');
+        formData.append('client_id', clientId);
+
+        return fetch('../handlers/client.php', {
+            method: 'POST',
+            body: formData
+        }).then(response => response.json());
+    }
+
+    async function deleteSelectedClients() {
+        const selectedIds = Array.from(selectedClientIds);
+
+        if (selectedIds.length === 0) {
+            createToast('info', 'Nothing Selected', `Select one or more ${recordLabelPlural} first.`, 'toastContainer');
+            return;
+        }
+
+        const confirmMessage = isAgentsMode
+            ? `Delete ${selectedIds.length} selected ${recordLabelPlural}? This will remove the selected agent records from the agents table only.`
+            : `Delete ${selectedIds.length} selected ${recordLabelPlural}? This will permanently remove the records and related approval data.`;
+
+        const confirmed = await showConfirmModal({
+            title: 'Confirm Delete',
+            message: confirmMessage,
+            confirmText: 'Delete Selected',
+            cancelText: 'Cancel',
+            variant: 'danger'
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        setButtonBusy(deleteSelectedBtn, true, 'Deleting...');
+
+        let successCount = 0;
+        let failureCount = 0;
+
+        try {
+            for (const clientId of selectedIds) {
+                try {
+                    const payload = await deleteClientRecord(clientId);
+                    if (payload.success) {
+                        successCount += 1;
+                        selectedClientIds.delete(String(clientId));
+                        selectedClientRows.delete(String(clientId));
+                    } else {
+                        failureCount += 1;
+                    }
+                } catch (error) {
+                    failureCount += 1;
+                }
+            }
+
+            updateBulkDeleteButtonState();
+
+            if (successCount > 0) {
+                const remainingTotal = Math.max(0, totalClients - successCount);
+                const maxPageAfterDelete = Math.max(1, Math.ceil(remainingTotal / pageSize));
+                const targetPage = Math.min(currentPage, maxPageAfterDelete);
+
+                createToast('success', 'Deleted', `${successCount} selected ${recordLabelPlural} deleted.`, 'toastContainer');
+                loadClients(targetPage);
+            }
+
+            if (failureCount > 0) {
+                createToast('error', 'Delete Failed', `${failureCount} selected ${recordLabelPlural} could not be deleted.`, 'toastContainer');
+            }
+        } finally {
+            setButtonBusy(deleteSelectedBtn, false);
+        }
+    }
+
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', deleteSelectedClients);
     }
 
     function syncSelectAllCheckbox() {
@@ -901,13 +1495,22 @@ include '../includes/sidebar.php';
     }
 
     // Load clients on page load
-    document.addEventListener('DOMContentLoaded', () => loadClients(1));
+    document.addEventListener('DOMContentLoaded', () => {
+        const filterType = document.getElementById('filterType');
+        if (filterType && initialTypeFilter) {
+            filterType.value = initialTypeFilter;
+        }
+
+        loadClients(1);
+    });
 
     // Get client data from row
     function getClientDataFromRow(row) {
         const cells = row.querySelectorAll('td');
         const displayName = cells[2].textContent.trim();
         const nameParts = displayName.split(' ');
+        const agentType = (row.dataset.agentType || '').trim();
+        const headAgentName = (row.dataset.headAgentName || '').trim();
         return {
             clientId: row.dataset.clientId,
             refCode: cells[1].textContent.trim(),
@@ -915,15 +1518,19 @@ include '../includes/sidebar.php';
             lastName: nameParts.length > 1 ? nameParts[nameParts.length - 1] : '',
             displayName: displayName,
             submittedBranch: cells[3].textContent.trim(),
-            type: cells[4].textContent.trim(),
-            contact: cells[5].textContent.trim(),
-            email: cells[6].textContent.trim()
+            type: agentType || cells[4].textContent.trim(),
+            agentType: agentType,
+            headAgentName: headAgentName,
+            contact: (row.dataset.contactNumber || cells[5]?.textContent || '').trim(),
+            email: (row.dataset.email || (isAgentsMode ? '' : cells[6]?.textContent || '')).trim()
         };
     }
 
     // Modal functionality
     const editModal = document.getElementById('editModal');
     const viewModal = document.getElementById('viewModal');
+    const viewModalTitle = document.getElementById('viewModalTitle');
+    const viewClientDetails = document.getElementById('viewClientDetails');
     const cancelBtn = document.getElementById('cancelBtn');
     const editModalCloseBtn = document.getElementById('editModalCloseBtn');
     const editActivityStatusButtons = document.querySelectorAll('.activity-status-toggle');
@@ -994,32 +1601,15 @@ include '../includes/sidebar.php';
             }
 
             const client = result.data;
-            const fallbackName = (client.client_name || '').trim();
 
             document.getElementById('viewClientId').value = client.client_id || '';
-            document.getElementById('viewRefCode').value = client.reference_code || '';
-            document.getElementById('viewClientNumber').value = client.client_number || '';
-            document.getElementById('viewClientType').value = client.client_type || 'individual';
-            const viewVerificationStatusEl = document.getElementById('viewVerificationStatus');
-            if (viewVerificationStatusEl) {
-                viewVerificationStatusEl.value = client.verification_status || 'pending';
+            if (viewModalTitle) {
+                viewModalTitle.textContent = getPreviewModalTitle(client);
             }
-            document.getElementById('viewFirstName').value = client.first_name || fallbackName;
-            document.getElementById('viewMiddleName').value = client.middle_name || '';
-            document.getElementById('viewLastName').value = client.last_name || '';
-            document.getElementById('viewBirthdate').value = client.date_of_birth || '';
-            document.getElementById('viewGender').value = (client.gender || '').toLowerCase();
-            document.getElementById('viewCivilStatus').value = client.civil_status || 'Single';
-            document.getElementById('viewOccupation').value = client.occupation || '';
-            document.getElementById('viewNationality').value = client.nationality || '';
-            document.getElementById('viewTin').value = client.tin_number || '';
-            document.getElementById('viewEmail').value = client.email || '';
-            document.getElementById('viewMobile').value = client.mobile_phone || client.office_phone || '';
-            document.getElementById('viewTelephone').value = client.landline_phone || client.office_phone || '';
-            document.getElementById('viewAddress').value = client.full_address || client.home_address || client.business_address || '';
-            document.getElementById('viewActivityStatus').value = client.activity_status_display || 'Active';
-            document.getElementById('viewActivityStatusUpdatedAt').value = client.activity_status_updated_display || 'N/A';
-            document.getElementById('viewActivityNote').value = 'Activity is managed manually from the edit modal.';
+
+            if (viewClientDetails) {
+                viewClientDetails.innerHTML = buildClientPreviewHtml(client);
+            }
 
             viewModal.style.display = 'block';
         })
@@ -1054,7 +1644,27 @@ include '../includes/sidebar.php';
 
             document.getElementById('editClientId').value = client.client_id || '';
             document.getElementById('editRefCode').value = client.reference_code || '';
-            document.getElementById('editClientType').value = client.client_type || 'individual';
+            document.getElementById('editSubmittedBranch').value = client.submitted_by_branch || 'N/A';
+            if (isAgentsMode) {
+                const clientTypeField = document.getElementById('editClientType');
+                if (clientTypeField) {
+                    clientTypeField.value = client.client_type || 'individual';
+                }
+
+                const agentTypeField = document.getElementById('editAgentType');
+                if (agentTypeField) {
+                    agentTypeField.value = (client.agent_type || 'agent').toLowerCase();
+                }
+
+                const headAgentField = document.getElementById('editHeadAgentName');
+                if (headAgentField) {
+                    ensureEditHeadAgentOption(headAgentField, client.head_agent_name || '');
+                }
+
+                syncEditAgentFields();
+            } else {
+                document.getElementById('editClientType').value = client.client_type || 'individual';
+            }
             document.getElementById('editFirstName').value = client.first_name || fallbackName;
             document.getElementById('editMiddleName').value = client.middle_name || '';
             document.getElementById('editLastName').value = client.last_name || '';
@@ -1101,6 +1711,21 @@ include '../includes/sidebar.php';
         formData.append('address', document.getElementById('editAddress').value.trim());
         formData.append('activityStatus', document.getElementById('editActivityStatus').value.trim());
         formData.append('clientType', document.getElementById('editClientType').value);
+        if (isAgentsMode) {
+            const agentTypeField = document.getElementById('editAgentType');
+            const headAgentField = document.getElementById('editHeadAgentName');
+            const agentType = agentTypeField ? agentTypeField.value : 'agent';
+            const headAgentName = headAgentField ? headAgentField.value.trim() : '';
+
+            if (agentType === 'sub_agent' && headAgentName === '') {
+                createToast('error', 'Validation Error', 'Head Agent Name is required for Sub agent.', 'toastContainer');
+                setButtonBusy(saveBtn, false);
+                return;
+            }
+
+            formData.append('agentType', agentType);
+            formData.append('headAgentName', headAgentName);
+        }
 
         fetch('../handlers/client.php', {
             method: 'POST',
@@ -1144,18 +1769,10 @@ include '../includes/sidebar.php';
         // Extract client name for reference
         const clientName = clientNameOverride || (row.querySelector('.col-name')?.textContent || 'Client').trim();
         
-        const formData = new FormData();
-        formData.append('action', 'delete_client');
-        formData.append('client_id', clientId);
-
         const deleteBtn = row.querySelector('.action-icon.delete');
         setButtonBusy(deleteBtn, true, '');
         
-        fetch('../handlers/client.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
+        deleteClientRecord(clientId)
         .then(data => {
             if (data.success) {
                 selectedClientIds.delete(String(clientId));
@@ -1165,6 +1782,7 @@ include '../includes/sidebar.php';
                 const targetPage = Math.min(currentPage, maxPageAfterDelete);
 
                 createToast('success', 'Deleted', clientName + ' has been removed.', 'toastContainer');
+                updateBulkDeleteButtonState();
                 loadClients(targetPage);
             } else {
                 createToast('error', 'Error', data.message || `Failed to delete ${recordLabelSingular}.`, 'toastContainer');
@@ -1254,6 +1872,12 @@ include '../includes/sidebar.php';
     }
 
     document.getElementById('saveBtn').addEventListener('click', saveClientChanges);
+    if (isAgentsMode) {
+        const agentTypeField = document.getElementById('editAgentType');
+        if (agentTypeField) {
+            agentTypeField.addEventListener('change', syncEditAgentFields);
+        }
+    }
 
     window.addEventListener('click', function(event) {
         if (event.target === editModal) {
@@ -1281,6 +1905,7 @@ include '../includes/sidebar.php';
         });
 
         this.indeterminate = false;
+        updateBulkDeleteButtonState();
     });
 
     function applyServerFilters() {
@@ -1308,8 +1933,11 @@ include '../includes/sidebar.php';
     // Export list functionality
     let exportData = [];
     let exportScopeLabel = `Filtered ${recordLabelPlural}`;
+    const exportLogoUrl = new URL('../../public/images/SterlingLogo2.png', window.location.href).href;
 
-    const exportHeaders = ['Ref Code', `Business / ${recordTitleCaseSingular} Name`, 'Submitted Branch', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
+    const exportHeaders = isAgentsMode
+        ? ['Ref Code', `Business / ${recordTitleCaseSingular} Name`, 'Submitted Branch', 'Agent Type', 'Main Agent', 'Contact', 'Client Number', 'Submitted By']
+        : ['Ref Code', `Business / ${recordTitleCaseSingular} Name`, 'Submitted Branch', 'Type', 'Contact', 'Email', 'Client Number', 'Submitted By'];
 
     function getFilterSummaryText() {
         const filters = getActiveFilters();
@@ -1323,11 +1951,18 @@ include '../includes/sidebar.php';
             return normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : 'N/A';
         };
 
+        const formatAgentType = (rawType) => {
+            const normalizedType = (rawType || '').toLowerCase();
+            if (normalizedType === 'sub_agent') return 'Sub agent';
+            if (normalizedType === 'agent') return 'Agent';
+            return normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : 'Agent';
+        };
+
         if (filters.search) {
             parts.push(`Search: ${filters.search}`);
         }
         if (filters.type) {
-            parts.push(`Type: ${formatClientType(filters.type)}`);
+            parts.push(`Type: ${isAgentsMode ? formatAgentType(filters.type) : formatClientType(filters.type)}`);
         }
         if (filters.activity) {
             const activityLabels = {
@@ -1357,13 +1992,24 @@ include '../includes/sidebar.php';
     function mapClientToExportRow(client) {
         const displayName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.client_name || 'N/A';
         const normalizedType = (client.client_type || '').toLowerCase();
+        const normalizedAgentType = (client.agent_type || '').toLowerCase();
+        const mainAgentName = (client.head_agent_name || '').trim();
         const isCorporateLike = normalizedType === 'corporate' || normalizedType === 'obligee';
         const submittedBranch = client.submitted_by_branch || 'N/A';
 
         let typeText = 'N/A';
-        if (normalizedType === 'individual') typeText = 'Individual';
-        if (normalizedType === 'corporate') typeText = 'Corporate';
-        if (normalizedType === 'obligee') typeText = 'Obligee';
+        if (isAgentsMode) {
+            if (normalizedAgentType === 'sub_agent') typeText = 'Sub agent';
+            else typeText = 'Agent';
+        } else {
+            if (normalizedType === 'individual') typeText = 'Individual';
+            if (normalizedType === 'corporate') typeText = 'Corporate';
+            if (normalizedType === 'obligee') typeText = 'Obligee';
+        }
+
+        const mainAgentText = isAgentsMode
+            ? (normalizedAgentType === 'sub_agent' && mainAgentName !== '' ? mainAgentName : 'None')
+            : 'N/A';
 
         const contactNumber = isCorporateLike
             ? (client.office_phone || 'N/A')
@@ -1374,11 +2020,30 @@ include '../includes/sidebar.php';
             displayName: displayName,
             submittedBranch: submittedBranch,
             type: typeText || 'N/A',
+            mainAgent: mainAgentText,
             contact: contactNumber,
             email: client.email || 'N/A',
             clientNumber: client.client_number || 'N/A',
             submittedBy: client.submitted_by_name || 'N/A'
         };
+    }
+
+    function getExportRowValues(row) {
+        const values = [
+            row.refCode,
+            row.displayName,
+            row.submittedBranch,
+            row.type
+        ];
+
+        if (isAgentsMode) {
+            values.push(row.mainAgent || 'N/A');
+            values.push(row.contact, row.clientNumber, row.submittedBy);
+            return values;
+        }
+
+        values.push(row.contact, row.email, row.clientNumber, row.submittedBy);
+        return values;
     }
 
     function getSelectedExportData() {
@@ -1437,43 +2102,48 @@ include '../includes/sidebar.php';
         const previewContent = document.getElementById('previewContent');
         const resolved = await resolveExportPayload();
         const data = resolved.data;
+        const safeGeneratedAt = escapeHtml(new Date().toLocaleString());
 
         if (data.length === 0) {
             exportData = [];
             exportScopeLabel = resolved.label;
-            previewContent.innerHTML = `<div style="padding: 20px; color: #6b7280;"><strong>No ${recordLabelPlural} found</strong> for ${resolved.label}.</div>`;
+            previewContent.innerHTML = `
+                <div class="export-preview-empty-state">
+                    <strong>No ${escapeHtml(recordLabelPlural)} found</strong>
+                </div>`;
             return;
         }
 
         // Build HTML preview table
         let html = '<div class="export-preview-shell">';
-        html += `<div class="export-preview-summary"><strong>Scope:</strong> ${resolved.label}</div>`;
+        html += `
+            <div class="export-preview-brand">
+                <img class="export-preview-brand-logo" src="${exportLogoUrl}" alt="Sterling logo">
+                <div class="export-preview-brand-copy">
+                    <div class="export-preview-kicker">Sterling Insurance Company Incorporated</div>
+                    <h2>${escapeHtml(recordTitleCasePlural)} Management Report</h2>
+                </div>
+            </div>`;
         html += '<table class="export-preview-table">';
         html += '<thead><tr>';
 
         exportHeaders.forEach(header => {
-            html += `<th>${header}</th>`;
+            html += `<th>${escapeHtml(header)}</th>`;
         });
         html += '</tr></thead><tbody>';
         
         data.forEach((row, index) => {
             html += `<tr class="${index % 2 === 0 ? 'is-even' : 'is-odd'}">`;
-            html += `<td>${row.refCode}</td>`;
-            html += `<td>${row.displayName}</td>`;
-            html += `<td>${row.submittedBranch}</td>`;
-            html += `<td>${row.type}</td>`;
-            html += `<td>${row.contact}</td>`;
-            html += `<td>${row.email}</td>`;
-            html += `<td>${row.clientNumber}</td>`;
-            html += `<td>${row.submittedBy}</td>`;
+            getExportRowValues(row).forEach(value => {
+                html += `<td>${escapeHtml(value)}</td>`;
+            });
             html += '</tr>';
         });
         
         html += '</tbody></table>';
         html += `<div class="export-preview-footer">`;
         html += `<p><strong>Total Records:</strong> ${data.length}</p>`;
-        html += `<p><strong>Scope:</strong> ${resolved.label}</p>`;
-        html += `<p><strong>Export Date:</strong> ${new Date().toLocaleString()}</p>`;
+        html += `<p><strong>Export Date:</strong> ${safeGeneratedAt}</p>`;
         html += `</div>`;
         html += `</div>`;
 
@@ -1506,16 +2176,7 @@ include '../includes/sidebar.php';
 
         // Add data rows
         exportData.forEach(row => {
-            const cells = [
-                row.refCode,
-                row.displayName,
-                row.submittedBranch,
-                row.type,
-                row.contact,
-                row.email,
-                row.clientNumber,
-                row.submittedBy
-            ].map(cell => {
+            const cells = getExportRowValues(row).map(cell => {
                 let content = cell.replace(/\s+/g, ' ').replace(/,/g, ';');
                 if (content.includes(',') || content.includes('"')) {
                     content = '"' + content.replace(/"/g, '""') + '"';
@@ -1567,23 +2228,191 @@ include '../includes/sidebar.php';
                 <title>Sterling insurance Company Incorporated</title>
     <link rel='icon' type='image/png' href='../css/images/SterlingLogo.png'>
                 <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    h1 { text-align: center; color: #374151; margin-bottom: 20px; }
-                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                    th { background: #f3f4f6; padding: 10px; text-align: left; border: 1px solid #d1d5db; font-weight: bold; }
-                    td { padding: 10px; border: 1px solid #d1d5db; }
-                    tr:nth-child(even) { background: #f9fafb; }
-                    .footer { margin-top: 20px; font-size: 0.9rem; color: #6b7280; border-top: 1px solid #d1d5db; padding-top: 10px; }
-                    @media print { body { margin: 0; padding: 10px; } }
+                    :root { color-scheme: light; }
+                    * { box-sizing: border-box; }
+                    body {
+                        margin: 0;
+                        padding: 18px;
+                        font-family: 'Sora', Arial, sans-serif;
+                        font-size: 9pt;
+                        line-height: 1.3;
+                        color: #173226;
+                        background: #ffffff;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .print-sheet {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 14px;
+                    }
+                    .export-preview-brand {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: flex-start;
+                        justify-content: flex-start;
+                        gap: 14px;
+                        padding: 0;
+                        margin: 0 0 50px;
+                        text-align: left;
+                    }
+                    .export-preview-brand-logo {
+                        width: 176px;
+                        height: auto;
+                        display: block;
+                        flex: 0 0 auto;
+                        object-fit: contain;
+                        object-position: center;
+                    }
+                    .export-preview-brand-copy {
+                        min-width: 0;
+                        padding: 2px 0 0;
+                    }
+                    .export-preview-kicker {
+                        font-size: 9pt;
+                        font-weight: 600;
+                        letter-spacing: 0.12em;
+                        text-transform: uppercase;
+                        color: #6b7f76;
+                        white-space: normal;
+                        line-height: 1.1;
+                        text-align: left;
+                        word-break: break-word;
+                    }
+                    .export-preview-brand-copy h2 {
+                        margin: 0;
+                        padding: 0;
+                        font-size: 9pt;
+                        font-weight: 700;
+                        line-height: 1.15;
+                        color: #116a3a;
+                        text-align: left;
+                    }
+                    .export-preview-footer {
+                        border-radius: 0;
+                        border: 1px solid #d8e9df;
+                        font-size: 9pt;
+                        text-overflow: clip;
+                        white-space: normal;
+                        overflow-wrap: anywhere;
+                        word-break: break-word;
+                    }
+                    .export-preview-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        table-layout: fixed;
+                        border: 1px solid #cfe4d6;
+                        border-radius: 0;
+                        overflow: hidden;
+                    }
+                    .export-preview-table thead th {
+                        padding: 10px 8px;
+                        background: #2f7a54;
+                        color: #ffffff;
+                        text-align: center;
+                        font-size: 9pt;
+                        font-weight: 700;
+                        letter-spacing: 0.03em;
+                        border-right: 1px solid rgba(255, 255, 255, 0.14);
+                        vertical-align: middle;
+                    }
+                    .export-preview-table thead th:last-child { border-right: none; }
+                    .export-preview-table tbody td {
+                        padding: 9px 8px;
+                        font-size: 9pt;
+                        color: #244236;
+                        border-top: 1px solid #e2eee6;
+                        border-right: 1px solid #edf5ef;
+                        text-align: center;
+                        vertical-align: middle;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .export-preview-table tbody td:last-child { border-right: none; }
+                    .export-preview-footer {
+                        display: grid;
+                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        gap: 10px;
+                        padding: 12px 14px;
+                        font-size: 9pt;
+                    }
+                    .export-preview-footer p { margin: 0; }
+                    .export-preview-empty-state {
+                        padding: 22px 18px;
+                        border-radius: 14px;
+                        border: 1px dashed #c9ded2;
+                        background: #fbfdfb;
+                        color: #4f635a;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        align-items: center;
+                        justify-content: center;
+                        text-align: center;
+                    }
+                    .export-preview-empty-state strong { color: #116a3a; }
+                    @page {
+                        size: portrait;
+                        margin: 10mm;
+                    }
+                    @media print {
+                        body { padding: 0; }
+                        .print-sheet { gap: 10px; }
+                        .export-preview-brand,
+                        .export-preview-footer {
+                            break-inside: avoid;
+                            page-break-inside: avoid;
+                        }
+                        .export-preview-brand,
+                        .export-preview-table,
+                        .export-preview-footer,
+                        .export-preview-empty-state {
+                            border-radius: 0;
+                        }
+                        .export-preview-table {
+                            width: 100%;
+                            min-width: 0;
+                            table-layout: auto;
+                        }
+                        .export-preview-table th:nth-child(5),
+                        .export-preview-table td:nth-child(5) {
+                            white-space: nowrap;
+                            overflow-wrap: normal;
+                            word-break: normal;
+                            min-width: 10px;
+                            font-variant-numeric: tabular-nums;
+                        }
+                        .export-preview-table th:nth-child(4),
+                        .export-preview-table td:nth-child(4) {
+                            white-space: nowrap;
+                            overflow-wrap: normal;
+                            word-break: normal;
+                            min-width: 90px;
+                        }
+                        .export-preview-table thead th,
+                        .export-preview-table tbody td {
+                            white-space: normal;
+                            overflow: visible;
+                            text-overflow: clip;
+                            overflow-wrap: anywhere;
+                            word-break: break-word;
+                        }
+                        .export-preview-table thead th {
+                            font-size: 9pt;
+                        }
+                        .export-preview-table tbody td {
+                            background: #ffffff;
+                            font-size: 9pt;
+                            padding: 7px 6px;
+                        }
+                    }
                 </style>
             </head>
             <body>
-                <h1>${recordTitleCasePlural} Management Report</h1>
-                ${content}
-                <div class="footer">
-                    <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
-                    <p><strong>Total Records:</strong> ${exportData.length}</p>
-                    <p><strong>Scope:</strong> ${exportScopeLabel}</p>
+                <div class="print-sheet">
+                    ${content}
                 </div>
             </body>
             </html>

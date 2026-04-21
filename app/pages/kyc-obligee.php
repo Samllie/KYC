@@ -3,14 +3,41 @@ require_once '../config/session.php';
 requireLogin();
 
 $selectedClientType = 'obligee';
+$isObligee = true;
 $selectedClassification = 'client';
 
-$clientTypeLabel = 'Obligee Client';
-$newClientLabel = 'New Obligee Client';
+$clientTypeLabel = 'Government Obligee Client';
+$newClientLabel = 'New Government Obligee Client';
 $breadcrumbParentLabel = 'Clients';
 $clientTypeIcon = 'bi-shield-check';
 $reviewUrl = 'kyc-obligee-review.php?classification=' . urlencode($selectedClassification);
 $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedClassification);
+$companyCardTitle = $isObligee ? 'Government Agency Information' : 'Company Information';
+$companyNameLabel = $isObligee ? 'Government Agency / Office Name' : 'Business / Company Name';
+$companyNamePlaceholder = $isObligee ? 'e.g. Department of Education - Region IV-A' : 'Registered Business/Company Name';
+$companyNameError = $isObligee ? 'Government agency/office name is required' : 'Business/Company name is required';
+$businessTypeLabel = $isObligee ? 'Body Type' : 'Business Type';
+$businessTypeHelper = $isObligee ? 'Choose whether this obligee record represents the Government or the Private Sector.' : '';
+$clientSinceLabel = $isObligee ? 'Date of Registration / Establishment' : 'Client Since';
+$businessDetailsTitle = $isObligee ? 'Agency Details' : 'Business Details';
+$designationLabel = $isObligee ? 'Authorized Contact Position' : 'Contact Person Designation';
+$designationPlaceholder = $isObligee ? 'e.g. Regional Director, Branch Chief' : 'e.g. Manager, Director';
+$addressCardTitle = $isObligee ? 'Government Office Address' : 'Business Address';
+$regionLabel = $isObligee ? 'Region / Jurisdiction' : 'Region';
+$provinceLabel = $isObligee ? 'Province / Area' : 'Province';
+$cityLabel = $isObligee ? 'City / Municipality' : 'City / Municipality';
+$barangayLabel = 'Barangay';
+$streetLabel = $isObligee ? 'District / Regional Branch' : 'Street / Unit / Building';
+$streetPlaceholder = $isObligee ? 'Choose a regional or district office, or type the official branch name' : 'House/Unit No., Street, Building';
+$streetHelpText = $isObligee ? 'Use the combobox to pick a Philippine government regional or district branch. You can type the official branch name if it is not listed.' : '';
+$contactPhoneLabel = $isObligee ? 'Agency Phone Number' : 'Phone Number';
+$contactPersonLabel = $isObligee ? 'Authorized Contact Person' : 'Company Owner';
+$contactEmailLabel = $isObligee ? 'Official Email Address' : 'Email Address';
+$supportingDocsTitle = $isObligee ? 'Government Requirements' : 'Supporting Documents';
+$supportingDocsHint = $isObligee ? 'Upload authority letters, appointment orders, agency IDs, and other Philippine government requirements.' : 'PDF, JPG, PNG (Max 5MB each)';
+$idCardTitle = $isObligee ? 'Authorized Signatory ID Verification' : 'Government ID Verification';
+$idUploadHint = $isObligee ? 'Upload the authorized signatory\'s ID photo, then enter the ID number manually.' : 'Upload your ID photo, then enter the ID number manually.';
+$pageBackground = 'radial-gradient(circle at 15% 20%, rgba(244, 232, 222, 0.92) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(233, 213, 194, 0.5) 0%, transparent 34%), linear-gradient(160deg, #fcf6f0 0%, #f5eadf 46%, #ffffff 100%)';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -74,7 +101,6 @@ $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedC
             --draft-btn-size: 42px;
         }
 
-        /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
             top: 50%;
@@ -597,11 +623,6 @@ $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedC
             z-index: 9997;
         }
 
-        body.drafts-popup-open::before {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
         @media (max-width: 900px) {
             body {
                 --draft-btn-bottom: 12px;
@@ -696,7 +717,7 @@ $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedC
         }
     </style>
 </head>
-<body class="kyc-compact" style="--wizard-accent:#8b5a2b;--wizard-accent-soft:#f4e8de;--wizard-accent-deep:#6b4320;">
+<body class="kyc-compact" style="--wizard-accent:#8b5a2b;--wizard-accent-soft:#f4e8de;--wizard-accent-deep:#6b4320;--page-background:<?php echo $pageBackground; ?>;">
 
 <?php
 $activePage = 'kyc-verification';
@@ -716,9 +737,6 @@ include '../includes/sidebar.php';
             </div>
         </div>
         <div class="topbar-right">
-            <button type="button" class="drafts-toggle-btn" title="Saved Drafts" onclick="toggleDraftsPanel()">
-                <i class="bi bi-inbox"></i>
-            </button>
         </div>
     </header>
 
@@ -803,66 +821,45 @@ include '../includes/sidebar.php';
                 </div>
             </div>
 
-            <!-- Drafts Card -->
-            <div class="card" id="draftsCard">
-                <div class="card-header">
-                    <div class="card-title"><i class="bi bi-inbox"></i> Saved Drafts</div>
-                    <button type="button" id="refreshDraftBtn" class="btn btn-sm btn-outline-secondary" onclick="refreshDrafts()">
-                        <i class="bi bi-arrow-clockwise"></i> Refresh
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="drafts-fields">
-                        <div>
-                            <label for="draftSelect" class="form-label">Drafts</label>
-                            <select id="draftSelect" class="form-select">
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="draftInfo" style="margin-top:10px; color: var(--gray-500); font-size: .85rem;"></div>
-                    <div id="draftDocsWrapper" style="margin-top:14px;">
-                        <div style="color: var(--gray-500); font-size:.85rem;">Attachments saved to the selected draft:</div>
-                        <div id="draftDocsContainer" style="margin-top:8px;"></div>
-                    </div>
-                    <div class="drafts-action-row">
-                        <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
-                            <i class="bi bi-box-arrow-in-right"></i> Load Draft
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Company Information Card -->
             <div class="card" data-wizard-step="2">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-building"></i> Company Information</div>
+                    <div class="card-title"><i class="bi bi-building"></i> <?php echo htmlspecialchars($companyCardTitle); ?></div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label for="corporateClientName" class="form-label">Business / Company Name <span class="req">*</span></label>
-                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="Registered Business/Company Name" required>
-                                <div class="form-error">Business/Company name is required</div>
+                                <label for="corporateClientName" class="form-label"><?php echo htmlspecialchars($companyNameLabel); ?> <span class="req">*</span></label>
+                                <input type="text" id="corporateClientName" name="corporateClientName" class="form-control" placeholder="<?php echo htmlspecialchars($companyNamePlaceholder); ?>" required>
+                                <div class="form-error"><?php echo htmlspecialchars($companyNameError); ?></div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="form-label">Business Type <span class="req">*</span></label>
-                                <div style="display:flex;gap:20px;margin-top:8px;">
-                                    <label style="display:flex;align-items:center;gap:8px;">
-                                        <input type="radio" id="businessPrivate" name="businessType" value="private" required> Private
-                                    </label>
-                                    <label style="display:flex;align-items:center;gap:8px;">
-                                        <input type="radio" id="businessGov" name="businessType" value="government" required> Government
-                                    </label>
-                                </div>
+                                <label class="form-label"><?php echo htmlspecialchars($businessTypeLabel); ?> <span class="req">*</span></label>
+                                <?php if ($isObligee): ?>
+                                    <select name="businessType" class="form-select" required>
+                                        <option value="">Select body type...</option>
+                                        <option value="government">Government</option>
+                                        <option value="private">Private Sector</option>
+                                    </select>
+                                    <div class="form-hint" style="margin-top:8px;color:var(--gray-500);font-size:.78rem;"><?php echo htmlspecialchars($businessTypeHelper); ?></div>
+                                <?php else: ?>
+                                    <div style="display:flex;gap:20px;margin-top:8px;">
+                                        <label style="display:flex;align-items:center;gap:8px;">
+                                            <input type="radio" id="businessPrivate" name="businessType" value="private" required> Private
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:8px;">
+                                            <input type="radio" id="businessGov" name="businessType" value="government" required> Government
+                                        </label>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="corporateClientSince" class="form-label">Client Since</label>
+                                <label for="corporateClientSince" class="form-label"><?php echo htmlspecialchars($clientSinceLabel); ?></label>
                                 <input type="date" id="corporateClientSince" name="corporateClientSince" class="form-control">
                             </div>
                         </div>
@@ -879,7 +876,7 @@ include '../includes/sidebar.php';
             <!-- Business Details Card -->
             <div class="card" data-wizard-step="2">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-info-circle"></i> Business Details</div>
+                    <div class="card-title"><i class="bi bi-info-circle"></i> <?php echo htmlspecialchars($businessDetailsTitle); ?></div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
@@ -903,8 +900,8 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="designation" class="form-label">Contact Person Designation</label>
-                                <input type="text" id="designation" name="designation" class="form-control" placeholder="e.g., Manager, Director">
+                                <label for="designation" class="form-label"><?php echo htmlspecialchars($designationLabel); ?></label>
+                                <input type="text" id="designation" name="designation" class="form-control" placeholder="<?php echo htmlspecialchars($designationPlaceholder); ?>">
                             </div>
                         </div>
                     </div>
@@ -914,13 +911,13 @@ include '../includes/sidebar.php';
             <!-- Business Address Card -->
             <div class="card" data-wizard-step="2">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-shop"></i> Business Address</div>
+                    <div class="card-title"><i class="bi bi-shop"></i> <?php echo htmlspecialchars($addressCardTitle); ?></div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="region" class="form-label">Region</label>
+                                <label for="region" class="form-label"><?php echo htmlspecialchars($regionLabel); ?></label>
                                 <div class="select-wrap">
                                     <select id="region" name="region" class="form-select">
                                         <option value="">Select region...</option>
@@ -930,7 +927,7 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="corporateBusinessProvince" class="form-label">Province</label>
+                                <label for="corporateBusinessProvince" class="form-label"><?php echo htmlspecialchars($provinceLabel); ?></label>
                                 <div class="select-wrap">
                                     <select id="corporateBusinessProvince" name="corporateBusinessProvince" class="form-select">
                                         <option value="">Select province...</option>
@@ -940,7 +937,7 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="corporateBusinessCtm" class="form-label">City / Municipality</label>
+                                <label for="corporateBusinessCtm" class="form-label"><?php echo htmlspecialchars($cityLabel); ?></label>
                                 <div class="select-wrap">
                                     <select id="corporateBusinessCtm" name="corporateBusinessCtm" class="form-select">
                                         <option value="">Select city/municipality...</option>
@@ -948,9 +945,10 @@ include '../includes/sidebar.php';
                                 </div>
                             </div>
                         </div>
+                        <?php if (!$isObligee): ?>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="corporateBusinessBarangay" class="form-label">Barangay</label>
+                                <label for="corporateBusinessBarangay" class="form-label"><?php echo htmlspecialchars($barangayLabel); ?></label>
                                 <div class="select-wrap">
                                     <select id="corporateBusinessBarangay" name="corporateBusinessBarangay" class="form-select">
                                         <option value="">Select barangay...</option>
@@ -958,12 +956,41 @@ include '../includes/sidebar.php';
                                 </div>
                             </div>
                         </div>
+                        <?php endif; ?>
                         <div class="col-md-12">
                             <div class="form-group">
-                                <label for="corporateStreet" class="form-label">Street / Unit / Building <span class="req">*</span></label>
-                                <input type="text" id="corporateStreet" name="corporateStreet" class="form-control" placeholder="House/Unit No., Street, Building" required>
+                                <label for="corporateStreet" class="form-label"><?php echo htmlspecialchars($streetLabel); ?> <span class="req">*</span></label>
+                                <input type="text" id="corporateStreet" name="corporateStreet" class="form-control" placeholder="<?php echo htmlspecialchars($streetPlaceholder); ?>" <?php echo $isObligee ? 'list="obligeeBranchOptions"' : ''; ?> required>
                                 <input type="hidden" id="corporateBusinessAddress" name="corporateBusinessAddress">
+                                <?php if ($isObligee): ?>
+                                    <datalist id="obligeeBranchOptions">
+                                        <option value="Department of Education - Central Office"></option>
+                                        <option value="Department of Education - NCR Regional Office"></option>
+                                        <option value="Department of Health - Central Office"></option>
+                                        <option value="Department of Health - NCR Regional Office"></option>
+                                        <option value="Department of the Interior and Local Government - NCR Regional Office"></option>
+                                        <option value="Civil Service Commission - Central Office"></option>
+                                        <option value="Civil Service Commission - NCR Regional Office"></option>
+                                        <option value="Commission on Audit - Central Office"></option>
+                                        <option value="Commission on Elections - Central Office"></option>
+                                        <option value="Bureau of Internal Revenue - Revenue District Office No. 38 (South Quezon City)"></option>
+                                        <option value="Bureau of Internal Revenue - Revenue District Office No. 39 (South Quezon City)"></option>
+                                        <option value="Department of Public Works and Highways - Regional Office III"></option>
+                                        <option value="Department of Public Works and Highways - Regional Office IV-A"></option>
+                                        <option value="Department of Social Welfare and Development - Regional Office VI"></option>
+                                        <option value="Department of Social Welfare and Development - Regional Office VII"></option>
+                                        <option value="Philippine Health Insurance Corporation - Regional Office IV-A"></option>
+                                        <option value="Philippine Statistics Authority - Regional Statistical Services Office"></option>
+                                        <option value="Land Transportation Office - NCR Regional Office"></option>
+                                        <option value="Land Transportation Office - Regional Office VII"></option>
+                                        <option value="TESDA - Regional Office VIII"></option>
+                                        <option value="Department of Labor and Employment - Regional Office VII"></option>
+                                    </datalist>
+                                <?php endif; ?>
                                 <div class="form-error">Business address is required</div>
+                                <?php if ($isObligee && $streetHelpText): ?>
+                                    <div style="margin-top:8px;color:var(--gray-500);font-size:.78rem;line-height:1.4;"><?php echo htmlspecialchars($streetHelpText); ?></div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -979,21 +1006,21 @@ include '../includes/sidebar.php';
                     <div class="row g-3">
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporatePhone" class="form-label">Phone Number <span class="req">*</span></label>
+                                <label for="corporatePhone" class="form-label"><?php echo htmlspecialchars($contactPhoneLabel); ?> <span class="req">*</span></label>
                                 <input type="tel" id="corporatePhone" name="corporatePhone" class="form-control" placeholder="(02) 8000 0000" required>
                                 <div class="form-error">Phone number is required</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporateContactPerson" class="form-label">Company Owner <span class="req">*</span></label>
-                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="Owner Full Name" required>
-                                <div class="form-error">Company owner is required</div>
+                                <label for="corporateContactPerson" class="form-label"><?php echo htmlspecialchars($contactPersonLabel); ?> <span class="req">*</span></label>
+                                <input type="text" id="corporateContactPerson" name="corporateContactPerson" class="form-control" placeholder="<?php echo $isObligee ? 'Authorized officer full name' : 'Owner Full Name'; ?>" required>
+                                <div class="form-error"><?php echo $isObligee ? 'Authorized contact person is required' : 'Company owner is required'; ?></div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="corporateEmail" class="form-label">Email Address <span class="req">*</span></label>
+                                <label for="corporateEmail" class="form-label"><?php echo htmlspecialchars($contactEmailLabel); ?> <span class="req">*</span></label>
                                 <input type="email" id="corporateEmail" name="corporateEmail" class="form-control" placeholder="user@example.com" required>
                                 <div class="form-error">Valid email is required</div>
                             </div>
@@ -1035,7 +1062,7 @@ include '../includes/sidebar.php';
             <!-- Government ID Verification Card -->
             <div class="card" data-wizard-step="3">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-person-vcard"></i> Government ID Verification</div>
+                    <div class="card-title"><i class="bi bi-person-vcard"></i> <?php echo htmlspecialchars($idCardTitle); ?></div>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
@@ -1082,7 +1109,7 @@ include '../includes/sidebar.php';
                                     <small>JPG, PNG, PDF (Max 5MB)</small>
                                 </div>
                                 <input type="file" id="governmentIdInput" accept=".jpg,.jpeg,.png" style="display:none;">
-                                <div class="id-upload-hint">Upload your ID photo, then enter the ID number manually.</div>
+                                <div class="id-upload-hint"><?php echo htmlspecialchars($idUploadHint); ?></div>
                                 <div class="file-list" id="governmentIdFileList" style="margin-top:12px;"></div>
                                 <div class="id-upload-status" id="governmentIdStatus">No ID photo uploaded yet.</div>
                             </div>
@@ -1092,15 +1119,15 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Documents Card -->
-            <div class="card card-span-2" data-wizard-step="3">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
-                    <div class="card-title"><i class="bi bi-file-earmark"></i> Supporting Documents</div>
+                    <div class="card-title"><i class="bi bi-file-earmark"></i> <?php echo htmlspecialchars($supportingDocsTitle); ?></div>
                 </div>
                 <div class="card-body">
                     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
                         <i class="bi bi-cloud-arrow-up upload-icon"></i>
                         <p><strong>Click to upload</strong> or drag and drop</p>
-                        <small>PDF, JPG, PNG (Max 5MB each)</small>
+                        <small><?php echo htmlspecialchars($supportingDocsHint); ?></small>
                     </div>
                     <input type="file" id="fileInput" name="documents[]" multiple accept=".jpg,.jpeg,.png,.pdf" style="display:none;">
                     <div class="file-list" id="fileList"></div>
@@ -1126,9 +1153,6 @@ include '../includes/sidebar.php';
                     <button type="button" id="clearBtn" class="btn btn-outline" onclick="clearForm()">
                         <i class="bi bi-arrow-counterclockwise"></i> Clear Form
                     </button>
-                    <button type="button" id="saveDraftBtn" class="btn btn-outline" onclick="saveDraft()">
-                        <i class="bi bi-download"></i> Save Draft
-                    </button>
                     <button type="button" id="wizardNextBtn" class="btn btn-primary">
                         Next <i class="bi bi-chevron-right"></i>
                     </button>
@@ -1150,6 +1174,7 @@ include '../includes/sidebar.php';
 const currentClientType = <?php echo json_encode($selectedClientType); ?>;
 const currentReviewUrl = <?php echo json_encode($reviewUrl); ?>;
 const currentVerificationUrl = <?php echo json_encode($verificationUrl); ?>;
+const isObligeeClient = currentClientType === 'obligee';
 
 // ── Toast ──────────────────────────────────────────────────
 function showToast(type, title, msg) {
@@ -1190,11 +1215,6 @@ function setButtonBusy(button, isBusy, label = 'Working...') {
 function revealFlowCards() {
     const cards = document.querySelectorAll('main.content .card');
     cards.forEach((card, idx) => {
-        if (card.id === 'draftsCard') {
-            card.classList.remove('flow-reveal');
-            card.style.animationDelay = '';
-            return;
-        }
         card.classList.add('flow-reveal');
         card.style.animationDelay = `${Math.min(idx * 45, 280)}ms`;
     });
@@ -1239,7 +1259,9 @@ function validateRadioGroup(name) {
 }
 
 function validateAllRequired() {
-    const requiredFields = ['corporateClientName', 'region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateBusinessBarangay', 'corporateStreet', 'corporatePhone', 'corporateContactPerson', 'corporateEmail', 'governmentIdType', 'idNumber'];
+    const requiredFields = isObligeeClient
+        ? ['corporateClientName', 'region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateStreet', 'corporatePhone', 'corporateContactPerson', 'corporateEmail', 'governmentIdType', 'idNumber']
+        : ['corporateClientName', 'region', 'corporateBusinessProvince', 'corporateBusinessCtm', 'corporateBusinessBarangay', 'corporateStreet', 'corporatePhone', 'corporateContactPerson', 'corporateEmail', 'governmentIdType', 'idNumber'];
     let allValid = true;
     let failedFields = [];
     
@@ -1254,8 +1276,14 @@ function validateAllRequired() {
         }
     });
     
-    // Validate businessType radio
-    if (!validateRadioGroup('businessType')) allValid = false;
+    if (isObligeeClient) {
+        const businessTypeField = document.querySelector('[name="businessType"]');
+        if (!businessTypeField || !['government', 'private'].includes(String(businessTypeField.value || '').toLowerCase())) {
+            allValid = false;
+        }
+    } else if (!validateRadioGroup('businessType')) {
+        allValid = false;
+    }
     if (!validateGovernmentIdSection()) allValid = false;
     
     if (!allValid && failedFields.length > 0) {
@@ -1320,12 +1348,14 @@ async function initCorporateAddressSelectors() {
     const cityEl = document.getElementById('corporateBusinessCtm');
     const barangayEl = document.getElementById('corporateBusinessBarangay');
 
-    if (!regionEl || !provinceEl || !cityEl || !barangayEl) return;
+    if (!regionEl || !provinceEl || !cityEl) return;
 
     setSelectLoading(regionEl, 'Loading regions...');
     setSelectLoading(provinceEl, 'Select region first...');
     setSelectLoading(cityEl, 'Select province first...');
-    setSelectLoading(barangayEl, 'Select city first...');
+    if (barangayEl) {
+        setSelectLoading(barangayEl, 'Select city first...');
+    }
 
     try {
         const regions = await psgcFetch('/regions/');
@@ -1341,18 +1371,24 @@ async function initCorporateAddressSelectors() {
         const selectedRegionCode = this.options[this.selectedIndex]?.dataset?.code || '';
         fillSelectOptions(provinceEl, [], 'name', 'name', 'Select province...');
         fillSelectOptions(cityEl, [], 'name', 'name', 'Select city/municipality...');
-        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        if (barangayEl) {
+            fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        }
 
         if (!selectedRegionCode) {
             provinceEl.disabled = true;
             cityEl.disabled = true;
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
             return;
         }
 
         setSelectLoading(provinceEl, 'Loading provinces...');
         cityEl.disabled = true;
-        barangayEl.disabled = true;
+        if (barangayEl) {
+            barangayEl.disabled = true;
+        }
 
         try {
             const provinces = await psgcFetch(`/regions/${selectedRegionCode}/provinces/`);
@@ -1365,20 +1401,26 @@ async function initCorporateAddressSelectors() {
                 const citiesInRegion = await psgcFetch(`/regions/${selectedRegionCode}/cities-municipalities/`);
                 fillSelectOptions(cityEl, citiesInRegion, 'name', 'name', 'Select city/municipality...');
                 cityEl.disabled = false;
-                fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
-                barangayEl.disabled = true;
+                if (barangayEl) {
+                    fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
+                    barangayEl.disabled = true;
+                }
                 return;
             }
 
             fillSelectOptions(provinceEl, provinces, 'name', 'name', 'Select province...');
             provinceEl.disabled = false;
             cityEl.disabled = true;
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
         } catch (error) {
             console.error(error);
             setSelectLoading(provinceEl, 'Unable to load provinces');
             cityEl.disabled = true;
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
         }
     });
 
@@ -1387,16 +1429,22 @@ async function initCorporateAddressSelectors() {
         const selectedRegionCode = regionEl.options[regionEl.selectedIndex]?.dataset?.code || '';
 
         fillSelectOptions(cityEl, [], 'name', 'name', 'Select city/municipality...');
-        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        if (barangayEl) {
+            fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        }
 
         if (!selectedProvinceCode && this.value !== 'NCR') {
             cityEl.disabled = true;
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
             return;
         }
 
         setSelectLoading(cityEl, 'Loading cities/municipalities...');
-        barangayEl.disabled = true;
+        if (barangayEl) {
+            barangayEl.disabled = true;
+        }
         try {
             const cities = this.value === 'NCR'
                 ? await psgcFetch(`/regions/${selectedRegionCode}/cities-municipalities/`)
@@ -1404,21 +1452,29 @@ async function initCorporateAddressSelectors() {
 
             fillSelectOptions(cityEl, cities, 'name', 'name', 'Select city/municipality...');
             cityEl.disabled = false;
-            fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                fillSelectOptions(barangayEl, [], 'name', 'name', 'Select city first...');
+                barangayEl.disabled = true;
+            }
         } catch (error) {
             console.error(error);
             setSelectLoading(cityEl, 'Unable to load cities/municipalities');
-            barangayEl.disabled = true;
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
         }
     });
 
     cityEl.addEventListener('change', async function () {
         const selectedCityCode = this.options[this.selectedIndex]?.dataset?.code || '';
-        fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        if (barangayEl) {
+            fillSelectOptions(barangayEl, [], 'name', 'name', 'Select barangay...');
+        }
 
-        if (!selectedCityCode) {
-            barangayEl.disabled = true;
+        if (!selectedCityCode || !barangayEl) {
+            if (barangayEl) {
+                barangayEl.disabled = true;
+            }
             return;
         }
 
@@ -1435,12 +1491,16 @@ async function initCorporateAddressSelectors() {
 }
 
 function buildAddress(street, barangay, city, province, region) {
+    if (isObligeeClient) {
+        return [street, city, province, region].filter(part => part && part.trim() !== '').join(', ');
+    }
+
     return [street, barangay, city, province, region].filter(part => part && part.trim() !== '').join(', ');
 }
 
 function syncCorporateAddressField() {
     const street = document.getElementById('corporateStreet')?.value || '';
-    const barangay = document.getElementById('corporateBusinessBarangay')?.value || '';
+    const barangay = isObligeeClient ? '' : (document.getElementById('corporateBusinessBarangay')?.value || '');
     const city = document.getElementById('corporateBusinessCtm')?.value || '';
     const province = document.getElementById('corporateBusinessProvince')?.value || '';
     const region = document.getElementById('region')?.value || '';
@@ -1542,7 +1602,7 @@ initCorporateAddressSelectors();
 // Restore form data on page load
 const KYC_NAVIGATION_TYPE = (performance.getEntriesByType('navigation')[0]?.type) || (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'navigate');
 
-async function clearDraftStateOnRefresh() {
+async function clearFormStateOnRefresh() {
     const regularUploads = getStoredUploads();
     const governmentIdUploads = getStoredGovernmentIdUploads();
 
@@ -1558,7 +1618,7 @@ async function clearDraftStateOnRefresh() {
 }
 
 if (KYC_NAVIGATION_TYPE === 'reload') {
-    void clearDraftStateOnRefresh();
+    void clearFormStateOnRefresh();
 }
 
 document.addEventListener('DOMContentLoaded', restoreFormData);
@@ -1774,7 +1834,6 @@ if (governmentIdTypeSelect) {
 
 document.addEventListener('DOMContentLoaded', renderGovernmentIdUploads);
 
-// ── Drafts UI (resume/load) ─────────────────────────────────────────────
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
@@ -1786,388 +1845,37 @@ function escapeHtml(str) {
 }
 
 function parseComposedAddress(addressStr) {
-    // Expected format from buildAddress(): "street, barangay, city, province, region"
+    // Expected format from buildAddress(): either "street, barangay, city, province, region" or the obligee variant without barangay.
     if (!addressStr) return null;
     const parts = String(addressStr).split(',').map(p => p.trim()).filter(Boolean);
-    if (parts.length < 5) return null;
+    if (parts.length < 4) return null;
+
+    if (parts.length === 4) {
+        const street = parts.slice(0, 1).join(', ');
+        return {
+            street,
+            barangay: '',
+            city: parts[1],
+            province: parts[2],
+            region: parts[3]
+        };
+    }
+
+    const street = parts.slice(0, parts.length - 4).join(', ');
     return {
-        street: parts[0],
-        barangay: parts[1],
-        city: parts[2],
-        province: parts[3],
-        region: parts.slice(4).join(', ')
+        street,
+        barangay: parts[parts.length - 4],
+        city: parts[parts.length - 3],
+        province: parts[parts.length - 2],
+        region: parts[parts.length - 1]
     };
 }
-
-function waitForSelectReady(selectEl, minOptions = 2, timeoutMs = 8000) {
-    return new Promise(resolve => {
-        const start = Date.now();
-        const timer = setInterval(() => {
-            const ok = selectEl && selectEl.options && selectEl.options.length >= minOptions && !selectEl.disabled;
-            if (ok) {
-                clearInterval(timer);
-                resolve(true);
-                return;
-            }
-            if (Date.now() - start >= timeoutMs) {
-                clearInterval(timer);
-                resolve(false);
-            }
-        }, 200);
-    });
-}
-
-async function restoreCorporateAddressFromDraftAddress(addressStr) {
-    const parsed = parseComposedAddress(addressStr);
-    if (!parsed) return;
-
-    const regionEl = document.getElementById('region');
-    const provinceEl = document.getElementById('corporateBusinessProvince');
-    const cityEl = document.getElementById('corporateBusinessCtm');
-    const barangayEl = document.getElementById('corporateBusinessBarangay');
-    const streetEl = document.getElementById('corporateStreet');
-
-    if (!regionEl || !provinceEl || !cityEl || !barangayEl || !streetEl) return;
-
-    const regionReady = await waitForSelectReady(regionEl, 2);
-    if (!regionReady) return;
-
-    regionEl.value = parsed.region;
-    regionEl.dispatchEvent(new Event('change'));
-
-    const provinceReady = await waitForSelectReady(provinceEl, 2);
-    if (!provinceReady) return;
-    provinceEl.value = parsed.province;
-    provinceEl.dispatchEvent(new Event('change'));
-
-    const cityReady = await waitForSelectReady(cityEl, 2);
-    if (!cityReady) return;
-    cityEl.value = parsed.city;
-    cityEl.dispatchEvent(new Event('change'));
-
-    const barangayReady = await waitForSelectReady(barangayEl, 2);
-    if (!barangayReady) return;
-    barangayEl.value = parsed.barangay;
-
-    streetEl.value = parsed.street;
-    syncCorporateAddressField();
-}
-
-async function loadSelectedDraft() {
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    const draftInfoEl = document.getElementById('draftInfo');
-
-    if (!draftSelect || !loadDraftBtn) return;
-    const refCode = draftSelect.value;
-    if (!refCode) return;
-
-    setButtonBusy(loadDraftBtn, true, 'Loading...');
-    if (draftDocsContainer) draftDocsContainer.innerHTML = 'Loading attachments...';
-    if (draftInfoEl) draftInfoEl.textContent = 'Loading draft...';
-
-    try {
-        const kycResp = await fetch(`../handlers/kyc.php?action=get_kyc&ref_code=${encodeURIComponent(refCode)}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const kycData = await kycResp.json();
-        if (!kycData || !kycData.success) {
-            showToast('error', 'Load Draft Failed', kycData?.message || 'Unable to load the selected draft.');
-            return;
-        }
-
-        const draft = kycData.data || {};
-
-        // Apply fields (only those present/mapped for the corporate form).
-        const refInput = document.getElementById('refCode');
-        if (refInput) {
-            refInput.value = draft.ref_code || draft.reference_code || refCode;
-            refInput.readOnly = true;
-        }
-
-        const setIfEl = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) el.value = value ?? '';
-        };
-
-        setIfEl('corporateClientName', draft.company);
-        setIfEl('corporatePhone', draft.mobile || draft.phone);
-        setIfEl('corporateEmail', draft.email);
-        setIfEl('corporateContactPerson', draft.occupation);
-        setIfEl('corporateGender', draft.gender);
-
-        await restoreCorporateAddressFromDraftAddress(draft.address);
-
-        if (draftInfoEl) {
-            const updatedAt = draft.updated_at ? new Date(draft.updated_at).toLocaleString() : '';
-            draftInfoEl.textContent = `Loaded ${refCode}${updatedAt ? ` (updated: ${escapeHtml(updatedAt)})` : ''}.`;
-        }
-
-        const docsResp = await fetch(`../handlers/kyc.php?action=get_draft_documents&ref_code=${encodeURIComponent(refCode)}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const docsData = await docsResp.json();
-        const docs = (docsData && docsData.success) ? (docsData.data || []) : [];
-        const governmentIdDocs = docs.filter(doc => {
-            const docType = String(doc.document_type || '').toLowerCase();
-            return docType === 'government_id' || docType === 'id' || docType === 'id_photo';
-        });
-
-        if (!draftDocsContainer) return;
-        if (!docs.length) {
-            draftDocsContainer.innerHTML = `<div style="color: var(--gray-500);">No saved attachments for this draft yet.</div>`;
-        } else {
-            draftDocsContainer.innerHTML = docs.map(doc => {
-                const fileUrl = `../../${doc.file_path}`;
-                const name = escapeHtml(doc.file_name || 'file');
-                const ext = (doc.file_name || '').split('.').pop().toLowerCase();
-                const icon = ext === 'pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark';
-                const size = doc.file_size ? ` (${escapeHtml(String(doc.file_size))} bytes)` : '';
-
-                return `
-                    <div class="file-item" style="margin-bottom:10px;">
-                        <i class="bi ${icon}"></i>
-                        <span>${name}</span>
-                        <span style="color: var(--gray-500); font-size: .8rem;">${escapeHtml(size)}</span>
-                        <div style="margin-top:6px;">
-                            <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Open</a>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        setStoredGovernmentIdUploads(governmentIdDocs.map(doc => ({
-            original_name: doc.file_name || '',
-            file_name: doc.file_name || '',
-            file_type: doc.file_type || null,
-            file_size: doc.file_size || null,
-            file_path: doc.file_path || null
-        })));
-        renderGovernmentIdUploads();
-
-        // Also load attachments into the form's attachment holder.
-        const draftSessionUploads = docs.map(doc => ({
-            file_name: doc.file_name || '',
-            original_name: doc.file_name || '',
-            file_type: doc.file_type || null,
-            file_size: doc.file_size || null,
-            file_path: doc.file_path || null
-        }));
-
-        if (typeof setStoredUploads === 'function' && typeof renderStoredUploads === 'function') {
-            setStoredUploads(draftSessionUploads || []);
-            renderStoredUploads();
-        }
-    } catch (error) {
-        console.error('Error loading draft:', error);
-        showToast('error', 'Load Draft Failed', 'Unexpected error while loading the draft.');
-    } finally {
-        setButtonBusy(loadDraftBtn, false);
-    }
-}
-
-async function refreshDrafts() {
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    const refreshDraftBtn = document.getElementById('refreshDraftBtn');
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    const draftInfoEl = document.getElementById('draftInfo');
-
-    if (!draftSelect) return;
-
-    setButtonBusy(refreshDraftBtn, true, 'Refreshing...');
-
-    draftSelect.innerHTML = `<option value="">Loading...</option>`;
-    draftSelect.value = '';
-    if (loadDraftBtn) loadDraftBtn.disabled = true;
-    if (draftDocsContainer) draftDocsContainer.innerHTML = '';
-    if (draftInfoEl) draftInfoEl.textContent = '';
-
-    try {
-        const resp = await fetch(`../handlers/kyc.php?action=get_drafts&draftType=${encodeURIComponent(currentClientType)}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const data = await resp.json();
-        const drafts = (data && data.success) ? (data.data || []) : [];
-
-        if (!drafts.length) {
-            draftSelect.innerHTML = `<option value="">No drafts found</option>`;
-            if (loadDraftBtn) loadDraftBtn.disabled = true;
-            return;
-        }
-
-        draftSelect.innerHTML = `
-            <option value="">Select a draft...</option>
-        ` + drafts.map(d => {
-            const refCode = d.ref_code || d.reference_code || '';
-            const label = (d.company || d.email || 'Draft');
-            return `<option value="${escapeHtml(refCode)}">${escapeHtml(refCode)} - ${escapeHtml(label)}</option>`;
-        }).join('');
-
-        draftSelect.onchange = function () {
-            if (loadDraftBtn) loadDraftBtn.disabled = !this.value;
-        };
-    } catch (error) {
-        console.error('Error loading drafts:', error);
-        draftSelect.innerHTML = `<option value="">Failed to load drafts</option>`;
-        if (loadDraftBtn) loadDraftBtn.disabled = true;
-    } finally {
-        setButtonBusy(refreshDraftBtn, false);
-    }
-}
-
-function getResumeReferenceFromQuery() {
-    const params = new URLSearchParams(window.location.search || '');
-    return String(params.get('resume_ref') || params.get('ref_code') || '').trim();
-}
-
-async function autoLoadDraftFromQuery() {
-    const resumeRef = getResumeReferenceFromQuery();
-    if (!resumeRef) {
-        return;
-    }
-
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    if (!draftSelect) {
-        return;
-    }
-
-    const hasDraftOption = Array.from(draftSelect.options || []).some(option => option.value === resumeRef);
-    if (!hasDraftOption) {
-        showToast('info', 'Draft Not Found', `Draft ${resumeRef} is not available for this account.`);
-        return;
-    }
-
-    draftSelect.value = resumeRef;
-    if (loadDraftBtn) {
-        loadDraftBtn.disabled = false;
-    }
-
-    await loadSelectedDraft();
-}
-
-// Load drafts list on page open.
-document.addEventListener('DOMContentLoaded', async () => {
-    const draftSelect = document.getElementById('draftSelect');
-    if (!draftSelect) return;
-    await refreshDrafts();
-    await autoLoadDraftFromQuery();
-});
-
-function toggleDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel) return;
-    const willOpen = !panel.classList.contains('open');
-    panel.classList.toggle('open', willOpen);
-    document.body.classList.toggle('drafts-popup-open', willOpen);
-    if (toggleBtn) {
-        toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-    }
-    if (willOpen && typeof refreshDrafts === 'function') {
-        queueDraftsPanelPosition();
-        startDraftsPanelFollow();
-        refreshDrafts();
-    } else {
-        stopDraftsPanelFollow();
-    }
-}
-
-let draftsPanelPositionRaf = 0;
-let draftsPanelFollowRaf = 0;
-
-function queueDraftsPanelPosition() {
-    if (draftsPanelPositionRaf) return;
-    draftsPanelPositionRaf = requestAnimationFrame(() => {
-        draftsPanelPositionRaf = 0;
-        positionDraftsPanel();
-    });
-}
-
-function startDraftsPanelFollow() {
-    if (draftsPanelFollowRaf) return;
-    const tick = () => {
-        const panel = document.getElementById('draftsCard');
-        if (!panel || !panel.classList.contains('open')) {
-            draftsPanelFollowRaf = 0;
-            return;
-        }
-        positionDraftsPanel();
-        draftsPanelFollowRaf = requestAnimationFrame(tick);
-    };
-    draftsPanelFollowRaf = requestAnimationFrame(tick);
-}
-
-function stopDraftsPanelFollow() {
-    if (draftsPanelFollowRaf) {
-        cancelAnimationFrame(draftsPanelFollowRaf);
-        draftsPanelFollowRaf = 0;
-    }
-    if (draftsPanelPositionRaf) {
-        cancelAnimationFrame(draftsPanelPositionRaf);
-        draftsPanelPositionRaf = 0;
-    }
-}
-
-function positionDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    if (!panel || !panel.classList.contains('open')) {
-        return;
-    }
-
-    panel.style.top = '50%';
-    panel.style.left = '50%';
-    panel.style.right = 'auto';
-    panel.style.bottom = 'auto';
-    panel.style.width = '';
-    panel.style.maxWidth = '';
-}
-
-function closeDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel) return;
-    panel.classList.remove('open');
-    document.body.classList.remove('drafts-popup-open');
-    stopDraftsPanelFollow();
-    if (toggleBtn) {
-        toggleBtn.setAttribute('aria-expanded', 'false');
-    }
-}
-
-document.addEventListener('click', function (event) {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel || !panel.classList.contains('open')) return;
-
-    const clickedInsidePanel = panel.contains(event.target);
-    const clickedToggle = !!(toggleBtn && (toggleBtn === event.target || toggleBtn.contains(event.target)));
-    if (!clickedInsidePanel && !clickedToggle) {
-        closeDraftsPanel();
-    }
-});
-
-document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') {
-        closeDraftsPanel();
-    }
-});
-
-window.addEventListener('resize', queueDraftsPanelPosition);
-window.addEventListener('scroll', queueDraftsPanelPosition, true);
 
 let kycMasonryRaf = 0;
 let kycMasonryObserver = null;
 
 function getKycMasonryItems(form) {
     return Array.from(form.children).filter((el) => {
-        if (el.id === 'draftsCard') return false;
         if (el.classList.contains('wizard-hidden')) return false;
         return el.classList.contains('card') || el.classList.contains('client-type-inline');
     });
@@ -2413,45 +2121,57 @@ document.addEventListener('DOMContentLoaded', () => {
 function proceedToReview() {
     const proceedBtn = document.getElementById('proceedBtn');
     if (proceedBtn?.disabled) return;
+    let isNavigating = false;
 
-    syncCorporateAddressField();
+    try {
+        syncCorporateAddressField();
 
-    if (!validateAllRequired()) {
-        showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
-        return;
-    }
-
-    setButtonBusy(proceedBtn, true, 'Preparing...');
-    
-    // Collect form data
-    const formData = {};
-    const form = document.getElementById('kycForm');
-    const elements = form.querySelectorAll('input, select, textarea');
-    elements.forEach(el => {
-        if (el.name && el.value) {
-            formData[el.name] = el.value;
+        if (!validateAllRequired()) {
+            showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
+            return;
         }
-    });
-    
-    // Store in sessionStorage
-    sessionStorage.setItem('kycFormData', JSON.stringify(formData));
-    
-    // Also store address components separately for reliable restoration
-    const addressData = {
-        region: document.getElementById('region').value,
-        province: document.getElementById('corporateBusinessProvince').value,
-        city: document.getElementById('corporateBusinessCtm').value,
-        barangay: document.getElementById('corporateBusinessBarangay').value,
-        street: document.getElementById('corporateStreet').value,
-        composed: document.getElementById('corporateBusinessAddress').value
-    };
-    sessionStorage.setItem('corporateAddressData', JSON.stringify(addressData));
-    sessionStorage.setItem('kycGovernmentIdFiles', JSON.stringify(getStoredGovernmentIdUploads()));
-    
-    // Navigate to review page
-    const reviewUrl = new URL(currentReviewUrl, window.location.href);
-    reviewUrl.searchParams.set('classification', 'client');
-    window.location.href = `${reviewUrl.pathname}${reviewUrl.search}`;
+
+        setButtonBusy(proceedBtn, true, 'Preparing...');
+        
+        // Collect form data
+        const formData = {};
+        const form = document.getElementById('kycForm');
+        const elements = form.querySelectorAll('input, select, textarea');
+        elements.forEach(el => {
+            if (el.name && el.value) {
+                formData[el.name] = el.value;
+            }
+        });
+        
+        // Store in sessionStorage
+        sessionStorage.setItem('kycFormData', JSON.stringify(formData));
+        
+        // Also store address components separately for reliable restoration
+        const barangayEl = document.getElementById('corporateBusinessBarangay');
+        const addressData = {
+            region: document.getElementById('region')?.value || '',
+            province: document.getElementById('corporateBusinessProvince')?.value || '',
+            city: document.getElementById('corporateBusinessCtm')?.value || '',
+            barangay: isObligeeClient ? '' : (barangayEl?.value || ''),
+            street: document.getElementById('corporateStreet')?.value || '',
+            composed: document.getElementById('corporateBusinessAddress')?.value || ''
+        };
+        sessionStorage.setItem('corporateAddressData', JSON.stringify(addressData));
+        sessionStorage.setItem('kycGovernmentIdFiles', JSON.stringify(getStoredGovernmentIdUploads()));
+        
+        // Navigate to review page
+        const reviewUrl = new URL(currentReviewUrl, window.location.href);
+        reviewUrl.searchParams.set('classification', 'client');
+        isNavigating = true;
+        window.location.href = `${reviewUrl.pathname}${reviewUrl.search}`;
+    } catch (error) {
+        console.error('Error preparing obligee preview:', error);
+        showToast('error', 'Preview Failed', 'Unable to prepare the review page. Please try again.');
+    } finally {
+        if (!isNavigating) {
+            setButtonBusy(proceedBtn, false);
+        }
+    }
 }
 
 function submitForm() {
@@ -2509,75 +2229,15 @@ function submitForm() {
     });
 }
 
-function saveDraft() {
-    const saveDraftBtn = document.getElementById('saveDraftBtn');
-    if (saveDraftBtn?.disabled) return;
-
-    syncCorporateAddressField();
-    setButtonBusy(saveDraftBtn, true, 'Saving...');
-
-    // Collect form data
-    const formData = new FormData();
-    formData.append('action', 'save_draft');
-    
-    // Add all form fields
-    const form = document.getElementById('kycForm');
-    const elements = form.querySelectorAll('input, select, textarea');
-    elements.forEach(el => {
-        if (el.name) {
-            formData.append(el.name, el.value);
-        }
-    });
-
-    // Persist attachments into `documents` for this draft.
-    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
-    formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
-    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
-    
-    // Submit to handler
-    fetch('../handlers/kyc.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (data.reference_code && !document.getElementById('refCode').value) {
-                document.getElementById('refCode').value = data.reference_code;
-                document.getElementById('refCode').readOnly = true;
-            }
-            showToast('info', 'Draft Saved', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Your progress has been saved successfully.');
-        } else {
-            showToast('error', 'Save Failed', data.message || 'Please try again.');
-        }
-    })
-    .catch(error => {
-        showToast('error', 'Error', 'An error occurred. Please try again.');
-        console.error('Error:', error);
-    })
-    .finally(() => {
-        setButtonBusy(saveDraftBtn, false);
-    });
-}
-
 async function clearForm() {
     const clearBtn = document.getElementById('clearBtn');
     setButtonBusy(clearBtn, true, 'Clearing...');
 
     document.getElementById('kycForm').querySelectorAll('input, select').forEach(el => {
-        if (el.readOnly) return;
+        if (el.readOnly || el.dataset.locked === 'true') return;
         el.value = '';
         el.classList.remove('is-invalid','is-valid');
     });
-
-    const draftSelect = document.getElementById('draftSelect');
-    if (draftSelect) draftSelect.value = '';
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    if (loadDraftBtn) loadDraftBtn.disabled = true;
-    const draftInfoEl = document.getElementById('draftInfo');
-    if (draftInfoEl) draftInfoEl.textContent = '';
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    if (draftDocsContainer) draftDocsContainer.innerHTML = '';
 
     // Clear any temp-uploaded documents
     const uploads = (typeof getStoredUploads === 'function') ? getStoredUploads() : [];
@@ -2768,7 +2428,7 @@ document.addEventListener('DOMContentLoaded', revealFlowCards);
 
 // ── Auto-gen Client Number ─────────────────────────────────
 document.getElementById('refCode').addEventListener('input', function() {
-    const cn = this.value ? 'CN-' + Date.now().toString().slice(-6) : '';
+    const cn = this.value ? 'CN - ' + String(Math.floor(Math.random() * 1000000)).padStart(6, '0') : '';
     document.getElementById('clientNumber').value = cn;
 });
 

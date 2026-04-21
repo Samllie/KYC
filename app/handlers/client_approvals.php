@@ -39,42 +39,52 @@ function isHeadOfficeUser() {
         || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
 }
 
+function tableExistsByName($db, $tableName) {
+    static $cache = [];
+
+    $tableName = trim((string)$tableName);
+    if ($tableName === '') {
+        return false;
+    }
+
+    if (array_key_exists($tableName, $cache)) {
+        return $cache[$tableName];
+    }
+
+    $safeTable = preg_replace('/[^a-z0-9_]/i', '', $tableName);
+    if ($safeTable === '') {
+        $cache[$tableName] = false;
+        return false;
+    }
+
+    $result = $db->query("SHOW TABLES LIKE '" . $db->real_escape_string($safeTable) . "'");
+    $cache[$tableName] = $result && $result->num_rows > 0;
+
+    if ($result instanceof mysqli_result) {
+        $result->free();
+    }
+
+    return $cache[$tableName];
+}
+
 function approvalsTableExists($db) {
-    static $exists = null;
-
-    if ($exists !== null) {
-        return $exists;
-    }
-
-    $result = $db->query("SHOW TABLES LIKE 'client_approvals'");
-    $exists = $result && $result->num_rows > 0;
-
-    if ($result instanceof mysqli_result) {
-        $result->free();
-    }
-
-    return $exists;
+    return tableExistsByName($db, 'client_approvals');
 }
 
-function approvalStatusHistoryTableExists($db) {
-    static $exists = null;
-
-    if ($exists !== null) {
-        return $exists;
-    }
-
-    $result = $db->query("SHOW TABLES LIKE 'client_approval_status_history'");
-    $exists = $result && $result->num_rows > 0;
-
-    if ($result instanceof mysqli_result) {
-        $result->free();
-    }
-
-    return $exists;
+function agentApprovalsTableExists($db) {
+    return tableExistsByName($db, 'agent_approvals');
 }
 
-function recordApprovalStatusHistory($db, $existingApproval, $targetStatus, $reviewNotes, $reviewerId, $reviewedAt) {
-    if (!approvalStatusHistoryTableExists($db)) {
+function approvedAgentsTableExists($db) {
+    return tableExistsByName($db, 'approved_agents');
+}
+
+function approvalStatusHistoryTableExists($db, $tableName = 'client_approval_status_history') {
+    return tableExistsByName($db, $tableName);
+}
+
+function recordApprovalStatusHistory($db, $historyTableName, $existingApproval, $targetStatus, $reviewNotes, $reviewerId, $reviewedAt) {
+    if (!approvalStatusHistoryTableExists($db, $historyTableName)) {
         return;
     }
 
@@ -95,7 +105,7 @@ function recordApprovalStatusHistory($db, $existingApproval, $targetStatus, $rev
     $historyNotesOrNull = $historyNotes !== '' ? $historyNotes : null;
 
     $stmt = $db->prepare(
-        "INSERT INTO client_approval_status_history (
+        "INSERT INTO {$historyTableName} (
             approval_id,
             client_id,
             reference_code,
@@ -131,6 +141,125 @@ function recordApprovalStatusHistory($db, $existingApproval, $targetStatus, $rev
 
     $stmt->execute();
     $stmt->close();
+}
+
+function syncApprovedAgentRowFromClient($db, $clientId) {
+    $clientId = intval($clientId);
+    if ($clientId <= 0 || !approvedAgentsTableExists($db)) {
+        return;
+    }
+
+    $sql = "
+        INSERT INTO approved_agents (
+            client_id,
+            reference_code,
+            client_number,
+            client_type,
+            agent_type,
+            head_agent_name,
+            agent_branch,
+            client_name,
+            first_name,
+            middle_name,
+            last_name,
+            mobile_phone,
+            office_phone,
+            email,
+            verification_status,
+            submitted_by,
+            submitted_at,
+            verified_by,
+            created_at
+        )
+        SELECT
+            c.client_id,
+            c.reference_code,
+            c.client_number,
+            c.client_type,
+            c.agent_type,
+            c.head_agent_name,
+            c.agent_branch,
+            c.client_name,
+            c.first_name,
+            c.middle_name,
+            c.last_name,
+            c.mobile_phone,
+            c.office_phone,
+            c.email,
+            c.verification_status,
+            c.submitted_by,
+            c.submitted_at,
+            c.verified_by,
+            c.created_at
+        FROM clients c
+        WHERE c.client_id = ?
+        LIMIT 1
+        ON DUPLICATE KEY UPDATE
+            reference_code = VALUES(reference_code),
+            client_number = VALUES(client_number),
+            client_type = VALUES(client_type),
+            agent_type = VALUES(agent_type),
+            head_agent_name = VALUES(head_agent_name),
+            agent_branch = VALUES(agent_branch),
+            client_name = VALUES(client_name),
+            first_name = VALUES(first_name),
+            middle_name = VALUES(middle_name),
+            last_name = VALUES(last_name),
+            mobile_phone = VALUES(mobile_phone),
+            office_phone = VALUES(office_phone),
+            email = VALUES(email),
+            verification_status = VALUES(verification_status),
+            submitted_by = VALUES(submitted_by),
+            submitted_at = VALUES(submitted_at),
+            verified_by = VALUES(verified_by),
+            updated_at = CURRENT_TIMESTAMP
+    ";
+
+    $stmt = $db->prepare($sql);
+    if (!$stmt) {
+        return;
+    }
+
+    $stmt->bind_param('i', $clientId);
+    $stmt->execute();
+    $stmt->close();
+}
+
+function deleteApprovedAgentRowByClient($db, $clientId) {
+    $clientId = intval($clientId);
+    if ($clientId <= 0 || !approvedAgentsTableExists($db)) {
+        return;
+    }
+
+    $stmt = $db->prepare("DELETE FROM approved_agents WHERE client_id = ?");
+    if (!$stmt) {
+        return;
+    }
+
+    $stmt->bind_param('i', $clientId);
+    $stmt->execute();
+    $stmt->close();
+}
+
+function deleteApprovalRowById($db, $tableName, $approvalId) {
+    $approvalId = intval($approvalId);
+    $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$tableName);
+
+    if ($approvalId <= 0 || $safeTable === '' || !tableExistsByName($db, $safeTable)) {
+        return false;
+    }
+
+    $stmt = $db->prepare("DELETE FROM {$safeTable} WHERE approval_id = ?");
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('i', $approvalId);
+    $stmt->execute();
+    $deleted = $stmt->affected_rows > 0;
+    $stmt->close();
+
+    return $deleted;
 }
 
 function buildDocumentPreviewUrl($rawPath) {
@@ -544,8 +673,18 @@ if (!isHeadOfficeUser()) {
     exit;
 }
 
-if (!approvalsTableExists($db)) {
-    $response['message'] = 'Client approvals table is not available. Please run database migrations.';
+$queueScope = strtolower(trim($_GET['queue'] ?? $_POST['queue'] ?? 'client'));
+if (!in_array($queueScope, ['client', 'agent'], true)) {
+    $queueScope = 'client';
+}
+
+$queueTable = $queueScope === 'agent' ? 'agent_approvals' : 'client_approvals';
+$historyTable = $queueScope === 'agent' ? 'agent_approval_status_history' : 'client_approval_status_history';
+
+if (!tableExistsByName($db, $queueTable)) {
+    $response['message'] = ($queueScope === 'agent'
+        ? 'Agent approvals table is not available. Please run database migrations.'
+        : 'Client approvals table is not available. Please run database migrations.');
     echo json_encode($response);
     exit;
 }
@@ -580,9 +719,6 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $whereClauses = [];
     $filterParams = [];
     $filterTypes = '';
-
-    // Limit queue view to applications submitted by KYC officer accounts.
-    $whereClauses[] = "LOWER(REPLACE(COALESCE(su.role, ''), '-', '_')) = 'kyc_officer'";
 
     if ($search !== '') {
         $searchLike = '%' . $search . '%';
@@ -636,7 +772,7 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $countQuery = "
         SELECT COUNT(*) AS total
-        FROM client_approvals ca
+        FROM {$queueTable} ca
         LEFT JOIN users su ON ca.submitted_by = su.user_id
         $whereSql
     ";
@@ -664,13 +800,13 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
             ca.approval_id DESC
     ";
 
-    if (approvalStatusHistoryTableExists($db)) {
+    if (approvalStatusHistoryTableExists($db, $historyTable)) {
         $resubmissionJoinSql = "
         LEFT JOIN (
             SELECT
                 h.approval_id,
                 MAX(h.reviewed_at) AS officer_resubmitted_at
-            FROM client_approval_status_history h
+            FROM {$historyTable} h
             LEFT JOIN users hu ON h.reviewed_by = hu.user_id
             WHERE h.previous_status = 'resubmit'
               AND h.new_status = 'pending'
@@ -725,7 +861,7 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
             su.full_name AS submitted_by_name,
             su.branch AS submitted_by_branch,
             ru.full_name AS reviewed_by_name
-        FROM client_approvals ca
+        FROM {$queueTable} ca
         LEFT JOIN users su ON ca.submitted_by = su.user_id
         LEFT JOIN users ru ON ca.reviewed_by = ru.user_id
         $resubmissionJoinSql
@@ -765,10 +901,9 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $availableBranches = [];
     $branchesResult = $db->query(
         "SELECT DISTINCT su.branch
-         FROM client_approvals ca
+         FROM {$queueTable} ca
          LEFT JOIN users su ON ca.submitted_by = su.user_id
-                 WHERE LOWER(REPLACE(COALESCE(su.role, ''), '-', '_')) = 'kyc_officer'
-                     AND su.branch IS NOT NULL AND TRIM(su.branch) <> ''
+         WHERE su.branch IS NOT NULL AND TRIM(su.branch) <> ''
          ORDER BY su.branch ASC"
     );
 
@@ -804,7 +939,7 @@ if ($action === 'get_application' && $_SERVER['REQUEST_METHOD'] === 'GET') {
             su.full_name AS submitted_by_name,
             su.branch AS submitted_by_branch,
             ru.full_name AS reviewed_by_name
-         FROM client_approvals ca
+         FROM {$queueTable} ca
          LEFT JOIN users su ON ca.submitted_by = su.user_id
          LEFT JOIN users ru ON ca.reviewed_by = ru.user_id
          WHERE ca.approval_id = ?",
@@ -866,31 +1001,11 @@ if ($action === 'get_application' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $matchingCredentials = findMatchingClients($approval, $client, $kyc, $clientId, $approval['reference_code'] ?? '');
 
-    $allSubmittedData = [];
-    if (is_array($approval)) {
-        foreach ($approval as $key => $value) {
-            $allSubmittedData['approval_' . $key] = $value;
-        }
-    }
-
-    if (is_array($client)) {
-        foreach ($client as $key => $value) {
-            $allSubmittedData['client_' . $key] = $value;
-        }
-    }
-
-    if (is_array($kyc)) {
-        foreach ($kyc as $key => $value) {
-            $allSubmittedData['kyc_' . $key] = $value;
-        }
-    }
-
     $response['success'] = true;
     $response['data'] = [
         'approval' => $approval,
         'client' => $client,
         'kyc' => $kyc,
-        'all_submitted_data' => $allSubmittedData,
         'documents' => is_array($documents) ? $documents : [],
         'matching_credentials' => $matchingCredentials,
     ];
@@ -909,7 +1024,7 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
     }
 
     $existing = fetchOne(
-        "SELECT approval_id, client_id, reference_code, approval_status FROM client_approvals WHERE approval_id = ?",
+        "SELECT approval_id, client_id, reference_code, approval_status, client_classification FROM {$queueTable} WHERE approval_id = ?",
         [$approvalId]
     );
 
@@ -934,7 +1049,7 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
         'approved_at' => $targetStatus === 'approved' ? $now : null,
     ];
 
-    $updateResult = update('client_approvals', $updatePayload, 'approval_id = ?', [$approvalId]);
+    $updateResult = update($queueTable, $updatePayload, 'approval_id = ?', [$approvalId]);
     if (isset($updateResult['error'])) {
         $response['message'] = $updateResult['error'];
         echo json_encode($response);
@@ -943,6 +1058,7 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
 
     recordApprovalStatusHistory(
         $db,
+        $historyTable,
         $existing,
         $targetStatus,
         $reviewNotes,
@@ -951,6 +1067,7 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
     );
 
     $targetClientId = intval($existing['client_id']);
+    $targetClassification = strtolower(trim((string)($existing['client_classification'] ?? 'client')));
     if ($targetClientId > 0) {
         if ($targetStatus === 'approved') {
             $stmt = $db->prepare(
@@ -962,6 +1079,10 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
                 $stmt->bind_param('i', $targetClientId);
                 $stmt->execute();
                 $stmt->close();
+            }
+
+            if ($targetClassification === 'agent') {
+                syncApprovedAgentRowFromClient($db, $targetClientId);
             }
 
             $stmt = $db->prepare(
@@ -998,6 +1119,10 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
                 $stmt->execute();
                 $stmt->close();
             }
+
+            if ($targetClassification === 'agent') {
+                deleteApprovedAgentRowByClient($db, $targetClientId);
+            }
         } elseif ($targetStatus === 'resubmit') {
             $resubmitReason = $reviewNotes !== '' ? $reviewNotes : 'Resubmission requested by Head Office review';
 
@@ -1022,11 +1147,47 @@ if (in_array($action, ['approve', 'decline', 'resubmit'], true) && $_SERVER['REQ
                 $stmt->execute();
                 $stmt->close();
             }
+
+            if ($targetClassification === 'agent') {
+                deleteApprovedAgentRowByClient($db, $targetClientId);
+            }
         }
     }
 
     $response['success'] = true;
     $response['message'] = 'Approval status updated successfully';
+    echo json_encode($response);
+    exit;
+}
+
+if ($action === 'delete_approval_record' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $approvalId = intval($_POST['approval_id'] ?? 0);
+
+    if ($approvalId <= 0) {
+        $response['message'] = 'Invalid approval ID';
+        echo json_encode($response);
+        exit;
+    }
+
+    $existing = fetchOne(
+        "SELECT approval_id, client_id, reference_code, approval_status, client_classification FROM {$queueTable} WHERE approval_id = ?",
+        [$approvalId]
+    );
+
+    if (!$existing) {
+        $response['message'] = 'Approval record not found';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (!deleteApprovalRowById($db, $queueTable, $approvalId)) {
+        $response['message'] = 'Approval record not found';
+        echo json_encode($response);
+        exit;
+    }
+
+    $response['success'] = true;
+    $response['message'] = 'Approval record deleted successfully';
     echo json_encode($response);
     exit;
 }

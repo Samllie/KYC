@@ -183,9 +183,11 @@ try {
 
     $usersHasBranch = hasColumn($db, 'users', 'branch');
     $clientsHasClassification = hasColumn($db, 'clients', 'client_classification');
-    $usingAgentsTable = $classification === 'agent' && tableExists($db, 'agents');
-    $usingApprovalQueue = tableExists($db, 'client_approvals');
-    $activityTable = $usingAgentsTable ? 'agents' : 'clients';
+    $usingApprovedAgentsTable = $classification === 'agent' && tableExists($db, 'approved_agents');
+    $usingAgentsTable = $classification === 'agent';
+    $usingLegacyAgentsTable = $usingAgentsTable && !$usingApprovedAgentsTable && tableExists($db, 'agents');
+    $usingApprovalQueue = !$usingApprovedAgentsTable && tableExists($db, $classification === 'agent' ? 'agent_approvals' : 'client_approvals');
+    $activityTable = $usingApprovedAgentsTable ? 'approved_agents' : ($usingLegacyAgentsTable ? 'agents' : 'clients');
     $activityColumnsAvailable = clientActivityHasColumn($db, $activityTable, 'activity_status')
         && clientActivityHasColumn($db, $activityTable, 'activity_status_updated_at');
 
@@ -202,9 +204,14 @@ try {
     $branchSelectExpr = "COALESCE($branchSqlExpr, 'UNASSIGNED')";
 
     $tableAlias = $usingAgentsTable ? 'a' : 'c';
-    $baseTableSql = $usingAgentsTable ? 'agents a' : 'clients c';
-    $approvalJoinSql = $usingApprovalQueue
-        ? " LEFT JOIN client_approvals ca ON ca.reference_code = {$tableAlias}.reference_code"
+    $baseTableSql = $usingAgentsTable
+        ? ($usingApprovedAgentsTable ? 'approved_agents a' : 'agents a')
+        : 'clients c';
+    $agentTypeSelect = hasColumn($db, $activityTable, 'agent_type') ? "{$tableAlias}.agent_type" : "NULL AS agent_type";
+    $headAgentNameSelect = hasColumn($db, $activityTable, 'head_agent_name') ? "{$tableAlias}.head_agent_name" : "NULL AS head_agent_name";
+    $agentBranchSelect = hasColumn($db, $activityTable, 'agent_branch') ? "{$tableAlias}.agent_branch" : "NULL AS agent_branch";
+    $approvalJoinSql = ($usingApprovalQueue && !$usingApprovedAgentsTable)
+        ? " LEFT JOIN " . ($classification === 'agent' ? 'agent_approvals' : 'client_approvals') . " ca ON ca.reference_code = {$tableAlias}.reference_code"
         : '';
 
     $clientsClassificationSqlExpr = $clientsHasClassification
@@ -269,7 +276,10 @@ try {
     }
 
     if ($type !== '') {
-        $whereClauses[] = $tableAlias . '.client_type = ?';
+        $typeColumn = $usingAgentsTable && hasColumn($db, $activityTable, 'agent_type')
+            ? $tableAlias . '.agent_type'
+            : $tableAlias . '.client_type';
+        $whereClauses[] = $typeColumn . ' = ?';
         $filterParams[] = $type;
         $filterTypes .= 's';
     }
@@ -356,6 +366,9 @@ try {
             {$tableAlias}.first_name,
             {$tableAlias}.last_name,
             {$tableAlias}.client_type,
+            {$agentTypeSelect},
+            {$headAgentNameSelect},
+            {$agentBranchSelect},
             {$tableAlias}.mobile_phone,
             {$tableAlias}.office_phone,
             {$tableAlias}.email,
@@ -394,10 +407,6 @@ try {
     $availableBranches = [];
     if ($isHeadOfficeUser && $usersHasBranch) {
         if ($usingAgentsTable) {
-            $branchJoinSql = $usingApprovalQueue
-                ? ' LEFT JOIN client_approvals ca ON ca.reference_code = a.reference_code'
-                : '';
-
             $branchExpr = $usingApprovalQueue
                 ? "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))"
                 : "NULLIF(TRIM(su.branch), '')";
@@ -412,9 +421,9 @@ try {
 
             $branchSql = "
                 SELECT DISTINCT $branchExpr AS branch
-                FROM agents a
-                LEFT JOIN users su ON a.submitted_by = su.user_id
-                {$branchJoinSql}
+                FROM {$baseTableSql}
+                LEFT JOIN users su ON {$tableAlias}.submitted_by = su.user_id
+                {$approvalJoinSql}
                 WHERE " . implode(' AND ', $branchWhereClauses) . "
                 ORDER BY branch ASC
             ";

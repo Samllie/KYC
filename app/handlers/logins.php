@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // Query user
-    $user = fetchOne("SELECT user_id, full_name, email, password, department, branch, role FROM users WHERE email = ?", [$email]);
+    $user = fetchOne("SELECT user_id, full_name, email, password, department, branch, role, account_classification, account_level FROM users WHERE email = ?", [$email]);
     
     if (!$user) {
         // User not found - could be wrong email or users table doesn't exist
@@ -78,6 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['department'] = $user['department'];
     $_SESSION['branch'] = $user['branch'];
     $_SESSION['role'] = $user['role'];
+    $_SESSION['account_classification'] = $user['account_classification'] ?? '';
+    $_SESSION['account_level'] = intval($user['account_level'] ?? 0);
 
     // Remember this account as trusted on this device for Switch Account suggestions.
     deviceAccountsRememberEmail($user['email']);

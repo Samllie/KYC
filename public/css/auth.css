@@ -45,13 +45,18 @@ body {
     background-color: var(--gray-100);
     color: var(--gray-900);
     line-height: 1.6;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 /* ─── Auth Container ──────────────────────────────── */
 .auth-container {
-    height: 100vh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -63,6 +68,9 @@ body {
     background-blend-mode: multiply;
     position: relative;
     overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .auth-container::before {
@@ -88,17 +96,15 @@ body {
     z-index: 2;
 }
 
-.page-corner-logo-wrap {
-    position: absolute;
-    top: 18px;
-    left: 18px;
-    z-index: 3;
-    pointer-events: none;
+.auth-panel-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
 }
 
-.page-corner-logo {
-    width: 270px;
-    max-width: 36vw;
+.auth-panel-logo-image {
+    width: 170px;
+    max-width: 52vw;
     height: auto;
     object-fit: contain;
     filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18));
@@ -158,23 +164,24 @@ body {
 /* ─── Form Container ──────────────────────────────── */
 .auth-form-container {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
     background: rgba(255, 255, 255, 0.92);
     border-radius: 20px;
-    padding: 20px;
+    padding: 18px;
     border: 1px solid #d7e5dd;
     box-shadow: 0 14px 34px rgba(13, 56, 34, 0.14);
 }
 
 .auth-form {
     background: rgba(255, 255, 255, 0.85);
-    padding: 28px;
+    padding: 24px;
     border-radius: 18px;
     box-shadow: none;
     width: 100%;
-    max-width: 500px;
+    max-width: 460px;
 }
 
 /* Register-specific layout polish */
@@ -196,19 +203,26 @@ body {
 .auth-container.register-layout .auth-form-container {
     position: relative;
     width: 100%;
-    max-width: 560px;
-    justify-self: center;
+    max-width: 520px;
     border-radius: var(--radius-lg);
-    padding: 20px;
+    padding: 18px;
     border: 1.5px solid var(--gray-300);
     background: var(--white);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
 }
 
+.auth-container.register-layout .auth-panel-logo {
+    margin-bottom: 14px;
+}
+
+.auth-container.register-layout .auth-panel-logo-image {
+    width: 150px;
+}
+
 .auth-container.register-layout .auth-form {
     border-radius: 18px;
-    padding: 24px;
+    padding: 22px;
     max-width: 100%;
 }
 
@@ -715,6 +729,7 @@ body {
     .auth-wrapper {
         grid-template-columns: 1fr;
         gap: 32px;
+        max-width: 720px;
     }
 
     .auth-container.register-layout .auth-wrapper {
@@ -740,6 +755,9 @@ body {
 @media (max-width: 768px) {
     .auth-container {
         padding: 16px;
+        background-attachment: scroll;
+        align-items: center;
+        justify-content: center;
     }
 
     .auth-container.register-layout {
@@ -751,38 +769,81 @@ body {
     }
 
     .auth-wrapper {
-        gap: 24px;
+        gap: 16px;
+        width: 100%;
+        max-width: 460px;
     }
 
-    .page-corner-logo-wrap {
-        top: 14px;
-        left: 14px;
+    .auth-container.login-layout .auth-wrapper {
+        grid-template-columns: 1fr;
+        max-width: 420px;
     }
 
-    .page-corner-logo {
-        width: 210px;
-        max-width: 46vw;
+    .auth-container.login-layout .auth-brand {
+        display: none;
+    }
+
+    .auth-container.register-layout .auth-brand {
+        display: none;
+    }
+
+    .auth-container.login-layout .auth-form-container {
+        padding: 12px;
+    }
+
+    .auth-container.register-layout .auth-form-container {
+        padding: 12px;
     }
 
     .auth-brand {
-        padding: 20px;
+        display: flex;
+        width: 100%;
+        padding: 8px 0 0;
+        align-items: center;
+        text-align: center;
     }
 
     .auth-brand h1 {
-        font-size: 1.74rem;
+        font-size: 1.52rem;
+        margin-bottom: 6px;
+    }
+
+    .brand-description {
+        max-width: none;
     }
 
     .brand-description p {
-        font-size: 1.04rem;
-        line-height: 1.68;
+        font-size: 0.98rem;
+        line-height: 1.62;
+    }
+
+    .auth-form-container {
+        width: 100%;
+        padding: 12px;
+        border-radius: 16px;
+    }
+
+    .auth-panel-logo {
+        margin-bottom: 10px;
+    }
+
+    .auth-panel-logo-image {
+        width: 128px;
+        max-width: 50vw;
     }
 
     .auth-form {
-        padding: 28px;
+        max-width: none;
+        padding: 18px;
+    }
+
+    .auth-container.register-layout .auth-form-container {
+        max-width: none;
+        padding: 12px;
     }
 
     .auth-container.register-layout .auth-form {
-        padding: 28px;
+        padding: 18px;
     }
 
     .register-form-grid {
@@ -811,6 +872,33 @@ body {
         font-size: 1.46rem;
     }
 
+    .switch-accounts {
+        max-height: none;
+        overflow: visible;
+        gap: 8px;
+    }
+
+    .switch-account-btn {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 14px;
+    }
+
+    .switch-account-name {
+        white-space: normal;
+        line-height: 1.3;
+    }
+
+    .switch-account-meta {
+        white-space: normal;
+        line-height: 1.35;
+    }
+
+    .switch-account-btn i {
+        align-self: flex-end;
+        margin-top: -2px;
+    }
+
     .toast-container {
         left: 16px;
         right: 16px;
@@ -819,74 +907,125 @@ body {
 }
 
 @media (max-width: 480px) {
-    .brand-logo-image {
-        width: 140px;
-        max-width: 75%;
+    .auth-container {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .auth-container.login-layout .auth-wrapper {
+        max-width: 100%;
+    }
+
+    .auth-container.login-layout .auth-form-container {
+        padding: 10px;
+    }
+
+    .auth-container.register-layout .auth-form-container {
+        padding: 10px;
+    }
+
+    .auth-wrapper {
+        gap: 12px;
+    }
+
+    .auth-panel-logo-image {
+        width: 116px;
+        max-width: 52vw;
+    }
+
+    .auth-brand {
+        padding-top: 4px;
     }
 
     .auth-brand h1 {
-        font-size: 1.44rem;
-    }
-
-    .auth-brand p {
-        font-size: 0.9rem;
+        font-size: 1.28rem;
     }
 
     .brand-description p {
-        font-size: 0.97rem;
-        line-height: 1.62;
+        font-size: 0.92rem;
+        line-height: 1.56;
+    }
+
+    .auth-form-container {
+        padding: 10px;
+        border-radius: 16px;
     }
 
     .auth-form {
-        padding: 20px;
-        border-radius: var(--radius-md);
+        padding: 16px;
+        border-radius: 14px;
     }
 
     .form-header {
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
 
     .form-header h2 {
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
 
     .form-header p {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
     }
 
     .login-form-header h2 {
-        font-size: 1.3rem;
+        font-size: 1.18rem;
     }
 
     .login-form-header p {
-        font-size: 0.9rem;
+        font-size: 0.84rem;
     }
 
     .register-form-header h2 {
-        font-size: 1.26rem;
+        font-size: 1.12rem;
     }
 
     .form-group {
-        margin-bottom: 14px;
+        margin-bottom: 12px;
+    }
+
+    .form-control,
+    .form-select {
+        padding: 9px 11px;
+        font-size: 0.82rem;
     }
 
     .btn {
-        padding: 9px 14px;
-        font-size: 0.85rem;
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 14px;
+        font-size: 0.83rem;
     }
 
     .auth-footer p {
         font-size: 0.7rem;
     }
 
-    .panel-logo {
-        width: 120px;
-        max-width: 64%;
+    .form-options {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 16px;
     }
 
-    .page-corner-logo {
-        width: 160px;
-        max-width: 56vw;
+    .checkbox-label {
+        font-size: 0.84rem;
+    }
+
+    .switch-accounts {
+        gap: 7px;
+    }
+
+    .switch-account-btn {
+        padding: 11px 12px;
+    }
+
+    .switch-account-name {
+        font-size: 0.86rem;
+    }
+
+    .switch-account-meta {
+        font-size: 0.72rem;
     }
 
 }

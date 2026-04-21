@@ -47,6 +47,8 @@ function getCurrentUser() {
         'department' => $_SESSION['department'] ?? '',
         'branch' => $_SESSION['branch'] ?? '',
         'role' => $_SESSION['role'] ?? '',
+        'account_classification' => $_SESSION['account_classification'] ?? '',
+        'account_level' => intval($_SESSION['account_level'] ?? 0),
         'avatar_initials' => getAvatarInitials($_SESSION['full_name'] ?? '')
     ];
 }
@@ -55,12 +57,27 @@ function getCurrentUser() {
  * Generate avatar initials from full name
  */
 function getAvatarInitials($fullName) {
-    $parts = explode(' ', trim($fullName));
-    $initials = '';
-    foreach ($parts as $part) {
-        $initials .= strtoupper($part[0]);
+    $cleanName = trim(preg_replace('/\s+/', ' ', (string)$fullName));
+
+    if ($cleanName === '') {
+        return 'U';
     }
-    return substr($initials, 0, 2);
+
+    $parts = preg_split('/\s+/', $cleanName) ?: [];
+    $firstPart = $parts[0] ?? '';
+    $lastPart = $parts[count($parts) - 1] ?? '';
+
+    $firstInitial = strtoupper(substr($firstPart, 0, 1));
+    if ($firstInitial === '') {
+        return 'U';
+    }
+
+    $lastInitial = strtoupper(substr($lastPart, 0, 1));
+    if ($lastInitial === '' || count($parts) === 1) {
+        return $firstInitial;
+    }
+
+    return $firstInitial . $lastInitial;
 }
 
 /**

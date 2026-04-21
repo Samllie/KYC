@@ -12,6 +12,9 @@ $clientTypeLabel = $isObligee ? 'Obligee Client' : 'Corporate Client';
 $breadcrumbParentLabel = 'Clients';
 $savedEntityLabel = 'Client';
 $backToEditUrl = 'kyc-corporate.php?type=' . urlencode($selectedClientType) . '&classification=' . urlencode($selectedClassification);
+$pageBackground = $isObligee
+    ? 'radial-gradient(circle at 15% 20%, rgba(244, 232, 222, 0.92) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(233, 213, 194, 0.5) 0%, transparent 34%), linear-gradient(160deg, #fcf6f0 0%, #f5eadf 46%, #ffffff 100%)'
+    : 'radial-gradient(circle at 15% 20%, rgba(232, 244, 238, 0.92) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(217, 242, 226, 0.5) 0%, transparent 34%), linear-gradient(160deg, #f7fcf9 0%, #edf8f1 46%, #ffffff 100%)';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -100,7 +103,7 @@ $backToEditUrl = 'kyc-corporate.php?type=' . urlencode($selectedClientType) . '&
         }
     </style>
 </head>
-<body style="--wizard-accent:<?php echo $isObligee ? '#8b5a2b' : '#2ea371'; ?>;--wizard-accent-soft:<?php echo $isObligee ? '#f4e8de' : '#e8f4ee'; ?>;--wizard-accent-deep:<?php echo $isObligee ? '#6b4320' : '#16633f'; ?>;">
+<body style="--wizard-accent:<?php echo $isObligee ? '#8b5a2b' : '#2ea371'; ?>;--wizard-accent-soft:<?php echo $isObligee ? '#f4e8de' : '#e8f4ee'; ?>;--wizard-accent-deep:<?php echo $isObligee ? '#6b4320' : '#16633f'; ?>;--page-background:<?php echo $pageBackground; ?>;">
 
 <?php
 $activePage = 'kyc-verification';
@@ -230,6 +233,17 @@ function escapeHtml(value) {
         .replaceAll("'", '&#039;');
 }
 
+function formatReviewValue(key, value) {
+    const text = String(value || '').trim();
+    if (!text) return '';
+
+    if (key === 'businessType') {
+        return text.toLowerCase() === 'government' ? 'Government' : 'Private Sector';
+    }
+
+    return text;
+}
+
 // ── Display Review Information ─────────────────────────
 function displayReview() {
     const formData = JSON.parse(sessionStorage.getItem('kycFormData') || '{}');
@@ -312,7 +326,7 @@ function displayReview() {
         `;
         
         section.fields.forEach(field => {
-            const value = formData[field.key] || '';
+            const value = formatReviewValue(field.key, formData[field.key]);
             if (value) {
                 html += `
                     <div>

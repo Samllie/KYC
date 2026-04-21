@@ -35,12 +35,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fullname = trim($_POST['fullname'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $branch = trim($_POST['branch'] ?? '');
+    $accountClassification = strtolower(trim($_POST['account_classification'] ?? ''));
     $password = trim($_POST['password'] ?? '');
     $confirmPassword = trim($_POST['confirm_password'] ?? '');
-    $department = trim($_POST['department'] ?? 'KYC');
     $maxCredentialLength = 32;
     $maxEmailLength = 120;
     $allowedEmailDomain = '@sterling-insurance.com.ph';
+    $allowedClassifications = [
+        'head_office',
+        'branch_manager',
+        'kyc_officer'
+    ];
+    $classificationRoleMap = [
+        'head_office' => 'admin',
+        'branch_manager' => 'manager',
+        'kyc_officer' => 'kyc_officer'
+    ];
+    $classificationLevelMap = [
+        'head_office' => 3,
+        'branch_manager' => 2,
+        'kyc_officer' => 1
+    ];
+    $classificationDepartmentMap = [
+        'head_office' => 'HEAD OFFICE',
+        'branch_manager' => 'BRANCH MANAGEMENT',
+        'kyc_officer' => 'KYC'
+    ];
     $allowedBranches = [
         'ALABANG BRANCH',
         'MANILA BRANCH I',
@@ -80,8 +100,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
     
     // Validation
-    if (empty($fullname) || empty($email) || empty($branch) || empty($password) || empty($confirmPassword)) {
+    if (empty($fullname) || empty($email) || empty($accountClassification) || empty($branch) || empty($password) || empty($confirmPassword)) {
         $response['message'] = 'All fields are required';
+        echo json_encode($response);
+        exit;
+    }
+
+    if (!in_array($accountClassification, $allowedClassifications, true)) {
+        $response['message'] = 'Invalid account classification selected';
         echo json_encode($response);
         exit;
     }
@@ -134,7 +160,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode($response);
         exit;
     }
-    
+
+    $role = $classificationRoleMap[$accountClassification] ?? 'kyc_officer';
+    $department = $classificationDepartmentMap[$accountClassification] ?? 'KYC';
+    $accountLevel = $classificationLevelMap[$accountClassification] ?? 1;
+
     if ($password !== $confirmPassword) {
         $response['message'] = 'Passwords do not match';
         echo json_encode($response);
@@ -151,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Hash password
     $passwordHash = hash('sha256', $password);
-    $avatarInitials = strtoupper(substr($fullname, 0, 1) . substr(strrchr($fullname, ' '), 1, 1));
+    $avatarInitials = getAvatarInitials($fullname);
     
     // Insert user
     $result = insert('users', [
@@ -160,7 +190,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'password' => $passwordHash,
         'department' => $department,
         'branch' => $branch,
-        'role' => 'kyc_officer',
+        'role' => $role,
+        'account_classification' => $accountClassification,
+        'account_level' => $accountLevel,
         'avatar_initials' => $avatarInitials,
         'status' => 'active'
     ]);

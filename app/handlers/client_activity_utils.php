@@ -102,6 +102,22 @@ if (!function_exists('clientActivityParseDate')) {
     }
 }
 
+if (!function_exists('clientActivityParseDateTime')) {
+    function clientActivityParseDateTime(?string $value): ?DateTimeImmutable
+    {
+        $dateValue = trim((string)$value);
+        if ($dateValue === '') {
+            return null;
+        }
+
+        try {
+            return new DateTimeImmutable($dateValue);
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+}
+
 if (!function_exists('clientActivityFormatDuration')) {
     function clientActivityFormatDuration(DateTimeInterface $from, DateTimeInterface $to): string
     {
@@ -186,7 +202,7 @@ if (!function_exists('clientActivityBuildSnapshot')) {
             'activity_inactive_date_display' => 'N/A',
             'activity_deactivated_date_display' => 'N/A',
             'activity_next_change_display' => 'N/A',
-            'activity_status_updated_display' => clientActivityFormatDate($updatedAt),
+            'activity_status_updated_display' => appFormatTimestampLocal($updatedAt),
         ];
     }
 }
@@ -312,14 +328,13 @@ if (!function_exists('clientActivityRefreshTable')) {
 if (!function_exists('clientActivityFormatDate')) {
     function clientActivityFormatDate(?string $value): string
     {
-        $date = clientActivityParseDate($value);
-        return $date ? $date->format('M j, Y') : 'N/A';
+        return appFormatDateLocal($value);
     }
 }
 
 if (!function_exists('clientActivityFormatDateTime')) {
     function clientActivityFormatDateTime(?string $value): string
     {
-        return clientActivityFormatDate($value);
+        return appFormatTimestampLocal($value);
     }
 }

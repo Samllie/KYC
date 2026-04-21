@@ -5,6 +5,7 @@ requireLogin();
 $requestedClassification = strtolower(trim($_GET['classification'] ?? 'client'));
 $defaultClassification = $requestedClassification === 'agent' ? 'agent' : 'client';
 $isAgentDefault = $defaultClassification === 'agent';
+$pageBackground = 'radial-gradient(circle at 15% 20%, rgba(232, 240, 251, 0.9) 0%, transparent 34%), radial-gradient(circle at 82% 18%, rgba(232, 244, 238, 0.9) 0%, transparent 30%), radial-gradient(circle at 72% 82%, rgba(244, 232, 222, 0.85) 0%, transparent 30%), linear-gradient(160deg, #fbfdff 0%, #f7fafc 46%, #fffaf4 100%)';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -447,7 +448,7 @@ $isAgentDefault = $defaultClassification === 'agent';
         }
     </style>
 </head>
-<body class="kyc-compact">
+<body class="kyc-compact" style="--page-background:<?php echo $pageBackground; ?>;">
 
 <?php
 $activePage = 'kyc-verification';
@@ -524,7 +525,7 @@ include '../includes/sidebar.php';
                         <i class="bi bi-people"></i>
                         <div class="selection-group-title">Client Registrations</div>
                     </div>
-                    <p class="selection-group-subtitle">Use this when registering policyholders and obligees as clients.</p>
+                    <p class="selection-group-subtitle">Use this when registering policyholders and Philippine government bodies as obligees.</p>
 
                     <div class="type-selector">
                         <a href="kyc-individual.php?classification=client" class="type-card individual">
@@ -555,7 +556,7 @@ include '../includes/sidebar.php';
                             </div>
                             <div class="type-card-title">Obligee Client</div>
                             <div class="type-card-desc">
-                                Register an obligee client using a dedicated obligee workflow.
+                                Register a Philippine government body using the dedicated obligee workflow.
                             </div>
                             <div class="type-card-btn">Select Obligee Client</div>
                         </a>
@@ -576,7 +577,7 @@ include '../includes/sidebar.php';
                             </div>
                             <div class="type-card-title">Individual Agent</div>
                             <div class="type-card-desc">
-                                Register an individual as an agent with identity and contact verification.
+                                Register an individual as an insurance agent with profile, ID, and contact verification.
                             </div>
                             <div class="type-card-btn">Select Individual Agent</div>
                         </a>

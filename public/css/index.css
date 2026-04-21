@@ -50,12 +50,13 @@
 html { font-size: 15px; scroll-behavior: smooth; }
 body {
     font-family: 'Sora', sans-serif;
-    background:
+    background: var(--page-background,
         radial-gradient(circle at 9% 8%, rgba(210, 252, 220, 0.86) 0%, transparent 34%),
         radial-gradient(circle at 90% 85%, rgba(255, 255, 255, 0.5) 0%, transparent 32%),
-        linear-gradient(160deg, #f7fcf8 0%, #eef7f2 45%, #fff 100%);
+        linear-gradient(160deg, #f7fcf8 0%, #eef7f2 45%, #fff 100%));
     color: var(--gray-900);
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     overflow-x: hidden;
 }
@@ -107,6 +108,7 @@ body.sidebar-collapsed .sidebar-text {
 .sidebar {
     width: var(--sidebar-w);
     height: 100vh;
+    height: 100dvh;
     background: var(--green-900);
     display: flex;
     flex-direction: column;
@@ -336,9 +338,10 @@ body.sidebar-collapsed .sidebar-text {
     width: 100%;
     border: none;
     background: transparent;
-    display: flex;
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr);
     align-items: center;
-    gap: 8px;
+    column-gap: 8px;
     text-align: left;
     padding: 8px 10px;
     border-radius: 8px;
@@ -549,6 +552,7 @@ body.sidebar-collapsed .nav-badge {
 
 body.sidebar-collapsed .brand-logo {
     justify-content: center;
+    gap: 0;
 }
 
 body.sidebar-collapsed .sidebar-brand {
@@ -579,6 +583,18 @@ body.sidebar-collapsed .nav-item {
     padding: 0;
     border-radius: 12px;
     overflow: hidden;
+    line-height: 0;
+}
+
+body.sidebar-collapsed .nav-item i {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    line-height: 1;
+    margin: 0;
 }
 
 body.sidebar-collapsed .nav-item .nav-text.sidebar-text {
@@ -615,15 +631,36 @@ body.sidebar-collapsed .nav-item .nav-badge {
 }
 
 body.sidebar-collapsed .user-card {
-    grid-template-columns: 36px;
-    justify-content: center;
+    display: grid;
+    place-items: center;
     width: 44px;
+    height: 44px;
     margin: 0 auto;
     padding: 4px;
 }
 
+body.sidebar-collapsed .user-avatar {
+    margin: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
 body.sidebar-collapsed .user-menu-btn {
     display: none;
+}
+
+.user-menu-item i {
+    width: 16px;
+    min-width: 16px;
+    display: grid;
+    place-items: center;
+    font-size: 0.95rem;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 /* In collapsed mode the dropdown is positioned via JS (fixed) */
@@ -638,6 +675,7 @@ body.sidebar-collapsed .sidebar-footer {
     width: calc(100% - var(--sidebar-w));
     flex: 0 0 auto;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     transition: margin-left 0.24s cubic-bezier(.22,1,.36,1), width 0.24s cubic-bezier(.22,1,.36,1);
@@ -664,6 +702,11 @@ body.sidebar-collapsed .sidebar-footer {
     font-weight: 700;
     color: var(--gray-900);
     line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.topbar-left {
+    min-width: 0;
 }
 .breadcrumb-trail {
     font-size: .7rem;
@@ -671,10 +714,11 @@ body.sidebar-collapsed .sidebar-footer {
     display: flex;
     align-items: center;
     gap: 4px;
+    min-width: 0;
 }
 .breadcrumb-trail span { color: var(--green-600); font-weight: 500; }
 
-.topbar-right { display: flex; align-items: center; gap: 8px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 .topbar-btn {
     width: 38px; height: 38px;
@@ -972,22 +1016,22 @@ body.sidebar-collapsed .steps-bar.sticky {
 
 /* ─── Upload Zone ────────────────────────────────── */
 .upload-zone {
-    border: 2px dashed var(--gray-300);
+    border: 2px dashed var(--wizard-accent-soft, var(--gray-300));
     border-radius: var(--radius-lg);
     padding: 28px 20px;
     text-align: center;
-    background: var(--gray-50);
+    background: rgba(255, 255, 255, 0.95);
     cursor: pointer;
     transition: all var(--transition);
 }
 .upload-zone:hover, .upload-zone.dragover {
-    border-color: var(--green-400);
-    background: var(--green-50);
+    border-color: var(--wizard-accent, var(--green-400));
+    background: rgba(248, 250, 252, 0.98);
 }
-.upload-zone .upload-icon { font-size: 1.8rem; color: var(--gray-300); margin-bottom: 8px; display: block; }
-.upload-zone:hover .upload-icon { color: var(--green-400); }
+.upload-zone .upload-icon { font-size: 1.8rem; color: var(--wizard-accent-soft, var(--gray-300)); margin-bottom: 8px; display: block; }
+.upload-zone:hover .upload-icon { color: var(--wizard-accent, var(--green-400)); }
 .upload-zone p { font-size: .82rem; color: var(--gray-500); margin: 0; }
-.upload-zone strong { color: var(--green-600); cursor: pointer; }
+.upload-zone strong { color: var(--wizard-accent-deep, var(--green-600)); cursor: pointer; }
 .upload-zone small { font-size: .7rem; color: var(--gray-300); display: block; margin-top: 4px; }
 
 .file-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -1078,6 +1122,10 @@ body.sidebar-collapsed .steps-bar.sticky {
         transition: transform 0.24s ease;
         z-index: 160;
         box-shadow: 24px 0 38px rgba(17, 24, 39, 0.24);
+    }
+
+    .steps-bar.sticky {
+        z-index: 150;
     }
 
     body.sidebar-mobile-open .sidebar {
@@ -1184,5 +1232,32 @@ body.sidebar-collapsed .steps-bar.sticky {
 
     .steps-bar .step-info span:first-child {
         font-size: 0.62rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .topbar {
+        padding: 8px 10px 8px 52px;
+    }
+
+    .topbar-left h1 {
+        font-size: 0.9rem;
+        line-height: 1.15;
+    }
+
+    .content {
+        padding: 12px;
+    }
+
+    .card-header {
+        padding: 12px 12px 0;
+    }
+
+    .card-body {
+        padding: 12px;
+    }
+
+    .card-footer {
+        padding: 10px 12px;
     }
 }

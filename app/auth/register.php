@@ -32,10 +32,6 @@ if (!$isHeadOfficeUser) {
 
 <!-- ═══════════════════════════════════════════════ AUTH CONTAINER -->
 <div class="auth-container register-layout">
-    <div class="page-corner-logo-wrap" aria-hidden="true">
-        <img src="../../css/images/SterlingLogo2.jpg" alt="" class="page-corner-logo">
-    </div>
-
     <div class="auth-wrapper">
         
         <!-- Left Side - Branding -->
@@ -48,10 +44,14 @@ if (!$isHeadOfficeUser) {
 
         <!-- Right Side - Register Form -->
         <div class="auth-form-container">
+            <div class="auth-panel-logo" aria-hidden="true">
+                <img src="../../css/images/SterlingLogo2.jpg" alt="" class="auth-panel-logo-image">
+            </div>
+
             <div class="auth-form">
                 <div class="form-header register-form-header">
                     <h2>Add Account</h2>
-                    <p>Fill in the details below to add a head office account.</p>
+                    <p>Fill in the details below to add a head office, branch manager, or KYC officer account.</p>
                 </div>
 
                 <form id="registerForm" class="register-form-grid" method="POST">
@@ -139,7 +139,24 @@ if (!$isHeadOfficeUser) {
                                 <option value="ILOILO BRANCH">ILOILO BRANCH</option>
                             </select>
                         </div>
-                        <div class="form-hint">Choose HEAD OFFICE for head office-level accounts.</div>
+                        <div class="form-hint">Branch assignment is separate from account level.</div>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <!-- Account Classification -->
+                    <div class="form-group register-col-12">
+                        <label for="account_classification" class="form-label">
+                            Account Classification <span class="req">*</span>
+                        </label>
+                        <div class="select-wrap">
+                            <select id="account_classification" name="account_classification" class="form-select" required>
+                                <option value="" selected disabled>Select classification</option>
+                                <option value="head_office">HEAD OFFICE</option>
+                                <option value="branch_manager">BRANCH MANAGER</option>
+                                <option value="kyc_officer">KYC OFFICER</option>
+                            </select>
+                        </div>
+                        <div class="form-hint">This controls the account access level.</div>
                         <div class="form-error"></div>
                     </div>
 
@@ -250,12 +267,14 @@ const form = document.getElementById('registerForm');
 const fullnameInput = document.getElementById('fullname');
 const emailInput = document.getElementById('email');
 const branchInput = document.getElementById('branch');
+const accountClassificationInput = document.getElementById('account_classification');
 const passwordInput = document.getElementById('password');
 const confirmPasswordInput = document.getElementById('confirm_password');
 const generatePasswordBtn = document.getElementById('generatePasswordBtn');
 const MAX_CREDENTIAL_LENGTH = 32;
 const MAX_EMAIL_LENGTH = 120;
 const ALLOWED_EMAIL_DOMAIN = '@sterling-insurance.com.ph';
+const VALID_ACCOUNT_CLASSIFICATIONS = ['head_office', 'branch_manager', 'kyc_officer'];
 const VALID_BRANCHES = [
     'ALABANG BRANCH',
     'MANILA BRANCH I',
@@ -344,7 +363,7 @@ function applySuggestedPassword() {
 function resetRegisterFormState() {
     form.reset();
 
-    [fullnameInput, emailInput, branchInput, passwordInput, confirmPasswordInput].forEach(field => {
+    [fullnameInput, emailInput, branchInput, accountClassificationInput, passwordInput, confirmPasswordInput].forEach(field => {
         if (field) {
             field.classList.remove('is-valid', 'is-invalid');
         }
@@ -393,6 +412,8 @@ function validateField(field) {
         isValid = value.length >= 3 && value.length <= MAX_CREDENTIAL_LENGTH;
     } else if (field.id === 'email') {
         isValid = value.length <= MAX_EMAIL_LENGTH && validateEmail(value);
+    } else if (field.id === 'account_classification') {
+        isValid = VALID_ACCOUNT_CLASSIFICATIONS.includes(value);
     } else if (field.id === 'branch') {
         isValid = VALID_BRANCHES.includes(value);
     } else if (field.id === 'password') {
@@ -408,6 +429,9 @@ function validateField(field) {
 
 fullnameInput.addEventListener('blur', () => validateField(fullnameInput));
 emailInput.addEventListener('blur', () => validateField(emailInput));
+if (accountClassificationInput) {
+    accountClassificationInput.addEventListener('blur', () => validateField(accountClassificationInput));
+}
 branchInput.addEventListener('blur', () => validateField(branchInput));
 passwordInput.addEventListener('blur', () => validateField(passwordInput));
 confirmPasswordInput.addEventListener('blur', () => validateField(confirmPasswordInput));
@@ -419,6 +443,12 @@ fullnameInput.addEventListener('input', () => {
 emailInput.addEventListener('input', () => {
     if (emailInput.classList.contains('is-invalid')) validateField(emailInput);
 });
+
+if (accountClassificationInput) {
+    accountClassificationInput.addEventListener('change', () => {
+        if (accountClassificationInput.classList.contains('is-invalid')) validateField(accountClassificationInput);
+    });
+}
 
 branchInput.addEventListener('change', () => {
     if (branchInput.classList.contains('is-invalid')) validateField(branchInput);
@@ -449,10 +479,12 @@ form.addEventListener('submit', function(e) {
     const fullnameValue = fullnameInput.value.trim();
     const fullnameValid = fullnameValue.length >= 3 && fullnameValue.length <= MAX_CREDENTIAL_LENGTH;
     const emailValue = emailInput.value.trim();
+    const classificationValue = accountClassificationInput ? accountClassificationInput.value.trim() : '';
     const branchValue = branchInput.value.trim();
     const passwordValue = passwordInput.value;
     const confirmPasswordValue = confirmPasswordInput.value;
     const emailValid = emailValue.length <= MAX_EMAIL_LENGTH && validateEmail(emailValue);
+    const classificationValid = VALID_ACCOUNT_CLASSIFICATIONS.includes(classificationValue);
     const branchValid = VALID_BRANCHES.includes(branchValue);
     const passwordValid = passwordValue.length >= 8 && passwordValue.length <= MAX_CREDENTIAL_LENGTH;
     const confirmPasswordValid = confirmPasswordValue === passwordValue && confirmPasswordValue.length >= 8 && confirmPasswordValue.length <= MAX_CREDENTIAL_LENGTH;
@@ -461,6 +493,10 @@ form.addEventListener('submit', function(e) {
     fullnameInput.classList.toggle('is-valid', fullnameValid);
     emailInput.classList.toggle('is-invalid', !emailValid);
     emailInput.classList.toggle('is-valid', emailValid);
+    if (accountClassificationInput) {
+        accountClassificationInput.classList.toggle('is-invalid', !classificationValid);
+        accountClassificationInput.classList.toggle('is-valid', classificationValid);
+    }
     branchInput.classList.toggle('is-invalid', !branchValid);
     branchInput.classList.toggle('is-valid', branchValid);
     passwordInput.classList.toggle('is-invalid', !passwordValid);
@@ -468,7 +504,7 @@ form.addEventListener('submit', function(e) {
     confirmPasswordInput.classList.toggle('is-invalid', !confirmPasswordValid);
     confirmPasswordInput.classList.toggle('is-valid', confirmPasswordValid);
 
-    if (!fullnameValid || !emailValid || !branchValid || !passwordValid || !confirmPasswordValid) {
+    if (!fullnameValid || !emailValid || !classificationValid || !branchValid || !passwordValid || !confirmPasswordValid) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields correctly.');
         return;
     }

@@ -1,16 +1,173 @@
 <?php
 require_once '../config/session.php';
+require_once '../config/db.php';
 requireLogin();
 
 $classificationFromQuery = strtolower(trim($_GET['classification'] ?? 'client'));
 $selectedClassification = $classificationFromQuery === 'agent' ? 'agent' : 'client';
 $isAgentFlow = $selectedClassification === 'agent';
 
+$currentUser = getCurrentUser() ?? [];
+$currentUserBranch = strtoupper(trim((string)($currentUser['branch'] ?? '')));
+$currentUserRole = strtolower(trim((string)($currentUser['role'] ?? '')));
+$currentUserDepartment = strtoupper(trim((string)($currentUser['department'] ?? '')));
+$currentUserFullName = trim((string)($currentUser['full_name'] ?? ''));
+$isHeadOfficeUser = $currentUserRole === 'admin'
+    || $currentUserDepartment === 'HEAD OFFICE'
+    || in_array($currentUserBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
+$effectiveBranch = $currentUserBranch !== '' ? $currentUserBranch : ($isHeadOfficeUser ? 'HEAD OFFICE' : '');
+
+function kycPageResolveBranchManagerName(string $branch, string $fallbackName = '', string $fallbackRole = ''): string {
+    global $db;
+
+    $branch = strtoupper(trim($branch));
+    if ($branch === '' || !$db instanceof mysqli) {
+        return '';
+    }
+
+    $stmt = $db->prepare(
+        "SELECT full_name
+         FROM users
+         WHERE UPPER(TRIM(branch)) = ?
+           AND LOWER(TRIM(role)) IN ('manager', 'admin')
+           AND full_name IS NOT NULL
+           AND TRIM(full_name) <> ''
+         ORDER BY CASE WHEN LOWER(TRIM(role)) = 'manager' THEN 0 ELSE 1 END, user_id ASC
+         LIMIT 1"
+    );
+
+    if ($stmt) {
+        $stmt->bind_param('s', $branch);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+
+        if ($result instanceof mysqli_result) {
+            $result->free();
+        }
+
+        $stmt->close();
+
+        if (!empty($row['full_name'])) {
+            return trim((string)$row['full_name']);
+        }
+    }
+
+    $fallbackName = trim($fallbackName);
+    $fallbackRole = strtolower(trim($fallbackRole));
+    if ($fallbackName !== '' && in_array($fallbackRole, ['manager', 'admin'], true)) {
+        return $fallbackName;
+    }
+
+    return '';
+}
+
+function kycPageFetchHeadAgentOptions(string $branch): array {
+    global $db;
+
+    $branch = strtoupper(trim($branch));
+    if ($branch === '' || !$db instanceof mysqli) {
+        return [];
+    }
+
+    $options = [];
+    $stmt = $db->prepare(
+        "SELECT DISTINCT
+            COALESCE(
+                NULLIF(TRIM(c.client_name), ''),
+                NULLIF(TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, ''))), ''),
+                c.reference_code
+            ) AS head_agent_name
+         FROM clients c
+         WHERE COALESCE(NULLIF(LOWER(TRIM(c.client_classification)), ''), 'client') = 'agent'
+           AND COALESCE(NULLIF(LOWER(TRIM(c.agent_type)), ''), 'agent') = 'agent'
+                     AND COALESCE(NULLIF(UPPER(TRIM(c.agent_branch)), ''), '') = ?
+           AND COALESCE(NULLIF(LOWER(TRIM(c.verification_status)), ''), '') = 'verified'
+           AND COALESCE(NULLIF(LOWER(TRIM(c.activity_status)), ''), 'active') = 'active'
+         ORDER BY head_agent_name ASC"
+    );
+
+    if (!$stmt) {
+        return [];
+    }
+
+    $stmt->bind_param('s', $branch);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $name = trim((string)($row['head_agent_name'] ?? ''));
+            if ($name !== '') {
+                $options[] = $name;
+            }
+        }
+        $result->free();
+    }
+
+    $stmt->close();
+
+    return array_values(array_unique($options));
+}
+
+$branchManagerName = kycPageResolveBranchManagerName($effectiveBranch, $currentUserFullName, $currentUserRole);
+$headAgentOptions = kycPageFetchHeadAgentOptions($effectiveBranch);
+$headAgentOptions = array_values(array_filter($headAgentOptions, static function ($name) use ($branchManagerName) {
+    return $branchManagerName === '' || strcasecmp(trim((string)$name), $branchManagerName) !== 0;
+}));
+
 $clientTypeLabel = $isAgentFlow ? 'Individual Agent' : 'Individual Client';
 $newClientLabel = $isAgentFlow ? 'New Individual Agent' : 'New Individual Client';
 $breadcrumbParentLabel = $isAgentFlow ? 'Agents' : 'Clients';
+$recordNumberLabel = $isAgentFlow ? 'Agent Number' : 'Client Number';
+$recordNumberPlaceholder = $isAgentFlow ? 'Auto-generated agent number' : 'CN - 000000';
+$agentOccupationOptions = ['Insurance Agent', 'Senior Insurance Agent', 'Unit Manager'];
+$agentTypeOptions = [
+    'agent' => 'Agent',
+    'sub_agent' => 'Sub agent',
+];
+$branchOptions = [
+    'HEAD OFFICE',
+    'ALABANG BRANCH',
+    'MANILA BRANCH I',
+    'MANILA BRANCH II',
+    'WEST AVENUE BRANCH',
+    'CUBAO BRANCH',
+    'ANGELES BRANCH',
+    'BATANGAS BRANCH',
+    'BACOLOD BRANCH',
+    'CABANATUAN BRANCH',
+    'BUTUAN BRANCH',
+    'CAGAYAN DE ORO BRANCH',
+    'CEBU BRANCH',
+    'CEBU REGIONAL OFFICE BRANCH',
+    'DAGUPAN BRANCH',
+    'DAVAO I BRANCH',
+    'DAVAO II BRANCH',
+    'GENSAN BRANCH',
+    'ISABELA BRANCH',
+    'LA UNION BRANCH',
+    'LAOAG BRANCH',
+    'LEGAZPI I BRANCH',
+    'LEGAZPI II BRANCH',
+    'MINDORO BRANCH',
+    'NAGA BRANCH',
+    'ORMOC BRANCH',
+    'OZAMIZ BRANCH',
+    'PAGADIAN BRANCH',
+    'SAN FERNANDO, PAMPANGA BRANCH',
+    'HEAD OFFICE BRANCH',
+    'SMRO BRANCH',
+    'TACLOBAN BRANCH',
+    'TUGUEGARAO BRANCH',
+    'VIGAN BRANCH',
+    'ILOILO BRANCH',
+];
 $verificationUrl = 'kyc-verification.php?classification=' . urlencode($selectedClassification);
 $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedClassification);
+$pageBackground = $isAgentFlow
+    ? 'radial-gradient(circle at 15% 20%, rgba(243, 232, 255, 0.92) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(235, 224, 255, 0.5) 0%, transparent 34%), linear-gradient(160deg, #fbf7ff 0%, #f3eaff 46%, #ffffff 100%)'
+    : 'radial-gradient(circle at 15% 20%, rgba(232, 240, 251, 0.9) 0%, transparent 38%), radial-gradient(circle at 85% 85%, rgba(220, 236, 255, 0.45) 0%, transparent 34%), linear-gradient(160deg, #f7fbff 0%, #eef6ff 46%, #ffffff 100%)';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -74,7 +231,6 @@ $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedCl
             --draft-btn-size: 42px;
         }
 
-        /* Saved Drafts floating panel */
         #draftsCard {
             position: fixed;
             top: 50%;
@@ -538,6 +694,17 @@ $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedCl
             margin-top: 3px;
         }
 
+        .agent-warning {
+            margin: 0 0 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid #f2d27a;
+            background: #fff8e1;
+            color: #7a5600;
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
         body.kyc-compact .btn {
             height: 36px;
             padding: 0 14px;
@@ -595,11 +762,6 @@ $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedCl
             pointer-events: none;
             transition: opacity 0.2s ease;
             z-index: 9997;
-        }
-
-        body.drafts-popup-open::before {
-            opacity: 1;
-            pointer-events: auto;
         }
 
         @media (max-width: 900px) {
@@ -696,7 +858,7 @@ $reviewUrl = 'kyc-individual-review.php?classification=' . urlencode($selectedCl
         }
     </style>
 </head>
-<body class="kyc-compact" style="--wizard-accent:<?php echo $isAgentFlow ? '#7c3aed' : '#2f7fd6'; ?>;--wizard-accent-soft:<?php echo $isAgentFlow ? '#f3e8ff' : '#e8f0fb'; ?>;--wizard-accent-deep:<?php echo $isAgentFlow ? '#5b21b6' : '#1f5ea9'; ?>;">
+<body class="kyc-compact" style="--wizard-accent:<?php echo $isAgentFlow ? '#7c3aed' : '#2f7fd6'; ?>;--wizard-accent-soft:<?php echo $isAgentFlow ? '#f3e8ff' : '#e8f0fb'; ?>;--wizard-accent-deep:<?php echo $isAgentFlow ? '#5b21b6' : '#1f5ea9'; ?>;--page-background:<?php echo $pageBackground; ?>;">
 
 <?php
 $activePage = 'kyc-verification';
@@ -716,9 +878,6 @@ include '../includes/sidebar.php';
             </div>
         </div>
         <div class="topbar-right">
-            <button type="button" class="drafts-toggle-btn" title="Saved Drafts" onclick="toggleDraftsPanel()">
-                <i class="bi bi-inbox"></i>
-            </button>
         </div>
     </header>
 
@@ -796,40 +955,10 @@ include '../includes/sidebar.php';
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="clientNumber" class="form-label">Client Number</label>
-                                <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="Auto-generated" readonly>
+                                <label for="clientNumber" class="form-label"><?php echo htmlspecialchars($recordNumberLabel); ?></label>
+                                <input type="text" id="clientNumber" name="clientNumber" class="form-control" placeholder="<?php echo htmlspecialchars($recordNumberPlaceholder); ?>" readonly>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Drafts Card -->
-            <div class="card" id="draftsCard">
-                <div class="card-header">
-                    <div class="card-title"><i class="bi bi-inbox"></i> Saved Drafts</div>
-                    <button type="button" id="refreshDraftBtn" class="btn btn-sm btn-outline-secondary" onclick="refreshDrafts()">
-                        <i class="bi bi-arrow-clockwise"></i> Refresh
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="drafts-fields">
-                        <div>
-                            <label for="draftSelect" class="form-label">Drafts</label>
-                            <select id="draftSelect" class="form-select">
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="draftInfo" style="margin-top:10px; color: var(--gray-500); font-size: .85rem;"></div>
-                    <div id="draftDocsWrapper" style="margin-top:14px;">
-                        <div style="color: var(--gray-500); font-size:.85rem;">Attachments saved to the selected draft:</div>
-                        <div id="draftDocsContainer" style="margin-top:8px;"></div>
-                    </div>
-                    <div class="drafts-action-row">
-                        <button type="button" class="btn btn-primary" id="loadDraftBtn" onclick="loadSelectedDraft()" disabled>
-                            <i class="bi bi-box-arrow-in-right"></i> Load Draft
-                        </button>
                     </div>
                 </div>
             </div>
@@ -886,6 +1015,7 @@ include '../includes/sidebar.php';
                                 </div>
                             </div>
                         </div>
+                        <?php if (!$isAgentFlow): ?>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="apSlCode" class="form-label">AP SL Code</label>
@@ -910,16 +1040,34 @@ include '../includes/sidebar.php';
                                 <input type="text" id="tinNumber" name="tinNumber" class="form-control" placeholder="TIN #">
                             </div>
                         </div>
+                        <?php endif; ?>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="nationality" class="form-label">Nationality</label>
                                 <input type="text" id="nationality" name="nationality" class="form-control" placeholder="e.g. Filipino">
                             </div>
                         </div>
+                        <?php if ($isAgentFlow): ?>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="occupation" class="form-label">Occupation <span class="req">*</span></label>
+                                <div class="select-wrap">
+                                    <select id="occupation" name="occupation" class="form-select" required>
+                                        <option value="">Select occupation...</option>
+                                        <?php foreach ($agentOccupationOptions as $agentOccupationOption): ?>
+                                            <option value="<?php echo htmlspecialchars($agentOccupationOption); ?>"><?php echo htmlspecialchars($agentOccupationOption); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-error">Occupation is required</div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
 
+            <?php if (!$isAgentFlow): ?>
             <!-- Spouse Information Card -->
             <div class="card" data-wizard-step="2">
                 <div class="card-header">
@@ -948,7 +1096,72 @@ include '../includes/sidebar.php';
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
+            <?php if ($isAgentFlow): ?>
+            <!-- Agent Identification Card -->
+            <div class="card" data-wizard-step="2">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-person-badge"></i> Agent Identification</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="agentType" class="form-label">Agent Type <span class="req">*</span></label>
+                                <div class="select-wrap">
+                                    <select id="agentType" name="agentType" class="form-select" required>
+                                        <?php foreach ($agentTypeOptions as $agentTypeValue => $agentTypeLabel): ?>
+                                            <option value="<?php echo htmlspecialchars($agentTypeValue); ?>"<?php echo $agentTypeValue === 'agent' ? ' selected' : ''; ?>><?php echo htmlspecialchars($agentTypeLabel); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-error">Agent type is required</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="agentBranch" class="form-label">Branch <span class="req">*</span></label>
+                                <div class="select-wrap">
+                                    <select id="agentBranch" name="agentBranch" class="form-select" required>
+                                        <option value="">Select branch...</option>
+                                        <?php foreach ($branchOptions as $branchOption): ?>
+                                            <option value="<?php echo htmlspecialchars($branchOption); ?>"><?php echo htmlspecialchars($branchOption); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="form-error">Branch is required</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12" id="headAgentNameGroup" style="display:none;">
+                            <div class="form-group">
+                                <label for="headAgentName" class="form-label">Head Agent Name <span style="font-size:0.85rem;color:#999;">(Required for Sub agent)</span></label>
+                                <div class="agent-warning">
+                                    Warning: only agents from the selected branch will appear here. If you choose None of the above, the system will use that branch's manager instead.
+                                </div>
+                                <div class="select-wrap">
+                                    <select id="headAgentName" name="headAgentName" class="form-select">
+                                        <option value="">Select head agent...</option>
+                                        <?php foreach ($headAgentOptions as $headAgentOption): ?>
+                                            <option value="<?php echo htmlspecialchars($headAgentOption); ?>"><?php echo htmlspecialchars($headAgentOption); ?></option>
+                                        <?php endforeach; ?>
+                                        <option value="__none_of_the_above__">None of the above</option>
+                                    </select>
+                                </div>
+                                <div class="form-error">Head Agent Name is required for Sub agent</div>
+                                <div class="form-hint" style="margin-top:6px;">Choose None of the above only if you want the selected branch manager saved as the main agent.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="idNumber" class="form-label">Existing ID Number <span style="font-size:0.85rem;color:#999;">(Optional)</span></label>
+                                <input type="text" id="idNumber" name="idNumber" class="form-control" placeholder="Enter existing ID number">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php else: ?>
             <!-- Government ID Verification Card -->
             <div class="card" data-wizard-step="2">
                 <div class="card-header">
@@ -1007,7 +1220,9 @@ include '../includes/sidebar.php';
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
+            <?php if (!$isAgentFlow): ?>
             <!-- Occupation Card -->
             <div class="card" data-wizard-step="3">
                 <div class="card-header">
@@ -1037,6 +1252,9 @@ include '../includes/sidebar.php';
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
+
+            <?php if (!$isAgentFlow): ?>
             <!-- Address Information Card -->
             <div class="card" data-wizard-step="3">
                 <div class="card-header">
@@ -1094,6 +1312,8 @@ include '../includes/sidebar.php';
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
+
             <!-- Home Address Card -->
             <div class="card" data-wizard-step="3">
                 <div class="card-header">
@@ -1187,6 +1407,7 @@ include '../includes/sidebar.php';
                 </div>
             </div>
 
+            <?php if (!$isAgentFlow): ?>
             <!-- Mailing Address Preference Card -->
             <div class="card" data-wizard-step="3">
                 <div class="card-header">
@@ -1212,7 +1433,7 @@ include '../includes/sidebar.php';
             </div>
 
             <!-- Documents Card -->
-            <div class="card card-span-2" data-wizard-step="3">
+            <div class="card" data-wizard-step="3">
                 <div class="card-header">
                     <div class="card-title"><i class="bi bi-file-earmark"></i> Supporting Documents</div>
                 </div>
@@ -1226,6 +1447,7 @@ include '../includes/sidebar.php';
                     <div class="file-list" id="fileList"></div>
                 </div>
             </div>
+            <?php endif; ?>
 
         </form>
 
@@ -1245,9 +1467,6 @@ include '../includes/sidebar.php';
                     </button>
                     <button type="button" id="clearBtn" class="btn btn-outline" onclick="clearForm()">
                         <i class="bi bi-arrow-counterclockwise"></i> Clear Form
-                    </button>
-                    <button type="button" id="saveDraftBtn" class="btn btn-outline" onclick="saveDraft()">
-                        <i class="bi bi-download"></i> Save Draft
                     </button>
                     <button type="button" id="wizardNextBtn" class="btn btn-primary">
                         Next <i class="bi bi-chevron-right"></i>
@@ -1269,6 +1488,7 @@ include '../includes/sidebar.php';
 <script>
 const currentReviewUrl = <?php echo json_encode($reviewUrl); ?>;
 const currentVerificationUrl = <?php echo json_encode($verificationUrl); ?>;
+const isAgentFlow = <?php echo $isAgentFlow ? 'true' : 'false'; ?>;
 
 // ── Toast ──────────────────────────────────────────────────
 function showToast(type, title, msg) {
@@ -1306,17 +1526,179 @@ function setButtonBusy(button, isBusy, label = 'Working...') {
     }
 }
 
+function generateRecordNumber(prefix, includeDate = true) {
+    if (!includeDate) {
+        const numericPart = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+        return `${prefix} - ${numericPart}`;
+    }
+
+    const now = new Date();
+    const datePart = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0'),
+        String(now.getHours()).padStart(2, '0'),
+        String(now.getMinutes()).padStart(2, '0'),
+        String(now.getSeconds()).padStart(2, '0')
+    ].join('');
+    const suffix = Array.from({ length: 6 }, () => Math.floor(Math.random() * 16).toString(16)).join('').toUpperCase();
+    return `${prefix}-${datePart}-${suffix}`;
+}
+
+function ensureRecordNumber() {
+    const field = document.getElementById('clientNumber');
+    if (!field || field.value.trim()) return;
+    field.value = isAgentFlow
+        ? generateRecordNumber('AG', false)
+        : `CN - ${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}`;
+}
+
+function syncAgentTypeFields() {
+    if (!isAgentFlow) {
+        return;
+    }
+
+    const agentTypeField = document.getElementById('agentType');
+    const headAgentGroup = document.getElementById('headAgentNameGroup');
+    const headAgentField = document.getElementById('headAgentName');
+
+    const agentBranchField = document.getElementById('agentBranch');
+    if (!agentTypeField || !headAgentGroup || !headAgentField || !agentBranchField) {
+        return;
+    }
+
+    const isSubAgent = agentTypeField.value === 'sub_agent';
+    headAgentGroup.style.display = isSubAgent ? '' : 'none';
+    const agentBranchValue = String(agentBranchField?.value || '').trim();
+    const requireHeadAgent = isSubAgent && agentBranchValue !== '';
+    headAgentField.required = requireHeadAgent;
+    headAgentField.dataset.required = requireHeadAgent ? 'true' : 'false';
+
+    if (!isSubAgent) {
+        headAgentField.value = '';
+        headAgentField.classList.remove('is-invalid', 'is-valid');
+    }
+}
+
 function revealFlowCards() {
     const cards = document.querySelectorAll('main.content .card');
     cards.forEach((card, idx) => {
-        if (card.id === 'draftsCard') {
-            card.classList.remove('flow-reveal');
-            card.style.animationDelay = '';
-            return;
-        }
         card.classList.add('flow-reveal');
         card.style.animationDelay = `${Math.min(idx * 45, 280)}ms`;
     });
+}
+
+const NONE_OF_THE_ABOVE_HEAD_AGENT_VALUE = '__none_of_the_above__';
+let headAgentOptionsRequestToken = 0;
+
+function getHeadAgentField() {
+    return document.getElementById('headAgentName');
+}
+
+function getAgentBranchField() {
+    return document.getElementById('agentBranch');
+}
+
+function setHeadAgentDropdownState(branchName, options, branchManagerName, preferredValue = '') {
+    const headAgentField = getHeadAgentField();
+    if (!headAgentField) {
+        return;
+    }
+
+    const normalizedBranch = String(branchName || '').trim();
+    const normalizedPreferred = String(preferredValue || headAgentField.value || '').trim();
+    const allowedValues = new Set();
+
+    headAgentField.innerHTML = '';
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = normalizedBranch === '' ? 'Select branch first...' : 'Select head agent...';
+    headAgentField.appendChild(placeholder);
+
+    (Array.isArray(options) ? options : []).forEach((optionLabel) => {
+        const value = String(optionLabel || '').trim();
+        if (value === '') {
+            return;
+        }
+
+        allowedValues.add(value.toLowerCase());
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        headAgentField.appendChild(option);
+    });
+
+    const noneOption = document.createElement('option');
+    noneOption.value = NONE_OF_THE_ABOVE_HEAD_AGENT_VALUE;
+    noneOption.textContent = 'None of the above';
+    headAgentField.appendChild(noneOption);
+
+    headAgentField.disabled = normalizedBranch === '';
+
+    let nextValue = normalizedPreferred;
+    if (nextValue !== '' && nextValue.toLowerCase() === String(branchManagerName || '').trim().toLowerCase()) {
+        nextValue = NONE_OF_THE_ABOVE_HEAD_AGENT_VALUE;
+    }
+
+    if (nextValue !== '' && nextValue !== NONE_OF_THE_ABOVE_HEAD_AGENT_VALUE && !allowedValues.has(nextValue.toLowerCase())) {
+        nextValue = '';
+    }
+
+    headAgentField.value = nextValue;
+    headAgentField.classList.remove('is-invalid', 'is-valid');
+}
+
+async function refreshHeadAgentOptions(preferredValue = '') {
+    if (!isAgentFlow) {
+        return;
+    }
+
+    const agentBranchField = getAgentBranchField();
+    const headAgentField = getHeadAgentField();
+    if (!agentBranchField || !headAgentField) {
+        return;
+    }
+
+    const branch = String(agentBranchField.value || '').trim();
+    const requestToken = ++headAgentOptionsRequestToken;
+
+    if (branch === '') {
+        setHeadAgentDropdownState('', [], '', preferredValue);
+        return;
+    }
+
+    setHeadAgentDropdownState(branch, [], '', preferredValue);
+
+    try {
+        const response = await fetch(`../handlers/kyc.php?action=head_agent_options&branch=${encodeURIComponent(branch)}`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        const payload = await response.json();
+
+        if (requestToken !== headAgentOptionsRequestToken) {
+            return;
+        }
+
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.message || 'Unable to load head agent options.');
+        }
+
+        setHeadAgentDropdownState(
+            branch,
+            Array.isArray(payload.options) ? payload.options : [],
+            payload.branch_manager_name || '',
+            preferredValue
+        );
+    } catch (error) {
+        if (requestToken !== headAgentOptionsRequestToken) {
+            return;
+        }
+
+        setHeadAgentDropdownState(branch, [], '', preferredValue);
+        console.error(error);
+    }
 }
 
 // ── Form Validation ────────────────────────────────────────
@@ -1328,6 +1710,14 @@ function validateField(id) {
     if (el.offsetParent === null) return true;
     
     const value = el.value.trim();
+    const isRequired = el.required || el.dataset.required === 'true';
+
+    if (!isRequired && value === '') {
+        el.classList.remove('is-invalid');
+        el.classList.remove('is-valid');
+        return true;
+    }
+
     let ok = value !== '';
     
     // Additional validation for specific field types
@@ -1362,7 +1752,11 @@ function validateRadioGroup(name) {
 }
 
 function validateAllRequired() {
-    const requiredFields = ['lastName', 'firstName', 'birthdate', 'occupation', 'mobile', 'email', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet', 'governmentIdType', 'idNumber'];
+    syncAgentTypeFields();
+
+    const requiredFields = isAgentFlow
+        ? ['lastName', 'firstName', 'birthdate', 'occupation', 'agentType', 'agentBranch', 'mobile', 'email', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet']
+        : ['lastName', 'firstName', 'birthdate', 'occupation', 'mobile', 'email', 'homeRegion', 'homeProvince', 'homeCtm', 'homeBarangay', 'homeStreet', 'governmentIdType', 'idNumber'];
     let allValid = true;
     let failedFields = [];
     
@@ -1380,11 +1774,28 @@ function validateAllRequired() {
     // Validate mailingAddressType radio
     if (!validateRadioGroup('mailingAddressType')) allValid = false;
     if (!validateGovernmentIdSection()) allValid = false;
+    if (isAgentFlow && !validateAgentAssignmentSection()) allValid = false;
     if (!allValid && failedFields.length > 0) {
         console.log('Failed fields:', failedFields);
     }
     
     return allValid;
+}
+
+function validateAgentAssignmentSection() {
+    if (!isAgentFlow) {
+        return true;
+    }
+
+    syncAgentTypeFields();
+
+    const agentTypeOk = validateField('agentType');
+    const agentBranchOk = validateField('agentBranch');
+    const headAgentField = document.getElementById('headAgentName');
+    const needsHeadAgent = Boolean(headAgentField && headAgentField.required);
+    const headAgentOk = !needsHeadAgent || validateField('headAgentName');
+
+    return agentTypeOk && agentBranchOk && headAgentOk;
 }
 
 // Add event listeners to all form fields
@@ -1564,14 +1975,20 @@ function syncComposedAddressFields() {
     const businessCity = document.getElementById('businessCtm')?.value || '';
     const businessProvince = document.getElementById('businessProvince')?.value || '';
     const businessRegion = document.getElementById('businessRegion')?.value || '';
-    document.getElementById('businessAddress').value = buildAddress(businessStreet, businessBarangay, businessCity, businessProvince, businessRegion);
+    const businessAddressField = document.getElementById('businessAddress');
+    if (businessAddressField) {
+        businessAddressField.value = buildAddress(businessStreet, businessBarangay, businessCity, businessProvince, businessRegion);
+    }
 
     const homeStreet = document.getElementById('homeStreet')?.value || '';
     const homeBarangay = document.getElementById('homeBarangay')?.value || '';
     const homeCity = document.getElementById('homeCtm')?.value || '';
     const homeProvince = document.getElementById('homeProvince')?.value || '';
     const homeRegion = document.getElementById('homeRegion')?.value || '';
-    document.getElementById('homeAddress').value = buildAddress(homeStreet, homeBarangay, homeCity, homeProvince, homeRegion);
+    const homeAddressField = document.getElementById('homeAddress');
+    if (homeAddressField) {
+        homeAddressField.value = buildAddress(homeStreet, homeBarangay, homeCity, homeProvince, homeRegion);
+    }
 }
 
 initAddressChain('businessRegion', 'businessProvince', 'businessCtm', 'businessBarangay');
@@ -1608,6 +2025,8 @@ function restoreFormData() {
                 }
             }
         });
+
+        syncAgentTypeFields();
         
         // Restore address data after API populates options
         // This requires waiting for PSGC API calls in the correct cascade order
@@ -1714,7 +2133,7 @@ function restoreHomeAddress(addressData) {
 // Restore form data on page load
 const KYC_NAVIGATION_TYPE = (performance.getEntriesByType('navigation')[0]?.type) || (performance.navigation && performance.navigation.type === 1 ? 'reload' : 'navigate');
 
-async function clearDraftStateOnRefresh() {
+async function clearFormStateOnRefresh() {
     const regularUploads = getStoredUploads();
     const governmentIdUploads = getStoredGovernmentIdUploads();
 
@@ -1730,12 +2149,16 @@ async function clearDraftStateOnRefresh() {
 }
 
 if (KYC_NAVIGATION_TYPE === 'reload') {
-    void clearDraftStateOnRefresh();
+    void clearFormStateOnRefresh();
 }
 
 document.addEventListener('DOMContentLoaded', restoreFormData);
 
 function validateGovernmentIdSection() {
+    if (isAgentFlow) {
+        return true;
+    }
+
     const typeOk = validateField('governmentIdType');
     const numberOk = validateField('idNumber');
     const uploadsOk = getStoredGovernmentIdUploads().length > 0;
@@ -1946,422 +2369,11 @@ if (governmentIdTypeSelect) {
 
 document.addEventListener('DOMContentLoaded', renderGovernmentIdUploads);
 
-// ── Drafts UI (resume/load) ─────────────────────────────────────────────
-function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-}
-
-function parseComposedAddress(addressStr) {
-    // Expected format from buildAddress(): "street, barangay, city, province, region"
-    if (!addressStr) return null;
-    const parts = String(addressStr).split(',').map(p => p.trim()).filter(Boolean);
-    if (parts.length < 5) return null;
-    return {
-        street: parts[0],
-        barangay: parts[1],
-        city: parts[2],
-        province: parts[3],
-        region: parts.slice(4).join(', ')
-    };
-}
-
-function waitForSelectReady(selectEl, minOptions = 2, timeoutMs = 8000) {
-    return new Promise(resolve => {
-        const start = Date.now();
-        const timer = setInterval(() => {
-            const ok = selectEl && selectEl.options && selectEl.options.length >= minOptions && !selectEl.disabled;
-            if (ok) {
-                clearInterval(timer);
-                resolve(true);
-                return;
-            }
-            if (Date.now() - start >= timeoutMs) {
-                clearInterval(timer);
-                resolve(false);
-            }
-        }, 200);
-    });
-}
-
-async function restoreHomeAddressFromDraftAddress(addressStr) {
-    const parsed = parseComposedAddress(addressStr);
-    if (!parsed) return;
-
-    const homeRegionEl = document.getElementById('homeRegion');
-    const homeProvinceEl = document.getElementById('homeProvince');
-    const homeCityEl = document.getElementById('homeCtm');
-    const homeBarangayEl = document.getElementById('homeBarangay');
-    const homeStreetEl = document.getElementById('homeStreet');
-
-    if (!homeRegionEl || !homeProvinceEl || !homeCityEl || !homeBarangayEl || !homeStreetEl) return;
-
-    // Wait for PSGC options to load.
-    const regionReady = await waitForSelectReady(homeRegionEl, 2);
-    if (!regionReady) return;
-
-    homeRegionEl.value = parsed.region;
-    homeRegionEl.dispatchEvent(new Event('change'));
-
-    const provinceReady = await waitForSelectReady(homeProvinceEl, 2);
-    if (!provinceReady) return;
-    homeProvinceEl.value = parsed.province;
-    homeProvinceEl.dispatchEvent(new Event('change'));
-
-    const cityReady = await waitForSelectReady(homeCityEl, 2);
-    if (!cityReady) return;
-    homeCityEl.value = parsed.city;
-    homeCityEl.dispatchEvent(new Event('change'));
-
-    const barangayReady = await waitForSelectReady(homeBarangayEl, 2);
-    if (!barangayReady) return;
-    homeBarangayEl.value = parsed.barangay;
-
-    homeStreetEl.value = parsed.street;
-    syncComposedAddressFields();
-}
-
-async function loadSelectedDraft() {
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    const draftInfoEl = document.getElementById('draftInfo');
-
-    if (!draftSelect || !loadDraftBtn) return;
-    const refCode = draftSelect.value;
-    if (!refCode) return;
-
-    setButtonBusy(loadDraftBtn, true, 'Loading...');
-    if (draftDocsContainer) draftDocsContainer.innerHTML = 'Loading attachments...';
-    if (draftInfoEl) draftInfoEl.textContent = 'Loading draft...';
-
-    try {
-        const kycResp = await fetch(`../handlers/kyc.php?action=get_kyc&ref_code=${encodeURIComponent(refCode)}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const kycData = await kycResp.json();
-        if (!kycData || !kycData.success) {
-            showToast('error', 'Load Draft Failed', kycData?.message || 'Unable to load the selected draft.');
-            return;
-        }
-
-        const draft = kycData.data || {};
-
-        // Apply fields (only those present in the individual form).
-        document.getElementById('refCode').value = draft.ref_code || draft.reference_code || refCode;
-        document.getElementById('refCode').readOnly = true;
-
-        const setIfEl = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) el.value = value ?? '';
-        };
-
-        setIfEl('lastName', draft.last_name);
-        setIfEl('firstName', draft.first_name);
-        setIfEl('middleName', draft.middle_name);
-        setIfEl('birthdate', draft.birthdate);
-        setIfEl('gender', draft.gender);
-        setIfEl('occupation', draft.occupation);
-        setIfEl('employer', draft.company);
-        setIfEl('mobile', draft.mobile);
-        setIfEl('telephone', draft.phone);
-        setIfEl('email', draft.email);
-
-        // Address restore (stored as composed homeAddress string).
-        await restoreHomeAddressFromDraftAddress(draft.address);
-
-        if (draftInfoEl) {
-            const updatedAt = draft.updated_at ? new Date(draft.updated_at).toLocaleString() : '';
-            draftInfoEl.textContent = `Loaded ${refCode}${updatedAt ? ` (updated: ${escapeHtml(updatedAt)})` : ''}.`;
-        }
-
-        // Load documents for this draft.
-        const docsResp = await fetch(`../handlers/kyc.php?action=get_draft_documents&ref_code=${encodeURIComponent(refCode)}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const docsData = await docsResp.json();
-        const docs = (docsData && docsData.success) ? (docsData.data || []) : [];
-        const governmentIdDocs = docs.filter(doc => {
-            const docType = String(doc.document_type || '').toLowerCase();
-            return docType === 'government_id' || docType === 'id' || docType === 'id_photo';
-        });
-        const supportingDocs = docs.filter(doc => !governmentIdDocs.includes(doc));
-
-        if (!draftDocsContainer) return;
-        if (!docs.length) {
-            draftDocsContainer.innerHTML = `<div style="color: var(--gray-500);">No saved attachments for this draft yet.</div>`;
-        } else {
-            draftDocsContainer.innerHTML = docs.map(doc => {
-                const fileUrl = `../../${doc.file_path}`;
-                const name = escapeHtml(doc.file_name || 'file');
-                const ext = (doc.file_name || '').split('.').pop().toLowerCase();
-                const icon = ext === 'pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark';
-                const size = doc.file_size ? ` (${escapeHtml(String(doc.file_size))} bytes)` : '';
-
-                if (ext === 'jpg' || ext === 'jpeg' || ext === 'png') {
-                    return `
-                        <div class="file-item" style="margin-bottom:10px;">
-                            <i class="bi ${icon}"></i>
-                            <span>${name}</span>
-                            <div style="margin-top:6px;">
-                                <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Open</a>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                return `
-                    <div class="file-item" style="margin-bottom:10px;">
-                        <i class="bi ${icon}"></i>
-                        <span>${name}</span>
-                        <span style="color: var(--gray-500); font-size: .8rem;">${escapeHtml(size)}</span>
-                        <div style="margin-top:6px;">
-                            <a href="${fileUrl}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Open</a>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        setStoredGovernmentIdUploads(governmentIdDocs.map(doc => ({
-            original_name: doc.file_name || '',
-            file_name: doc.file_name || '',
-            file_type: doc.file_type || null,
-            file_size: doc.file_size || null,
-            file_path: doc.file_path || null
-        })));
-        renderGovernmentIdUploads();
-
-        // Also load attachments into the form's attachment holder.
-        // These attachments are already finalized (stored in `documents`), so we keep their `file_path`
-        // and avoid relying on temp upload paths.
-        const draftSessionUploads = docs.map(doc => ({
-            file_name: doc.file_name || '',
-            original_name: doc.file_name || '',
-            file_type: doc.file_type || null,
-            file_size: doc.file_size || null,
-            file_path: doc.file_path || null
-        }));
-
-        if (typeof setStoredUploads === 'function' && typeof renderStoredUploads === 'function') {
-            setStoredUploads(draftSessionUploads || []);
-            renderStoredUploads();
-        }
-    } catch (error) {
-        console.error('Error loading draft:', error);
-        showToast('error', 'Load Draft Failed', 'Unexpected error while loading the draft.');
-    } finally {
-        setButtonBusy(loadDraftBtn, false);
-    }
-}
-
-async function refreshDrafts() {
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    const refreshDraftBtn = document.getElementById('refreshDraftBtn');
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    const draftInfoEl = document.getElementById('draftInfo');
-
-    if (!draftSelect) return;
-
-    setButtonBusy(refreshDraftBtn, true, 'Refreshing...');
-
-    draftSelect.innerHTML = `<option value="">Loading...</option>`;
-    draftSelect.value = '';
-    if (loadDraftBtn) loadDraftBtn.disabled = true;
-    if (draftDocsContainer) draftDocsContainer.innerHTML = '';
-    if (draftInfoEl) draftInfoEl.textContent = '';
-
-    try {
-        const resp = await fetch(`../handlers/kyc.php?action=get_drafts&draftType=individual`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const data = await resp.json();
-        const drafts = (data && data.success) ? (data.data || []) : [];
-
-        if (!drafts.length) {
-            draftSelect.innerHTML = `<option value="">No drafts found</option>`;
-            if (loadDraftBtn) loadDraftBtn.disabled = true;
-            return;
-        }
-
-        draftSelect.innerHTML = `
-            <option value="">Select a draft...</option>
-        ` + drafts.map(d => {
-            const refCode = d.ref_code || d.reference_code || '';
-            const label = (d.first_name || d.last_name)
-                ? `${(d.first_name || '').toString().trim()} ${(d.last_name || '').toString().trim()}`.trim()
-                : (d.company || d.email || 'Draft');
-            return `<option value="${escapeHtml(refCode)}">${escapeHtml(refCode)} - ${escapeHtml(label)}</option>`;
-        }).join('');
-
-        draftSelect.onchange = function () {
-            if (loadDraftBtn) loadDraftBtn.disabled = !this.value;
-        };
-    } catch (error) {
-        console.error('Error loading drafts:', error);
-        draftSelect.innerHTML = `<option value="">Failed to load drafts</option>`;
-        if (loadDraftBtn) loadDraftBtn.disabled = true;
-    } finally {
-        setButtonBusy(refreshDraftBtn, false);
-    }
-}
-
-function getResumeReferenceFromQuery() {
-    const params = new URLSearchParams(window.location.search || '');
-    return String(params.get('resume_ref') || params.get('ref_code') || '').trim();
-}
-
-async function autoLoadDraftFromQuery() {
-    const resumeRef = getResumeReferenceFromQuery();
-    if (!resumeRef) {
-        return;
-    }
-
-    const draftSelect = document.getElementById('draftSelect');
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    if (!draftSelect) {
-        return;
-    }
-
-    const hasDraftOption = Array.from(draftSelect.options || []).some(option => option.value === resumeRef);
-    if (!hasDraftOption) {
-        showToast('info', 'Draft Not Found', `Draft ${resumeRef} is not available for this account.`);
-        return;
-    }
-
-    draftSelect.value = resumeRef;
-    if (loadDraftBtn) {
-        loadDraftBtn.disabled = false;
-    }
-
-    await loadSelectedDraft();
-}
-
-// Load drafts list on page open.
-document.addEventListener('DOMContentLoaded', async () => {
-    const draftSelect = document.getElementById('draftSelect');
-    if (!draftSelect) return;
-    await refreshDrafts();
-    await autoLoadDraftFromQuery();
-});
-
-function toggleDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel) return;
-    const willOpen = !panel.classList.contains('open');
-    panel.classList.toggle('open', willOpen);
-    document.body.classList.toggle('drafts-popup-open', willOpen);
-    if (toggleBtn) {
-        toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-    }
-    if (willOpen && typeof refreshDrafts === 'function') {
-        queueDraftsPanelPosition();
-        startDraftsPanelFollow();
-        refreshDrafts();
-    } else {
-        stopDraftsPanelFollow();
-    }
-}
-
-let draftsPanelPositionRaf = 0;
-let draftsPanelFollowRaf = 0;
-
-function queueDraftsPanelPosition() {
-    if (draftsPanelPositionRaf) return;
-    draftsPanelPositionRaf = requestAnimationFrame(() => {
-        draftsPanelPositionRaf = 0;
-        positionDraftsPanel();
-    });
-}
-
-function startDraftsPanelFollow() {
-    if (draftsPanelFollowRaf) return;
-    const tick = () => {
-        const panel = document.getElementById('draftsCard');
-        if (!panel || !panel.classList.contains('open')) {
-            draftsPanelFollowRaf = 0;
-            return;
-        }
-        positionDraftsPanel();
-        draftsPanelFollowRaf = requestAnimationFrame(tick);
-    };
-    draftsPanelFollowRaf = requestAnimationFrame(tick);
-}
-
-function stopDraftsPanelFollow() {
-    if (draftsPanelFollowRaf) {
-        cancelAnimationFrame(draftsPanelFollowRaf);
-        draftsPanelFollowRaf = 0;
-    }
-    if (draftsPanelPositionRaf) {
-        cancelAnimationFrame(draftsPanelPositionRaf);
-        draftsPanelPositionRaf = 0;
-    }
-}
-
-function positionDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    if (!panel || !panel.classList.contains('open')) {
-        return;
-    }
-
-    panel.style.top = '50%';
-    panel.style.left = '50%';
-    panel.style.right = 'auto';
-    panel.style.bottom = 'auto';
-    panel.style.width = '';
-    panel.style.maxWidth = '';
-}
-
-function closeDraftsPanel() {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel) return;
-    panel.classList.remove('open');
-    document.body.classList.remove('drafts-popup-open');
-    stopDraftsPanelFollow();
-    if (toggleBtn) {
-        toggleBtn.setAttribute('aria-expanded', 'false');
-    }
-}
-
-document.addEventListener('click', function (event) {
-    const panel = document.getElementById('draftsCard');
-    const toggleBtn = document.querySelector('.drafts-toggle-btn');
-    if (!panel || !panel.classList.contains('open')) return;
-
-    const clickedInsidePanel = panel.contains(event.target);
-    const clickedToggle = !!(toggleBtn && (toggleBtn === event.target || toggleBtn.contains(event.target)));
-    if (!clickedInsidePanel && !clickedToggle) {
-        closeDraftsPanel();
-    }
-});
-
-document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') {
-        closeDraftsPanel();
-    }
-});
-
-window.addEventListener('resize', queueDraftsPanelPosition);
-window.addEventListener('scroll', queueDraftsPanelPosition, true);
-
 let kycMasonryRaf = 0;
 let kycMasonryObserver = null;
 
 function getKycMasonryItems(form) {
     return Array.from(form.children).filter((el) => {
-        if (el.id === 'draftsCard') return false;
         if (el.classList.contains('wizard-hidden')) return false;
         return el.classList.contains('card') || el.classList.contains('client-type-inline');
     });
@@ -2550,6 +2562,25 @@ function goToWizardStep(step) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const agentTypeField = document.getElementById('agentType');
+    const agentBranchField = document.getElementById('agentBranch');
+    if (agentTypeField) {
+        agentTypeField.addEventListener('change', async () => {
+            syncAgentTypeFields();
+            await refreshHeadAgentOptions();
+        });
+    }
+
+    if (agentBranchField) {
+        agentBranchField.addEventListener('change', async () => {
+            syncAgentTypeFields();
+            await refreshHeadAgentOptions();
+        });
+    }
+
+    syncAgentTypeFields();
+    refreshHeadAgentOptions();
+
     const prevBtn = document.getElementById('wizardPrevBtn');
     const nextBtn = document.getElementById('wizardNextBtn');
 
@@ -2617,6 +2648,7 @@ function proceedToReview() {
     if (proceedBtn?.disabled) return;
 
     syncComposedAddressFields();
+    syncAgentTypeFields();
 
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
@@ -2639,29 +2671,33 @@ function proceedToReview() {
     sessionStorage.setItem('kycFormData', JSON.stringify(formData));
     
     // Also store address components separately for reliable restoration
+    const getValue = (fieldId) => document.getElementById(fieldId)?.value || '';
     const addressData = {
-        businessRegion: document.getElementById('businessRegion').value,
-        businessProvince: document.getElementById('businessProvince').value,
-        businessCity: document.getElementById('businessCtm').value,
-        businessBarangay: document.getElementById('businessBarangay').value,
-        businessStreet: document.getElementById('businessStreet').value,
-        businessAddress: document.getElementById('businessAddress').value,
-        homeRegion: document.getElementById('homeRegion').value,
-        homeProvince: document.getElementById('homeProvince').value,
-        homeCity: document.getElementById('homeCtm').value,
-        homeBarangay: document.getElementById('homeBarangay').value,
-        homeStreet: document.getElementById('homeStreet').value,
-        homeAddress: document.getElementById('homeAddress').value
+        businessRegion: getValue('businessRegion'),
+        businessProvince: getValue('businessProvince'),
+        businessCity: getValue('businessCtm'),
+        businessBarangay: getValue('businessBarangay'),
+        businessStreet: getValue('businessStreet'),
+        businessAddress: getValue('businessAddress'),
+        homeRegion: getValue('homeRegion'),
+        homeProvince: getValue('homeProvince'),
+        homeCity: getValue('homeCtm'),
+        homeBarangay: getValue('homeBarangay'),
+        homeStreet: getValue('homeStreet'),
+        homeAddress: getValue('homeAddress')
     };
     sessionStorage.setItem('individualAddressData', JSON.stringify(addressData));
     sessionStorage.setItem('kycGovernmentIdFiles', JSON.stringify(getStoredGovernmentIdUploads()));
     
     // Navigate to review page
-    window.location.href = currentReviewUrl;
+    const reviewUrl = new URL(currentReviewUrl, window.location.href);
+    reviewUrl.searchParams.set('classification', isAgentFlow ? 'agent' : 'client');
+    window.location.href = `${reviewUrl.pathname}${reviewUrl.search}`;
 }
 
 function submitForm() {
     syncComposedAddressFields();
+    syncAgentTypeFields();
 
     if (!validateAllRequired()) {
         showToast('error', 'Validation Failed', 'Please fill in all required fields marked with *');
@@ -2681,9 +2717,9 @@ function submitForm() {
         }
     });
 
-    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
+    const uploadedFiles = isAgentFlow ? [] : (getStoredUploads ? getStoredUploads() : []);
     formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
-    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
+    formData.append('uploadedIdFiles', JSON.stringify(isAgentFlow ? [] : (getStoredGovernmentIdUploads() || [])));
     
     // Submit to handler
     fetch('../handlers/kyc.php', {
@@ -2693,11 +2729,12 @@ function submitForm() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            const entityLabel = isAgentFlow ? 'Agent' : 'Client';
             if (data.reference_code && !document.getElementById('refCode').value) {
                 document.getElementById('refCode').value = data.reference_code;
                 document.getElementById('refCode').readOnly = true;
             }
-            showToast('success', 'Client Saved!', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Client registered successfully.');
+            showToast('success', `${entityLabel} Saved!`, data.reference_code ? `Reference Code: ${data.reference_code}` : `${entityLabel} registered successfully.`);
             // Increment stat
             const tv = document.getElementById('stat-total');
             if (tv) tv.textContent = parseInt(tv.textContent) + 1;
@@ -2715,57 +2752,6 @@ function submitForm() {
     });
 }
 
-function saveDraft() {
-    const saveDraftBtn = document.getElementById('saveDraftBtn');
-    if (saveDraftBtn?.disabled) return;
-
-    syncComposedAddressFields();
-    setButtonBusy(saveDraftBtn, true, 'Saving...');
-
-    // Collect form data
-    const formData = new FormData();
-    formData.append('action', 'save_draft');
-    
-    // Add all form fields
-    const form = document.getElementById('kycForm');
-    const elements = form.querySelectorAll('input, select, textarea');
-    elements.forEach(el => {
-        if (el.name) {
-            formData.append(el.name, el.value);
-        }
-    });
-
-    // Persist attachments into `documents` for this draft.
-    const uploadedFiles = getStoredUploads ? getStoredUploads() : [];
-    formData.append('uploadedFiles', JSON.stringify(uploadedFiles || []));
-    formData.append('uploadedIdFiles', JSON.stringify(getStoredGovernmentIdUploads() || []));
-    
-    // Submit to handler
-    fetch('../handlers/kyc.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (data.reference_code && !document.getElementById('refCode').value) {
-                document.getElementById('refCode').value = data.reference_code;
-                document.getElementById('refCode').readOnly = true;
-            }
-            showToast('info', 'Draft Saved', data.reference_code ? `Reference Code: ${data.reference_code}` : 'Your progress has been saved successfully.');
-        } else {
-            showToast('error', 'Save Failed', data.message || 'Please try again.');
-        }
-    })
-    .catch(error => {
-        showToast('error', 'Error', 'An error occurred. Please try again.');
-        console.error('Error:', error);
-    })
-    .finally(() => {
-        setButtonBusy(saveDraftBtn, false);
-    });
-}
-
 async function clearForm() {
     const clearBtn = document.getElementById('clearBtn');
     setButtonBusy(clearBtn, true, 'Clearing...');
@@ -2775,15 +2761,6 @@ async function clearForm() {
         el.value = '';
         el.classList.remove('is-invalid','is-valid');
     });
-
-    const draftSelect = document.getElementById('draftSelect');
-    if (draftSelect) draftSelect.value = '';
-    const loadDraftBtn = document.getElementById('loadDraftBtn');
-    if (loadDraftBtn) loadDraftBtn.disabled = true;
-    const draftInfoEl = document.getElementById('draftInfo');
-    if (draftInfoEl) draftInfoEl.textContent = '';
-    const draftDocsContainer = document.getElementById('draftDocsContainer');
-    if (draftDocsContainer) draftDocsContainer.innerHTML = '';
 
     // Clear any temp-uploaded documents
     const uploads = (typeof getStoredUploads === 'function') ? getStoredUploads() : [];
@@ -2971,12 +2948,7 @@ if (zone) {
 // Render any existing temp uploads (e.g., returning from review)
 document.addEventListener('DOMContentLoaded', renderStoredUploads);
 document.addEventListener('DOMContentLoaded', revealFlowCards);
-
-// ── Auto-gen Client Number ─────────────────────────────────
-document.getElementById('refCode').addEventListener('input', function() {
-    const cn = this.value ? 'CN-' + Date.now().toString().slice(-6) : '';
-    document.getElementById('clientNumber').value = cn;
-});
+document.addEventListener('DOMContentLoaded', ensureRecordNumber);
 
 // ── Collapse Steps to Tiny Progress on Scroll ───────────────
 const stepsBar = document.querySelector('.steps-bar');

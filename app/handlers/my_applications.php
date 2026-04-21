@@ -102,6 +102,7 @@ function getEditableFieldLengths() {
         'middle_name' => 50,
         'last_name' => 50,
         'suffix' => 10,
+        'client_since' => 10,
         'contact_person' => 100,
         'mobile_phone' => 20,
         'office_phone' => 20,
@@ -120,6 +121,8 @@ function getEditableFieldLengths() {
         'spouse_birthdate' => 10,
         'spouse_occupation' => 100,
         'business_type' => 20,
+        'business_street' => 150,
+        'business_barangay' => 100,
         'business_address' => 255,
         'business_ctm' => 50,
         'business_province' => 50,
@@ -142,6 +145,71 @@ function normalizeNullableDate($value) {
     }
 
     return $trimmed;
+}
+
+function parseBusinessAddressComponents($addressStr) {
+    $trimmed = trim((string)$addressStr);
+    if ($trimmed === '') {
+        return null;
+    }
+
+    $parts = array_map('trim', explode(',', $trimmed));
+    $parts = array_values(array_filter($parts, static fn($part) => $part !== ''));
+
+    if (count($parts) < 5) {
+        return null;
+    }
+
+    return [
+        'street' => $parts[0],
+        'barangay' => $parts[1],
+        'city' => $parts[2],
+        'province' => $parts[3],
+        'region' => implode(', ', array_slice($parts, 4)),
+    ];
+}
+
+function buildBusinessAddressString($street, $barangay, $city, $province, $region) {
+    $parts = [];
+    foreach ([$street, $barangay, $city, $province, $region] as $part) {
+        $text = trim((string)$part);
+        if ($text !== '') {
+            $parts[] = $text;
+        }
+    }
+
+    return implode(', ', $parts);
+}
+
+function myApplicationsNormalizeIncomingFieldName($fieldName) {
+    $field = strtolower(trim((string)$fieldName));
+    if ($field === '') {
+        return '';
+    }
+
+    $aliases = [
+        'corporateclientname' => 'client_name',
+        'businesstype' => 'business_type',
+        'corporateclientsince' => 'client_since',
+        'tinnumber' => 'tin_number',
+        'corporateapslcode' => 'ap_sl_code',
+        'corporatearslcode' => 'ar_sl_code',
+        'corporatestreet' => 'business_street',
+        'corporatebusinessbarangay' => 'business_barangay',
+        'corporatebusinessaddress' => 'business_address',
+        'corporatebusinessctm' => 'business_ctm',
+        'corporatebusinessprovince' => 'business_province',
+        'corporatephone' => 'office_phone',
+        'corporatecontactperson' => 'contact_person',
+        'corporateemail' => 'email',
+        'corporategender' => 'gender',
+        'governmentidtype' => 'id_type',
+        'idtype' => 'id_type',
+        'idnumber' => 'id_number',
+        'clientclassification' => 'client_classification',
+    ];
+
+    return $aliases[$field] ?? $field;
 }
 
 function coalesceDisplayName($values, $fallbackReference = '') {
@@ -214,6 +282,27 @@ function executeUpdateById($db, $table, $idColumn, $idValue, $updateData, &$erro
     return $ok;
 }
 
+function deleteApplicationRowById($db, $table, $approvalId) {
+    $approvalId = intval($approvalId);
+    $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$table);
+
+    if ($approvalId <= 0 || $safeTable === '' || !tableExists($db, $safeTable)) {
+        return false;
+    }
+
+    $stmt = $db->prepare("DELETE FROM {$safeTable} WHERE approval_id = ?");
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('i', $approvalId);
+    $stmt->execute();
+    $deleted = $stmt->affected_rows > 0;
+    $stmt->close();
+
+    return $deleted;
+}
+
 function isHeadOfficeSession() {
     $sessionRole = strtolower(trim((string)($_SESSION['role'] ?? '')));
     $sessionDepartment = strtoupper(trim((string)($_SESSION['department'] ?? '')));
@@ -224,8 +313,10 @@ function isHeadOfficeSession() {
         || in_array($sessionBranch, ['HEAD OFFICE', 'HEAD OFFICE BRANCH', 'SMRO', 'SMRO BRANCH'], true);
 }
 
-function recordApprovalStatusHistory($db, $existingApproval, $targetStatus, $reviewNotes, $reviewerId, $reviewedAt) {
-    if (!tableExists($db, 'client_approval_status_history')) {
+function recordApprovalStatusHistory($db, $existingApproval, $targetStatus, $reviewNotes, $reviewerId, $reviewedAt, $approvalTable = '') {
+    $historyTable = myApplicationsHistoryTableForApprovalTable($approvalTable !== '' ? $approvalTable : ($existingApproval['source_table'] ?? 'client_approvals'));
+
+    if (!tableExists($db, $historyTable)) {
         return;
     }
 
@@ -251,7 +342,7 @@ function recordApprovalStatusHistory($db, $existingApproval, $targetStatus, $rev
     $safeReviewedAt = trim((string)$reviewedAt);
 
     $stmt = $db->prepare(
-        "INSERT INTO client_approval_status_history (
+        "INSERT INTO `{$historyTable}` (
             approval_id,
             client_id,
             reference_code,
@@ -307,6 +398,203 @@ function resolveResubmitEditUrl($row) {
     return 'kyc-individual.php?classification=client&resume_ref=' . rawurlencode($referenceCode);
 }
 
+function myApplicationsQueueTables() {
+    global $db;
+
+    static $tables = null;
+    if ($tables !== null) {
+        return $tables;
+    }
+
+    $tables = [];
+    if (tableExists($db, 'client_approvals')) {
+        $tables[] = 'client_approvals';
+    }
+
+    return $tables;
+}
+
+function myApplicationsHistoryTableForApprovalTable($approvalTable) {
+    return 'client_approval_status_history';
+}
+
+function myApplicationsBuildQueueQuery($approvalTable, $scope, array $extraWhereClauses = [], array $extraParams = [], $extraTypes = '', $includeHistory = true) {
+    global $db;
+
+    $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$approvalTable);
+    if ($safeTable === '' || !tableExists($db, $safeTable)) {
+        return null;
+    }
+
+    $approvalColumns = getTableColumns($db, $safeTable);
+
+    $whereClauses = [$scope['sql']];
+    $params = $scope['params'];
+    $types = $scope['types'];
+
+    foreach ($extraWhereClauses as $clause) {
+        $clauseText = trim((string)$clause);
+        if ($clauseText !== '') {
+            $whereClauses[] = $clauseText;
+        }
+    }
+
+    if (!empty($extraParams)) {
+        $params = array_merge($params, $extraParams);
+        $types .= $extraTypes;
+    }
+
+    if (isset($approvalColumns['client_classification'])) {
+        $whereClauses[] = "LOWER(COALESCE(NULLIF(TRIM(ca.client_classification), ''), 'client')) = 'client'";
+    }
+
+    $historySelectSql = "NULL AS previous_review_status,\n            NULL AS latest_reviewed_at";
+    $historyJoinSql = '';
+
+    if ($includeHistory) {
+        $historyTable = myApplicationsHistoryTableForApprovalTable($safeTable);
+        if (tableExists($db, $historyTable)) {
+            $historyJoinSql = "\n        LEFT JOIN (\n            SELECT h.approval_id, h.previous_status, h.reviewed_at\n            FROM `{$historyTable}` h\n            INNER JOIN (\n                SELECT approval_id, MAX(history_id) AS latest_history_id\n                FROM `{$historyTable}`\n                GROUP BY approval_id\n            ) hx ON hx.latest_history_id = h.history_id\n        ) hs ON hs.approval_id = ca.approval_id";
+            $historySelectSql = "hs.previous_status AS previous_review_status,\n            hs.reviewed_at AS latest_reviewed_at";
+        }
+    }
+
+    $whereSql = 'WHERE ' . implode(' AND ', $whereClauses);
+
+    return [
+        'sql' => "\n        SELECT\n            ca.*,\n            ru.full_name AS reviewed_by_name,\n            '{$safeTable}' AS source_table,\n            {$historySelectSql}\n        FROM `{$safeTable}` ca\n        {$scope['join_sql']}\n        LEFT JOIN users ru ON ca.reviewed_by = ru.user_id{$historyJoinSql}\n        {$whereSql}\n    ",
+        'params' => $params,
+        'types' => $types,
+        'table' => $safeTable,
+    ];
+}
+
+function myApplicationsFetchApprovalRecord($approvalId, $scope, $requestedTable = '') {
+    global $db;
+
+    $approvalId = intval($approvalId);
+    if ($approvalId <= 0) {
+        return null;
+    }
+
+    $tables = myApplicationsQueueTables();
+    if ($requestedTable !== '') {
+        $safeRequestedTable = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$requestedTable);
+        $tables = in_array($safeRequestedTable, $tables, true) ? [$safeRequestedTable] : [];
+    }
+
+    foreach ($tables as $queueTable) {
+        $queryInfo = myApplicationsBuildQueueQuery($queueTable, $scope, ['ca.approval_id = ?'], [$approvalId], 'i', true);
+        if (!$queryInfo) {
+            continue;
+        }
+
+        $stmt = $db->prepare($queryInfo['sql'] . "\n        LIMIT 1");
+        if (!$stmt) {
+            continue;
+        }
+
+        bindDynamicParams($stmt, $queryInfo['types'], $queryInfo['params']);
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            $row = $result instanceof mysqli_result ? $result->fetch_assoc() : null;
+            $stmt->close();
+
+            if ($row) {
+                return $row;
+            }
+        } else {
+            $stmt->close();
+        }
+    }
+
+    return null;
+}
+
+function myApplicationsFetchClientRecord($clientId) {
+    global $db;
+
+    $clientId = intval($clientId);
+    if ($clientId <= 0 || !tableExists($db, 'clients')) {
+        return null;
+    }
+
+    $stmt = $db->prepare("SELECT * FROM `clients` WHERE client_id = ? LIMIT 1");
+    if (!$stmt) {
+        return null;
+    }
+
+    $stmt->bind_param('i', $clientId);
+    $row = null;
+
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($result instanceof mysqli_result) {
+            $row = $result->fetch_assoc();
+        }
+    }
+
+    $stmt->close();
+
+    return $row;
+}
+
+function myApplicationsScopeInfo() {
+    global $db;
+
+    static $scope = null;
+    if ($scope !== null) {
+        return $scope;
+    }
+
+    $approvalColumns = getTableColumns($db, 'client_approvals');
+    $userColumns = getTableColumns($db, 'users');
+
+    $hasApprovalBranch = isset($approvalColumns['submitted_by_branch']);
+    $hasUserBranch = isset($userColumns['branch']);
+
+    $branchJoinSql = $hasUserBranch ? ' LEFT JOIN users su ON ca.submitted_by = su.user_id' : '';
+
+    if ($hasApprovalBranch && $hasUserBranch) {
+        $branchExpr = "COALESCE(NULLIF(TRIM(ca.submitted_by_branch), ''), NULLIF(TRIM(su.branch), ''))";
+    } elseif ($hasApprovalBranch) {
+        $branchExpr = "NULLIF(TRIM(ca.submitted_by_branch), '')";
+    } elseif ($hasUserBranch) {
+        $branchExpr = "NULLIF(TRIM(su.branch), '')";
+    } else {
+        $branchExpr = '';
+    }
+
+    $scope = [
+        'join_sql' => $branchJoinSql,
+        'branch_expr' => $branchExpr,
+        'can_scope_by_branch' => $branchExpr !== '',
+    ];
+
+    return $scope;
+}
+
+function myApplicationsScopeCondition() {
+    $scope = myApplicationsScopeInfo();
+
+    $currentBranch = strtoupper(trim((string)($_SESSION['branch'] ?? '')));
+    if ($scope['can_scope_by_branch'] && $currentBranch !== '') {
+        return [
+            'sql' => "UPPER(COALESCE({$scope['branch_expr']}, '')) = ?",
+            'params' => [$currentBranch],
+            'types' => 's',
+            'join_sql' => $scope['join_sql'],
+        ];
+    }
+
+    return [
+        'sql' => 'ca.submitted_by = ?',
+        'params' => [intval($_SESSION['user_id'] ?? 0)],
+        'types' => 'i',
+        'join_sql' => $scope['join_sql'],
+    ];
+}
+
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     $response['message'] = 'Unauthorized access';
@@ -320,10 +608,11 @@ if ($currentRole !== 'kyc_officer' || isHeadOfficeSession()) {
     jsonExit($response, 403);
 }
 
-if (!tableExists($db, 'client_approvals')) {
+if (empty(myApplicationsQueueTables())) {
     $response['message'] = 'Client approvals table is not available. Please run database migrations.';
     jsonExit($response, 500);
 }
+
 
 $action = strtolower(trim((string)($_REQUEST['action'] ?? 'list')));
 $userId = intval($_SESSION['user_id']);
@@ -337,49 +626,9 @@ if ($action === 'details' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $editableFieldLengths = getEditableFieldLengths();
     $desiredFields = array_keys($editableFieldLengths);
-    $clientColumns = getTableColumns($db, 'clients');
-    $clientSelectParts = [];
-    foreach ($desiredFields as $field) {
-        if (isset($clientColumns[$field])) {
-            $clientSelectParts[] = "c.`$field` AS `$field`";
-        }
-    }
-    $clientSelectSql = empty($clientSelectParts)
-        ? ''
-        : (",\n        " . implode(",\n        ", $clientSelectParts));
-
-    $query = "
-        SELECT
-            ca.approval_id,
-            ca.client_id,
-            ca.reference_code,
-            ca.client_type,
-            ca.client_classification,
-            ca.approval_status,
-            ca.review_notes$clientSelectSql
-        FROM client_approvals ca
-        LEFT JOIN clients c ON c.client_id = ca.client_id
-        WHERE ca.approval_id = ?
-          AND ca.submitted_by = ?
-        LIMIT 1
-    ";
-
-    $stmt = $db->prepare($query);
-    if (!$stmt) {
-        $response['message'] = 'Database error: ' . $db->error;
-        jsonExit($response, 500);
-    }
-
-    $stmt->bind_param('ii', $approvalId, $userId);
-    if (!$stmt->execute()) {
-        $response['message'] = 'Failed to load application details: ' . ($stmt->error ?: 'Unknown database error');
-        $stmt->close();
-        jsonExit($response, 500);
-    }
-
-    $result = $stmt->get_result();
-    $row = $result instanceof mysqli_result ? $result->fetch_assoc() : null;
-    $stmt->close();
+    $scope = myApplicationsScopeCondition();
+    $requestedTable = trim((string)($_GET['source_table'] ?? ''));
+    $row = myApplicationsFetchApprovalRecord($approvalId, $scope, $requestedTable);
 
     if (!$row) {
         $response['message'] = 'Application not found.';
@@ -387,6 +636,15 @@ if ($action === 'details' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     $status = strtolower(trim((string)($row['approval_status'] ?? 'pending')));
+    $clientRow = myApplicationsFetchClientRecord(intval($row['client_id'] ?? 0));
+    if (is_array($clientRow)) {
+        foreach ($clientRow as $field => $value) {
+            if (!array_key_exists($field, $row) || $row[$field] === null || $row[$field] === '') {
+                $row[$field] = $value;
+            }
+        }
+    }
+
     $credentials = [];
     foreach ($desiredFields as $field) {
         $credentials[$field] = isset($row[$field]) && $row[$field] !== null
@@ -396,6 +654,16 @@ if ($action === 'details' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 
     if (($credentials['client_type'] ?? '') === '') {
         $credentials['client_type'] = (string)($row['client_type'] ?? '');
+    }
+
+    if (($credentials['client_name'] ?? '') === '' && isset($row['company_name']) && trim((string)$row['company_name']) !== '') {
+        $credentials['client_name'] = (string)$row['company_name'];
+    }
+
+    $parsedBusinessAddress = parseBusinessAddressComponents((string)($credentials['business_address'] ?? ''));
+    if (is_array($parsedBusinessAddress)) {
+        $credentials['business_street'] = $parsedBusinessAddress['street'] ?? '';
+        $credentials['business_barangay'] = $parsedBusinessAddress['barangay'] ?? '';
     }
 
     $response['success'] = true;
@@ -434,44 +702,20 @@ if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         jsonExit($response, 400);
     }
 
-    $ownershipSql = "
-        SELECT
-            approval_id,
-            client_id,
-            reference_code,
-            approval_status,
-            client_type,
-            client_name,
-            first_name,
-            middle_name,
-            last_name,
-            contact_person,
-            mobile_phone,
-            office_phone,
-                        email,
-                        review_notes
-        FROM client_approvals
-        WHERE approval_id = ?
-          AND submitted_by = ?
-        LIMIT 1
-    ";
+    $normalizedIncomingFields = [];
+    foreach ($incomingFields as $field => $value) {
+        $normalizedField = myApplicationsNormalizeIncomingFieldName($field);
+        if ($normalizedField === '') {
+            continue;
+        }
 
-    $ownershipStmt = $db->prepare($ownershipSql);
-    if (!$ownershipStmt) {
-        $response['message'] = 'Database error: ' . $db->error;
-        jsonExit($response, 500);
+        $normalizedIncomingFields[$normalizedField] = $value;
     }
+    $incomingFields = $normalizedIncomingFields;
 
-    $ownershipStmt->bind_param('ii', $approvalId, $userId);
-    if (!$ownershipStmt->execute()) {
-        $response['message'] = 'Failed to validate application ownership: ' . ($ownershipStmt->error ?: 'Unknown database error');
-        $ownershipStmt->close();
-        jsonExit($response, 500);
-    }
-
-    $ownershipResult = $ownershipStmt->get_result();
-    $existingApproval = $ownershipResult instanceof mysqli_result ? $ownershipResult->fetch_assoc() : null;
-    $ownershipStmt->close();
+    $scope = myApplicationsScopeCondition();
+    $requestedTable = trim((string)($payload['source_table'] ?? ''));
+    $existingApproval = myApplicationsFetchApprovalRecord($approvalId, $scope, $requestedTable);
 
     if (!$existingApproval) {
         $response['message'] = 'Application not found.';
@@ -549,8 +793,20 @@ if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $sanitized[$field] = substr($value, 0, intval($maxLength));
     }
 
+    $composedBusinessAddress = buildBusinessAddressString(
+        $sanitized['business_street'] ?? '',
+        $sanitized['business_barangay'] ?? '',
+        $sanitized['business_ctm'] ?? '',
+        $sanitized['business_province'] ?? '',
+        $sanitized['region'] ?? ''
+    );
+    if ($composedBusinessAddress !== '') {
+        $sanitized['business_address'] = $composedBusinessAddress;
+    }
+
     $clientColumns = getTableColumns($db, 'clients');
-    $approvalColumns = getTableColumns($db, 'client_approvals');
+    $approvalTable = trim((string)($existingApproval['source_table'] ?? 'client_approvals'));
+    $approvalColumns = getTableColumns($db, $approvalTable);
 
     $clientUpdate = [];
     foreach ($sanitized as $field => $value) {
@@ -570,6 +826,19 @@ if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (isset($clientColumns['rejection_reason'])) {
         $clientUpdate['rejection_reason'] = null;
+    }
+
+    $effectiveClientType = strtolower(trim((string)($sanitized['client_type'] ?? $existingApproval['client_type'] ?? '')));
+    if ($effectiveClientType === 'corporate') {
+        $clientNameForCorporate = trim((string)($sanitized['client_name'] ?? ''));
+        if ($clientNameForCorporate !== '' && isset($clientColumns['company_name'])) {
+            $clientUpdate['company_name'] = $clientNameForCorporate;
+        }
+
+        $businessAddressForCorporate = trim((string)($sanitized['business_address'] ?? ''));
+        if ($businessAddressForCorporate !== '' && isset($clientColumns['full_address'])) {
+            $clientUpdate['full_address'] = $businessAddressForCorporate;
+        }
     }
 
     $approvalUpdatable = [
@@ -640,7 +909,7 @@ if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!empty($approvalUpdate)) {
-        $approvalUpdated = executeUpdateById($db, 'client_approvals', 'approval_id', $approvalId, $approvalUpdate, $updateError);
+        $approvalUpdated = executeUpdateById($db, $approvalTable, 'approval_id', $approvalId, $approvalUpdate, $updateError);
         if (!$approvalUpdated) {
             $db->rollback();
             $response['message'] = 'Failed to update application credentials: ' . ($updateError ?: 'Unknown database error');
@@ -698,7 +967,8 @@ if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'pending',
         $resubmissionMarker,
         $userId,
-        $resubmittedAt
+        $resubmittedAt,
+        $approvalTable
     );
 
     $db->commit();
@@ -706,6 +976,34 @@ if ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $response['success'] = true;
     $response['message'] = 'Submitted credentials were updated and resubmitted for review.';
     $response['data'] = ['approval_id' => $approvalId];
+    jsonExit($response);
+}
+
+if ($action === 'delete_application_record' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $approvalId = intval($_POST['approval_id'] ?? 0);
+
+    if ($approvalId <= 0) {
+        $response['message'] = 'Invalid application id.';
+        jsonExit($response, 400);
+    }
+
+    $scope = myApplicationsScopeCondition();
+    $requestedTable = trim((string)($_POST['source_table'] ?? ''));
+    $existing = myApplicationsFetchApprovalRecord($approvalId, $scope, $requestedTable);
+
+    if (!$existing) {
+        $response['message'] = 'Application record not found.';
+        jsonExit($response, 404);
+    }
+
+    $approvalTable = trim((string)($existing['source_table'] ?? 'client_approvals'));
+    if (!deleteApplicationRowById($db, $approvalTable, $approvalId)) {
+        $response['message'] = 'Application record not found.';
+        jsonExit($response, 404);
+    }
+
+    $response['success'] = true;
+    $response['message'] = 'Application record deleted successfully';
     jsonExit($response);
 }
 
@@ -731,13 +1029,14 @@ if (!in_array($type, $allowedTypes, true)) {
     $type = '';
 }
 
-$whereClauses = ['ca.submitted_by = ?'];
-$filterParams = [$userId];
-$filterTypes = 'i';
+$scope = myApplicationsScopeCondition();
+$extraWhereClauses = [];
+$filterParams = [];
+$filterTypes = '';
 
 if ($search !== '') {
     $searchLike = '%' . $search . '%';
-    $whereClauses[] = "(
+    $extraWhereClauses[] = "(
         ca.reference_code LIKE ? OR
         ca.client_number LIKE ? OR
         ca.display_name LIKE ? OR
@@ -754,25 +1053,50 @@ if ($search !== '') {
 }
 
 if ($status !== '') {
-    $whereClauses[] = 'ca.approval_status = ?';
+    $extraWhereClauses[] = 'ca.approval_status = ?';
     $filterParams[] = $status;
     $filterTypes .= 's';
 }
 
 if ($type !== '') {
-    $whereClauses[] = 'ca.client_type = ?';
+    $extraWhereClauses[] = 'ca.client_type = ?';
     $filterParams[] = $type;
     $filterTypes .= 's';
 }
 
-$whereSql = 'WHERE ' . implode(' AND ', $whereClauses);
+$queueTables = myApplicationsQueueTables();
+if (empty($queueTables)) {
+    $response['message'] = 'Approval queue tables are not available. Please run database migrations.';
+    jsonExit($response, 500);
+}
+
+$queueSelectSqlParts = [];
+$queueSelectParams = [];
+$queueSelectTypes = '';
+foreach ($queueTables as $queueTable) {
+    $queryInfo = myApplicationsBuildQueueQuery($queueTable, $scope, $extraWhereClauses, $filterParams, $filterTypes, true);
+    if (!$queryInfo) {
+        continue;
+    }
+
+    $queueSelectSqlParts[] = $queryInfo['sql'];
+    $queueSelectParams = array_merge($queueSelectParams, $queryInfo['params']);
+    $queueSelectTypes .= $queryInfo['types'];
+}
+
+if (empty($queueSelectSqlParts)) {
+    $response['message'] = 'Approval queue tables are not available. Please run database migrations.';
+    jsonExit($response, 500);
+}
+
+$unionSql = implode("\nUNION ALL\n", $queueSelectSqlParts);
 $offset = ($page - 1) * $pageSize;
 
 $countQuery = "
     SELECT COUNT(*) AS total
-    FROM client_approvals ca
-    LEFT JOIN users ru ON ca.reviewed_by = ru.user_id
-    $whereSql
+    FROM (
+{$unionSql}
+    ) queue_union
 ";
 
 $countStmt = $db->prepare($countQuery);
@@ -781,7 +1105,9 @@ if (!$countStmt) {
     jsonExit($response, 500);
 }
 
-bindDynamicParams($countStmt, $filterTypes, $filterParams);
+$countStmtParams = $queueSelectParams;
+$countStmtTypes = $queueSelectTypes;
+bindDynamicParams($countStmt, $countStmtTypes, $countStmtParams);
 $countExecuted = $countStmt->execute();
 if (!$countExecuted) {
     $response['message'] = 'Failed to count applications: ' . ($countStmt->error ?: 'Unknown database error');
@@ -795,58 +1121,13 @@ $total = intval($countRow['total'] ?? 0);
 $countStmt->close();
 
 $historyEnabled = tableExists($db, 'client_approval_status_history');
-$historyJoinSql = '';
-$historySelectSql = "
-    NULL AS previous_review_status,
-    NULL AS latest_reviewed_at,
-";
-
-if ($historyEnabled) {
-    $historyJoinSql = "
-        LEFT JOIN (
-            SELECT h.approval_id, h.previous_status, h.reviewed_at
-            FROM client_approval_status_history h
-            INNER JOIN (
-                SELECT approval_id, MAX(history_id) AS latest_history_id
-                FROM client_approval_status_history
-                GROUP BY approval_id
-            ) hx ON hx.latest_history_id = h.history_id
-        ) hs ON hs.approval_id = ca.approval_id
-    ";
-
-    $historySelectSql = "
-        hs.previous_status AS previous_review_status,
-        hs.reviewed_at AS latest_reviewed_at,
-    ";
-}
 
 $query = "
-    SELECT
-        ca.approval_id,
-        ca.client_id,
-        ca.reference_code,
-        ca.client_number,
-        ca.client_classification,
-        ca.client_type,
-        ca.display_name,
-        ca.client_name,
-        ca.email,
-        ca.mobile_phone,
-        ca.office_phone,
-        ca.approval_status,
-        ca.review_notes,
-        ca.submitted_at,
-        ca.reviewed_at,
-        ca.approved_at,
-        ca.reviewed_by,
-        ru.full_name AS reviewed_by_name,
-        $historySelectSql
-        ca.updated_at
-    FROM client_approvals ca
-    LEFT JOIN users ru ON ca.reviewed_by = ru.user_id
-    $historyJoinSql
-    $whereSql
-    ORDER BY COALESCE(ca.submitted_at, ca.created_at) DESC, ca.approval_id DESC
+    SELECT *
+    FROM (
+{$unionSql}
+    ) queue_union
+    ORDER BY COALESCE(submitted_at, created_at) DESC, approval_id DESC
     LIMIT ? OFFSET ?
 ";
 
@@ -856,8 +1137,8 @@ if (!$stmt) {
     jsonExit($response, 500);
 }
 
-$queryParams = $filterParams;
-$queryTypes = $filterTypes;
+$queryParams = $queueSelectParams;
+$queryTypes = $queueSelectTypes;
 $queryParams[] = $pageSize;
 $queryParams[] = $offset;
 $queryTypes .= 'ii';

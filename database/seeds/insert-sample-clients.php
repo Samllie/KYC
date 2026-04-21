@@ -4,8 +4,8 @@ require_once 'config/db.php';
 // Insert sample clients for testing
 $sampleClients = [
     [
-        'reference_code' => 'REF-20260317-00001',
-        'client_number' => 'CN-1710643200',
+        'reference_code' => 'REF - 000001',
+        'client_number' => 'CN - 000001',
         'client_type' => 'individual',
         'first_name' => 'Juan',
         'middle_name' => 'Santos',
@@ -18,8 +18,8 @@ $sampleClients = [
         'verification_status' => 'verified'
     ],
     [
-        'reference_code' => 'REF-20260317-00002',
-        'client_number' => 'CN-1710643201',
+        'reference_code' => 'REF - 000002',
+        'client_number' => 'CN - 000002',
         'client_type' => 'individual',
         'first_name' => 'Maria',
         'middle_name' => 'Garcia',
@@ -32,8 +32,8 @@ $sampleClients = [
         'verification_status' => 'pending'
     ],
     [
-        'reference_code' => 'REF-20260317-00003',
-        'client_number' => 'CN-1710643202',
+        'reference_code' => 'REF - 000003',
+        'client_number' => 'CN - 000003',
         'client_type' => 'corporate',
         'first_name' => 'ABC',
         'middle_name' => '',
