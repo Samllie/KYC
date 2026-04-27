@@ -2191,6 +2191,16 @@ function setStoredGovernmentIdUploads(files) {
     sessionStorage.setItem('kycGovernmentIdFiles', JSON.stringify(files || []));
 }
 
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
 function renderGovernmentIdUploads() {
     const list = document.getElementById('governmentIdFileList');
     if (!list) return;
